@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AppsUiTest {
     @get:Rule val compose = createComposeRule()
-    @Test fun `tap launches and long press options persist dock preference`() {
+    @Test fun `tap launches and options no longer offer dock Pin`() {
         val app = LaunchableApp(ComponentName("org.mozilla", "Main"), Process.myUserHandle(), "Firefox")
         var launched: LaunchableApp? = null
         val source = object : AppsSource {

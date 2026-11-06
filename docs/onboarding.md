@@ -5,7 +5,7 @@ First launch opens a seven-step setup using Sidekit's existing canvas, theme, ca
 1. Choose Sidekit as Android's home app, or continue to do this later.
 2. Match the accent to a Sidephone case. Changes apply immediately.
 3. Choose the grid or list home layout.
-4. Hide apps you do not want on home. The same controls are in Settings → Hide apps. Built-in and Sideport apps can be hidden or restored, including with Show all apps. Hidden apps are excluded from grid, list, search and dock; they are not uninstalled. Settings remains in Options.
+4. Hide apps you do not want on home. The same controls are in Settings → Hide apps. Built-in and Sideport apps can be hidden or restored, including with Show all apps. Hidden apps are excluded from grid, list, search, dock and Arrange apps; they are not uninstalled. Settings remains in Options.
 5. Review feature-specific permissions and special access. Nothing is requested automatically. Declining access never blocks completion; the affected feature still needs its permission. Returning from Android settings refreshes status. A repeated runtime-permission request opens App settings so permanently denied access can be changed.
 6. Choose letters or numbers as the default input mode.
 7. Explore tappable, schematic keypad diagrams. The remembered/detected module comes first. Skip through all four without changing the active module, or explicitly select one with “Use”. Finish opens home.
@@ -13,6 +13,10 @@ First launch opens a seven-step setup using Sidekit's existing canvas, theme, ca
 The keypad hardware exposes no distinct module identifier. Existing detection recognises distinctive key events, persists the last module and initially defaults to T9. Setup does not claim to detect a module before such a key is pressed. Controller actions depend on the app/game; the tour does not promise universal game mappings. For keypads Sidekit does not recognise, or to move keys, see [Keypad mapping](keypad-mapping.md).
 
 Progress and preferences survive process restarts. Only Finish records completion. Account connections are configured inside their respective apps.
+
+## Launcher arrangement
+
+Settings → Arrange apps edits the home order. Select an app, then move it up or down; the same up/down controls work with the D-pad. The first four apps are also shown in the dock. Done saves, Back cancels and Reset restores the default order. Hidden apps are not listed.
 
 ## Launcher search
 

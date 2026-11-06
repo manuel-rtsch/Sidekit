@@ -2,6 +2,14 @@
 
 Settings → Keypad mapping lets you use a keypad that Sidekit doesn't recognise, or move Sidephone keys. It is off by default: Sidekit receives keys as they arrive and detects the module from them, as before.
 
+## Automatic navigation
+
+With Mapping off, Sidekit's own screens use these navigation defaults:
+
+- T9 and Sundial: their native direction keys, with Enter or the centre key to confirm.
+- Game controller: the D-pad moves, A confirms and B goes back. X/Y and the shoulder buttons stay game actions.
+- Mini QWERTY: T/D/B/J move up/left/down/right while not typing, and Enter confirms. While a text field is focused, those keys stay letters.
+
 ## Custom mapping
 
 Tap **Mapping** to switch from Automatic to Custom. Custom mapping uses the module that is currently detected, and **Layout** chooses a different one: T9, Mini QWERTY, Sundial or Game controller. While Custom is on, detection is paused, so a key can't switch the module.
