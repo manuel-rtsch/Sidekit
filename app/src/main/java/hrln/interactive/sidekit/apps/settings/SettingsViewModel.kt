@@ -56,9 +56,9 @@ class SidekitPreferences(context: Context) {
         })
     }
     /**
-     * Legacy write-only stub kept for backward compatibility (the Apps screen's Pin action writes
-     * it). It stored a component path, not a launcher app id, so it never drove the dock and has
-     * nothing meaningful to migrate. The launcher now reads dock membership and order from
+     * Legacy write-only stub kept for backward compatibility. It stored a component path, not a
+     * launcher app id, so it never drove the dock and has nothing meaningful to migrate. The
+     * launcher now reads dock membership and order from
      * [hrln.interactive.sidekit.home.HomePreferences].
      */
     var dockComponent: String?
