@@ -55,6 +55,20 @@ class HomePreferences(context: Context) {
 
     fun isInDock(id: String): Boolean = id in dockApps
 
+    /**
+     * Replaces the stored home order wholesale. Used by the arrange screen's Done, which edits a
+     * local buffer and commits once. Unknown ids are dropped so the stored list stays renderable.
+     */
+    fun saveOrder(order: List<String>) = write(KEY_HOME_ORDER, order.filter { it.isNotBlank() })
+
+    /**
+     * Replaces the stored dock wholesale, capped at [DOCK_MAX] and rendered in home order.
+     * Apply after [saveOrder] so the sort uses the new order; safe either way for known ids.
+     */
+    fun saveDock(dock: List<String>) {
+        write(KEY_DOCK_APPS, sortByHomeOrder(dock.filter { it.isNotBlank() }.distinct().take(DOCK_MAX)))
+    }
+
     /** Drops any stored order/dock and returns to the built-in defaults. */
     fun reset() {
         prefs.edit().remove(KEY_HOME_ORDER).remove(KEY_DOCK_APPS).apply()
