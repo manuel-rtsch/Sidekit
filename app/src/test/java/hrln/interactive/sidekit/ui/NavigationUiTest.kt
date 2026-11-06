@@ -1,14 +1,15 @@
 package hrln.interactive.sidekit.ui
 
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -17,7 +18,6 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.activity.ComponentActivity
 import hrln.interactive.sidekit.apps.sidenotes.SidenotesTags
 import hrln.interactive.sidekit.launcher.LauncherTags
 import hrln.interactive.sidekit.navigation.LAUNCHER_ROUTE
@@ -39,8 +39,18 @@ class NavigationUiTest {
         SidekitPreviewFrame { SidekitNavHost(nav) }
     }
 
-    private fun openFromDock(app: SubApp) =
-        compose.onAllNodesWithContentDescription(app.label).onLast().performClick()
+    private fun openFromDock(app: SubApp) = compose.onAllNodesWithContentDescription(app.label).onLast().performClick()
+
+    /** Waits for a chrome action to be laid out, not just published (the bar morphs it in). */
+    private fun waitForAction(label: String) {
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithContentDescription(label)
+                .fetchSemanticsNodes()
+                .any { it.boundsInRoot.width > 0f && it.boundsInRoot.height > 0f }
+        }
+        // Let the bar finish growing the button so clicks land in its final centre.
+        compose.waitForIdle()
+    }
 
     @Test fun sidenotesWriteSaveSwipeDeleteUndoAndGoHome() {
         launch()
@@ -72,6 +82,10 @@ class NavigationUiTest {
         openFromDock(SubApp.Sidemessage)
         compose.onNodeWithContentDescription("New Message").performClick()
         compose.onNodeWithTag(hrln.interactive.sidekit.apps.sidemessage.SidemessageTags.TO).performTextInput("0412345678")
+        // NewMessageUiState comes from a StateFlow combined on Dispatchers.Default, so the action
+        // is not guaranteed to exist by the time performTextInput returns. Wait for it instead of
+        // racing the flow: otherwise the click intermittently sees the previous bar.
+        waitForAction("Text 0412345678")
         compose.onNodeWithContentDescription("Text 0412345678").performClick()
         compose.onNodeWithTag(hrln.interactive.sidekit.apps.sidemessage.SidemessageTags.CONVERSATION).assertIsDisplayed()
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
@@ -99,5 +113,4 @@ class NavigationUiTest {
     }
 }
 
-private fun hasClickLabel(label: String) =
-    SemanticsMatcher("click label = $label") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
+private fun hasClickLabel(label: String) = SemanticsMatcher("click label = $label") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
