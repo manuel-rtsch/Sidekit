@@ -9,9 +9,14 @@ import hrln.interactive.sidekit.navigation.SubApp
 /**
  * The Edit buffer for the "Arrange apps" screen.
  *
- * Seeds order and dock from the stored [HomePreferences], then lets the user edit a local copy so
- * nothing is persisted until [commit] (Back or Reset only touch this buffer). [order] and [dock]
- * are Compose state so the arrange UI re-renders as the user edits.
+ * Seeds the home order from the stored [HomePreferences], then lets the user edit a local copy so
+ * nothing is persisted until [commit] (Back or Reset only touch this buffer). [order] and
+ * [selected] are Compose state so the arrange UI re-renders as the user edits.
+ *
+ * Reordering is a selection mode: pressing Confirm on a focused app selects it ([selected]), then
+ * Up/Down moves it through the order (or each row's arrows move that app directly). The dock is
+ * never edited by hand — it is derived as the first [HomePreferences.DOCK_MAX] apps of [order],
+ * so moving an app into/out of the top four automatically pins/unpins it.
  */
 class HomeArranger(private val home: HomePreferences, known: Iterable<String>) {
 
@@ -24,10 +29,21 @@ class HomeArranger(private val home: HomePreferences, known: Iterable<String>) {
     var order by mutableStateOf(home.homeOrderFor(knownIds))
         private set
 
-    var dock by mutableStateOf(home.dockFor(knownIds).toSet())
+    /** The app currently selected for reordering, or null when not in selection mode. */
+    var selected by mutableStateOf<String?>(null)
         private set
 
-    fun isInDock(id: String): Boolean = id in dock
+    /** The dock: the first [HomePreferences.DOCK_MAX] apps of [order]. */
+    val dock: List<String> get() = order.take(HomePreferences.DOCK_MAX)
+
+    fun isInDock(id: String): Boolean = order.indexOf(id) in 0 until HomePreferences.DOCK_MAX
+
+    fun isSelected(id: String): Boolean = selected == id
+
+    /** Selects [id] (or deselects it if it is already selected). */
+    fun select(id: String) {
+        selected = if (selected == id) null else id
+    }
 
     /** Moves [id] by [delta] in the home order (positive = later), clamped at the ends. */
     fun move(id: String, delta: Int) {
@@ -38,24 +54,19 @@ class HomeArranger(private val home: HomePreferences, known: Iterable<String>) {
         order = order.toMutableList().apply { removeAt(index); add(target, id) }
     }
 
-    /** Pins [id] to the dock (capped at [HomePreferences.DOCK_MAX]) or unpins it. */
-    fun toggleDock(id: String) {
-        dock = when {
-            id in dock -> dock - id
-            dock.size < HomePreferences.DOCK_MAX -> dock + id
-            else -> dock
-        }
+    /** Moves the currently selected app by [delta]; no-op when nothing is selected. */
+    fun moveSelected(delta: Int) {
+        selected?.let { move(it, delta) }
     }
 
-    /** Restores the built-in defaults (enum order + freshly-seen apps; the default dock). */
+    /** Restores the built-in defaults (enum order + freshly-seen apps) and clears the selection. */
     fun reset() {
         order = SubApp.entries.map { it.visibilityId() } + appendedDefaults
-        dock = SubApp.dock.map { it.visibilityId() }.toSet()
+        selected = null
     }
 
-    /** Writes the buffer to [HomePreferences]; order first so the dock is rendered in the new order. */
+    /** Writes the edited order to [HomePreferences]. The dock follows automatically. */
     fun commit() {
         home.saveOrder(order)
-        home.saveDock(dock.toList())
     }
 }

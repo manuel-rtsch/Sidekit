@@ -40,12 +40,14 @@ android {
         // Development build that installs alongside the stable SideKit as a separate app
         // (`hrln.interactive.sidekit.dev`), so the stable one can remain the daily driver while
         // this tracks the current branch/tip for testing. See app/src/dev/res for its distinct
-        // name. `.sidekit` is a library with only debug/release, so fall back to its debug.
+        // name. It derives from `profile` (R8 + debug signing, no debug Compose checks, baseline
+        // profile) so the on-device testing build doesn't stutter like a raw debug build — it
+        // also falls back to `.sidekit` release. Use `debug` for breakpoint debugging instead.
         create("dev") {
-            initWith(getByName("debug"))
+            initWith(getByName("profile"))
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            matchingFallbacks += listOf("debug")
+            matchingFallbacks += listOf("release")
         }
     }
     compileOptions {

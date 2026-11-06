@@ -7,10 +7,11 @@ import hrln.interactive.sidekit.navigation.SubApp
 import org.json.JSONArray
 
 /**
- * The launcher's home order and dock, stored as stable app IDs.
+ * The launcher's home order, stored as stable app IDs.
  *
- * One ordered home list plus a dock set (Phase 0 decision): both the grid and the list render
- * from the same home list, and the dock shows the pinned apps in home order. IDs are the existing
+ * A single ordered home list drives everything: both the grid and the list render from the same
+ * home order, and the dock is derived as the **first [DOCK_MAX] apps** of that order (no separate
+ * pinned set — reordering an app into/out of the top four changes the dock). IDs are the existing
  * [visibilityId] strings (`builtin:Name` for Sidekit apps, `ported:package` for Sideport apps).
  *
  * Unknown or uninstalled IDs are kept in storage but skipped at render time, so a reinstalled app
@@ -27,10 +28,6 @@ class HomePreferences(context: Context) {
     val homeOrder: List<String>
         get() = read(KEY_HOME_ORDER, SubApp.entries.map { it.visibilityId() })
 
-    /** The dock, stored as its ids. Default = the four built-in dock apps. At most [DOCK_MAX] entries. */
-    val dockApps: List<String>
-        get() = read(KEY_DOCK_APPS, SubApp.dock.map { it.visibilityId() })
-
     /** Moves [id] by [delta] (positive = later) in the home order, if it is present. */
     fun move(id: String, delta: Int) {
         val order = homeOrder
@@ -41,37 +38,15 @@ class HomePreferences(context: Context) {
         write(KEY_HOME_ORDER, order.toMutableList().apply { removeAt(index); add(target, id) })
     }
 
-    /** Pins [id] to the dock when [pinned], or unpins it. The dock renders in home order. */
-    fun setDock(id: String, pinned: Boolean) {
-        val current = dockApps
-        when {
-            pinned && id !in current && current.size < DOCK_MAX ->
-                write(KEY_DOCK_APPS, sortByHomeOrder(current + id))
-            !pinned && id in current ->
-                write(KEY_DOCK_APPS, sortByHomeOrder(current.filterNot { it == id }))
-            else -> Unit
-        }
-    }
-
-    fun isInDock(id: String): Boolean = id in dockApps
-
     /**
      * Replaces the stored home order wholesale. Used by the arrange screen's Done, which edits a
      * local buffer and commits once. Unknown ids are dropped so the stored list stays renderable.
      */
     fun saveOrder(order: List<String>) = write(KEY_HOME_ORDER, order.filter { it.isNotBlank() })
 
-    /**
-     * Replaces the stored dock wholesale, capped at [DOCK_MAX] and rendered in home order.
-     * Apply after [saveOrder] so the sort uses the new order; safe either way for known ids.
-     */
-    fun saveDock(dock: List<String>) {
-        write(KEY_DOCK_APPS, sortByHomeOrder(dock.filter { it.isNotBlank() }.distinct().take(DOCK_MAX)))
-    }
-
-    /** Drops any stored order/dock and returns to the built-in defaults. */
+    /** Drops the stored order and returns to the built-in default (dock follows the top four). */
     fun reset() {
-        prefs.edit().remove(KEY_HOME_ORDER).remove(KEY_DOCK_APPS).apply()
+        prefs.edit().remove(KEY_HOME_ORDER).apply()
     }
 
     /**
@@ -85,24 +60,19 @@ class HomePreferences(context: Context) {
         return stored.filter { it in knownSet } + known.filter { it !in stored }
     }
 
-    /** The dock ids drawn from [known] and rendered in home order. */
-    fun dockFor(known: Iterable<String>): List<String> {
-        val dock = dockApps.toSet()
-        return homeOrderFor(known).filter { it in dock }
-    }
+    /** The dock is derived: the first [DOCK_MAX] apps of the resolved home order. */
+    fun dockFor(known: Iterable<String>): List<String> = homeOrderFor(known).take(DOCK_MAX)
 
-    /** Registers a change listener for home order and dock writes; returns an unregister call. */
+    /** True when [id] is one of the first [DOCK_MAX] apps of the stored home order. */
+    fun isInDock(id: String): Boolean = homeOrder.indexOf(id) in 0 until DOCK_MAX
+
+    /** Registers a change listener for home order writes; returns an unregister call. */
     fun observe(onChange: () -> Unit): () -> Unit {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == KEY_HOME_ORDER || key == KEY_DOCK_APPS || key == null) onChange()
+            if (key == KEY_HOME_ORDER || key == null) onChange()
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
         return { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-
-    private fun sortByHomeOrder(ids: List<String>): List<String> {
-        val order = homeOrder
-        return ids.sortedBy { i -> order.indexOf(i).let { if (it < 0) Int.MAX_VALUE else it } }
     }
 
     /**
@@ -128,6 +98,5 @@ class HomePreferences(context: Context) {
         const val DOCK_MAX = 4
 
         private const val KEY_HOME_ORDER = "home_order"
-        private const val KEY_DOCK_APPS = "dock_apps"
     }
 }

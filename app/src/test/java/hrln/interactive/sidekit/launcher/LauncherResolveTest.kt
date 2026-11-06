@@ -54,18 +54,20 @@ class LauncherResolveTest {
     }
 
     @Test
-    fun `custom dock renders in home order and can hold a ported app`() {
+    fun `custom dock derives from the reordered home order and can hold a ported app`() {
         val home = HomePreferences(context)
-        SubApp.dock.forEach { home.setDock(it.visibilityId(), false) } // clear the default dock
-        home.setDock("builtin:Camera", true)
-        home.setDock("builtin:Mail", true)
-        // Pin a ported app into the second freed slot.
-        home.setDock("ported:test.calendar", true)
+        // Reordering Mail, Camera and a ported app into the top four changes the dock automatically
+        // (the arrange screen commits such an order via saveOrder).
+        val customHome = listOf("builtin:Mail", "builtin:Camera", "ported:test.calendar", "builtin:Phonebook") + builtinsExcept("builtin:Mail", "builtin:Camera", "builtin:Phonebook")
+        home.saveOrder(customHome)
 
         val dock = toLauncherEntries(home.dockFor(known), subsById, portedById)
-        // Home order has Mail before Camera, ported apps appended last, so dock = [Mail, Camera, ForeignCalendar].
-        assertEquals(listOf("builtin:Mail", "builtin:Camera", "ported:test.calendar"), dock.map { it.id })
+        // Dock = the first four of the committed home order, in that order, incl. the ported app.
+        assertEquals(listOf("builtin:Mail", "builtin:Camera", "ported:test.calendar", "builtin:Phonebook"), dock.map { it.id })
     }
+
+    private fun builtinsExcept(vararg drop: String): List<String> =
+        SubApp.entries.map { it.visibilityId() }.filterNot { it in drop }
 
     @Test
     fun `reordering home order reorders the shared grid and list order`() {

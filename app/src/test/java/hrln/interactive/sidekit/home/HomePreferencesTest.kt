@@ -30,32 +30,31 @@ class HomePreferencesTest {
     private fun fresh() = HomePreferences(context)
 
     @Test
-    fun `defaults equal the current hardcoded home and dock`() {
+    fun `defaults equal the current hardcoded home and derived dock`() {
         val home = fresh()
         assertEquals(SubApp.entries.map { it.visibilityId() }, home.homeOrder)
-        assertEquals(SubApp.dock.map { it.visibilityId() }, home.dockApps)
+        // The dock is the first DOCK_MAX apps of the order — the default dock apps are first.
+        assertEquals(SubApp.dock.map { it.visibilityId() }, home.dockFor(allIds))
         assertEquals(
             listOf("builtin:Sidemessage", "builtin:Sidenotes", "builtin:Sideticks", "builtin:Phonebook"),
-            home.homeOrder.take(4),
+            home.homeOrder.take(HomePreferences.DOCK_MAX),
         )
     }
 
     @Test
-    fun `order and dock round-trip through a new instance`() {
+    fun `order round-trips through a new instance and the dock follows it`() {
         fresh().also { home ->
             home.move(allIds[0], 3)                 // Sidemessage +3
             home.move(allIds[1], 2)                 // Sidenotes  +2
-            home.setDock("builtin:Phonebook", false) // free a dock slot
-            home.setDock(allIds.last(), true)       // pin Sideport in its place
         }
         val restored = fresh()
         // Start: [Sidemessage, Sidenotes, Sideticks, Phonebook, ...]
         // after Sidemessage+3 -> [Sidenotes, Sideticks, Phonebook, Sidemessage, ...]
         // after Sidenotes+2   -> [Sideticks, Phonebook, Sidenotes, Sidemessage, ...]
         assertEquals(listOf("builtin:Sideticks", "builtin:Phonebook", "builtin:Sidenotes", "builtin:Sidemessage"), restored.homeOrder.take(4))
-        assertTrue(restored.isInDock(allIds.last()))
-        assertFalse(restored.isInDock("builtin:Phonebook"))
-        assertEquals(4, restored.dockApps.size)
+        assertEquals(restored.homeOrder.take(4), restored.dockFor(allIds))
+        assertTrue(restored.isInDock("builtin:Sideticks"))
+        assertFalse(restored.isInDock("builtin:Photos"))
     }
 
     @Test
@@ -70,21 +69,22 @@ class HomePreferencesTest {
     }
 
     @Test
-    fun `setDock caps at four and unpinning restores a slot`() {
+    fun `reordering an app into the top four pins it in the dock`() {
         val home = fresh()
-        assertTrue(home.isInDock(allIds.first()))
-        assertEquals(4, home.dockApps.size)
+        // Photos starts at index 4 (outside the dock).
+        assertFalse(home.isInDock("builtin:Photos"))
+        val defaultDock = home.dockFor(allIds)
+        assertEquals(SubApp.dock.map { it.visibilityId() }, defaultDock)
 
-        // Dock is full; further pins are refused.
-        allIds.drop(4).forEach { home.setDock(it, true) }
-        assertEquals(4, home.dockApps.size)
-        assertFalse(home.isInDock(allIds[4]))
+        home.move("builtin:Photos", -1)       // Photos 4 -> 3, trading places with Phonebook
+        assertTrue(home.isInDock("builtin:Photos"))
+        assertEquals(HomePreferences.DOCK_MAX, home.dockFor(allIds).size)
+        assertEquals("builtin:Photos", home.homeOrder.take(4).last())   // Photos in, Phonebook moved out
+        assertFalse(home.isInDock("builtin:Phonebook"))
 
-        // Free a slot, then pin a new app.
-        home.setDock(allIds.first(), false)
-        home.setDock(allIds[4], true)
-        assertTrue(home.isInDock(allIds[4]))
-        assertEquals(4, home.dockApps.size)
+        home.move("builtin:Photos", 1)        // back out of the dock
+        assertFalse(home.isInDock("builtin:Photos"))
+        assertEquals(defaultDock, home.dockFor(allIds))
     }
 
     @Test
@@ -96,8 +96,8 @@ class HomePreferencesTest {
         val known = allIds.filterNot { it == "builtin:Sideticks" }
         assertEquals(known, home.homeOrderFor(known))
 
-        val dock = home.dockFor(known)
-        assertEquals(listOf("builtin:Sidemessage", "builtin:Sidenotes", "builtin:Phonebook"), dock)
+        // Dock is derived from the rendered order: [SM, SN, Phonebook, Photos] after Sideticks drops.
+        assertEquals(listOf("builtin:Sidemessage", "builtin:Sidenotes", "builtin:Phonebook", "builtin:Photos"), home.dockFor(known))
     }
 
     @Test
@@ -114,34 +114,32 @@ class HomePreferencesTest {
         val home = fresh()
         home.move("builtin:Phonebook", -2)   // [Sidemessage, Phonebook, Sidenotes, Sideticks, ...]
         home.move("builtin:Sidenotes", 1)    // [Sidemessage, Phonebook, Sideticks, Sidenotes, ...]
-        val expected = home.homeOrderFor(allIds).filter { it in home.dockApps }
-        assertEquals(expected, home.dockFor(allIds))
+        // The dock is exactly the first four of the rendered order — no separate sort needed.
+        assertEquals(home.homeOrderFor(allIds).take(HomePreferences.DOCK_MAX), home.dockFor(allIds))
     }
 
     @Test
     fun `reset restores defaults`() {
         fresh().also { home ->
             home.move(allIds.first(), 1)
-            home.setDock(allIds.first(), false)
             home.reset()
         }
         assertEquals(SubApp.entries.map { it.visibilityId() }, fresh().homeOrder)
-        assertEquals(SubApp.dock.map { it.visibilityId() }, fresh().dockApps)
+        assertEquals(SubApp.dock.map { it.visibilityId() }, fresh().dockFor(allIds))
     }
 
     @Test
-    fun `observer fires on order and dock changes until unregistered`() {
+    fun `observer fires on order changes until unregistered`() {
         val home = fresh()
         var calls = 0
         val unregister = home.observe { calls++ }
 
         home.move(allIds.first(), 1)          // order change
-        home.setDock(allIds.first(), false)   // dock change
-        home.setDock(allIds.first(), true)    // dock change back
-        assertEquals(3, calls)
+        home.move(allIds.first(), 1)
+        assertEquals(2, calls)
 
         unregister()
         home.move(allIds.first(), 1)
-        assertEquals(3, calls)
+        assertEquals(2, calls)
     }
 }

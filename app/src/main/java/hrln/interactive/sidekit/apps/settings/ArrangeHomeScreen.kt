@@ -1,6 +1,8 @@
 package hrln.interactive.sidekit.apps.settings
 
+import android.view.KeyEvent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,12 +39,13 @@ import hrln.interactive.sidekit.home.HomePreferences
 import hrln.interactive.sidekit.navigation.SubApp
 
 /**
- * Settings → Arrange apps. Edit the home order and the four-slot dock against a local buffer and
- * commit only on Done, so Back genuinely cancels and Reset only touches the buffer.
+ * Settings → Arrange apps. Edit the home order against a local buffer and commit only on Done, so
+ * Back genuinely cancels and Reset only touches the buffer.
  *
- * Interaction is keypad-first: each row toggles its dock membership on tap (showing "In dock"),
- * and the row's paired up/down arrows reorder it. The row arrows keep the action bar to the
- * commit controls (Back / Done / Reset) instead of encoding a global "selected row".
+ * Reordering is a selection mode, keypad-first: Confirm on a focused app selects it (highlighted),
+ * then Up/Down moves it through the order. Each row also keeps up/down arrows as a direct toggle,
+ * and tapping a row selects it too. The dock is automatic — the first [HomePreferences.DOCK_MAX]
+ * apps are "In dock" — so reordering an app into/out of the top four pins/unpins it.
  */
 @Composable
 internal fun ArrangeHomeScreen(back: () -> Unit) {
@@ -52,16 +58,31 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
     // Editing buffer, seeded from the stored prefs once. Nothing is written until commit() (Done).
     val arranger = remember(home, known) { HomeArranger(home, known) }
     val order = arranger.order
-    val dock = arranger.dock
+    val selected = arranger.selected
     fun done() {
         arranger.commit()
         back()
     }
     fun cancel() = back() // buffer never committed, so Back leaves the launcher unchanged
 
+    val focus = remember { FocusRequester() }
     val list = rememberLazyListState()
+    LaunchedEffect(Unit) { focus.requestFocus() }
     SidekitScaffold(
         "Arrange apps",
+        // While an app is selected, Up/Down move it instead of moving focus (B/T on the keypad);
+        // Left/Right, Confirm and Back are untouched so the user can still reach the arrows and the
+        // action bar. Deselect (Confirm on the selected row) to browse freely again.
+        modifier = Modifier.focusRequester(focus).onPreviewKeyEvent { event ->
+            val native = event.nativeKeyEvent
+            if (selected != null && native.action == KeyEvent.ACTION_DOWN && native.repeatCount == 0) {
+                when (native.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_UP -> { arranger.moveSelected(-1); true }
+                    KeyEvent.KEYCODE_DPAD_DOWN -> { arranger.moveSelected(+1); true }
+                    else -> false
+                }
+            } else false
+        }.focusable(),
         actions = listOf(
             SideAction.back("back", "Settings", ::cancel),
             SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check),
@@ -71,7 +92,7 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
         SidekitList(padding, state = list) {
             item {
                 SidekitText(
-                    "Tap a row to pin or unpin it in the four-slot dock (shown as \"In dock\"). Use each row's arrows to move it through the home order. Done saves; Back leaves it unchanged.",
+                    "Press Enter on an app to select it, then press Up/Down to move it (each row's arrows do the same). The first four apps are the dock, shown as \"In dock\". Done saves; Back leaves it unchanged.",
                     style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp, textAlign = TextAlign.Start),
                     maxLines = Int.MAX_VALUE,
                 )
@@ -82,7 +103,7 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                 val enabledUp = index > 0
                 val enabledDown = index < last
                 // The up/down arrows sit beside the row (not inside its clickable tile) so each is its
-                // own D-pad focus target and touch target; the tile itself toggles the dock pin.
+                // own D-pad focus target and touch target; the tile selects the app for reordering.
                 Row(
                     Modifier.fillMaxWidth().height(76.dp).listFade(list, index + 1),
                     verticalAlignment = Alignment.CenterVertically,
@@ -95,8 +116,13 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                     SidekitItem(
                         title = label,
                         modifier = Modifier.weight(1f),
-                        secondary = if (id in dock) "In dock" else null,
-                        onClick = { arranger.toggleDock(id) },
+                        secondary = when {
+                            arranger.isSelected(id) -> "Selected"
+                            arranger.isInDock(id) -> "In dock"
+                            else -> null
+                        },
+                        colour = if (arranger.isSelected(id)) ItemColour.Secondary else ItemColour.Primary,
+                        onClick = { arranger.select(id) },
                     )
                 }
             }
