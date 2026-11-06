@@ -24,9 +24,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.ActionTone
@@ -43,18 +41,21 @@ import hrln.interactive.sidekit.navigation.SubApp
  * Back genuinely cancels and Reset only touches the buffer.
  *
  * Reordering is a selection mode, keypad-first: Confirm on a focused app selects it (highlighted),
- * then Up/Down moves it through the order. Each row also keeps up/down arrows as a direct toggle,
- * and tapping a row selects it too. The dock is automatic — the first [HomePreferences.DOCK_MAX]
- * apps are "In dock" — so reordering an app into/out of the top four pins/unpins it.
+ * then Up/Down moves it through the order. The selected row also shows up/down arrows on its right
+ * as a direct toggle, and tapping a row selects it too. The dock is automatic — the first
+ * [HomePreferences.DOCK_MAX] apps are "In dock" — so reordering an app into/out of the top four
+ * pins/unpins it. Hidden apps are omitted so they cannot take a dock slot here.
  */
 @Composable
 internal fun ArrangeHomeScreen(back: () -> Unit) {
     val context = LocalContext.current
     val home = remember(context) { HomePreferences(context) }
+    val prefs = remember(context) { SidekitPreferences(context) }
+    val hidden = rememberHiddenApps(prefs)
     val ported by remember { PortedApps.get(context).apps }.collectAsStateWithLifecycle()
     val subsById = remember(SubApp.entries) { SubApp.entries.associateBy { it.visibilityId() } }
     val portedById = remember(ported) { ported.associateBy { it.visibilityId() } }
-    val known = remember(subsById, portedById) { subsById.keys + portedById.keys }
+    val known = remember(subsById, portedById, hidden) { (subsById.keys + portedById.keys) - hidden }
     // Editing buffer, seeded from the stored prefs once. Nothing is written until commit() (Done).
     val arranger = remember(home, known) { HomeArranger(home, known) }
     val order = arranger.order
@@ -68,6 +69,12 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
     val focus = remember { FocusRequester() }
     val list = rememberLazyListState()
     LaunchedEffect(Unit) { focus.requestFocus() }
+    // Moving the selected app reorders the keyed row, but focus alone does not re-run bring-into-view.
+    // Keep the list on the selected app so Up/Down never walks the selection off the visible page.
+    LaunchedEffect(selected, order) {
+        val index = selected?.let(order::indexOf) ?: return@LaunchedEffect
+        if (index >= 0) list.animateScrollToItem(index + 1)
+    }
     SidekitScaffold(
         "Arrange apps",
         // While an app is selected, Up/Down move it instead of moving focus (B/T on the keypad);
@@ -92,8 +99,8 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
         SidekitList(padding, state = list) {
             item {
                 SidekitText(
-                    "Press Enter on an app to select it, then press Up/Down to move it (each row's arrows do the same). The first four apps are the dock, shown as \"In dock\". Done saves; Back leaves it unchanged.",
-                    style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp, textAlign = TextAlign.Start),
+                    "Select apps, then move them up or down. First 4 apps are also shown in the dock",
+                    style = SidekitTheme.typography.label,
                     maxLines = Int.MAX_VALUE,
                 )
             }
@@ -102,28 +109,31 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                 val label = subsById[id]?.label ?: portedById[id]?.label ?: return@itemsIndexed
                 val enabledUp = index > 0
                 val enabledDown = index < last
-                // The up/down arrows sit beside the row (not inside its clickable tile) so each is its
-                // own D-pad focus target and touch target; the tile selects the app for reordering.
+                val isSelected = arranger.isSelected(id)
+                // Arrows only appear on the selected row, on its right, so unselected rows stay clean
+                // and every arrow is an unambiguous D-pad/touch target for the app it moves.
                 Row(
                     Modifier.fillMaxWidth().height(76.dp).listFade(list, index + 1),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap),
                 ) {
-                    Column {
-                        ItemArrow(up = true, enabled = enabledUp, contentDescription = "Move $label up") { arranger.move(id, -1) }
-                        ItemArrow(up = false, enabled = enabledDown, contentDescription = "Move $label down") { arranger.move(id, +1) }
-                    }
                     SidekitItem(
                         title = label,
                         modifier = Modifier.weight(1f),
                         secondary = when {
-                            arranger.isSelected(id) -> "Selected"
+                            isSelected -> "Selected"
                             arranger.isInDock(id) -> "In dock"
                             else -> null
                         },
-                        colour = if (arranger.isSelected(id)) ItemColour.Secondary else ItemColour.Primary,
+                        colour = if (isSelected) ItemColour.Secondary else ItemColour.Primary,
                         onClick = { arranger.select(id) },
                     )
+                    if (isSelected) {
+                        Column {
+                            ItemArrow(up = true, enabled = enabledUp, contentDescription = "Move $label up") { arranger.move(id, -1) }
+                            ItemArrow(up = false, enabled = enabledDown, contentDescription = "Move $label down") { arranger.move(id, +1) }
+                        }
+                    }
                 }
             }
         }

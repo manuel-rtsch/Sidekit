@@ -61,7 +61,7 @@ class HomeArranger(private val home: HomePreferences, known: Iterable<String>) {
 
     /** Restores the built-in defaults (enum order + freshly-seen apps) and clears the selection. */
     fun reset() {
-        order = SubApp.entries.map { it.visibilityId() } + appendedDefaults
+        order = SubApp.entries.map { it.visibilityId() }.filter { it in knownIds } + appendedDefaults
         selected = null
     }
 

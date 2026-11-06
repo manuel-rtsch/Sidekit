@@ -123,6 +123,18 @@ class HomeArrangerTest {
     }
 
     @Test
+    fun `reset keeps only the known apps, so filtered apps stay out`() {
+        val home = HomePreferences(context)
+        val visibleKnown = known - photos
+        val arranger = HomeArranger(home, visibleKnown)
+        assertFalse(arranger.order.contains(photos))
+
+        arranger.reset()
+        assertFalse(arranger.order.contains(photos))
+        assertEquals(SubApp.entries.map { it.visibilityId() }.filter { it in visibleKnown } + listOf(matrix), arranger.order)
+    }
+
+    @Test
     fun `reset restores built-in defaults, dock and clears the selection`() {
         val home = HomePreferences(context)
         val arranger = HomeArranger(home, known)

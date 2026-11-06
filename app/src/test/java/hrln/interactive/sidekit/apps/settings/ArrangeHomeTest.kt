@@ -31,10 +31,10 @@ class ArrangeHomeTest {
     @Before
     fun cleanPrefs() {
         HomePreferences(context).reset()
+        SidekitPreferences(context).hiddenApps = emptySet()
     }
 
-    @Test
-    fun `renders every app with the four pinned dock apps marked In dock`() {
+    private fun arrange() {
         compose.setContent {
             SidekitTheme {
                 SidekitCanvas {
@@ -43,10 +43,32 @@ class ArrangeHomeTest {
             }
         }
         compose.waitForIdle()
+    }
+
+    @Test
+    fun `renders every app with the four pinned dock apps marked In dock`() {
+        arrange()
+        compose.onNodeWithText("Select apps, then move them up or down. First 4 apps are also shown in the dock").assertIsDisplayed()
         compose.onAllNodesWithText("In dock").assertCountEquals(HomePreferences.DOCK_MAX)
         SubApp.dock.forEach { compose.onNodeWithText(it.label).assertIsDisplayed() }
-        // Rows are each an independent click target beside their move arrows, not hidden under a merged tile.
-        compose.onNodeWithContentDescription("Move Photos up").assertExists()
         compose.onNodeWithText("Photos").assertExists()
+    }
+
+    @Test
+    fun `move arrows appear only on the selected row`() {
+        arrange()
+        compose.onNodeWithContentDescription("Move Sidenotes up").assertDoesNotExist()
+        compose.onNodeWithText("Sidenotes").performClick()
+        compose.onNodeWithContentDescription("Move Sidenotes up").assertExists()
+        compose.onNodeWithContentDescription("Move Sidenotes down").assertExists()
+        compose.onNodeWithContentDescription("Move Photos up").assertDoesNotExist()
+    }
+
+    @Test
+    fun `hidden apps are omitted from the rearrangement list`() {
+        SidekitPreferences(context).hiddenApps = setOf("builtin:Sidenotes")
+        arrange()
+        compose.onNodeWithText("Sidenotes").assertDoesNotExist()
+        compose.onNodeWithText("Sidemessage").assertExists()
     }
 }
