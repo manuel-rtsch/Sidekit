@@ -27,13 +27,20 @@ data class Track(
     val album: String = "",
     val durationMs: Long = 0,
     val trackNumber: Int = 0,
-    val addedAt: Long = 0,
+    val addedAt: Long = 0
 ) {
     val uri: Uri get() = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
 }
 
 @Immutable
 data class Playlist(val id: Long, val name: String, val trackIds: List<Long>)
+
+/**
+ * The one playlist the Save buttons write to. It is reserved by name so that saving the same
+ * track twice is a no-op and un-saving it is possible; an ordinary playlist made with
+ * [PlaylistRepository.create] never takes this name (blank names become "Playlist N").
+ */
+const val SAVED_PLAYLIST = "Saved songs"
 
 fun albumArtUri(albumId: Long): Uri = ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumId)
 
@@ -50,7 +57,7 @@ class MusicLibrary(
     val artists: List<Artist>,
     val albums: List<Album>,
     val tracks: List<Track>,
-    val playlists: List<Playlist>,
+    val playlists: List<Playlist>
 ) {
     private val trackById = tracks.associateBy { it.id }
     private val albumById = albums.associateBy { it.id }
@@ -60,6 +67,14 @@ class MusicLibrary(
     fun album(id: Long): Album? = albumById[id]
     fun track(id: Long): Track? = trackById[id]
     fun playlist(id: Long): Playlist? = playlists.firstOrNull { it.id == id }
+    fun savedSongs(): Playlist? = playlists.firstOrNull { it.name == SAVED_PLAYLIST }
+    fun isSaved(trackId: Long): Boolean = savedSongs()?.trackIds?.contains(trackId) == true
+
+    /** True when every track is saved, which is when the Save button reads "Saved". */
+    fun areSaved(trackIds: List<Long>): Boolean {
+        val saved = savedSongs()?.trackIds.orEmpty()
+        return trackIds.isNotEmpty() && trackIds.all { it in saved }
+    }
     fun tracksOf(album: Album): List<Track> = album.trackIds.mapNotNull(::track)
     fun tracksOf(playlist: Playlist): List<Track> = playlist.trackIds.mapNotNull(::track)
     fun albumsBy(artist: Artist): List<Album> = albums.filter { it.artistId == artist.id }
@@ -140,14 +155,14 @@ class MediaStoreMusicSource(private val resolver: ContentResolver) : MusicSource
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.TRACK,
-            MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.DATE_ADDED
         )
         return resolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
             projection,
             "${MediaStore.Audio.Media.IS_MUSIC} != 0",
             null,
-            null,
+            null
         )?.use { c ->
             val out = ArrayList<Track>(c.count)
             while (c.moveToNext()) {
@@ -161,7 +176,7 @@ class MediaStoreMusicSource(private val resolver: ContentResolver) : MusicSource
                     durationMs = c.getLong(6),
                     // TRACK is disc * 1000 + track.
                     trackNumber = c.getInt(7),
-                    addedAt = c.getLong(8),
+                    addedAt = c.getLong(8)
                 )
             }
             out

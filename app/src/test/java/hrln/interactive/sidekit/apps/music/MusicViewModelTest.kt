@@ -1,29 +1,29 @@
 package hrln.interactive.sidekit.apps.music
 
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.resetMain
-import org.junit.After
-import org.junit.Before
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MusicViewModelTest {
     private val tracks = listOf(
         Track(1, "Our Mission", 1, 3, "Yoshiruma Terui", "Hidden Inventory", 1000),
-        Track(2, "A Little Lesson", 1, 3, "Yoshiruma Terui", "Hidden Inventory", 2000),
+        Track(2, "A Little Lesson", 1, 3, "Yoshiruma Terui", "Hidden Inventory", 2000)
     )
     private val player = FakePlayer()
     private val source = object : MusicSource {
@@ -36,6 +36,7 @@ class MusicViewModelTest {
     }
 
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
     @After fun tearDown() = Dispatchers.resetMain()
 
     @Test fun playTrackQueuesItsAlbumFromThatTrack() = runTest {
@@ -55,8 +56,33 @@ class MusicViewModelTest {
         vm.state.first { it.loaded }
         vm.playPlaylist(8)
         assertEquals(listOf(tracks[1]), player.tracks)
-        vm.saveTracks("New", tracks)
-        assertEquals(2, vm.state.first { it.library.playlists.size == 2 }.library.playlists.size)
+        vm.viewModelScope.cancel()
+    }
+
+    @Test fun savingTwiceKeepsOneSavedPlaylist() = runTest {
+        val vm = MusicViewModel(source, PlaylistRepository(store, backgroundScope, UnconfinedTestDispatcher()), player, UnconfinedTestDispatcher())
+        val loaded = vm.state.first { it.loaded }
+        assertTrue(!loaded.library.isSaved(1))
+        vm.toggleSaved(tracks[0])
+        val saved = vm.state.first { it.library.isSaved(1) }
+        assertEquals(listOf("Favourites", SAVED_PLAYLIST), saved.library.playlists.map { it.name })
+        assertTrue(saved.library.areSaved(listOf(1)))
+        vm.toggleSaved(tracks[0])
+        val unsaved = vm.state.first { !it.library.isSaved(1) }
+        assertEquals(listOf(8L), unsaved.library.playlists.map { it.id })
+        assertEquals(null, unsaved.library.savedSongs())
+        vm.viewModelScope.cancel()
+    }
+
+    @Test fun savingAnAlbumAddsEveryTrackOnceAndUnSavesThemTogether() = runTest {
+        val vm = MusicViewModel(source, PlaylistRepository(store, backgroundScope, UnconfinedTestDispatcher()), player, UnconfinedTestDispatcher())
+        vm.state.first { it.loaded }
+        vm.toggleSaved(tracks)
+        val saved = vm.state.first { it.library.areSaved(tracks.map { it.id }) }.library
+        assertEquals(listOf(1L, 2L), saved.savedSongs()?.trackIds)
+        vm.toggleSaved(tracks)
+        assertTrue(!vm.state.first { !it.library.isSaved(1) }.library.areSaved(tracks.map { it.id }))
+        assertEquals(null, vm.state.value.library.savedSongs())
         vm.viewModelScope.cancel()
     }
 
@@ -73,7 +99,10 @@ class MusicViewModelTest {
         override val state: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState())
         var tracks: List<Track> = emptyList()
         var start = -1
-        override fun playQueue(tracks: List<Track>, startIndex: Int, shuffle: Boolean?) { this.tracks = tracks; start = startIndex }
+        override fun playQueue(tracks: List<Track>, startIndex: Int, shuffle: Boolean?) {
+            this.tracks = tracks
+            start = startIndex
+        }
         override fun togglePlayPause() = Unit
         override fun next() = Unit
         override fun previous() = Unit
