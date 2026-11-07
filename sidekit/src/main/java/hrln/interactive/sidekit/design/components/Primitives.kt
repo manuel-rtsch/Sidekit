@@ -4,8 +4,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -27,8 +27,11 @@ fun SidekitText(
     style: TextStyle = SidekitTheme.typography.body,
     color: Color = LocalSidekitContentColor.current,
     maxLines: Int = 1,
+    /** Reserve room for this many lines even when the text is shorter, so a centred heading
+     *  doesn't resize the block around it when the next item is a different length. */
+    minLines: Int = 1,
     textAlign: TextAlign? = null,
-    textDecoration: TextDecoration? = null,
+    textDecoration: TextDecoration? = null
 ) {
     // TextStyle.copy merges every attribute; do it once per distinct style, not every recomposition.
     val resolved = remember(style, color, textAlign, textDecoration) {
@@ -38,8 +41,9 @@ fun SidekitText(
         text = text,
         modifier = modifier,
         style = resolved,
+        minLines = minLines,
         maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
+        overflow = TextOverflow.Ellipsis
     )
 }
 
@@ -49,12 +53,12 @@ fun SidekitIconImage(
     modifier: Modifier = Modifier,
     size: Dp = SidekitTheme.spacing.iconSize,
     tint: Color = LocalSidekitContentColor.current,
-    contentDescription: String? = null,
+    contentDescription: String? = null
 ) {
     Image(
         painter = painterResource(icon.drawable),
         contentDescription = contentDescription,
         modifier = modifier.size(size),
-        colorFilter = ColorFilter.tint(tint),
+        colorFilter = ColorFilter.tint(tint)
     )
 }

@@ -24,12 +24,15 @@ data class PlayQueue(
     val order: List<Int> = tracks.indices.toList(),
     val position: Int = 0,
     val shuffle: Boolean = false,
-    val repeat: RepeatMode = RepeatMode.Off,
+    val repeat: RepeatMode = RepeatMode.Off
 ) {
     val current: Track? get() = order.getOrNull(position)?.let(tracks::getOrNull)
     val isEmpty: Boolean get() = current == null
 
-    /** Tracks after the current one, in play order (Now Playing's "Up next"). */
+    /**
+     * Tracks after the current one, in play order. Nothing shows these yet: Now Playing has no
+     * queue panel, so `MusicPlayer.jumpTo` and this have no caller until one exists.
+     */
     val upNext: List<Track> get() = if (isEmpty) emptyList() else order.drop(position + 1).map(tracks::get)
 
     /** Next / previous by the user: wraps around the ends, whatever the repeat mode. */
