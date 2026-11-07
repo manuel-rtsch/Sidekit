@@ -441,11 +441,14 @@ private const val SKIP_WEIGHT = 0.85f
 private const val PLAY_WEIGHT = 1.2f
 
 /**
- * Fill of a tile. [Play] is the screen's main way forward, but it takes the *body's* top tone
- * (`ItemColour.Secondary`, as the calculator's `=` does) rather than the action bar's primaryA1:
- * a tile painted with the bar's tone reads as a seventh action button, which is what this screen
- * used to be. [On] is a mode switched on or a track saved — the commit green the bar uses for
- * Save, so colour alone says "this is already applied".
+ * Fill of a tile, and the ladder is deliberate:
+ *
+ * - [Play] takes the calculator's operator green (`successA1`, the colour of its AC and ÷). Never
+ *   the action bar's primaryA1: a tile painted with the bar's tone reads as a seventh action
+ *   button, which is what this screen used to be.
+ * - [On] is a mode switched on or a track saved. It is the same green one step brighter instead of
+ *   a second hue, so the row still has exactly one accent: play.
+ * - [Neutral] is everything the user hasn't switched on.
  */
 private enum class TileTone { Neutral, Play, On }
 
@@ -458,8 +461,8 @@ private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> U
         Modifier.weight(weight),
         color = when (tone) {
             TileTone.Neutral -> colors.surfaceA3
-            TileTone.Play -> colors.primaryA2
-            TileTone.On -> colors.successA1
+            TileTone.Play -> colors.successA1
+            TileTone.On -> colors.surfaceA5
         },
         iconSize = SidekitTheme.spacing.tileIconSize,
         onClick = onClick
