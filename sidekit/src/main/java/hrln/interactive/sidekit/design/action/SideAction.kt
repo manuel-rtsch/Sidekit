@@ -15,6 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.restoreFocusedChild
+import androidx.compose.ui.focus.saveFocusedChild
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import hrln.interactive.sidekit.design.icons.SidekitIcon
@@ -57,7 +61,7 @@ enum class ActionMotion {
     Up,
 
     /** Scales in on the spot. */
-    None,
+    None
 }
 
 /**
@@ -89,7 +93,7 @@ class SideAction(
     val dense: Boolean = false,
     val artKey: Any? = null,
     val art: (@Composable () -> Unit)? = null,
-    val onClick: () -> Unit,
+    val onClick: () -> Unit
 ) {
     init {
         require(label != null || icon != null || art != null) { "SideAction '$key' needs a label, icon or art" }
@@ -97,25 +101,21 @@ class SideAction(
     }
 
     /** What the user can see; a change here plays the content swap. Click handlers are excluded. */
-    internal fun sameContent(other: SideAction): Boolean =
-        label == other.label && icon == other.icon && iconAtEnd == other.iconAtEnd &&
-            dense == other.dense && (art == null) == (other.art == null) && artKey == other.artKey
+    internal fun sameContent(other: SideAction): Boolean = label == other.label && icon == other.icon && iconAtEnd == other.iconAtEnd &&
+        dense == other.dense && (art == null) == (other.art == null) && artKey == other.artKey
 
     /** Everything the bar draws or animates is the same; only click handlers (and art lambdas for the same [artKey]) may differ. */
-    internal fun sameLook(other: SideAction): Boolean =
-        sameContent(other) && tone == other.tone && weight == other.weight && square == other.square &&
-            motion == other.motion && contentDescription == other.contentDescription
+    internal fun sameLook(other: SideAction): Boolean = sameContent(other) && tone == other.tone && weight == other.weight && square == other.square &&
+        motion == other.motion && contentDescription == other.contentDescription
 
     internal val description: String? get() = contentDescription ?: label
 
     companion object {
         /** Wide button that navigates deeper: label then a right arrow. */
-        fun forward(key: String, label: String, onClick: () -> Unit, icon: SidekitIcon = SidekitIcon.ArrowRightAlt) =
-            SideAction(key, label, icon, iconAtEnd = true, motion = ActionMotion.Forward, onClick = onClick)
+        fun forward(key: String, label: String, onClick: () -> Unit, icon: SidekitIcon = SidekitIcon.ArrowRightAlt) = SideAction(key, label, icon, iconAtEnd = true, motion = ActionMotion.Forward, onClick = onClick)
 
         /** Wide button that returns: left arrow then label. */
-        fun back(key: String, label: String, onClick: () -> Unit) =
-            SideAction(key, label, SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, onClick = onClick)
+        fun back(key: String, label: String, onClick: () -> Unit) = SideAction(key, label, SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, onClick = onClick)
 
         /** Square icon-only button. */
         fun square(
@@ -124,7 +124,7 @@ class SideAction(
             contentDescription: String,
             onClick: () -> Unit,
             tone: ActionTone = ActionTone.Primary,
-            motion: ActionMotion = ActionMotion.None,
+            motion: ActionMotion = ActionMotion.None
         ) = SideAction(key, icon = icon, tone = tone, square = true, motion = motion, contentDescription = contentDescription, onClick = onClick)
     }
 }
@@ -137,7 +137,7 @@ class SideAction(
 class HeaderSpec(
     val title: String,
     val align: TextAlign = TextAlign.Start,
-    val modifier: Modifier = Modifier,
+    val modifier: Modifier = Modifier
 )
 
 /**
@@ -214,6 +214,58 @@ class ChromeState {
     internal var onChange: (() -> Unit)? = null
 
     /**
+     * The current screen's root (header and body), registered by [hrln.interactive.sidekit.design.components.SidekitScaffold].
+     * Focus search treats the action bar as stacked over the content, so a plain Up from the bar
+     * often finds no geometric candidate. The bar asks this requester instead.
+     */
+    private var contentFocus: FocusRequester? = null
+
+    /** Fallback for screens that draw their own body without a scaffold (camera, video). */
+    private var canvasContentFocus: FocusRequester? = null
+
+    internal fun registerContentFocus(requester: FocusRequester) {
+        contentFocus = requester
+    }
+
+    internal fun unregisterContentFocus(requester: FocusRequester) {
+        if (contentFocus === requester) contentFocus = null
+    }
+
+    internal fun registerCanvasContentFocus(requester: FocusRequester) {
+        canvasContentFocus = requester
+    }
+
+    internal fun unregisterCanvasContentFocus(requester: FocusRequester) {
+        if (canvasContentFocus === requester) canvasContentFocus = null
+    }
+
+    private val activeContentFocus: FocusRequester?
+        get() = contentFocus ?: canvasContentFocus
+
+    /**
+     * Remembers the deepest focused child of the current screen's content. Called after every
+     * D-pad move: Compose stores it as a saveable hash, not a node, so it can't go stale.
+     * Does nothing (and never clobbers the memory) while focus is outside the content.
+     */
+    internal fun saveContentFocus() {
+        runCatching { activeContentFocus?.saveFocusedChild() }
+    }
+
+    /**
+     * Returns the Up key on the action bar to the content. Restores the element that last had
+     * focus; if that element is gone (the action replaced the screen), enters the current
+     * screen's first focusable element. Returns false if there is nothing to focus.
+     */
+    internal fun restoreContentFocus(): Boolean {
+        val requester = activeContentFocus ?: return false
+        return runCatching {
+            requester.restoreFocusedChild() ||
+                requester.requestFocus(FocusDirection.Enter) ||
+                requester.requestFocus(FocusDirection.Down)
+        }.getOrDefault(false)
+    }
+
+    /**
      * False for the moment between one screen leaving and the next attaching. Hosts hold their
      * state through it rather than animating towards "nothing".
      */
@@ -248,7 +300,7 @@ internal class ChromePublisher {
             opts.map { o ->
                 SideAction(
                     "options.${o.key}", o.label, o.icon, o.iconAtEnd, o.tone, o.weight, o.square,
-                    ActionMotion.Up, o.contentDescription, dense = o.dense || opts.size > 2, artKey = o.artKey, art = o.art,
+                    ActionMotion.Up, o.contentDescription, dense = o.dense || opts.size > 2, artKey = o.artKey, art = o.art
                 ) {
                     close()
                     o.onClick()
