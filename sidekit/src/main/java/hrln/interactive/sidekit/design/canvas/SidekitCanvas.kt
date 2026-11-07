@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.design.canvas
 
+import android.view.ViewTreeObserver
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,10 +25,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
-import android.view.ViewTreeObserver
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.ActionBarHost
@@ -47,8 +47,7 @@ object SidephoneCanvas {
      * Density that makes the 480 x 640 canvas fill [widthPx] x [heightPx] (letterboxed if the
      * aspect ratio differs), so 1.dp in SideKit code is exactly 1 Figma px.
      */
-    fun density(widthPx: Int, heightPx: Int): Float =
-        minOf(widthPx / WIDTH.toFloat(), heightPx / HEIGHT.toFloat())
+    fun density(widthPx: Int, heightPx: Int): Float = minOf(widthPx / WIDTH.toFloat(), heightPx / HEIGHT.toFloat())
 }
 
 /**
@@ -69,11 +68,11 @@ fun SidekitCanvas(
     modifier: Modifier = Modifier,
     chrome: ChromeState = remember { ChromeState() },
     keypad: Keypad? = null,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         val scale = SidephoneCanvas.density(constraints.maxWidth, constraints.maxHeight)
         val letterboxed = constraints.maxWidth - SidephoneCanvas.WIDTH * scale >= 1f ||
@@ -82,7 +81,7 @@ fun SidekitCanvas(
         CompositionLocalProvider(
             LocalDensity provides Density(density = scale, fontScale = 1f),
             LocalChrome provides chrome,
-            LocalKeypad provides keypad,
+            LocalKeypad provides keypad
         ) {
             val hasFocus = revealFocusOnKeys()
             // Screens that publish chrome without a scaffold (camera, video) still need an Up
@@ -106,7 +105,7 @@ fun SidekitCanvas(
                     }
                     // Screens slide during navigation; keep them inside the panel.
                     .clipToBounds()
-                    .background(SidekitTheme.colors.surfaceA1),
+                    .background(SidekitTheme.colors.surfaceA1)
             ) {
                 Box(Modifier.fillMaxSize().focusRequester(canvasFocus)) { content() }
                 // Back closes the options bar before it goes back a screen.
@@ -115,14 +114,14 @@ fun SidekitCanvas(
                     state = chrome,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(start = SidekitTheme.spacing.pagePadding, end = SidekitTheme.spacing.pagePadding, top = SidekitTheme.spacing.pagePadding),
+                        .padding(start = SidekitTheme.spacing.pagePadding, end = SidekitTheme.spacing.pagePadding, top = SidekitTheme.spacing.pagePadding)
                 )
                 ActionBarHost(
                     state = chrome,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .imePadding()
-                        .padding(SidekitTheme.spacing.pagePadding),
+                        .padding(SidekitTheme.spacing.pagePadding)
                 )
             }
         }

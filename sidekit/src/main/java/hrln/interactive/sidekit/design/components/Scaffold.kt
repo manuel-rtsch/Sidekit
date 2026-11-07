@@ -40,14 +40,14 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
 fun SidekitHeader(
     title: String,
     modifier: Modifier = Modifier,
-    textAlign: TextAlign = TextAlign.Start,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(SidekitTheme.spacing.headerHeight)
             .padding(horizontal = SidekitTheme.spacing.itemPadding)
-            .padding(top = SidekitTheme.spacing.itemPadding),
+            .padding(top = SidekitTheme.spacing.itemPadding)
     ) {
         SidekitText(
             text = title,
@@ -55,7 +55,7 @@ fun SidekitHeader(
                 .fillMaxWidth()
                 .semantics { heading() },
             style = SidekitTheme.typography.title,
-            textAlign = textAlign,
+            textAlign = textAlign
         )
     }
 }
@@ -81,7 +81,7 @@ fun SidekitScaffold(
     titleModifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
     trailingAction: SideAction? = null,
-    content: @Composable (PaddingValues) -> Unit,
+    content: @Composable (PaddingValues) -> Unit
 ) {
     val spacing = SidekitTheme.spacing
     val spec = if (header == null && title != null) HeaderSpec(title, titleAlign, titleModifier) else null
@@ -107,7 +107,7 @@ fun SidekitScaffold(
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(start = spacing.pagePadding, end = spacing.pagePadding, top = spacing.pagePadding),
+                .padding(start = spacing.pagePadding, end = spacing.pagePadding, top = spacing.pagePadding)
         ) {
             when {
                 header != null -> header()
@@ -125,7 +125,7 @@ fun SidekitScaffold(
                             translationY = (1f - p) * rise.toPx()
                             compositingStrategy = CompositingStrategy.ModulateAlpha
                         }
-                    },
+                    }
             ) {
                 val bottom = if (actions.isNotEmpty()) spacing.actionBarHeight + spacing.pageGap + spacing.pagePadding else spacing.pagePadding
                 CompositionLocalProvider(LocalBodyEntrance provides entrance) {

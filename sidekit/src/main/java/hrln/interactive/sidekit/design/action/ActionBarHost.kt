@@ -4,11 +4,8 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animate
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.foundation.clickable
 import androidx.compose.animation.core.tween
-import hrln.interactive.sidekit.design.theme.SidekitIndication
-import hrln.interactive.sidekit.design.theme.drawFocusRing
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -25,6 +22,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
@@ -36,16 +34,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.graphics.GraphicsLayerScope
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -64,16 +62,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.components.SidekitIconImage
-import hrln.interactive.sidekit.design.theme.contentColorFor
 import hrln.interactive.sidekit.design.motion.SidekitMotion
+import hrln.interactive.sidekit.design.theme.SidekitIndication
 import hrln.interactive.sidekit.design.theme.SidekitTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import hrln.interactive.sidekit.design.theme.contentColorFor
+import hrln.interactive.sidekit.design.theme.drawFocusRing
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * One rendered button. Survives across action changes for as long as its key does, so its
@@ -94,6 +94,7 @@ internal class ActionSlot(action: SideAction, present: Boolean) {
     val presence = Animatable(if (present) 1f else 0f)
     val squareness = Animatable(if (action.square) 1f else 0f)
     val weight = Animatable(action.weight)
+
     /**
      * Label swap progress, 0 (old label) to 1 (new). A plain float state rather than an Animatable
      * so it can be reset to 0 synchronously in [update]: otherwise the new label is drawn at full
@@ -270,7 +271,7 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
     Layout(
         contents = listOf(
             { slots.forEach { slot -> key(slot) { SlotSurface(slot, model) } } },
-            { slots.forEach { slot -> key(slot) { SlotContent(slot) } } },
+            { slots.forEach { slot -> key(slot) { SlotContent(slot) } } }
         ),
         modifier = modifier
             .fillMaxWidth()
@@ -284,7 +285,7 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
             .graphicsLayer {
                 // Slide only: no alpha, so no offscreen layer for the whole bar.
                 translationY = (1f - model.shown.value) * (size.height + spacing.pagePadding.toPx())
-            },
+            }
     ) { (surfaces, contents), constraints ->
         val n = min(slots.size, min(surfaces.size, contents.size))
         val width = constraints.maxWidth
@@ -343,7 +344,7 @@ private fun layoutSlots(
     gapPx: Float,
     outWidths: FloatArray,
     outGaps: FloatArray?,
-    settled: Boolean,
+    settled: Boolean
 ) {
     var gapTotal = 0f
     var fixedTotal = 0f
@@ -426,18 +427,18 @@ private fun SlotSurface(slot: ActionSlot, model: ActionBarModel) {
                 indication = null,
                 enabled = !slot.removing,
                 role = Role.Button,
-                onClickLabel = action.description,
+                onClickLabel = action.description
             ) {
                 view.performHapticFeedback(
                     when (slot.action.tone) {
                         ActionTone.Secondary -> HapticFeedbackConstants.CONFIRM
                         ActionTone.Destructive -> HapticFeedbackConstants.REJECT
                         else -> HapticFeedbackConstants.VIRTUAL_KEY
-                    },
+                    }
                 )
                 model.lastPressed = slot.key
                 slot.latest.onClick()
-            },
+            }
     )
 }
 
@@ -462,7 +463,7 @@ private fun SlotContent(slot: ActionSlot) {
                     alpha = (1f - p / LABEL_HANDOFF).coerceIn(0f, 1f)
                     applyTravel(current.motion, -p, distance)
                     compositingStrategy = CompositingStrategy.ModulateAlpha
-                },
+                }
             )
         }
         ActionContent(current, Modifier.fitToSlot(slot, distance, current, previous != null, stale))
@@ -479,7 +480,7 @@ private fun Modifier.fitToSlot(
     distance: Float,
     shown: SideAction,
     hasPrevious: Boolean,
-    stale: () -> Boolean,
+    stale: () -> Boolean
 ) = layout { measurable, constraints ->
     // A stale label (see SlotContent) belongs to the old layout: keep its natural width rather than
     // ellipsizing it to the new one for a frame.
@@ -515,8 +516,11 @@ private const val LABEL_HANDOFF = 0.3f
 private fun GraphicsLayerScope.applyTravel(motion: ActionMotion, t: Float, distance: Float) {
     when (motion) {
         ActionMotion.Forward -> translationX = t * distance
+
         ActionMotion.Back -> translationX = -t * distance
+
         ActionMotion.Up -> translationY = t * distance * 0.7f
+
         ActionMotion.None -> {
             val s = 1f - 0.25f * abs(t)
             scaleX = s
@@ -541,7 +545,7 @@ private fun ActionLabel(
     oneLine: TextStyle,
     twoLine: TextStyle,
     color: Color,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     val measurer = rememberTextMeasurer()
     val singleStyle = remember(oneLine, color) { oneLine.copy(color = color, textAlign = TextAlign.Center) }
@@ -552,12 +556,14 @@ private fun ActionLabel(
         modifier = modifier.drawWithContent {
             drawContent()
             drawn?.let { drawText(it) }
-        },
+        }
     ) { _, constraints ->
         val bounds = Constraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
         val single = measurer.measure(text, singleStyle, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
         // lineCount == 1 means it fits on one row at the normal size, so it is never shrunk.
-        val result = if (single.lineCount <= 1) single else {
+        val result = if (single.lineCount <= 1) {
+            single
+        } else {
             measurer.measure(text, wrappedStyle, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
         }
         drawn = result
@@ -576,8 +582,8 @@ private fun ActionContent(action: SideAction, modifier: Modifier) {
         // single-line labels the row fills the slot, and a list-sized gap makes the text look
         // detached from its icon.
         horizontalArrangement = Arrangement.spacedBy(
-            if (action.dense) spacing.itemContentGap / 2 - 2.dp else spacing.itemContentGap - 4.dp,
-        ),
+            if (action.dense) spacing.itemContentGap / 2 - 2.dp else spacing.itemContentGap - 4.dp
+        )
     ) {
         val icon = action.icon
         val art = action.art
@@ -598,7 +604,7 @@ private fun ActionContent(action: SideAction, modifier: Modifier) {
                     // Drawn text does not expose semantics on its own. Always expose the label as
                     // text so tests and accessibility can find the button by what it says, even
                     // when the action also has a content description.
-                    .semantics { text = AnnotatedString(label) },
+                    .semantics { text = AnnotatedString(label) }
             )
         }
         if (icon != null && action.iconAtEnd) SidekitIconImage(icon, tint = foreground)

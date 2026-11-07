@@ -14,24 +14,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.isFocused
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.requestFocus
-import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performKeyPress
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.action.PublishChrome
@@ -76,7 +76,7 @@ class ActionBarUpNavigationTest {
                         if (screen == 0) {
                             SidekitScaffold(
                                 title = "Screen A",
-                                actions = listOf(SideAction("next", "Next", onClick = { screen = 1 })),
+                                actions = listOf(SideAction("next", "Next", onClick = { screen = 1 }))
                             ) { padding ->
                                 SidekitList(contentPadding = padding) {
                                     items(6) { i -> SidekitItem("A $i", onClick = {}) }
@@ -85,7 +85,7 @@ class ActionBarUpNavigationTest {
                         } else {
                             SidekitScaffold(
                                 title = "Screen B",
-                                actions = listOf(SideAction("next", "Next", onClick = {})),
+                                actions = listOf(SideAction("next", "Next", onClick = {}))
                             ) { padding ->
                                 SidekitList(contentPadding = padding) {
                                     items(6) { i -> SidekitItem("B $i", onClick = {}) }
@@ -108,7 +108,7 @@ class ActionBarUpNavigationTest {
                     SidekitCanvas(chrome = remember { ChromeState() }) {
                         SidekitScaffold(
                             title = "Rows",
-                            actions = listOf(SideAction("alpha", "Alpha", onClick = {})),
+                            actions = listOf(SideAction("alpha", "Alpha", onClick = {}))
                         ) { padding ->
                             val state = remember { LazyListState() }
                             androidx.compose.runtime.SideEffect { listState = state }
@@ -153,7 +153,7 @@ class ActionBarUpNavigationTest {
         val state = listState!!
         assertTrue(
             "test must exercise a scrolled list",
-            state.firstVisibleItemIndex > 0 || state.firstVisibleItemScrollOffset > 0,
+            state.firstVisibleItemIndex > 0 || state.firstVisibleItemScrollOffset > 0
         )
 
         key(KeyEvent.KEYCODE_DPAD_UP)
@@ -204,7 +204,6 @@ class ActionBarUpNavigationTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.onNodeWithText("Screen B").assertExists()
         compose.onNodeWithText("B 0").assertExists()
-
 
         key(KeyEvent.KEYCODE_DPAD_UP)
         assertEquals("B 0", focusedLabel())
