@@ -42,32 +42,41 @@ class ScreenshotTest {
         @Composable { LauncherScreen(state, {}, {}) }
 
     @Test fun launcherGrid() = shoot("launcher_grid_53-1129", launcher(LauncherUiState()))
+
     /**
      * The local "Sidephone" AVD reports 320 dpi (480 x 640 px = 240 x 320 dp). SidekitCanvas must
      * still lay out the full 480 x 640 Figma frame; compare with launcher_grid_53-1129.png.
      */
     @Config(qualifiers = "w240dp-h320dp-xhdpi")
-    @Test fun launcherGridAtSidephoneAvdDensity() = shoot("launcher_grid_avd_320dpi", launcher(LauncherUiState()))
+    @Test
+    fun launcherGridAtSidephoneAvdDensity() = shoot("launcher_grid_avd_320dpi", launcher(LauncherUiState()))
 
     @Test fun launcherList() = shoot("launcher_list_36-2", launcher(LauncherUiState(layout = LauncherLayout.List)))
+
     /** The same frame with Settings → Compact layout on: header 75 instead of 103, bar 100 instead of 112. */
     @Test fun launcherGridCompact() {
         compose.setContent {
             hrln.interactive.sidekit.design.theme.SidekitTheme(
-                spacing = hrln.interactive.sidekit.design.theme.SidekitSpacing.Compact,
+                spacing = hrln.interactive.sidekit.design.theme.SidekitSpacing.Compact
             ) { SidekitCanvas { LauncherScreen(LauncherUiState(), {}, {}) } }
         }
         compose.onRoot().captureRoboImage("screenshots/launcher_grid_compact.png")
     }
+
     @Test fun sidenotes() = shoot("sidenotes_1-278") { SidenotesListScreen(SidenotesUiState(SidenotesSampleData.notes), {}, {}, {}, {}) }
+
     @Test fun sidenotesUndo() = shoot("sidenotes_undo") {
         SidenotesListScreen(SidenotesUiState(SidenotesSampleData.notes.drop(1), recentlyDeleted = SidenotesSampleData.notes.first()), {}, {}, {}, {})
     }
+
     @Test fun note() = shoot("note_1-312") { NoteEditorScreen(SidenotesSampleData.notes.first().body, isNew = false, canDelete = true, {}, {}, {}) }
+
     @Test fun sideticks() = shoot("sideticks_1-564") { SideticksScreen(SideticksUiState(showTicked = true), {}, {}, {}, {}, {}, {}) }
+
     @Test fun sidemessage() = shoot("sidemessage_35-98") {
         SidemessageInboxScreen(SidemessageSampleData.inbox, true, {}, {}, {}, {}, {})
     }
+
     @Test fun conversation() = shoot("conversation_35-145") {
         ConversationScreen(SidemessageSampleData.conversation, true, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
     }

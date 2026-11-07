@@ -76,7 +76,7 @@ class MusicActions(
     val openPlaylist: (Playlist) -> Unit = {},
     val openAlbum: (Album) -> Unit = {},
     val openArtist: (Artist) -> Unit = {},
-    val openTrack: (Track) -> Unit = {},
+    val openTrack: (Track) -> Unit = {}
 ) {
     fun open(item: LibraryItem) = when (item) {
         is LibraryItem.PlaylistItem -> openPlaylist(item.playlist)
@@ -97,15 +97,15 @@ fun MusicHomeScreen(
     onSearch: () -> Unit,
     artUri: Uri? = null,
     artId: Long = 0,
-    onNewPlaylist: () -> Unit = {},
+    onNewPlaylist: () -> Unit = {}
 ) {
     SidekitScaffold(
         title = "Music",
         actions = listOf(
             SideAction("nowPlaying", square = true, contentDescription = "Now Playing", artKey = artId, art = { AlbumArt(SMALL_ART, artUri) }, onClick = onNowPlaying),
-            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch),
+            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
         ),
-        options = listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = onNewPlaylist)),
+        options = listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = onNewPlaylist))
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
@@ -127,12 +127,12 @@ fun MusicLibraryListScreen(
     items: List<LibraryItem>,
     actions: MusicActions,
     onBack: () -> Unit,
-    onNewPlaylist: (() -> Unit)? = null,
+    onNewPlaylist: (() -> Unit)? = null
 ) {
     SidekitScaffold(
         title = title,
         actions = backToMusic(onBack),
-        options = onNewPlaylist?.let { listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = it)) }.orEmpty(),
+        options = onNewPlaylist?.let { listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = it)) }.orEmpty()
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) { libraryRows(items, listState, 0, actions) }
@@ -184,12 +184,15 @@ fun NowPlayingScreen(
     onShuffle: () -> Unit,
     onRepeat: () -> Unit,
     onBookmark: () -> Unit,
-    onBack: () -> Unit,
+    onBack: () -> Unit
 ) {
     val track = playback.track
     var tick by remember { mutableLongStateOf(0L) }
     LaunchedEffect(playback.isPlaying) {
-        while (playback.isPlaying) { tick++; delay(500) }
+        while (playback.isPlaying) {
+            tick++
+            delay(500)
+        }
     }
     val position = playback.positionAt(SystemClock.elapsedRealtime() + tick * 0)
     val gap = SidekitTheme.spacing.itemOuterGap
@@ -200,7 +203,7 @@ fun NowPlayingScreen(
             SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to Music", onBack, motion = ActionMotion.Back),
             SideAction("album", icon = SidekitIcon.Album, contentDescription = "Album", onClick = onAlbum),
             SideAction("artist", icon = SidekitIcon.Artist, contentDescription = "Artist", onClick = onArtist),
-            SideAction("save", icon = SidekitIcon.Bookmark, contentDescription = "Save", onClick = onBookmark),
+            SideAction("save", icon = SidekitIcon.Bookmark, contentDescription = "Save", onClick = onBookmark)
         )
     }
     val shuffle = playback.queue.shuffle
@@ -208,7 +211,7 @@ fun NowPlayingScreen(
     val options = remember(shuffle, repeat, onShuffle, onRepeat) {
         listOf(
             SideAction("shuffle", if (shuffle) "Shuffle: on" else "Shuffle: off", SidekitIcon.Shuffle, onClick = onShuffle),
-            SideAction("repeat", "Repeat: ${repeat.name.lowercase()}", SidekitIcon.Undo, onClick = onRepeat),
+            SideAction("repeat", "Repeat: ${repeat.name.lowercase()}", SidekitIcon.Undo, onClick = onRepeat)
         )
     }
     val artUri = remember(track?.albumId) { track?.let { albumArtUri(it.albumId) } }
@@ -247,13 +250,16 @@ private fun MusicSeek(position: Long, duration: Long, onSeek: (Long) -> Unit) {
             SidekitText(widest, Modifier.alpha(0f).clearAndSetSemantics {}, style = timeStyle)
             SidekitText(formatDuration(position), style = timeStyle)
         }
-        Box(Modifier.weight(1f).height(36.dp).pointerInput(duration) {
-            detectHorizontalDragGestures { change, _ -> if (duration > 0) onSeek(((change.position.x / size.width).coerceIn(0f, 1f) * duration).toLong()) }
-        }.drawBehind {
-            val h = 6.dp.toPx(); val y = (size.height - h) / 2
-            drawRoundRect(trackColor, Offset(0f, y), Size(size.width, h), CornerRadius(h / 2))
-            drawRoundRect(progressColor, Offset(0f, y), Size(size.width * fraction.coerceIn(0f, 1f), h), CornerRadius(h / 2))
-        })
+        Box(
+            Modifier.weight(1f).height(36.dp).pointerInput(duration) {
+                detectHorizontalDragGestures { change, _ -> if (duration > 0) onSeek(((change.position.x / size.width).coerceIn(0f, 1f) * duration).toLong()) }
+            }.drawBehind {
+                val h = 6.dp.toPx()
+                val y = (size.height - h) / 2
+                drawRoundRect(trackColor, Offset(0f, y), Size(size.width, h), CornerRadius(h / 2))
+                drawRoundRect(progressColor, Offset(0f, y), Size(size.width * fraction.coerceIn(0f, 1f), h), CornerRadius(h / 2))
+            }
+        )
         SidekitText(formatDuration(duration), style = timeStyle)
     }
 }
@@ -282,11 +288,18 @@ private enum class PlayTileColour { None, Light, Strong }
 @Composable
 private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> Unit, colour: PlayTileColour = PlayTileColour.None) {
     val colors = SidekitTheme.colors
-    SidekitIconItem(icon, label, Modifier.weight(1f), color = when (colour) {
-        PlayTileColour.None -> colors.surfaceA3
-        PlayTileColour.Light -> colors.primaryA2
-        PlayTileColour.Strong -> colors.primaryA1
-    }, iconSize = SidekitTheme.spacing.tileIconSize, onClick = onClick)
+    SidekitIconItem(
+        icon,
+        label,
+        Modifier.weight(1f),
+        color = when (colour) {
+            PlayTileColour.None -> colors.surfaceA3
+            PlayTileColour.Light -> colors.primaryA2
+            PlayTileColour.Strong -> colors.primaryA1
+        },
+        iconSize = SidekitTheme.spacing.tileIconSize,
+        onClick = onClick
+    )
 }
 
 private fun LazyListScope.libraryRows(items: List<LibraryItem>, listState: LazyListState, firstIndex: Int, actions: MusicActions) {
@@ -316,7 +329,12 @@ private fun LibraryItem.icon() = when (this) {
 
 @Composable
 private fun AlbumArt(size: Dp, uri: Uri? = null, shape: RoundedCornerShape = SidekitTheme.shapes.control, bordered: Boolean = true) {
-    Box(Modifier.size(size).clip(shape).background(SidekitTheme.colors.surfaceA2).then(if (bordered) Modifier.border(1.dp, SidekitTheme.colors.light, shape) else Modifier).semantics { contentDescription = "Album art"; role = Role.Image }) {
+    Box(
+        Modifier.size(size).clip(shape).background(SidekitTheme.colors.surfaceA2).then(if (bordered) Modifier.border(1.dp, SidekitTheme.colors.light, shape) else Modifier).semantics {
+            contentDescription = "Album art"
+            role = Role.Image
+        }
+    ) {
         Thumbnail(uri, size, size, Modifier.fillMaxSize())
     }
 }
