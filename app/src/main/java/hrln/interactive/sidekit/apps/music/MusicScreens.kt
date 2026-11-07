@@ -211,10 +211,12 @@ fun NowPlayingScreen(
     actions: NowPlayingActions
 ) {
     val track = playback.track
-    // The bar keeps only what the body can't hold: leaving the screen, and the save toggle. The
-    // transport below it is the loudest row, which is right: playing is what this screen is for.
+    // Play is the one accent on this screen, so the bar gives its usual primary blue up: back is
+    // what ActionTone.Muted is for ("back-out, alternatives"), and the transport above stays the
+    // loudest row. Only back and Save are permanent; Album and Artist live in Options, because the
+    // art and the artist line already go there and most tracks are played without leaving this screen.
     val bar = buildList {
-        add(SideAction.back("back", "Music", actions.onBack))
+        add(SideAction("back", "Music", SidekitIcon.ArrowLeftAlt, tone = ActionTone.Muted, motion = ActionMotion.Back, onClick = actions.onBack))
         if (track != null) {
             add(
                 SideAction.square(
@@ -228,9 +230,17 @@ fun NowPlayingScreen(
             )
         }
     }
+    val options = if (track == null) {
+        emptyList()
+    } else {
+        listOf(
+            SideAction("album", "Album", SidekitIcon.Album, onClick = actions.onAlbum),
+            SideAction("artist", "Artist", SidekitIcon.Artist, onClick = actions.onArtist)
+        )
+    }
     // No header: the track's own title is this screen's heading, and the height the shared title
     // takes is the difference between a thumbnail and an album cover.
-    SidekitScaffold(title = null, actions = bar) { padding ->
+    SidekitScaffold(title = null, actions = bar, options = options) { padding ->
         if (track == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { NothingPlaying() }
         } else {
@@ -431,10 +441,11 @@ private const val SKIP_WEIGHT = 0.85f
 private const val PLAY_WEIGHT = 1.2f
 
 /**
- * Fill of a tile: neutral, [Play] for the screen's main way forward (the action bar's primary
- * blue), and [On] for a mode that is switched on or a track that is saved — the commit green the
- * action bar uses for Save, so colour alone says "this is already applied". Only one tile per
- * screen is blue, so the play button stays the loudest thing in the row.
+ * Fill of a tile. [Play] is the screen's main way forward, but it takes the *body's* top tone
+ * (`ItemColour.Secondary`, as the calculator's `=` does) rather than the action bar's primaryA1:
+ * a tile painted with the bar's tone reads as a seventh action button, which is what this screen
+ * used to be. [On] is a mode switched on or a track saved — the commit green the bar uses for
+ * Save, so colour alone says "this is already applied".
  */
 private enum class TileTone { Neutral, Play, On }
 
@@ -447,7 +458,7 @@ private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> U
         Modifier.weight(weight),
         color = when (tone) {
             TileTone.Neutral -> colors.surfaceA3
-            TileTone.Play -> colors.primaryA1
+            TileTone.Play -> colors.primaryA2
             TileTone.On -> colors.successA1
         },
         iconSize = SidekitTheme.spacing.tileIconSize,

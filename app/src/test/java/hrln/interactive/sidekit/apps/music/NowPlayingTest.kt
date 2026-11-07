@@ -10,6 +10,8 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import hrln.interactive.sidekit.design.action.ChromeState
+import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -41,10 +43,27 @@ class NowPlayingTest {
 
     @Test fun theBarHoldsOnlyBackAndSave() {
         compose.setContent { SidekitPreviewFrame { NowPlayingScreen(playing, false, NowPlayingActions()) } }
-        // Album and Artist moved onto the art and the artist line, so their buttons are gone.
+        // Album and Artist left the bar for the art, the artist line and Options.
         compose.onNodeWithContentDescription("Album").assertDoesNotExist()
         compose.onNodeWithContentDescription("Artist").assertDoesNotExist()
         compose.onNodeWithContentDescription("Music").assertIsDisplayed()
+    }
+
+    @Test fun optionsHoldTheWayToTheAlbumAndTheArtist() {
+        lateinit var chrome: ChromeState
+        val calls = mutableListOf<String>()
+        compose.setContent {
+            SidekitPreviewFrame {
+                chrome = LocalChrome.current!!
+                NowPlayingScreen(playing, false, NowPlayingActions(onAlbum = { calls += "album" }, onArtist = { calls += "artist" }))
+            }
+        }
+        compose.runOnUiThread { chrome.toggleOptions() }
+        compose.onNodeWithContentDescription("Album").assertIsDisplayed().performClick()
+        assertEquals(listOf("album"), calls)
+        compose.runOnUiThread { chrome.toggleOptions() }
+        compose.onNodeWithContentDescription("Artist").assertIsDisplayed().performClick()
+        assertEquals(listOf("album", "artist"), calls)
     }
 
     @Test fun seekIsASliderThatCanBeScrubbed() {

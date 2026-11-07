@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import hrln.interactive.sidekit.design.action.ChromeState
+import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +36,18 @@ class MusicScreenshotTest {
 
     @Test fun nowPlayingSavedAndShuffling() = shoot("music_now_playing_saved") {
         NowPlayingScreen(playing.copy(queue = playing.queue.withShuffle(true).withRepeat(RepeatMode.All)), saved = true, actions = NowPlayingActions())
+    }
+
+    @Test fun nowPlayingOptions() {
+        lateinit var chrome: ChromeState
+        compose.setContent {
+            SidekitPreviewFrame {
+                chrome = LocalChrome.current!!
+                NowPlayingScreen(playing, saved = false, actions = NowPlayingActions())
+            }
+        }
+        compose.runOnUiThread { chrome.toggleOptions() }
+        compose.onRoot().captureRoboImage("screenshots/music_now_playing_options.png")
     }
 
     @Test fun nowPlayingEmpty() = shoot("music_now_playing_empty") {
