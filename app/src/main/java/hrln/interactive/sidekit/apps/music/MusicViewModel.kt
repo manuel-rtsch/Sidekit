@@ -16,7 +16,7 @@ data class MusicUiState(
     val library: MusicLibrary = MusicLibrary.Empty,
     val playback: PlaybackState = PlaybackState(),
     val loaded: Boolean = false,
-    val query: String = "",
+    val query: String = ""
 ) {
     val home: List<LibraryItem> get() = library.home()
     val results: List<LibraryItem> get() = library.search(query)
@@ -28,7 +28,7 @@ class MusicViewModel(
     private val source: MusicSource,
     private val playlists: PlaylistRepository,
     private val player: MusicPlayer,
-    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val io: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
     private val query = MutableStateFlow("")
     private val loaded = MutableStateFlow(false)
@@ -38,7 +38,7 @@ class MusicViewModel(
         player.state,
         loaded,
         query,
-        ::MusicUiState,
+        ::MusicUiState
     ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MusicUiState(playback = player.state.value))
 
     private fun sourceLibrary() = combine(source.changes(), playlists.playlists) { _, saved ->
@@ -81,13 +81,21 @@ class MusicViewModel(
 
     private fun List<Track>.indexOfFirstId(id: Long) = indexOfFirst { it.id == id }
 
-    /** The bookmark tiles make a persistent playlist from the current album or track. */
-    fun saveTracks(name: String, tracks: List<Track>) {
-        if (tracks.isNotEmpty()) playlists.create(name, tracks.map { it.id })
-    }
+    /**
+     * The Save buttons on Now Playing and an album: add those tracks to the one saved playlist,
+     * or take them out again when they are all in it.
+     */
+    fun toggleSaved(tracks: List<Track>) = playlists.toggleSaved(tracks.map { it.id })
+
+    /** Saving one track (Now Playing) instead of a whole album. */
+    fun toggleSaved(track: Track) = toggleSaved(listOf(track))
 
     fun createPlaylist() = playlists.create("")
 
-    fun updateQuery(value: String) { query.value = value }
-    fun clearSearch() { query.value = "" }
+    fun updateQuery(value: String) {
+        query.value = value
+    }
+    fun clearSearch() {
+        query.value = ""
+    }
 }

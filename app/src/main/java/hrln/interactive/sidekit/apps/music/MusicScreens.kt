@@ -2,11 +2,15 @@ package hrln.interactive.sidekit.apps.music
 
 import android.net.Uri
 import android.os.SystemClock
-import android.view.KeyEvent
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,9 +28,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,15 +42,20 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -56,6 +64,7 @@ import hrln.interactive.sidekit.apps.media.PermissionRationale
 import hrln.interactive.sidekit.apps.media.Thumbnail
 import hrln.interactive.sidekit.apps.media.formatDuration
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitIconItem
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -76,7 +85,7 @@ class MusicActions(
     val openPlaylist: (Playlist) -> Unit = {},
     val openAlbum: (Album) -> Unit = {},
     val openArtist: (Artist) -> Unit = {},
-    val openTrack: (Track) -> Unit = {},
+    val openTrack: (Track) -> Unit = {}
 ) {
     fun open(item: LibraryItem) = when (item) {
         is LibraryItem.PlaylistItem -> openPlaylist(item.playlist)
@@ -85,6 +94,20 @@ class MusicActions(
         is LibraryItem.TrackItem -> openTrack(item.track)
     }
 }
+
+/** Everything Now Playing can do, grouped so the screen keeps one positional argument. */
+class NowPlayingActions(
+    val onPlayPause: () -> Unit = {},
+    val onPrevious: () -> Unit = {},
+    val onNext: () -> Unit = {},
+    val onSeek: (Long) -> Unit = {},
+    val onShuffle: () -> Unit = {},
+    val onRepeat: () -> Unit = {},
+    val onSave: () -> Unit = {},
+    val onAlbum: () -> Unit = {},
+    val onArtist: () -> Unit = {},
+    val onBack: () -> Unit = {}
+)
 
 @Composable
 fun MusicHomeScreen(
@@ -97,15 +120,15 @@ fun MusicHomeScreen(
     onSearch: () -> Unit,
     artUri: Uri? = null,
     artId: Long = 0,
-    onNewPlaylist: () -> Unit = {},
+    onNewPlaylist: () -> Unit = {}
 ) {
     SidekitScaffold(
         title = "Music",
         actions = listOf(
             SideAction("nowPlaying", square = true, contentDescription = "Now Playing", artKey = artId, art = { AlbumArt(SMALL_ART, artUri) }, onClick = onNowPlaying),
-            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch),
+            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
         ),
-        options = listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = onNewPlaylist)),
+        options = listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = onNewPlaylist))
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
@@ -127,12 +150,12 @@ fun MusicLibraryListScreen(
     items: List<LibraryItem>,
     actions: MusicActions,
     onBack: () -> Unit,
-    onNewPlaylist: (() -> Unit)? = null,
+    onNewPlaylist: (() -> Unit)? = null
 ) {
     SidekitScaffold(
         title = title,
         actions = backToMusic(onBack),
-        options = onNewPlaylist?.let { listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = it)) }.orEmpty(),
+        options = onNewPlaylist?.let { listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = it)) }.orEmpty()
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) { libraryRows(items, listState, 0, actions) }
@@ -140,7 +163,16 @@ fun MusicLibraryListScreen(
 }
 
 @Composable
-fun AlbumScreen(album: Album, tracks: List<Track>, onArtist: () -> Unit, onPlay: () -> Unit, onTrack: (Track) -> Unit, onBookmark: () -> Unit, onBack: () -> Unit) {
+fun AlbumScreen(
+    album: Album,
+    tracks: List<Track>,
+    saved: Boolean,
+    onArtist: () -> Unit,
+    onPlay: () -> Unit,
+    onTrack: (Track) -> Unit,
+    onBookmark: () -> Unit,
+    onBack: () -> Unit
+) {
     SidekitScaffold(title = album.title, actions = backToMusic(onBack)) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
@@ -148,8 +180,8 @@ fun AlbumScreen(album: Album, tracks: List<Track>, onArtist: () -> Unit, onPlay:
                 SidekitItemRow(Modifier.listFade(listState, 0)) {
                     SidekitTile(Modifier.weight(1f)) { AlbumArt(SMALL_ART, album.artUri) }
                     IconTile(SidekitIcon.Artist, "Artist", onArtist)
-                    IconTile(SidekitIcon.Bookmark, "Save", onBookmark)
-                    IconTile(SidekitIcon.PlayArrow, "Play", onPlay, PlayTileColour.Light)
+                    IconTile(if (saved) SidekitIcon.Check else SidekitIcon.Bookmark, if (saved) "Saved" else "Save", onBookmark, if (saved) TileTone.On else TileTone.Neutral)
+                    IconTile(SidekitIcon.PlayArrow, "Play", onPlay, TileTone.Play)
                 }
             }
             itemsIndexed(tracks, key = { _, t -> t.id }) { index, track ->
@@ -165,7 +197,7 @@ fun ArtistScreen(artist: Artist, albums: List<Album>, onPlay: () -> Unit, onAlbu
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item(key = "tiles") {
-                SidekitItemRow(Modifier.listFade(listState, 0)) { IconTile(SidekitIcon.PlayArrow, "Play", onPlay, PlayTileColour.Light) }
+                SidekitItemRow(Modifier.listFade(listState, 0)) { IconTile(SidekitIcon.PlayArrow, "Play", onPlay, TileTone.Play) }
             }
             libraryRows(albums.map(LibraryItem::AlbumItem), listState, 1, MusicActions(openAlbum = onAlbum))
         }
@@ -175,64 +207,128 @@ fun ArtistScreen(artist: Artist, albums: List<Album>, onPlay: () -> Unit, onAlbu
 @Composable
 fun NowPlayingScreen(
     playback: PlaybackState,
-    onAlbum: () -> Unit,
-    onArtist: () -> Unit,
-    onPlayPause: () -> Unit,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-    onSeek: (Long) -> Unit,
-    onShuffle: () -> Unit,
-    onRepeat: () -> Unit,
-    onBookmark: () -> Unit,
-    onBack: () -> Unit,
+    saved: Boolean,
+    actions: NowPlayingActions
 ) {
     val track = playback.track
-    var tick by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(playback.isPlaying) {
-        while (playback.isPlaying) { tick++; delay(500) }
+    // The bar keeps only what the body can't hold: leaving the screen, and the save toggle. The
+    // transport below it is the loudest row, which is right: playing is what this screen is for.
+    val bar = buildList {
+        add(SideAction.back("back", "Music", actions.onBack))
+        if (track != null) {
+            add(
+                SideAction.square(
+                    "save",
+                    if (saved) SidekitIcon.Check else SidekitIcon.Bookmark,
+                    if (saved) "Saved" else "Save",
+                    actions.onSave,
+                    tone = if (saved) ActionTone.Secondary else ActionTone.Muted,
+                    motion = ActionMotion.Up
+                )
+            )
+        }
     }
-    val position = playback.positionAt(SystemClock.elapsedRealtime() + tick * 0)
-    val gap = SidekitTheme.spacing.itemOuterGap
-    // Back plus the track's destinations live in the action bar, so the body has room for the art
-    // and one row of full-size playback controls.
-    val actions = remember(onBack, onAlbum, onArtist, onBookmark) {
-        listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to Music", onBack, motion = ActionMotion.Back),
-            SideAction("album", icon = SidekitIcon.Album, contentDescription = "Album", onClick = onAlbum),
-            SideAction("artist", icon = SidekitIcon.Artist, contentDescription = "Artist", onClick = onArtist),
-            SideAction("save", icon = SidekitIcon.Bookmark, contentDescription = "Save", onClick = onBookmark),
-        )
-    }
-    val shuffle = playback.queue.shuffle
-    val repeat = playback.queue.repeat
-    val options = remember(shuffle, repeat, onShuffle, onRepeat) {
-        listOf(
-            SideAction("shuffle", if (shuffle) "Shuffle: on" else "Shuffle: off", SidekitIcon.Shuffle, onClick = onShuffle),
-            SideAction("repeat", "Repeat: ${repeat.name.lowercase()}", SidekitIcon.Undo, onClick = onRepeat),
-        )
-    }
-    val artUri = remember(track?.albumId) { track?.let { albumArtUri(it.albumId) } }
-    SidekitScaffold(title = "Now Playing", actions = actions, options = options) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap)) {
-            // The art takes whatever height the text, seek row and controls leave, as a square.
-            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                AlbumArt(minOf(maxWidth, maxHeight), artUri, SidekitTheme.shapes.item, false)
-            }
-            SidekitText(track?.title ?: "Nothing playing", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2)
-            SidekitText(track?.artist.orEmpty(), style = SidekitTheme.typography.label, color = SidekitTheme.colors.surfaceA6, maxLines = 1)
-            MusicSeek(position, playback.durationMs.takeIf { it > 0 } ?: track?.durationMs ?: 0L, onSeek)
-            SidekitItemRow {
-                IconTile(SidekitIcon.SkipPrevious, "Previous", onPrevious)
-                IconTile(if (playback.isPlaying) SidekitIcon.Pause else SidekitIcon.PlayArrow, if (playback.isPlaying) "Pause" else "Play", onPlayPause, PlayTileColour.Strong)
-                IconTile(SidekitIcon.SkipNext, "Next", onNext)
-            }
+    // No header: the track's own title is this screen's heading, and the height the shared title
+    // takes is the difference between a thumbnail and an album cover.
+    SidekitScaffold(title = null, actions = bar) { padding ->
+        if (track == null) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { NothingPlaying() }
+        } else {
+            NowPlayingBody(playback, track, actions, Modifier.fillMaxSize().padding(padding))
         }
     }
 }
 
 @Composable
+private fun NowPlayingBody(playback: PlaybackState, track: Track, actions: NowPlayingActions, modifier: Modifier) {
+    val queue = playback.queue
+    val duration = playback.durationMs.takeIf { it > 0 } ?: track.durationMs
+    val artUri = remember(track.albumId) { albumArtUri(track.albumId) }
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.pageGap)) {
+        // The art takes whatever height the text, seek row and transport leave, as a square.
+        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            AlbumArt(minOf(maxWidth, maxHeight), artUri, SidekitTheme.shapes.item, false, onClick = actions.onAlbum, onClickLabel = "Open album")
+        }
+        // Title and artist are one block: they read as one caption, so they sit closer together
+        // than the sections around them.
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            SidekitText(
+                track.title,
+                Modifier.fillMaxWidth(),
+                style = SidekitTheme.typography.headline,
+                textAlign = TextAlign.Center,
+                minLines = 1,
+                maxLines = 2
+            )
+            if (track.artist.isNotBlank()) {
+                // Tapping the artist is how you get to the artist, so the bar needs no button for it.
+                SidekitText(
+                    track.artist,
+                    Modifier.fillMaxWidth().clickable(onClickLabel = "Open artist") { actions.onArtist() },
+                    style = SidekitTheme.typography.label,
+                    color = SidekitTheme.colors.surfaceA6,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        TickingPosition(playback) { position -> MusicSeek(position, duration, actions.onSeek) }
+        SidekitItemRow {
+            IconTile(SidekitIcon.Shuffle, if (queue.shuffle) "Shuffle on" else "Shuffle off", actions.onShuffle, if (queue.shuffle) TileTone.On else TileTone.Neutral, MODE_WEIGHT)
+            IconTile(SidekitIcon.SkipPrevious, "Previous", actions.onPrevious, weight = SKIP_WEIGHT)
+            IconTile(
+                if (playback.isPlaying) SidekitIcon.Pause else SidekitIcon.PlayArrow,
+                if (playback.isPlaying) "Pause" else "Play",
+                actions.onPlayPause,
+                TileTone.Play,
+                PLAY_WEIGHT
+            )
+            IconTile(SidekitIcon.SkipNext, "Next", actions.onNext, weight = SKIP_WEIGHT)
+            IconTile(
+                SidekitIcon.Undo,
+                queue.repeat.label,
+                actions.onRepeat,
+                if (queue.repeat == RepeatMode.Off) TileTone.Neutral else TileTone.On,
+                MODE_WEIGHT
+            )
+        }
+    }
+}
+
+@Composable
+private fun NothingPlaying() {
+    val colors = SidekitTheme.colors
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.pageGap)) {
+        SidekitText("Nothing playing", style = SidekitTheme.typography.headline, color = colors.surfaceA6)
+        SidekitText("Pick a song from your library", style = SidekitTheme.typography.caption, color = colors.surfaceA6)
+    }
+}
+
+/**
+ * Re-publishes the playback position while it plays. Its own composable so the half-second tick
+ * recomposes the seek row only: the art and the transport don't redraw twice a second, and the
+ * screen as a whole only recomposes when the state actually changes.
+ */
+@Composable
+private fun TickingPosition(playback: PlaybackState, content: @Composable (Long) -> Unit) {
+    val now = { SystemClock.elapsedRealtime() }
+    val position by produceState(playback.positionAt(now()), playback) {
+        value = playback.positionAt(now())
+        while (playback.isPlaying) {
+            delay(POSITION_TICK_MS)
+            value = playback.positionAt(now())
+        }
+    }
+    content(position)
+}
+
+/**
+ * The seek bar: tap or drag the track, or step it with D-pad left/right. Progress semantics make
+ * it announce and adjust like any slider, so TalkBack can scrub what a finger can.
+ */
+@Composable
 private fun MusicSeek(position: Long, duration: Long, onSeek: (Long) -> Unit) {
-    val fraction = if (duration > 0) position / duration.toFloat() else 0f
+    val seekable = duration > 0
+    val fraction = if (seekable) (position.toFloat() / duration).coerceIn(0f, 1f) else 0f
     val trackColor = SidekitTheme.colors.surfaceA4
     val progressColor = SidekitTheme.colors.light
     // The bar takes whatever width the two labels leave, so the elapsed label must not change width
@@ -242,18 +338,62 @@ private fun MusicSeek(position: Long, duration: Long, onSeek: (Long) -> Unit) {
     val labelStyle = SidekitTheme.typography.label
     val timeStyle = remember(labelStyle) { labelStyle.copy(fontFeatureSettings = "tnum") }
     val widest = remember(duration) { formatDuration(duration).replace(DIGIT, "0") }
+    val interaction = remember { MutableInteractionSource() }
+    fun seekTo(target: Float) {
+        if (seekable) onSeek((target.coerceIn(0f, 1f) * duration).toLong())
+    }
+    val step = if (seekable) SEEK_STEP_MS.toFloat() / duration else 0f
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(contentAlignment = Alignment.CenterEnd) {
             SidekitText(widest, Modifier.alpha(0f).clearAndSetSemantics {}, style = timeStyle)
             SidekitText(formatDuration(position), style = timeStyle)
         }
-        Box(Modifier.weight(1f).height(36.dp).pointerInput(duration) {
-            detectHorizontalDragGestures { change, _ -> if (duration > 0) onSeek(((change.position.x / size.width).coerceIn(0f, 1f) * duration).toLong()) }
-        }.drawBehind {
-            val h = 6.dp.toPx(); val y = (size.height - h) / 2
-            drawRoundRect(trackColor, Offset(0f, y), Size(size.width, h), CornerRadius(h / 2))
-            drawRoundRect(progressColor, Offset(0f, y), Size(size.width * fraction.coerceIn(0f, 1f), h), CornerRadius(h / 2))
-        })
+        Box(
+            Modifier
+                .weight(1f)
+                .height(SEEK_TOUCH_HEIGHT)
+                .onKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                    when (event.key) {
+                        Key.DirectionLeft -> {
+                            seekTo(fraction - step)
+                            true
+                        }
+
+                        Key.DirectionRight -> {
+                            seekTo(fraction + step)
+                            true
+                        }
+
+                        else -> false
+                    }
+                }
+                .indication(interaction, LocalIndication.current)
+                .focusable(interactionSource = interaction)
+                .pointerInput(duration) { detectTapGestures { offset -> seekTo(offset.x / size.width) } }
+                .pointerInput(duration) { detectHorizontalDragGestures { change, _ -> seekTo(change.position.x / size.width) } }
+                .semantics {
+                    if (seekable) {
+                        contentDescription = "Seek"
+                        progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+                        setProgress { target ->
+                            seekTo(target)
+                            true
+                        }
+                    }
+                }
+                .drawBehind {
+                    val h = 6.dp.toPx()
+                    val y = (size.height - h) / 2
+                    drawRoundRect(trackColor, Offset(0f, y), Size(size.width, h), CornerRadius(h / 2))
+                    if (fraction > 0f) {
+                        val filled = size.width * fraction
+                        drawRoundRect(progressColor, Offset(0f, y), Size(filled, h), CornerRadius(h / 2))
+                        // The knob is what says "this is draggable" without a label.
+                        drawCircle(progressColor, SEEK_KNOB.toPx(), Offset(filled, size.height / 2))
+                    }
+                }
+        )
         SidekitText(formatDuration(duration), style = timeStyle)
     }
 }
@@ -277,16 +417,42 @@ fun MusicPermissionScreen(access: Access, onBack: () -> Unit) {
 }
 
 private val SMALL_ART = 44.dp
-private enum class PlayTileColour { None, Light, Strong }
+
+/** How far one D-pad step or one share of the seek bar moves playback. */
+private const val SEEK_STEP_MS = 5_000L
+private val SEEK_TOUCH_HEIGHT = 36.dp
+private val SEEK_KNOB = 9.dp
+private const val POSITION_TICK_MS = 500L
+
+// The transport row shares its width by weight, so play is a wide pill and the mode toggles are
+// narrow: the row reads as play with things around it, not as five equal buttons.
+private const val MODE_WEIGHT = 0.85f
+private const val SKIP_WEIGHT = 0.85f
+private const val PLAY_WEIGHT = 1.2f
+
+/**
+ * Fill of a tile: neutral, [Play] for the screen's main way forward (the action bar's primary
+ * blue), and [On] for a mode that is switched on or a track that is saved — the commit green the
+ * action bar uses for Save, so colour alone says "this is already applied". Only one tile per
+ * screen is blue, so the play button stays the loudest thing in the row.
+ */
+private enum class TileTone { Neutral, Play, On }
 
 @Composable
-private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> Unit, colour: PlayTileColour = PlayTileColour.None) {
+private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> Unit, tone: TileTone = TileTone.Neutral, weight: Float = 1f) {
     val colors = SidekitTheme.colors
-    SidekitIconItem(icon, label, Modifier.weight(1f), color = when (colour) {
-        PlayTileColour.None -> colors.surfaceA3
-        PlayTileColour.Light -> colors.primaryA2
-        PlayTileColour.Strong -> colors.primaryA1
-    }, iconSize = SidekitTheme.spacing.tileIconSize, onClick = onClick)
+    SidekitIconItem(
+        icon,
+        label,
+        Modifier.weight(weight),
+        color = when (tone) {
+            TileTone.Neutral -> colors.surfaceA3
+            TileTone.Play -> colors.primaryA1
+            TileTone.On -> colors.successA1
+        },
+        iconSize = SidekitTheme.spacing.tileIconSize,
+        onClick = onClick
+    )
 }
 
 private fun LazyListScope.libraryRows(items: List<LibraryItem>, listState: LazyListState, firstIndex: Int, actions: MusicActions) {
@@ -315,8 +481,23 @@ private fun LibraryItem.icon() = when (this) {
 }
 
 @Composable
-private fun AlbumArt(size: Dp, uri: Uri? = null, shape: RoundedCornerShape = SidekitTheme.shapes.control, bordered: Boolean = true) {
-    Box(Modifier.size(size).clip(shape).background(SidekitTheme.colors.surfaceA2).then(if (bordered) Modifier.border(1.dp, SidekitTheme.colors.light, shape) else Modifier).semantics { contentDescription = "Album art"; role = Role.Image }) {
+private fun AlbumArt(
+    size: Dp,
+    uri: Uri? = null,
+    shape: RoundedCornerShape = SidekitTheme.shapes.control,
+    bordered: Boolean = true,
+    onClick: (() -> Unit)? = null,
+    onClickLabel: String? = null
+) {
+    Box(
+        Modifier.size(size).clip(shape).background(SidekitTheme.colors.surfaceA2)
+            .then(if (bordered) Modifier.border(1.dp, SidekitTheme.colors.light, shape) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = onClickLabel, onClick = onClick) else Modifier)
+            .semantics {
+                contentDescription = "Album art"
+                if (onClick == null) role = Role.Image
+            }
+    ) {
         Thumbnail(uri, size, size, Modifier.fillMaxSize())
     }
 }

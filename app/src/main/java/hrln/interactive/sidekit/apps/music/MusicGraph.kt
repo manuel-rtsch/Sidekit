@@ -46,38 +46,82 @@ fun NavGraphBuilder.musicGraph(nav: NavHostController) {
                 return@composable
             }
             val state by vm.state.collectAsStateWithLifecycle()
-            MusicHomeScreen(state.home, vm.actions(nav), { nav.navigate(PLAYLISTS) }, { nav.navigate(ALBUMS) }, { nav.navigate(ARTISTS) }, { nav.navigate(NOW_PLAYING) }, { vm.clearSearch(); nav.navigate(SEARCH) }, state.nowPlaying?.let { albumArtUri(it.albumId) }, state.nowPlaying?.albumId ?: 0, vm::createPlaylist)
+            MusicHomeScreen(state.home, vm.actions(nav), { nav.navigate(PLAYLISTS) }, { nav.navigate(ALBUMS) }, { nav.navigate(ARTISTS) }, { nav.navigate(NOW_PLAYING) }, {
+                vm.clearSearch()
+                nav.navigate(SEARCH)
+            }, state.nowPlaying?.let { albumArtUri(it.albumId) }, state.nowPlaying?.albumId ?: 0, vm::createPlaylist)
         }
         composable(PLAYLISTS) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
             MusicLibraryListScreen("Playlists", state.library.playlists.map(LibraryItem::PlaylistItem), vm.actions(nav), backToMusic, vm::createPlaylist)
         }
         composable(ALBUMS) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
             MusicLibraryListScreen("Albums", state.library.albums.map(LibraryItem::AlbumItem), vm.actions(nav), backToMusic)
         }
         composable(ARTISTS) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
             MusicLibraryListScreen("Artists", state.library.artists.map(LibraryItem::ArtistItem), vm.actions(nav), backToMusic)
         }
         composable(ALBUM, arguments = idArg) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
             val album = state.library.album(entry.arguments?.getLong("id") ?: -1) ?: return@composable
             val tracks = state.library.tracksOf(album)
-            AlbumScreen(album, tracks, { nav.navigate(artistRoute(album.artistId)) }, { vm.playAlbum(album.id); nav.navigate(NOW_PLAYING) }, { vm.playTrack(it.id); nav.navigate(NOW_PLAYING) }, { vm.saveTracks(album.title, tracks) }, backToMusic)
+            AlbumScreen(
+                album,
+                tracks,
+                state.library.areSaved(tracks.map { it.id }),
+                { nav.navigate(artistRoute(album.artistId)) },
+                {
+                    vm.playAlbum(album.id)
+                    nav.navigate(NOW_PLAYING)
+                },
+                {
+                    vm.playTrack(it.id)
+                    nav.navigate(NOW_PLAYING)
+                },
+                { vm.toggleSaved(tracks) },
+                backToMusic
+            )
         }
         composable(ARTIST, arguments = idArg) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
             val artist = state.library.artist(entry.arguments?.getLong("id") ?: -1) ?: return@composable
-            ArtistScreen(artist, state.library.albumsBy(artist), { vm.playArtist(artist.id); nav.navigate(NOW_PLAYING) }, { nav.navigate(albumRoute(it.id)) }, backToMusic)
+            ArtistScreen(artist, state.library.albumsBy(artist), {
+                vm.playArtist(artist.id)
+                nav.navigate(NOW_PLAYING)
+            }, { nav.navigate(albumRoute(it.id)) }, backToMusic)
         }
         composable(NOW_PLAYING) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
-            val track = state.nowPlaying; val album = track?.let { state.library.album(it.albumId) }
-            NowPlayingScreen(state.playback, { album?.let { nav.navigate(albumRoute(it.id)) } }, { track?.let { nav.navigate(artistRoute(it.artistId)) } }, vm::togglePlayPause, vm::skipPrevious, vm::skipNext, vm::seekTo, { vm.setShuffle(!state.playback.queue.shuffle) }, vm::cycleRepeat, { track?.let { vm.saveTracks(it.title, listOf(it)) } }, backToMusic)
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
+            val track = state.nowPlaying
+            val album = track?.let { state.library.album(it.albumId) }
+            NowPlayingScreen(
+                state.playback,
+                track != null && state.library.isSaved(track.id),
+                NowPlayingActions(
+                    onPlayPause = vm::togglePlayPause,
+                    onPrevious = vm::skipPrevious,
+                    onNext = vm::skipNext,
+                    onSeek = vm::seekTo,
+                    onShuffle = { vm.setShuffle(!state.playback.queue.shuffle) },
+                    onRepeat = vm::cycleRepeat,
+                    onSave = { track?.let { vm.toggleSaved(it) } },
+                    onAlbum = { album?.let { nav.navigate(albumRoute(it.id)) } },
+                    onArtist = { track?.let { nav.navigate(artistRoute(it.artistId)) } },
+                    onBack = backToMusic
+                )
+            )
         }
         composable(SEARCH) { entry ->
-            val vm = entry.musicViewModel(nav); val state by vm.state.collectAsStateWithLifecycle()
+            val vm = entry.musicViewModel(nav)
+            val state by vm.state.collectAsStateWithLifecycle()
             MusicSearchScreen(state.query, state.results, vm::updateQuery, vm.actions(nav), backToMusic)
         }
     }
@@ -89,17 +133,26 @@ private fun MusicPermissionBar(action: hrln.interactive.sidekit.design.action.Si
 }
 
 private fun MusicViewModel.actions(nav: NavHostController) = MusicActions(
-    openPlaylist = { playPlaylist(it.id); nav.navigate(NOW_PLAYING) },
+    openPlaylist = {
+        playPlaylist(it.id)
+        nav.navigate(NOW_PLAYING)
+    },
     openAlbum = { nav.navigate(albumRoute(it.id)) },
     openArtist = { nav.navigate(artistRoute(it.id)) },
-    openTrack = { playTrack(it.id); nav.navigate(NOW_PLAYING) },
+    openTrack = {
+        playTrack(it.id)
+        nav.navigate(NOW_PLAYING)
+    }
 )
 
 @Composable
 private fun NavBackStackEntry.musicViewModel(nav: NavHostController): MusicViewModel {
     val parent = remember(this) { nav.getBackStackEntry(ROOT) }
     val context = LocalContext.current.applicationContext
-    return viewModel(parent, factory = remember(context) {
-        viewModelFactory { initializer { MusicViewModel(MediaStoreMusicSource(context.contentResolver), Playlists.repository(context), MusicPlayback.get(context)) } }
-    })
+    return viewModel(
+        parent,
+        factory = remember(context) {
+            viewModelFactory { initializer { MusicViewModel(MediaStoreMusicSource(context.contentResolver), Playlists.repository(context), MusicPlayback.get(context)) } }
+        }
+    )
 }
