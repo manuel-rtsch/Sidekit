@@ -211,12 +211,10 @@ fun NowPlayingScreen(
     actions: NowPlayingActions
 ) {
     val track = playback.track
-    // Play is the one accent on this screen, so the bar gives its usual primary blue up: back is
-    // what ActionTone.Muted is for ("back-out, alternatives"), and the transport above stays the
-    // loudest row. Only back and Save are permanent; Album and Artist live in Options, because the
-    // art and the artist line already go there and most tracks are played without leaving this screen.
+    // Only back and Save are permanent in the bar; Album and Artist live in Options, because the art
+    // and the artist line already go there and most tracks are played without leaving this screen.
     val bar = buildList {
-        add(SideAction("back", "Music", SidekitIcon.ArrowLeftAlt, tone = ActionTone.Muted, motion = ActionMotion.Back, onClick = actions.onBack))
+        add(SideAction.back("back", "Music", actions.onBack))
         if (track != null) {
             add(
                 SideAction.square(
