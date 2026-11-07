@@ -93,17 +93,21 @@ fun SidekitList(
     LocalBodyEntrance.current?.listDriven = true
     val density = LocalDensity.current
     val spacing = SidekitTheme.spacing
-    val focusScroll = remember(contentPadding, density, spacing) {
+    // While focus is in the action bar the list must not chase it: the bar is drawn over the
+    // bottom of the list, and scrolling for it leaves Up with no stable row to return to.
+    val hasFocus = remember { mutableStateOf(false) }
+    val focusScroll = remember(contentPadding, density, spacing, hasFocus) {
         with(density) {
             FocusBand(
                 top = contentPadding.calculateTopPadding().toPx(),
                 pitch = (spacing.itemHeight + spacing.itemOuterGap).toPx(),
+                hasFocus = { hasFocus.value },
             )
         }
     }
     CompositionLocalProvider(LocalBringIntoViewSpec provides focusScroll) {
         LazyColumn(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize().onFocusChanged { hasFocus.value = it.hasFocus },
             state = state,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(spacing.itemOuterGap),
@@ -117,8 +121,13 @@ fun SidekitList(
  * title, where the list fade is lightest and the action bar is far away. Moving down a long list
  * scrolls it a row at a time, like a wheel menu.
  */
-private class FocusBand(private val top: Float, private val pitch: Float) : BringIntoViewSpec {
+private class FocusBand(
+    private val top: Float,
+    private val pitch: Float,
+    private val hasFocus: () -> Boolean,
+) : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+        if (!hasFocus()) return 0f
         val bandEnd = top + pitch
         return when {
             offset < top -> offset - top

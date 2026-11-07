@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -22,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.HeaderSpec
+import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.design.action.PublishChrome
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.motion.BodyEntrance
@@ -84,13 +88,23 @@ fun SidekitScaffold(
     val spec = if (header == null && title != null) HeaderSpec(title, titleAlign, titleModifier) else null
     PublishChrome(spec, actions, options, trailingAction)
 
+    // Lets the action bar hand Up back to the content by name instead of by geometry. The
+    // requester survives content changes (list swaps, new screens) and restoreFocusedChild()
+    // reports false when the remembered element no longer exists.
+    val chrome = LocalChrome.current
+    val contentFocus = remember { FocusRequester() }
+    DisposableEffect(chrome, contentFocus) {
+        chrome?.registerContentFocus(contentFocus)
+        onDispose { chrome?.unregisterContentFocus(contentFocus) }
+    }
+
     // Previews and screenshots show the arrived state; on device the body plays its entrance.
     val inspection = LocalInspectionMode.current
     val entrance = remember { BodyEntrance(arrived = inspection) }
     LaunchedEffect(entrance) { entrance.play() }
     val rise = BodyEntrance.RISE_DP.dp
 
-    Box(modifier.fillMaxSize().imePadding()) {
+    Box(modifier.fillMaxSize().imePadding().focusRequester(contentFocus)) {
         Column(
             Modifier
                 .fillMaxSize()

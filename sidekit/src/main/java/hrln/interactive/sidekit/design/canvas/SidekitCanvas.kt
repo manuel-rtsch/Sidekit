@@ -18,7 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import android.view.ViewTreeObserver
@@ -80,15 +85,30 @@ fun SidekitCanvas(
             LocalKeypad provides keypad,
         ) {
             val hasFocus = revealFocusOnKeys()
+            // Screens that publish chrome without a scaffold (camera, video) still need an Up
+            // target. The scaffold registers a better one that includes its header.
+            val canvasFocus = remember { FocusRequester() }
+            DisposableEffect(chrome, canvasFocus) {
+                chrome.registerCanvasContentFocus(canvasFocus)
+                onDispose { chrome.unregisterCanvasContentFocus(canvasFocus) }
+            }
             Box(
                 modifier = Modifier
                     .size(SidephoneCanvas.WIDTH.dp, SidephoneCanvas.HEIGHT.dp)
                     .onFocusChanged { hasFocus.value = it.hasFocus }
+                    // Keep the content's last focused child saved for the action bar's Up key.
+                    // The press records where focus is before the move, the release where it
+                    // landed; while focus is in the bar saveContentFocus() is a no-op, so the
+                    // memory survives.
+                    .onPreviewKeyEvent { event ->
+                        if (event.key.isNavigationKey) chrome.saveContentFocus()
+                        false
+                    }
                     // Screens slide during navigation; keep them inside the panel.
                     .clipToBounds()
                     .background(SidekitTheme.colors.surfaceA1),
             ) {
-                content()
+                Box(Modifier.fillMaxSize().focusRequester(canvasFocus)) { content() }
                 // Back closes the options bar before it goes back a screen.
                 BackHandler(enabled = chrome.optionsOpen) { chrome.closeOptions() }
                 HeaderHost(
@@ -108,6 +128,10 @@ fun SidekitCanvas(
         }
     }
 }
+
+private val Key.isNavigationKey: Boolean
+    get() = this == Key.DirectionUp || this == Key.DirectionDown ||
+        this == Key.DirectionLeft || this == Key.DirectionRight
 
 /**
  * Android swallows the first D-pad press after a touch: it only takes the window out of touch

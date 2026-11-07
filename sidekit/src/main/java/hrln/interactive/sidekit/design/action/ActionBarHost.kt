@@ -38,6 +38,11 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
@@ -270,6 +275,12 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .height(spacing.actionBarHeight)
+            // The bar is drawn over the content, so the geometric Up search from a bar button
+            // has nothing reliable to find (especially once the list has scrolled). Hand Up
+            // back to the content explicitly instead. Only keys inside the bar reach this.
+            .onPreviewKeyEvent { event ->
+                event.type == KeyEventType.KeyDown && event.key == Key.DirectionUp && state.restoreContentFocus()
+            }
             .graphicsLayer {
                 // Slide only: no alpha, so no offscreen layer for the whole bar.
                 translationY = (1f - model.shown.value) * (size.height + spacing.pagePadding.toPx())
