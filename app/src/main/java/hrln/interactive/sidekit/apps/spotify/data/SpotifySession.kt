@@ -20,15 +20,28 @@ class SpotifySession(
 
     val nativeAvailable: Boolean get() = NativeBridge.isAvailable
 
+    private val nativeGateway by lazy {
+        NativeSpotifyGateway(NativeBridge) { accessToken() }
+    }
+    val gateway: SpotifyGateway get() = nativeGateway
+
+    init {
+        if (nativeAvailable) NativeBridge.initialize()
+    }
+
     suspend fun signIn(openBrowser: suspend (String) -> Unit) {
         auth.signIn(openBrowser)
         _signedIn.value = true
     }
 
     fun signOut() {
+        NativeBridge.disconnect()
         auth.clear()
         _signedIn.value = false
     }
+
+    /** Connects librespot with the current access token, creating the one player on first use. */
+    suspend fun ensurePlaybackConnected() = nativeGateway.ensureConnected()
 
     suspend fun accessToken(): String? = auth.accessToken()
 
