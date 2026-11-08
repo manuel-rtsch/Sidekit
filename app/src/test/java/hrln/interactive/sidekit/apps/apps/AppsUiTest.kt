@@ -9,8 +9,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
-import hrln.interactive.sidekit.design.action.ChromeState
-import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.home.HomePreferences
 import hrln.interactive.sidekit.home.homeId
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
@@ -28,7 +26,7 @@ import org.robolectric.annotation.GraphicsMode
 class AppsUiTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun `tap launches and Options pins and unpins the app`() {
+    @Test fun `tap launches and the app page pins and unpins it`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         HomePreferences(context).reset()
         val app = LaunchableApp(ComponentName("org.mozilla", "Main"), Process.myUserHandle(), "Firefox")
@@ -42,30 +40,24 @@ class AppsUiTest {
             override fun info(app: LaunchableApp) {}
         }
         val vm = AppsViewModel(source)
-        lateinit var chrome: ChromeState
-        compose.setContent {
-            SidekitPreviewFrame {
-                chrome = LocalChrome.current!!
-                AppsScreen(vm) {}
-            }
-        }
+        compose.setContent { SidekitPreviewFrame { AppsScreen(vm) {} } }
         compose.onRoot().captureRoboImage("/tmp/sidekit-apps.png")
         compose.onNodeWithText("Firefox").performClick()
         assertEquals(app, launched)
+
+        // Holding an app opens its page; the actions live there instead of crowding Options.
         compose.onNodeWithText("Firefox").performTouchInput { longClick() }
-        compose.runOnIdle { chrome.toggleOptions() }
-        // Pinning from the Apps screen adds a direct home entry (no Sideport), appending it to the
-        // shared home order that Arrange apps and the derived dock already use.
-        compose.onNodeWithText("Pin to home").assertExists().performClick()
-        compose.runOnIdle { assertTrue(app.homeId(context) in HomePreferences(context).homeOrder) }
-        // Re-open Options so the bar picks up the new pin state.
-        compose.runOnIdle { chrome.closeOptions() }
-        compose.runOnIdle { chrome.toggleOptions() }
-        compose.onNodeWithText("Unpin from home").assertExists()
+        compose.onNodeWithText("Pin to home").assertExists()
         compose.onNodeWithText("App info").assertExists()
-        compose.onNodeWithText("Uninstall").assertExists()
+        compose.onNodeWithText("Uninstall app").assertExists()
+
+        // Pinning writes a direct home entry (no Sideport) into the shared home order.
+        compose.onNodeWithText("Pin to home").performClick()
+        compose.runOnIdle { assertTrue(app.homeId(context) in HomePreferences(context).homeOrder) }
+        compose.onNodeWithText("Unpin from home").assertExists()
 
         compose.onNodeWithText("Unpin from home").performClick()
         compose.runOnIdle { assertFalse(app.homeId(context) in HomePreferences(context).homeOrder) }
+        compose.onNodeWithText("Pin to home").assertExists()
     }
 }
