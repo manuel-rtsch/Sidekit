@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import hrln.interactive.sidekit.design.action.ChromeState
+import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
 import org.junit.Rule
 import org.junit.Test
@@ -21,9 +23,43 @@ class MusicScreenshotTest {
         compose.setContent { SidekitPreviewFrame(content) }
         compose.onRoot().captureRoboImage("screenshots/$name.png")
     }
+
     @Test fun home() = shoot("music_home_71-1618") { MusicHomeScreen(library.home(), MusicActions(), {}, {}, {}, {}, {}) }
+
     @Test fun albums() = shoot("music_albums_71-1483") { MusicLibraryListScreen("Albums", library.albums.map(LibraryItem::AlbumItem), MusicActions(), {}) }
-    @Test fun album() = shoot("music_album_71-1051") { AlbumScreen(library.albums.first(), tracks, {}, {}, {}, {}, {}) }
-    @Test fun nowPlaying() = shoot("music_now_playing_71-759") { NowPlayingScreen(PlaybackState(PlayQueue.of(tracks, 0, false, RepeatMode.Off), true, durationMs = 180_000), {}, {}, {}, {}, {}, {}, {}, {}, {}, {}) }
+
+    @Test fun album() = shoot("music_album_71-1051") { AlbumScreen(library.albums.first(), tracks, false, {}, {}, {}, {}, {}) }
+
+    @Test fun nowPlaying() = shoot("music_now_playing_71-759") {
+        NowPlayingScreen(playing, saved = false, actions = NowPlayingActions())
+    }
+
+    @Test fun nowPlayingSavedAndShuffling() = shoot("music_now_playing_saved") {
+        NowPlayingScreen(playing.copy(queue = playing.queue.withShuffle(true).withRepeat(RepeatMode.All)), saved = true, actions = NowPlayingActions())
+    }
+
+    @Test fun nowPlayingOptions() {
+        lateinit var chrome: ChromeState
+        compose.setContent {
+            SidekitPreviewFrame {
+                chrome = LocalChrome.current!!
+                NowPlayingScreen(playing, saved = false, actions = NowPlayingActions())
+            }
+        }
+        compose.runOnUiThread { chrome.toggleOptions() }
+        compose.onRoot().captureRoboImage("screenshots/music_now_playing_options.png")
+    }
+
+    @Test fun nowPlayingEmpty() = shoot("music_now_playing_empty") {
+        NowPlayingScreen(PlaybackState(), saved = false, actions = NowPlayingActions())
+    }
+
+    private val playing = PlaybackState(
+        queue = PlayQueue.of(tracks, 0, false, RepeatMode.Off),
+        isPlaying = true,
+        positionMs = 42_000,
+        durationMs = 180_000
+    )
+
     @Test fun search() = shoot("music_search_blank_71-1929") { MusicSearchScreen("", emptyList(), {}, MusicActions(), {}) }
 }

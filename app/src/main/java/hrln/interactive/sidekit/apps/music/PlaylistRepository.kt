@@ -2,6 +2,12 @@ package hrln.interactive.sidekit.apps.music
 
 import android.content.Context
 import androidx.core.util.AtomicFile
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,12 +19,6 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.IOException
 
 /** Where playlists live on disk. Called off the main thread only. */
 interface PlaylistStore {
@@ -84,7 +84,7 @@ class FilePlaylistStore(file: File) : PlaylistStore {
 class PlaylistRepository(
     private val store: PlaylistStore,
     scope: CoroutineScope,
-    io: CoroutineDispatcher = Dispatchers.IO,
+    io: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val _playlists = MutableStateFlow<List<Playlist>?>(null)
 
@@ -128,6 +128,30 @@ class PlaylistRepository(
             list + Playlist(id, title, trackIds.distinct())
         }
         return id
+    }
+
+    /**
+     * The Save button: adds [trackIds] to the reserved [SAVED_PLAYLIST] playlist, or removes
+     * them when they are already all saved. Creates the playlist on first use and drops it once
+     * it empties, so pressing Save twice never leaves a second copy behind. Returns true when the
+     * tracks are saved afterwards.
+     */
+    fun toggleSaved(trackIds: List<Long>): Boolean {
+        val ids = trackIds.distinct()
+        if (ids.isEmpty()) return false
+        var saved = false
+        mutate { list ->
+            val existing = list.firstOrNull { it.name == SAVED_PLAYLIST }
+            if (existing == null) {
+                saved = true
+                list + Playlist(nextId(), SAVED_PLAYLIST, ids)
+            } else {
+                saved = ids.any { it !in existing.trackIds }
+                val tracks = if (saved) (existing.trackIds + ids).distinct() else existing.trackIds - ids.toSet()
+                if (tracks.isEmpty()) list - existing else list.map { if (it.id == existing.id) it.copy(trackIds = tracks) else it }
+            }
+        }
+        return saved
     }
 
     /** Appends tracks not already in the playlist. */
@@ -175,7 +199,7 @@ object Playlists {
     fun repository(context: Context): PlaylistRepository = repository ?: synchronized(this) {
         repository ?: PlaylistRepository(
             FilePlaylistStore(File(context.applicationContext.filesDir, "music_playlists.bin")),
-            CoroutineScope(SupervisorJob()),
+            CoroutineScope(SupervisorJob())
         ).also { repository = it }
     }
 }
