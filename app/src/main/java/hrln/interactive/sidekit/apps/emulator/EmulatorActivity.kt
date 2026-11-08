@@ -91,6 +91,7 @@ class EmulatorActivity : Activity(), SurfaceHolder.Callback {
         layout.addView(shoulders)
         setContentView(layout)
         surface.holder.addCallback(this)
+        if (!EmulatorCore.available) return fail("The emulator engine is not available in this build.")
         try {
             handle = EmulatorCore.open(game.absolutePath)
             check(handle != 0L) { "This file is not a supported Game Boy ROM." }
