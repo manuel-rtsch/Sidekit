@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
+import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.components.SidekitText
@@ -51,7 +51,7 @@ object HealthSampleData {
     // Placeholder content from "Health / Home" (96:764).
     val summary = HealthSummary(
         steps = StepsToday(steps = 6420, goal = 8000),
-        metrics = listOf(HealthMetric("Heart rate", "68 bpm"), HealthMetric("Last sleep", "7 hr 42 min")),
+        metrics = listOf(HealthMetric("Heart rate", "68 bpm"), HealthMetric("Last sleep", "7 hr 42 min"))
     )
 }
 
@@ -68,7 +68,7 @@ fun NavGraphBuilder.healthGraph(nav: NavHostController) {
 fun HealthScreen(summary: HealthSummary, onHistory: () -> Unit = {}, onGoals: () -> Unit = {}) {
     SidekitScaffold(
         title = "Health",
-        actions = dualArrowActions("History", "Goals", onHistory, onGoals),
+        actions = dualArrowActions("History", "Goals", onHistory, onGoals)
     ) { padding ->
         EverydayContent(padding) {
             StepsCard(summary.steps)
@@ -84,7 +84,7 @@ internal fun StepsCard(steps: StepsToday) {
     SidekitTile(Modifier.fillMaxWidth().height(171.dp), contentAlignment = Alignment.TopStart) {
         Column(
             Modifier.padding(start = SidekitTheme.spacing.itemPadding, end = SidekitTheme.spacing.itemPadding, top = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             SidekitText("Steps today", style = SidekitTheme.typography.caption)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -98,7 +98,7 @@ internal fun StepsCard(steps: StepsToday) {
                     .height(10.dp)
                     .clip(barShape)
                     .background(colors.surfaceA1)
-                    .semantics { progressBarRangeInfo = ProgressBarRangeInfo(steps.progress, 0f..1f) },
+                    .semantics { progressBarRangeInfo = ProgressBarRangeInfo(steps.progress, 0f..1f) }
             ) {
                 Box(Modifier.fillMaxHeight().fillMaxWidth(steps.progress).clip(barShape).background(colors.emphasisA1))
             }

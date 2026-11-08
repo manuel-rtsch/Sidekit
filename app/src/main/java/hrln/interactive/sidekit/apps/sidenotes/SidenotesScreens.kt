@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.apps.sidenotes
 
 import androidx.activity.compose.BackHandler
-import hrln.interactive.sidekit.design.components.SidekitTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,15 +32,16 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import hrln.interactive.sidekit.design.action.ActionMotion
-import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.components.SidekitSwipeRow
 import hrln.interactive.sidekit.design.components.SidekitText
+import hrln.interactive.sidekit.design.components.SidekitTextField
 import hrln.interactive.sidekit.design.components.listFade
 import hrln.interactive.sidekit.design.components.rememberSwipeRevealGroup
 import hrln.interactive.sidekit.design.icons.SidekitIcon
@@ -67,11 +67,11 @@ fun SidenotesListScreen(
     onOpenNote: (Note) -> Unit,
     onNewNote: () -> Unit,
     onDelete: (Note) -> Unit,
-    onUndoDelete: () -> Unit,
+    onUndoDelete: () -> Unit
 ) {
     val actions = undoBar(
         continueWith = SideAction.forward("new", "New Sidenote", onNewNote),
-        undo = if (state.recentlyDeleted != null) SideAction.undo(contentDescription = "Undo delete note", onClick = onUndoDelete) else null,
+        undo = if (state.recentlyDeleted != null) SideAction.undo(contentDescription = "Undo delete note", onClick = onUndoDelete) else null
     )
 
     SidekitScaffold(title = "My Sidenotes", actions = actions) { padding ->
@@ -94,12 +94,12 @@ fun SidenotesListScreen(
                     modifier = Modifier
                         .animateItem()
                         .listFade(listState, index),
-                    deleteLabel = "Delete ${note.title}",
+                    deleteLabel = "Delete ${note.title}"
                 ) {
                     SidekitItem(
                         title = note.title,
                         secondary = note.preview.ifEmpty { null },
-                        onClick = { onOpenNote(note) },
+                        onClick = { onOpenNote(note) }
                     )
                 }
             }
@@ -116,7 +116,7 @@ private fun EmptyNotes(modifier: Modifier) {
                 "Your notes will appear here",
                 style = SidekitTheme.typography.label,
                 color = SidekitTheme.colors.surfaceA6,
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -143,7 +143,7 @@ fun NoteEditorScreen(
     canDelete: Boolean,
     onSave: (String) -> Unit,
     onClose: (String) -> Unit,
-    onDelete: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val text = rememberTextFieldState(initialText)
     var saved by rememberSaveable { mutableStateOf(initialText) }
@@ -177,16 +177,23 @@ fun NoteEditorScreen(
         EditorMode.Clean -> listOfNotNull(
             SideAction.back("back", "My Sidenotes", close),
             if (canDelete) {
-                SideAction.square("delete", SidekitIcon.DeleteForever, "Delete note", { focusManager.clearFocus(); confirmingDelete = true }, tone = ActionTone.Destructive)
-            } else null,
+                SideAction.square("delete", SidekitIcon.DeleteForever, "Delete note", {
+                    focusManager.clearFocus()
+                    confirmingDelete = true
+                }, tone = ActionTone.Destructive)
+            } else {
+                null
+            }
         )
+
         EditorMode.Dirty -> listOf(
             SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Save and go back", close, motion = ActionMotion.Back),
-            SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save note", onClick = save),
+            SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save note", onClick = save)
         )
+
         EditorMode.ConfirmDelete -> listOf(
             SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep note") { confirmingDelete = false },
-            SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete", onClick = onDelete),
+            SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete", onClick = onDelete)
         )
     }
 
@@ -197,10 +204,15 @@ fun NoteEditorScreen(
         actions = actions,
         // Keypad Options key: delete without hunting for the bin button (it may be hidden while editing).
         options = if (canDelete && mode != EditorMode.ConfirmDelete) {
-            listOf(SideAction("delete", "Delete note", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { focusManager.clearFocus(); confirmingDelete = true })
+            listOf(
+                SideAction("delete", "Delete note", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) {
+                    focusManager.clearFocus()
+                    confirmingDelete = true
+                }
+            )
         } else {
             emptyList()
-        },
+        }
     ) { padding ->
         SidekitCard(Modifier.fillMaxSize().padding(padding)) {
             // With the T9 keypad attached the action bar becomes word suggestions while typing.
@@ -212,7 +224,7 @@ fun NoteEditorScreen(
                 placeholder = "Start typing…",
                 focusRequester = focus,
                 focusOnKeypad = true,
-                autoFocus = isNew,
+                autoFocus = isNew
             )
         }
     }

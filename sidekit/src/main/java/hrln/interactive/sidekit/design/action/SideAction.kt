@@ -121,12 +121,10 @@ class SideAction(
          * Commit: green, check at the end, rises from below. The screen names the act, the role
          * owns the colour — saving looks the same in every sub-app.
          */
-        fun save(key: String, label: String = "Save", onClick: () -> Unit) =
-            SideAction(key, label, SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onClick)
+        fun save(key: String, label: String = "Save", onClick: () -> Unit) = SideAction(key, label, SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onClick)
 
         /** Commit that leaves the screen: green, arrow at the end, enters from the right. */
-        fun send(key: String, label: String = "Send", onClick: () -> Unit) =
-            SideAction(key, label, SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward, onClick = onClick)
+        fun send(key: String, label: String = "Send", onClick: () -> Unit) = SideAction(key, label, SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward, onClick = onClick)
 
         /**
          * Take it back: grey, no promise to advance. Cancel and Undo wear the same colour because
@@ -140,7 +138,7 @@ class SideAction(
             icon: SidekitIcon? = SidekitIcon.ArrowLeftAlt,
             motion: ActionMotion = ActionMotion.Back,
             contentDescription: String? = null,
-            onClick: () -> Unit,
+            onClick: () -> Unit
         ) = SideAction(key, label, icon, tone = ActionTone.Muted, motion = motion, contentDescription = contentDescription, onClick = onClick)
 
         /**
@@ -151,12 +149,11 @@ class SideAction(
             key: String = "undo",
             label: String = "Undo",
             contentDescription: String? = null,
-            onClick: () -> Unit,
+            onClick: () -> Unit
         ) = SideAction(key, label, SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = contentDescription, onClick = onClick)
 
         /** Destroy: red, wherever it appears (bar, confirm, Options). [icon] stays optional. */
-        fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) =
-            SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)
+        fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) = SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)
 
         /** Square icon-only button. */
         fun square(

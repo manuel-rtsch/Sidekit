@@ -12,5 +12,4 @@ package hrln.interactive.sidekit.design.action
  * exit button steps aside for the window; the system back still leaves, and the exit returns with
  * the primary.
  */
-fun undoBar(continueWith: SideAction, undo: SideAction? = null): List<SideAction> =
-    if (undo == null) listOf(continueWith) else listOf(continueWith, undo)
+fun undoBar(continueWith: SideAction, undo: SideAction? = null): List<SideAction> = if (undo == null) listOf(continueWith) else listOf(continueWith, undo)

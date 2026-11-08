@@ -37,10 +37,14 @@ fun NavGraphBuilder.liveMapsGraph(nav: NavHostController) {
         composable("$root/search") { entry ->
             val parent = remember(entry) { nav.getBackStackEntry(root) }
             val vm: MapsViewModel = viewModel(parent)
-            PlaceSearch({ nav.popBackStack() }) { vm.destination = it; nav.popBackStack() }
+            PlaceSearch({ nav.popBackStack() }) {
+                vm.destination = it
+                nav.popBackStack()
+            }
         }
     }
 }
+
 @Composable
 private fun LiveMaps(vm: MapsViewModel, onSearch: () -> Unit) {
     val context = LocalContext.current
@@ -48,13 +52,28 @@ private fun LiveMaps(vm: MapsViewModel, onSearch: () -> Unit) {
     var fallback by remember { mutableStateOf(false) }
     var zoom by remember { mutableIntStateOf(0) }
     var recenter by remember { mutableStateOf(false) }
-    val location = locationAction({ vm.current = it; recenter = true }) { message = it }
+    val location = locationAction({
+        vm.current = it
+        recenter = true
+    }) { message = it }
     val list = rememberLazyListState()
-    SidekitScaffold("Maps", actions = listOf(SideAction.back("search", "Search", onSearch), SideAction("go", "Go") {
-        val to = vm.destination
-        if (to == null) message = "Search and select a destination first"
-        else if (!openDirections(context, to)) { fallback = true; message = "No navigation app. Straight-line guidance only; paths and obstacles are not considered." }
-    }, location), options = listOf(SideAction("zoomIn", "Zoom +") { zoom = kotlin.math.abs(zoom) + 1 }, SideAction("zoomOut", "Zoom −") { zoom = -kotlin.math.abs(zoom) - 1 }, SideAction("center", "Centre") { recenter = !recenter })) { padding ->
+    SidekitScaffold(
+        "Maps",
+        actions = listOf(
+            SideAction.back("search", "Search", onSearch),
+            SideAction("go", "Go") {
+                val to = vm.destination
+                if (to == null) {
+                    message = "Search and select a destination first"
+                } else if (!openDirections(context, to)) {
+                    fallback = true
+                    message = "No navigation app. Straight-line guidance only; paths and obstacles are not considered."
+                }
+            },
+            location
+        ),
+        options = listOf(SideAction("zoomIn", "Zoom +") { zoom = kotlin.math.abs(zoom) + 1 }, SideAction("zoomOut", "Zoom −") { zoom = -kotlin.math.abs(zoom) - 1 }, SideAction("center", "Centre") { recenter = !recenter })
+    ) { padding ->
         SidekitList(padding, state = list) {
             val center = if (recenter) vm.current ?: vm.destination else vm.destination ?: vm.current
             if (center != null) item { Box(Modifier.listFade(list, 0)) { RasterMap(center, vm.current, vm.destination, zoom) { if (!fallback) message = it } } }
@@ -64,6 +83,7 @@ private fun LiveMaps(vm: MapsViewModel, onSearch: () -> Unit) {
         }
     }
 }
+
 @Composable
 private fun StraightLine(from: Place, to: Place) {
     val context = LocalContext.current
@@ -76,14 +96,25 @@ private fun StraightLine(from: Place, to: Place) {
     SidekitTile(Modifier.fillMaxWidth().height(230.dp)) {
         Column {
             SidekitText("${result[0].toInt()} m · ${((result[1] + 360) % 360).toInt()}° true", Modifier.padding(SidekitTheme.spacing.itemPadding))
-            if (sensor.available) Canvas(Modifier.fillMaxWidth().height(100.dp)) {
-                rotate(result[1] - (sensor.angle.floatValue + declination)) {
-                    drawLine(color, center + Offset(0f, 30.dp.toPx()), center - Offset(0f, 30.dp.toPx()), 5.dp.toPx())
-                    drawLine(color, center - Offset(0f, 30.dp.toPx()), center + Offset(-15.dp.toPx(), -10.dp.toPx()), 5.dp.toPx())
-                    drawLine(color, center - Offset(0f, 30.dp.toPx()), center + Offset(15.dp.toPx(), -10.dp.toPx()), 5.dp.toPx())
+            if (sensor.available) {
+                Canvas(Modifier.fillMaxWidth().height(100.dp)) {
+                    rotate(result[1] - (sensor.angle.floatValue + declination)) {
+                        drawLine(color, center + Offset(0f, 30.dp.toPx()), center - Offset(0f, 30.dp.toPx()), 5.dp.toPx())
+                        drawLine(color, center - Offset(0f, 30.dp.toPx()), center + Offset(-15.dp.toPx(), -10.dp.toPx()), 5.dp.toPx())
+                        drawLine(color, center - Offset(0f, 30.dp.toPx()), center + Offset(15.dp.toPx(), -10.dp.toPx()), 5.dp.toPx())
+                    }
                 }
             }
-            SidekitText(if (!sensor.available) "No compass sensor" else if (accuracy <= 1) "Calibrate: move in a figure eight" else "Hold phone flat", style = SidekitTheme.typography.small)
+            SidekitText(
+                if (!sensor.available) {
+                    "No compass sensor"
+                } else if (accuracy <= 1) {
+                    "Calibrate: move in a figure eight"
+                } else {
+                    "Hold phone flat"
+                },
+                style = SidekitTheme.typography.small
+            )
         }
     }
 }

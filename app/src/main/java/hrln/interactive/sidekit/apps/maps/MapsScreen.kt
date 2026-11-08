@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import hrln.interactive.sidekit.apps.everyday.backAndGoActions
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
+import hrln.interactive.sidekit.apps.everyday.backAndGoActions
+import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.SidekitTile
-import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
@@ -52,7 +52,7 @@ fun NavGraphBuilder.mapsGraph(nav: NavHostController) {
 fun MapsScreen(destination: MapsDestination, onSearch: () -> Unit = {}, onGo: () -> Unit = {}) {
     SidekitScaffold(
         title = "Maps",
-        actions = backAndGoActions("Search", "Go", onSearch, onGo),
+        actions = backAndGoActions("Search", "Go", onSearch, onGo)
     ) { padding ->
         EverydayContent(padding) {
             NeighbourhoodMap(Modifier.fillMaxWidth().height(263.dp))
@@ -60,7 +60,7 @@ fun MapsScreen(destination: MapsDestination, onSearch: () -> Unit = {}, onGo: ()
             SidekitTile(Modifier.fillMaxWidth().height(119.dp), contentAlignment = Alignment.TopStart) {
                 Column(
                     Modifier.padding(start = SidekitTheme.spacing.itemPadding, top = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     SidekitText(destination.name)
                     SidekitText(destination.detail, style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
@@ -80,7 +80,7 @@ private fun NeighbourhoodMap(modifier: Modifier = Modifier) {
     Box(
         modifier
             .clip(SidekitTheme.shapes.item)
-            .semantics { contentDescription = "Map: walking route from your location to Central Station" },
+            .semantics { contentDescription = "Map: walking route from your location to Central Station" }
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val u = 1.dp.toPx()

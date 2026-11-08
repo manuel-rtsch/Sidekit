@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
+import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.SidekitTile
@@ -54,7 +54,7 @@ fun NavGraphBuilder.compassGraph(nav: NavHostController) {
 fun CompassScreen(reading: CompassReading, onCalibrate: () -> Unit = {}, onSave: () -> Unit = {}) {
     SidekitScaffold(
         title = "Compass",
-        actions = dualArrowActions("Calibrate", "Save", onCalibrate, onSave),
+        actions = dualArrowActions("Calibrate", "Save", onCalibrate, onSave)
     ) { padding ->
         EverydayContent(padding) {
             // "Compass dial" (96:682): 460 x 278, the 268 dial inset 5 from the top.
@@ -66,7 +66,7 @@ fun CompassScreen(reading: CompassReading, onCalibrate: () -> Unit = {}, onSave:
                 Row(
                     Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding),
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     SidekitText(reading.label, style = SidekitTheme.typography.title)
                     SidekitText(reading.description, style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
@@ -97,10 +97,16 @@ internal fun CompassDial(degrees: () -> Float, modifier: Modifier = Modifier) {
             }
             rotate(-degrees(), pivot = c) {
                 val north = Path().apply {
-                    moveTo(134 * u, 53 * u); lineTo(153 * u, 134 * u); lineTo(115 * u, 134 * u); close()
+                    moveTo(134 * u, 53 * u)
+                    lineTo(153 * u, 134 * u)
+                    lineTo(115 * u, 134 * u)
+                    close()
                 }
                 val south = Path().apply {
-                    moveTo(115 * u, 134 * u); lineTo(153 * u, 134 * u); lineTo(134 * u, 215 * u); close()
+                    moveTo(115 * u, 134 * u)
+                    lineTo(153 * u, 134 * u)
+                    lineTo(134 * u, 215 * u)
+                    close()
                 }
                 drawPath(north, colors.emphasisA1)
                 drawPath(south, colors.surfaceA6)
@@ -112,7 +118,7 @@ internal fun CompassDial(degrees: () -> Float, modifier: Modifier = Modifier) {
                 Modifier
                     .offset((centre.x - 20).dp, (centre.y - 15).dp)
                     .size(40.dp, 30.dp),
-                contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.Center
             ) {
                 SidekitText(letter, style = SidekitTheme.typography.small)
             }

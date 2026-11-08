@@ -1,36 +1,36 @@
 package hrln.interactive.sidekit.apps.calculator
 
-import androidx.compose.foundation.layout.height
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import hrln.interactive.sidekit.design.action.ActionMotion
-import hrln.interactive.sidekit.design.action.SideAction
-import hrln.interactive.sidekit.design.components.SidekitList
-import hrln.interactive.sidekit.design.components.SidekitItem
-import hrln.interactive.sidekit.design.components.listFade
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitItemRow
+import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.SidekitTile
+import hrln.interactive.sidekit.design.components.listFade
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
@@ -65,46 +65,86 @@ fun NavGraphBuilder.calculatorGraph(nav: NavHostController) {
 }
 
 @Composable
-fun CalculatorScreen(display: String, onKey: (CalcKey) -> Unit, history: List<Calculation> = emptyList(),
-    onClearHistory: () -> Unit = {}, onRecall: (String) -> Unit = {}, historyError: String? = null) {
+fun CalculatorScreen(
+    display: String,
+    onKey: (CalcKey) -> Unit,
+    history: List<Calculation> = emptyList(),
+    onClearHistory: () -> Unit = {},
+    onRecall: (String) -> Unit = {},
+    historyError: String? = null
+) {
     var page by rememberSaveable { mutableStateOf("keys") }
     var confirmClear by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(page) { if (page == "keys") focus.requestFocus() }
-    BackHandler(page != "keys") { page = "keys"; confirmClear = false }
+    BackHandler(page != "keys") {
+        page = "keys"
+        confirmClear = false
+    }
     SidekitScaffold(
-        title = if (page == "keys") display else if (page == "history") "History" else "Keypad help",
+        title = if (page == "keys") {
+            display
+        } else if (page == "history") {
+            "History"
+        } else {
+            "Keypad help"
+        },
         titleAlign = if (page == "keys") TextAlign.End else TextAlign.Start,
         modifier = Modifier.focusRequester(focus).onPreviewKeyEvent { event ->
-            if (page != "keys") false else calculatorHardwareKey(event.nativeKeyEvent.keyCode)?.let { key ->
-                if (event.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN && event.nativeKeyEvent.repeatCount == 0) onKey(key)
-                true
-            } ?: false
+            if (page != "keys") {
+                false
+            } else {
+                calculatorHardwareKey(event.nativeKeyEvent.keyCode)?.let { key ->
+                    if (event.nativeKeyEvent.action == android.view.KeyEvent.ACTION_DOWN && event.nativeKeyEvent.repeatCount == 0) onKey(key)
+                    true
+                } ?: false
+            }
         }.focusable(),
-        actions = if (page == "keys") listOf(SideAction("clear", "Clear") { onKey(CalcKey.Clear) }, SideAction("main", "=") { onKey(CalcKey.Equals) })
-        else if (confirmClear) listOf(SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmClear = false }, SideAction.delete("main", "Clear history") { onClearHistory(); confirmClear = false })
-        else listOf(SideAction("main", "Back") { page = "keys" }),
+        actions = if (page == "keys") {
+            listOf(SideAction("clear", "Clear") { onKey(CalcKey.Clear) }, SideAction("main", "=") { onKey(CalcKey.Equals) })
+        } else if (confirmClear) {
+            listOf(
+                SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmClear = false },
+                SideAction.delete("main", "Clear history") {
+                    onClearHistory()
+                    confirmClear = false
+                }
+            )
+        } else {
+            listOf(SideAction("main", "Back") { page = "keys" })
+        },
         options = when (page) {
             "keys" -> listOf(SideAction("history", "History") { page = "history" }, SideAction("help", "Keypad") { page = "help" })
             "history" -> listOf(SideAction.delete("clear", "Clear history") { confirmClear = true })
             else -> emptyList()
-        },
+        }
     ) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
             when (page) {
-                "keys" -> CalculatorKeypad.rows.forEachIndexed { index, row -> item {
-                    SidekitItemRow(Modifier.listFade(list, index)) {
-                        row.forEach { key ->
-                            SidekitTile(Modifier.weight(1f).height(SidekitTheme.spacing.itemHeight * 0.7f), color = key.color(), onClick = { onKey(key) }, onClickLabel = key.label) { SidekitText(key.label) }
+                "keys" -> CalculatorKeypad.rows.forEachIndexed { index, row ->
+                    item {
+                        SidekitItemRow(Modifier.listFade(list, index)) {
+                            row.forEach { key ->
+                                SidekitTile(Modifier.weight(1f).height(SidekitTheme.spacing.itemHeight * 0.7f), color = key.color(), onClick = { onKey(key) }, onClickLabel = key.label) { SidekitText(key.label) }
+                            }
                         }
                     }
-                } }
+                }
+
                 "history" -> {
                     historyError?.let { item { SidekitItem(it) } }
                     if (history.isEmpty()) item { SidekitItem("No calculations yet", Modifier.listFade(list, 0)) }
-                    history.forEachIndexed { index, entry -> item { SidekitItem(entry.result, Modifier.listFade(list, index), secondary = entry.expression, onClick = { onRecall(entry.result); page = "keys" }) } }
+                    history.forEachIndexed { index, entry ->
+                        item {
+                            SidekitItem(entry.result, Modifier.listFade(list, index), secondary = entry.expression, onClick = {
+                                onRecall(entry.result)
+                                page = "keys"
+                            })
+                        }
+                    }
                 }
+
                 else -> listOf("0–9 type numbers", "* multiplies · # equals", "Delete backspaces", "Use the operator tiles for +, −, ÷ and decimal.", "Calculations run left to right.").forEachIndexed { index, text -> item { SidekitItem(text, Modifier.listFade(list, index)) } }
             }
         }
@@ -115,9 +155,13 @@ fun CalculatorScreen(display: String, onKey: (CalcKey) -> Unit, history: List<Ca
 private fun CalcKey.color(): Color {
     val colors = SidekitTheme.colors
     return when (this) {
-        CalcKey.Backspace -> colors.dangerA2 // Item "Destructive" colour
+        CalcKey.Backspace -> colors.dangerA2
+
+        // Item "Destructive" colour
         CalcKey.Clear, CalcKey.Percent, is CalcKey.Op -> colors.successA1
+
         CalcKey.Equals -> colors.emphasisA2
+
         is CalcKey.Digit, CalcKey.Sign, CalcKey.Decimal -> colors.surfaceA3
     }
 }

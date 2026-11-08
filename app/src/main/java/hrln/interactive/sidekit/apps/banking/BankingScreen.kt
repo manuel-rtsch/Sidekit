@@ -23,9 +23,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.ActionMotion
-import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -53,7 +53,7 @@ object BankingSampleData {
     val account = BankAccount("Everyday · 4821", "$2,480.50", "Available balance")
     val transactions = listOf(
         BankTransaction("Groceries", "−$64.20", 1),
-        BankTransaction("Salary", "+$2,150.00", 2),
+        BankTransaction("Salary", "+$2,150.00", 2)
     )
 }
 
@@ -75,12 +75,14 @@ private const val TRACKER_CAPTION = "Tracked here · not bank-linked"
  * Undo split shared by every Banking list: the main action holds the left slot and the right slot
  * offers "Undo delete Barclays" until the window closes. Nothing else is taken away.
  */
-private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> =
-    if (undo == null) main
-    else undoBar(
+private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> = if (undo == null) {
+    main
+} else {
+    undoBar(
         continueWith = main.last(),
-        undo = SideAction.undo(contentDescription = undo.label, onClick = onUndo),
+        undo = SideAction.undo(contentDescription = undo.label, onClick = onUndo)
     )
+}
 
 /**
  * "Banking / Home" (96:959): the selected account's balance, then its transactions (swipe left
@@ -96,14 +98,15 @@ fun BankingScreen(
     onDeleteTransaction: ((BankTransaction) -> Unit)? = null,
     undo: BankingUndo? = null,
     onUndo: () -> Unit = {},
-    options: List<SideAction> = emptyList(),
+    options: List<SideAction> = emptyList()
 ) {
     val actions = when {
         account == null -> listOf(SideAction.forward("forward", "Add account", onAccounts))
+
         else -> withUndo(
             undo,
             onUndo,
-            listOf(SideAction.back("back", "Accounts", onAccounts), SideAction.forward("forward", "Pay", onPay)),
+            listOf(SideAction.back("back", "Accounts", onAccounts), SideAction.forward("forward", "Pay", onPay))
         )
     }
     SidekitScaffold(title = "Banking", actions = actions, options = options) { padding ->
@@ -130,7 +133,7 @@ fun BankingScreen(
                         group = swipe,
                         onDelete = { onDeleteTransaction(t) },
                         modifier = Modifier.animateItem().listFade(listState, i + 1),
-                        deleteLabel = "Delete ${t.description}",
+                        deleteLabel = "Delete ${t.description}"
                     ) { row() }
                 }
             }
@@ -150,7 +153,7 @@ private fun BalanceCard(account: BankAccount, modifier: Modifier = Modifier) {
     SidekitTile(modifier.fillMaxWidth().height(171.dp), contentAlignment = Alignment.TopStart) {
         Column(
             Modifier.padding(start = SidekitTheme.spacing.itemPadding, end = SidekitTheme.spacing.itemPadding, top = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             SidekitText(account.name, style = SidekitTheme.typography.caption, color = colors.surfaceA6)
             SidekitText(account.balance, style = SidekitTheme.typography.numeric)
@@ -189,14 +192,14 @@ fun BankingAccountsScreen(
     onEdit: (Account) -> Unit,
     onDelete: (Account) -> Unit,
     undo: BankingUndo?,
-    onUndo: () -> Unit,
+    onUndo: () -> Unit
 ) {
     BackHandler(onBack = onBack)
     val selected = book.selected
     SidekitScaffold(
         title = "Accounts",
         actions = withUndo(undo, onUndo, listOf(SideAction.back("back", "Banking", onBack), SideAction.forward("forward", "New", onNew))),
-        options = listOfNotNull(selected?.let { SideAction("edit", "Edit ${it.name}", SidekitIcon.Edit) { onEdit(it) } }),
+        options = listOfNotNull(selected?.let { SideAction("edit", "Edit ${it.name}", SidekitIcon.Edit) { onEdit(it) } })
     ) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
@@ -210,13 +213,13 @@ fun BankingAccountsScreen(
                     group = swipe,
                     onDelete = { onDelete(a) },
                     modifier = Modifier.animateItem().listFade(listState, i),
-                    deleteLabel = "Delete ${a.name}",
+                    deleteLabel = "Delete ${a.name}"
                 ) {
                     SidekitItem(
                         a.name,
                         secondary = Money.format(book.balance(a.id)),
                         colour = if (a.id == selected?.id) ItemColour.Secondary else ItemColour.Primary,
-                        onClick = { onOpen(a) },
+                        onClick = { onOpen(a) }
                     )
                 }
             }
@@ -234,7 +237,7 @@ internal fun FieldCard(
     focus: FocusRequester,
     onDone: () -> Unit,
     autoFocus: Boolean = false,
-    focusOnKeypad: Boolean = false,
+    focusOnKeypad: Boolean = false
 ) {
     SidekitCard(Modifier.fillMaxWidth().heightIn(min = SidekitTheme.spacing.itemHeight)) {
         SidekitTextField(
@@ -246,7 +249,7 @@ internal fun FieldCard(
             focusOnKeypad = focusOnKeypad,
             singleLine = true,
             onDone = onDone,
-            autoFocus = autoFocus,
+            autoFocus = autoFocus
         )
     }
 }
@@ -260,7 +263,7 @@ fun BankingPayScreen(
     book: BankBook,
     incoming: Boolean,
     onCancel: () -> Unit,
-    onRecord: (accountId: Long, payee: String, cents: Long, note: String) -> Unit,
+    onRecord: (accountId: Long, payee: String, cents: Long, note: String) -> Unit
 ) {
     var accountId by rememberSaveable { mutableStateOf(book.selected?.id ?: -1L) }
     var payee by rememberSaveable { mutableStateOf("") }
@@ -278,7 +281,7 @@ fun BankingPayScreen(
     val actions = if (valid) {
         listOf(
             SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
-            SideAction("record", "Record", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = if (incoming) "Record income" else "Record payment", onClick = record),
+            SideAction("record", "Record", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = if (incoming) "Record income" else "Record payment", onClick = record)
         )
     } else {
         listOf(SideAction.cancel("back", onClick = onCancel))
@@ -297,7 +300,9 @@ fun BankingPayScreen(
                             val i = book.accounts.indexOfFirst { it.id == account?.id }
                             accountId = book.accounts[(i + 1) % book.accounts.size].id
                         }
-                    } else null,
+                    } else {
+                        null
+                    }
                 )
             }
             item(key = "payee") {
@@ -327,7 +332,7 @@ fun BankingPayScreen(
 fun BankingAccountEditor(
     existing: Account?,
     onCancel: () -> Unit,
-    onSave: (name: String, openingCents: Long) -> Unit,
+    onSave: (name: String, openingCents: Long) -> Unit
 ) {
     var name by rememberSaveable { mutableStateOf(existing?.name.orEmpty()) }
     var opening by rememberSaveable { mutableStateOf(existing?.let { Money.plain(it.openingCents) }.orEmpty()) }
@@ -341,7 +346,7 @@ fun BankingAccountEditor(
     val actions = if (valid) {
         listOf(
             SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
-            SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save account", onClick = save),
+            SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save account", onClick = save)
         )
     } else {
         listOf(SideAction.cancel("back", onClick = onCancel))
@@ -361,9 +366,12 @@ fun BankingAccountEditor(
             }
             item(key = "hint") {
                 NoticeCard(
-                    if (existing == null) "Enter what's in the account today; payments you record are taken from it. Use a minus for money owed."
-                    else "The starting balance is what the account held before the payments recorded here.",
-                    Modifier.listFade(listState, 2),
+                    if (existing == null) {
+                        "Enter what's in the account today; payments you record are taken from it. Use a minus for money owed."
+                    } else {
+                        "The starting balance is what the account held before the payments recorded here."
+                    },
+                    Modifier.listFade(listState, 2)
                 )
             }
         }
@@ -379,14 +387,14 @@ fun BankingLockedScreen(
     deviceSecure: Boolean,
     message: String?,
     onUnlock: () -> Unit,
-    onBack: () -> Unit,
+    onBack: () -> Unit
 ) {
     SidekitScaffold(
         title = "Banking",
         actions = listOf(
             SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Leave Banking", onBack, motion = ActionMotion.Back),
-            SideAction("unlock", if (deviceSecure) "Unlock" else "Open", SidekitIcon.Encrypted, contentDescription = "Unlock Banking", onClick = onUnlock),
-        ),
+            SideAction("unlock", if (deviceSecure) "Unlock" else "Open", SidekitIcon.Encrypted, contentDescription = "Unlock Banking", onClick = onUnlock)
+        )
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
@@ -395,9 +403,12 @@ fun BankingLockedScreen(
             }
             item {
                 NoticeCard(
-                    message ?: if (deviceSecure) "Banking opens with your screen lock and locks again when you leave."
-                    else "This phone has no screen lock, so Banking can't ask for one. Your data is still encrypted on the phone; set a screen lock in Settings to protect it.",
-                    Modifier.listFade(listState, 1),
+                    message ?: if (deviceSecure) {
+                        "Banking opens with your screen lock and locks again when you leave."
+                    } else {
+                        "This phone has no screen lock, so Banking can't ask for one. Your data is still encrypted on the phone; set a screen lock in Settings to protect it."
+                    },
+                    Modifier.listFade(listState, 1)
                 )
             }
             item { NoticeCard(TRACKER_NOTICE, Modifier.listFade(listState, 2)) }
@@ -413,7 +424,7 @@ fun BankingUnreadableScreen(onBack: () -> Unit, onErase: () -> Unit) {
     val actions = if (confirming) {
         listOf(
             SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep the file") { confirming = false },
-            SideAction("erase", "Erase", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm erase", onClick = onErase),
+            SideAction("erase", "Erase", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm erase", onClick = onErase)
         )
     } else {
         listOf(SideAction.back("back", "Leave", onBack))
@@ -421,14 +432,14 @@ fun BankingUnreadableScreen(onBack: () -> Unit, onErase: () -> Unit) {
     SidekitScaffold(
         title = "Banking",
         actions = actions,
-        options = listOf(SideAction("erase", "Erase and start over", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { confirming = true }),
+        options = listOf(SideAction("erase", "Erase and start over", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { confirming = true })
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item {
                 NoticeCard(
                     "Banking's data can't be decrypted on this phone, so nothing has been changed. The Options key can erase it and start over.",
-                    Modifier.listFade(listState, 0),
+                    Modifier.listFade(listState, 0)
                 )
             }
         }

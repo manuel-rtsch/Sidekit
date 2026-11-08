@@ -83,7 +83,7 @@ fun ProjectionOverlay(state: ProjectionState, actions: ProjectionActions, chrome
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .wrapContentHeight(Alignment.Bottom, unbounded = true)
-                .height(fullHeight),
+                .height(fullHeight)
         ) {
             SidekitCanvas(chrome = chrome, keypad = keypad) {
                 if (state.inspector) InspectorScreen(state, actions) else ProjectedScreen(state, actions)
@@ -110,7 +110,7 @@ private fun OpeningScreen(state: ProjectionState, actions: ProjectionActions) {
     SidekitScaffold(
         state.app.label,
         actions = listOf(SideAction.back("back", "Sidekit", actions::exitToSidekit)),
-        options = listOf(SideAction("original", "Original view", onClick = actions::showOriginal)),
+        options = listOf(SideAction("original", "Original view", onClick = actions::showOriginal))
     ) { padding ->
         SidekitList(padding) {
             item { SidekitCard(Modifier.fillMaxWidth()) { SidekitText("Opening ${state.app.label}…", style = SidekitTheme.typography.label, maxLines = 3) } }
@@ -125,7 +125,7 @@ private fun ScreenBody(state: ProjectionState, model: ScreenModel, actions: Proj
         listOf(
             SideAction("menu", "Menu", onClick = openMenu),
             SideAction("original", "Original", tone = ActionTone.Muted, onClick = actions::showOriginal),
-            SideAction("sidekit", "Sidekit", tone = ActionTone.Muted, onClick = actions::exitToSidekit),
+            SideAction("sidekit", "Sidekit", tone = ActionTone.Muted, onClick = actions::exitToSidekit)
         )
     }
     val list = rememberLazyListState()
@@ -165,7 +165,7 @@ private fun ScreenBody(state: ProjectionState, model: ScreenModel, actions: Proj
                         SidekitText(
                             "Nothing on this screen can be read. Press Options and choose Original to use the app as it is.",
                             style = SidekitTheme.typography.label,
-                            maxLines = Int.MAX_VALUE,
+                            maxLines = Int.MAX_VALUE
                         )
                     }
                 }
@@ -211,6 +211,7 @@ private fun BlockRow(block: Block, modifier: Modifier, actions: ProjectionAction
                 }
             }
         }
+
         is ItemBlock -> {
             val secondary = block.checked?.let { if (it) "On" else "Off" } ?: block.secondary
             val colour = when {
@@ -224,10 +225,10 @@ private fun BlockRow(block: Block, modifier: Modifier, actions: ProjectionAction
                     modifier.combinedClickable(
                         onClick = { actions.press(block) },
                         onLongClick = { actions.press(block, long = true) },
-                        onLongClickLabel = "More for ${block.title}",
+                        onLongClickLabel = "More for ${block.title}"
                     ),
                     secondary = secondary,
-                    colour = colour,
+                    colour = colour
                 )
             } else {
                 SidekitItem(
@@ -236,11 +237,13 @@ private fun BlockRow(block: Block, modifier: Modifier, actions: ProjectionAction
                     secondary = secondary,
                     colour = colour,
                     showLinkArrow = block.click != null && secondary == null && block.inList,
-                    onClick = block.click?.let { { actions.press(block) } },
+                    onClick = block.click?.let { { actions.press(block) } }
                 )
             }
         }
+
         is FieldBlock -> ProjectedField(block, modifier, actions)
+
         is ButtonBlock -> SidekitLineButton(
             block.label,
             onClick = { actions.press(block) },
@@ -249,7 +252,7 @@ private fun BlockRow(block: Block, modifier: Modifier, actions: ProjectionAction
                 Tone.Destructive -> LineButtonVariant.Destructive
                 Tone.Muted -> LineButtonVariant.Secondary
                 else -> LineButtonVariant.Primary
-            },
+            }
         )
     }
 }
@@ -272,7 +275,7 @@ private fun ProjectedField(block: FieldBlock, modifier: Modifier, actions: Proje
         onValueChange = { text = it },
         modifier = modifier.onFocusChanged { focused = it.hasFocus },
         placeholder = block.hint ?: if (block.password) "Password" else null,
-        singleLine = true,
+        singleLine = true
     )
 }
 
@@ -301,13 +304,32 @@ private fun actionBar(specs: List<ActionSpec>, actions: ProjectionActions): List
 private fun MenuScreen(state: ProjectionState, model: ScreenModel, actions: ProjectionActions, close: () -> Unit) {
     val list = rememberLazyListState()
     val rows = buildList<Pair<String, () -> Unit>> {
-        model.options.forEach { o -> add((if (o.selected) "• ${o.label}" else o.label) to { close(); actions.pressAction(o.handle, o.key) }) }
+        model.options.forEach { o ->
+            add(
+                (if (o.selected) "• ${o.label}" else o.label) to {
+                    close()
+                    actions.pressAction(o.handle, o.key)
+                }
+            )
+        }
     }
     val sideport = listOf<Pair<String, () -> Unit>>(
-        "Show original" to { close(); actions.showOriginal() },
-        "Messages and media" to { close(); actions.openHub() },
-        "Inspect screen" to { close(); actions.toggleInspector() },
-        "Back to Sidekit" to { close(); actions.exitToSidekit() },
+        "Show original" to {
+            close()
+            actions.showOriginal()
+        },
+        "Messages and media" to {
+            close()
+            actions.openHub()
+        },
+        "Inspect screen" to {
+            close()
+            actions.toggleInspector()
+        },
+        "Back to Sidekit" to {
+            close()
+            actions.exitToSidekit()
+        }
     )
     SidekitScaffold("${state.app.label} menu", actions = listOf(SideAction.back("menu.close", "Close", close))) { padding ->
         SidekitList(padding, state = list) {
@@ -330,8 +352,8 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
         "Inspect",
         actions = listOf(
             SideAction.back("inspect.close", "Close", actions::toggleInspector),
-            SideAction("inspect.export", "Export", tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = actions::exportTree),
-        ),
+            SideAction("inspect.export", "Export", tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = actions::exportTree)
+        )
     ) { padding ->
         SidekitList(padding, state = list) {
             item(key = "summary") {
@@ -346,7 +368,7 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
                             state.notice?.let { append("\n").append(it) }
                         },
                         style = SidekitTheme.typography.caption,
-                        maxLines = 8,
+                        maxLines = 8
                     )
                 }
             }
@@ -356,7 +378,7 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
                         SidekitText(
                             node.simpleClass + (node.idName?.let { " #$it" } ?: ""),
                             style = SidekitTheme.typography.tiny,
-                            color = SidekitTheme.colors.surfaceA6,
+                            color = SidekitTheme.colors.surfaceA6
                         )
                         node.label?.let { SidekitText(it, style = SidekitTheme.typography.small, maxLines = 3) }
                         flags(node).takeIf { it.isNotEmpty() }?.let {
@@ -371,7 +393,10 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
 
 private fun flatten(root: UiNode): List<Pair<UiNode, Int>> {
     val out = ArrayList<Pair<UiNode, Int>>()
-    fun go(n: UiNode, d: Int) { out += n to d; n.children.forEach { go(it, d + 1) } }
+    fun go(n: UiNode, d: Int) {
+        out += n to d
+        n.children.forEach { go(it, d + 1) }
+    }
     go(root, 0)
     return out
 }
@@ -396,7 +421,7 @@ fun OriginalPill(label: String, onClick: () -> Unit) {
             .clickable(onClickLabel = "Show $label in Sidekit", onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         SidekitIconImage(SidekitIcon.DeployedCode, size = 22.dp)
         SidekitText("Sidekit", style = SidekitTheme.typography.small)

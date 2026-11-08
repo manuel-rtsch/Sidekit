@@ -35,7 +35,7 @@ fun SidekitToggleTile(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     val colors = SidekitTheme.colors
     Box(
@@ -45,7 +45,7 @@ fun SidekitToggleTile(
             .background(if (checked) colors.successA1 else colors.surfaceA3)
             .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
             .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         SidekitIconImage(icon, size = SidekitTheme.spacing.tileIconSize)
     }
@@ -58,7 +58,7 @@ fun SidekitSliderItem(
     label: String,
     value: Float,
     onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     val colors = SidekitTheme.colors
     Box(
@@ -78,20 +78,23 @@ fun SidekitSliderItem(
             .semantics {
                 contentDescription = label
                 progressBarRangeInfo = ProgressBarRangeInfo(value, 0f..1f)
-                setProgress { onValueChange(it.coerceIn(0f, 1f)); true }
+                setProgress {
+                    onValueChange(it.coerceIn(0f, 1f))
+                    true
+                }
             },
-        contentAlignment = Alignment.CenterStart,
+        contentAlignment = Alignment.CenterStart
     ) {
         Box(
             Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(value.coerceIn(0f, 1f))
-                .background(colors.emphasisA1),
+                .background(colors.emphasisA1)
         )
         Row(
             modifier = Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap),
+            horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap)
         ) {
             SidekitIconImage(icon)
             SidekitText(label)
@@ -107,6 +110,6 @@ fun SidekitTickBox(checked: Boolean, modifier: Modifier = Modifier) {
         modifier
             .size(44.dp)
             .clip(SidekitTheme.shapes.control)
-            .then(if (checked) Modifier.background(light) else Modifier.border(3.dp, light, SidekitTheme.shapes.control)),
+            .then(if (checked) Modifier.background(light) else Modifier.border(3.dp, light, SidekitTheme.shapes.control))
     )
 }

@@ -32,7 +32,7 @@ data class SidekitColors(
     val surfaceA5: Color = Color(0xFF717171),
     val surfaceA6: Color = Color(0xFF8B8B8B),
     val dark: Color = Color(0xFF000000),
-    val light: Color = Color(0xFFFFFFFF),
+    val light: Color = Color(0xFFFFFFFF)
 ) {
     /**
      * Content emphasis: the selected day, a progress fill, a route, your own message, a marker.
@@ -51,9 +51,7 @@ data class SidekitColors(
 private const val CONTENT_LUMINANCE = 0.3f
 
 /** Black or white, whichever reads against an arbitrary [background] (e.g. a colour swatch). */
-fun readableContentOn(background: Color): Color =
-    if (background.luminance() > CONTENT_LUMINANCE) Color(0xFF000000) else Color(0xFFFFFFFF)
+fun readableContentOn(background: Color): Color = if (background.luminance() > CONTENT_LUMINANCE) Color(0xFF000000) else Color(0xFFFFFFFF)
 
 /** Keep labels readable when a light case colour replaces the default blue. */
-fun SidekitColors.contentColorFor(background: Color): Color =
-    if (background in listOf(primaryA1, primaryA2, primaryA3)) readableContentOn(background) else light
+fun SidekitColors.contentColorFor(background: Color): Color = if (background in listOf(primaryA1, primaryA2, primaryA3)) readableContentOn(background) else light

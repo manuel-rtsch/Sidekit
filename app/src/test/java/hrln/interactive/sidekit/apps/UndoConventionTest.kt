@@ -55,7 +55,7 @@ class UndoConventionTest {
         }
         assertTrue(
             "Build Undo with SideAction.undo and place it with undoBar:\n" + offences.joinToString("\n"),
-            offences.isEmpty(),
+            offences.isEmpty()
         )
     }
 

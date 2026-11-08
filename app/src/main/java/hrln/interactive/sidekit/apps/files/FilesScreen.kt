@@ -51,7 +51,7 @@ object FilesSampleData {
         FileLocation("Documents", "8 files"),
         FileLocation("Downloads", "24 files"),
         FileLocation("Photos", "56 files"),
-        FileLocation("On Sidephone", "2.4 GB"),
+        FileLocation("On Sidephone", "2.4 GB")
     )
 }
 
@@ -61,13 +61,12 @@ object FilesTags {
 }
 
 /** The bar for a moment after something happened, else [actions]. Tapping the message dismisses it. */
-private fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> =
-    if (notice == null) actions else listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, motion = ActionMotion.Up, onClick = onDismiss))
+private fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> = if (notice == null) actions else listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, motion = ActionMotion.Up, onClick = onDismiss))
 
 /** "Cancel | Delete" confirmation, in the bar instead of a dialog. */
 private fun confirmActions(verb: String, name: String, onCancel: () -> Unit, onConfirm: () -> Unit) = listOf(
     SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep $name", onClick = onCancel),
-    SideAction("forward", verb, SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm ${verb.lowercase()} $name", onClick = onConfirm),
+    SideAction("forward", verb, SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm ${verb.lowercase()} $name", onClick = onConfirm)
 )
 
 /**
@@ -87,23 +86,28 @@ fun FilesScreen(
     onAllow: () -> Unit = {},
     onRemove: ((FileLocation) -> Unit)? = null,
     notice: String? = null,
-    onDismissNotice: () -> Unit = {},
+    onDismissNotice: () -> Unit = {}
 ) {
     var removing by rememberSaveable { mutableStateOf<String?>(null) }
     val pending = locations.firstOrNull { it.place != null && it.place == removing }
     BackHandler(enabled = pending != null) { removing = null }
     val actions = when {
-        pending != null -> confirmActions("Remove", pending.name, { removing = null }) { onRemove?.invoke(pending); removing = null }
+        pending != null -> confirmActions("Remove", pending.name, { removing = null }) {
+            onRemove?.invoke(pending)
+            removing = null
+        }
+
         needsPermission -> listOf(
             SideAction.back("back", "Browse", onBrowse),
-            SideAction("forward", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Allow access to media", onClick = onAllow),
+            SideAction("forward", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Allow access to media", onClick = onAllow)
         )
+
         else -> listOf(SideAction.back("back", "Browse", onBrowse), SideAction.forward("forward", "Search", onSearch))
     }
     SidekitScaffold(
         title = "Files",
         actions = withNotice(notice, onDismissNotice, actions),
-        options = if (needsPermission) listOf(SideAction("search", "Search", SidekitIcon.Search, onClick = onSearch)) else emptyList(),
+        options = if (needsPermission) listOf(SideAction("search", "Search", SidekitIcon.Search, onClick = onSearch)) else emptyList()
     ) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
@@ -112,7 +116,7 @@ fun FilesScreen(
                 item(key = "permission") {
                     Explain(
                         "Files lists your photos, videos, music and downloads. Android asks once before an app can see them. Folders you add with Browse work without it.",
-                        Modifier.listFade(listState, 0),
+                        Modifier.listFade(listState, 0)
                     )
                 }
             }
@@ -124,7 +128,7 @@ fun FilesScreen(
                         Modifier.height(CompactRowHeight),
                         secondary = location.detail,
                         colour = if (location == pending) ItemColour.Destructive else ItemColour.Primary,
-                        onClick = { onOpen(location) },
+                        onClick = { onOpen(location) }
                     )
                 }
                 if (location.removable && onRemove != null) {
@@ -133,7 +137,7 @@ fun FilesScreen(
                         group = swipe,
                         onDelete = { removing = location.place },
                         modifier = Modifier.animateItem().listFade(listState, i + offset),
-                        deleteLabel = "Remove ${location.name}",
+                        deleteLabel = "Remove ${location.name}"
                     ) { row() }
                 } else {
                     Column(Modifier.listFade(listState, i + offset)) { row() }
@@ -156,7 +160,7 @@ internal fun homeRows(home: FilesHome): List<FileLocation> {
         FileLocation(
             kind.title,
             if (home.mediaAllowed) FileFormat.count(home.counts[kind] ?: 0) else "Needs access",
-            FilePlace.Media(kind).encode(),
+            FilePlace.Media(kind).encode()
         )
     }
     val folders = home.folders.map { FileLocation(it.name, "Folder", it.location.encode(), removable = true) }
@@ -182,7 +186,7 @@ fun FilesBrowseScreen(
     onSort: (FileSort) -> Unit,
     onBack: () -> Unit,
     onSearch: () -> Unit,
-    onDismissNotice: () -> Unit,
+    onDismissNotice: () -> Unit
 ) {
     BackHandler { if (pendingDelete != null) onCancelDelete() else onBack() }
     val actions = if (pendingDelete != null) {
@@ -207,7 +211,7 @@ private fun EntryList(
     onOpen: (FileEntry) -> Unit,
     onAskDelete: (FileEntry) -> Unit,
     empty: String?,
-    header: (@Composable (Modifier) -> Unit)? = null,
+    header: (@Composable (Modifier) -> Unit)? = null
 ) {
     val listState = rememberLazyListState()
     val swipe = rememberSwipeRevealGroup()
@@ -219,14 +223,16 @@ private fun EntryList(
         if (header != null) item(key = "header", contentType = "header") { header(Modifier.listFade(listState, 0)) }
         when {
             entries == null -> item(key = "loading") { Explain("Loading…", Modifier.listFade(listState, offset)) }
+
             entries.isEmpty() && empty != null -> item(key = "empty") { Explain(empty, Modifier.listFade(listState, offset)) }
+
             else -> itemsIndexed(entries, key = { _, e -> e.key }, contentType = { _, _ -> "entry" }) { i, e ->
                 SidekitSwipeRow(
                     key = e.key,
                     group = swipe,
                     onDelete = { onAskDelete(e) },
                     modifier = Modifier.animateItem().listFade(listState, i + offset),
-                    deleteLabel = "Delete ${e.name}",
+                    deleteLabel = "Delete ${e.name}"
                 ) {
                     SidekitItem(
                         e.name,
@@ -234,7 +240,7 @@ private fun EntryList(
                         secondary = FileFormat.detail(e),
                         icon = if (e.isDirectory) SidekitIcon.FolderCopy else null,
                         colour = if (e.key == pendingDelete?.key) ItemColour.Destructive else ItemColour.Primary,
-                        onClick = { onOpen(e) },
+                        onClick = { onOpen(e) }
                     )
                 }
             }
@@ -257,7 +263,7 @@ fun FilesSearchScreen(
     onConfirmDelete: () -> Unit,
     onSort: (FileSort) -> Unit,
     onBack: () -> Unit,
-    onDismissNotice: () -> Unit,
+    onDismissNotice: () -> Unit
 ) {
     BackHandler { if (pendingDelete != null) onCancelDelete() else onBack() }
     val actions = if (pendingDelete != null) {
@@ -282,10 +288,10 @@ fun FilesSearchScreen(
                         placeholder = "File name",
                         focusOnKeypad = true,
                         singleLine = true,
-                        autoFocus = true,
+                        autoFocus = true
                     )
                 }
-            },
+            }
         )
     }
 }

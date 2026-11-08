@@ -6,20 +6,20 @@ import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
-import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.apps.settings.*
+import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.input.*
@@ -48,25 +48,55 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
         revision++
         if (it.values.any { granted -> !granted }) message = "Some access was not granted. You can continue, or manage it in App settings."
     }
-    LifecycleResumeEffect(Unit) { revision++; onPauseOrDispose {} }
-    fun move(next: Int) { step = next; message = null; if (!replay) prefs.setupStep = next }
-    fun finish() { prefs.setupComplete = true; prefs.setupStep = 0; onFinish() }
+    LifecycleResumeEffect(Unit) {
+        revision++
+        onPauseOrDispose {}
+    }
+    fun move(next: Int) {
+        step = next
+        message = null
+        if (!replay) prefs.setupStep = next
+    }
+    fun finish() {
+        prefs.setupComplete = true
+        prefs.setupStep = 0
+        onFinish()
+    }
     fun open(intent: Intent) {
-        try { result.launch(intent) } catch (_: android.content.ActivityNotFoundException) { message = "This settings screen is unavailable on this device." }
-        catch (_: SecurityException) { message = "Android could not open this setting. You can continue and change it in Settings." }
+        try {
+            result.launch(intent)
+        } catch (_: android.content.ActivityNotFoundException) {
+            message = "This settings screen is unavailable on this device."
+        } catch (_: SecurityException) {
+            message = "Android could not open this setting. You can continue and change it in Settings."
+        }
     }
     fun request(entry: SetupAccess) {
         message = null
-        if (entry.intent != null) open(entry.intent.invoke(context))
-        else if (entry.title in requested) open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-        else { requested.add(entry.title); permissionResult.launch(entry.permissions.toTypedArray()) }
+        if (entry.intent != null) {
+            open(entry.intent.invoke(context))
+        } else if (entry.title in requested) {
+            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+        } else {
+            requested.add(entry.title)
+            permissionResult.launch(entry.permissions.toTypedArray())
+        }
     }
     val titles = listOf("Hello, Sidekit", "Make it yours", "Your home screen", "Choose your apps", "Make it work", "Your typing style", "Meet your keypad")
-    BackHandler { if (step > 0) move(step - 1) else if (replay) onFinish() }
-    SidekitScaffold(titles[step], actions = buildList {
-        if (step > 0 || replay) add(SideAction.back("back", "Back") { if (step > 0) move(step - 1) else onFinish() })
-        add(SideAction.forward("next", if (step == 6) "Finish" else "Next", { if (step == 6) finish() else move(step + 1) }))
-    }) { padding ->
+    BackHandler {
+        if (step > 0) {
+            move(step - 1)
+        } else if (replay) {
+            onFinish()
+        }
+    }
+    SidekitScaffold(
+        titles[step],
+        actions = buildList {
+            if (step > 0 || replay) add(SideAction.back("back", "Back") { if (step > 0) move(step - 1) else onFinish() })
+            add(SideAction.forward("next", if (step == 6) "Finish" else "Next", { if (step == 6) finish() else move(step + 1) }))
+        }
+    ) { padding ->
         key(step) {
             val listState = rememberLazyListState()
             LaunchedEffect(tourIndex) { if (step == 6) listState.scrollToItem(0) }
@@ -81,13 +111,27 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
                         }
                         item { Copy("Always one press away", "Choose Sidekit in Android’s home app prompt. You can also tap Next and do this later in Settings.") }
                     }
+
                     1 -> caseColourChoices(selectedColour) { prefs.caseColour = it }
+
                     2 -> {
                         item { Copy("Grid or list?", "Change this any time in Settings.") }
-                        item { LayoutChoice(false, listLayout) { listLayout = false; prefs.listLayout = false } }
-                        item { LayoutChoice(true, listLayout) { listLayout = true; prefs.listLayout = true } }
+                        item {
+                            LayoutChoice(false, listLayout) {
+                                listLayout = false
+                                prefs.listLayout = false
+                            }
+                        }
+                        item {
+                            LayoutChoice(true, listLayout) {
+                                listLayout = true
+                                prefs.listLayout = true
+                            }
+                        }
                     }
+
                     3 -> hiddenAppChoices(hidden, ported) { prefs.hiddenApps = it }
+
                     4 -> {
                         item { Copy("You’re in control", "Enable access for the features you want, or continue without it. Status updates when you return.") }
                         access.forEach { entry ->
@@ -101,16 +145,22 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
                         }
                         item { Copy("Accounts come later", "Connect mail and other accounts inside their apps. Screen lock and network access use Android’s existing settings; there is no extra permission prompt here.") }
                     }
+
                     5 -> {
                         item { Copy("Letters or numbers?", "Choose how text fields start. Hold # (T9) or aA (Mini QWERTY) to switch while typing.") }
-                        T9Mode.entries.forEach { mode -> item {
-                            val label = if (mode == T9Mode.Numeric) "Numbers" else "Letters · multi-tap"
-                            SidekitLineButton("${if (inputMode == mode) "✓ " else ""}$label", {
-                                inputMode = mode; prefs.inputMode = mode; keypad?.let(prefs::applyInputDefault)
-                            }, variant = if (inputMode == mode) LineButtonVariant.Primary else LineButtonVariant.Secondary)
-                        } }
+                        T9Mode.entries.forEach { mode ->
+                            item {
+                                val label = if (mode == T9Mode.Numeric) "Numbers" else "Letters · multi-tap"
+                                SidekitLineButton("${if (inputMode == mode) "✓ " else ""}$label", {
+                                    inputMode = mode
+                                    prefs.inputMode = mode
+                                    keypad?.let(prefs::applyInputDefault)
+                                }, variant = if (inputMode == mode) LineButtonVariant.Primary else LineButtonVariant.Secondary)
+                            }
+                        }
                         item { Copy("Words as you type", "Suggestions appear in the action bar. Select a suggestion to complete a word. Your typing preference can be changed in Settings.") }
                     }
+
                     6 -> {
                         item { SidekitText("${tourIndex + 1} / ${modules.size} · ${modules[tourIndex].label}", style = SidekitTheme.typography.headline) }
                         item { KeypadDemo(modules[tourIndex]) }
