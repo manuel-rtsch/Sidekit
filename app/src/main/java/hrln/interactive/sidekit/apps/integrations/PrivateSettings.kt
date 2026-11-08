@@ -2,7 +2,6 @@ package hrln.interactive.sidekit.apps.integrations
 
 import android.content.Context
 import androidx.core.util.AtomicFile
-import hrln.interactive.sidekit.apps.banking.KeystoreCipher
 import org.json.JSONObject
 import java.io.File
 
