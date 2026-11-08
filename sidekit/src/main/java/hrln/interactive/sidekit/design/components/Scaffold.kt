@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -22,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.HeaderSpec
+import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.design.action.PublishChrome
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.motion.BodyEntrance
@@ -30,20 +34,21 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
 
 /**
  * Header frame (62:898): 460 x 103, title inset 30/30. Drawn by the shared title host; screens
- * use it directly only for a custom header.
+ * use it directly only for a custom header. The spacing token `headerPaddingTop` shortens it
+ * (with `headerHeight`) in compact mode.
  */
 @Composable
 fun SidekitHeader(
     title: String,
     modifier: Modifier = Modifier,
-    textAlign: TextAlign = TextAlign.Start,
+    textAlign: TextAlign = TextAlign.Start
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(SidekitTheme.spacing.headerHeight)
             .padding(horizontal = SidekitTheme.spacing.itemPadding)
-            .padding(top = SidekitTheme.spacing.itemPadding),
+            .padding(top = SidekitTheme.spacing.headerPaddingTop)
     ) {
         SidekitText(
             text = title,
@@ -51,7 +56,7 @@ fun SidekitHeader(
                 .fillMaxWidth()
                 .semantics { heading() },
             style = SidekitTheme.typography.title,
-            textAlign = textAlign,
+            textAlign = textAlign
         )
     }
 }
@@ -77,11 +82,21 @@ fun SidekitScaffold(
     titleModifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
     trailingAction: SideAction? = null,
-    content: @Composable (PaddingValues) -> Unit,
+    content: @Composable (PaddingValues) -> Unit
 ) {
     val spacing = SidekitTheme.spacing
     val spec = if (header == null && title != null) HeaderSpec(title, titleAlign, titleModifier) else null
     PublishChrome(spec, actions, options, trailingAction)
+
+    // Lets the action bar hand Up back to the content by name instead of by geometry. The
+    // requester survives content changes (list swaps, new screens) and restoreFocusedChild()
+    // reports false when the remembered element no longer exists.
+    val chrome = LocalChrome.current
+    val contentFocus = remember { FocusRequester() }
+    DisposableEffect(chrome, contentFocus) {
+        chrome?.registerContentFocus(contentFocus)
+        onDispose { chrome?.unregisterContentFocus(contentFocus) }
+    }
 
     // Previews and screenshots show the arrived state; on device the body plays its entrance.
     val inspection = LocalInspectionMode.current
@@ -89,11 +104,11 @@ fun SidekitScaffold(
     LaunchedEffect(entrance) { entrance.play() }
     val rise = BodyEntrance.RISE_DP.dp
 
-    Box(modifier.fillMaxSize().imePadding()) {
+    Box(modifier.fillMaxSize().imePadding().focusRequester(contentFocus)) {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(start = spacing.pagePadding, end = spacing.pagePadding, top = spacing.pagePadding),
+                .padding(start = spacing.pagePadding, end = spacing.pagePadding, top = spacing.pagePadding)
         ) {
             when {
                 header != null -> header()
@@ -111,7 +126,7 @@ fun SidekitScaffold(
                             translationY = (1f - p) * rise.toPx()
                             compositingStrategy = CompositingStrategy.ModulateAlpha
                         }
-                    },
+                    }
             ) {
                 val bottom = if (actions.isNotEmpty()) spacing.actionBarHeight + spacing.pageGap + spacing.pagePadding else spacing.pagePadding
                 CompositionLocalProvider(LocalBodyEntrance provides entrance) {
