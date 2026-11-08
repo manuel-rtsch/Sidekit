@@ -13,7 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hrln.interactive.sidekit.apps.maps.*
+import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import kotlinx.coroutines.*
@@ -46,7 +48,7 @@ fun LiveCompass(onBookmarks: () -> Unit) {
     val list = rememberLazyListState()
     val measurer = rememberTextMeasurer()
     val bearingStyle = SidekitTheme.typography.title.copy(color = SidekitTheme.colors.light)
-    SidekitScaffold("Compass", actions = listOf(SideAction("calibrate", "Calibrate") { status = "Move phone in a figure eight, away from metal; then hold flat" }, SideAction("save", "Save") {
+    SidekitScaffold("Compass", actions = listOf(SideAction("calibrate", "Calibrate") { status = "Move phone in a figure eight, away from metal; then hold flat" }, SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up) {
         val heading = sensor.latest
         if (heading == null) status = "Waiting for a heading"
         else if (loaded == null) status = "Loading bookmarks…"

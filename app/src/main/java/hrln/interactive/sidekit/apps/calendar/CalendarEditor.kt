@@ -12,7 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.components.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -81,7 +84,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
         actions = when {
             busy -> listOf(SideAction("main", "Saving…") {})
             choosingCalendar -> listOf(SideAction("main", "Back") { choosingCalendar = false })
-            deleting -> listOf(SideAction("cancel", "Cancel") { deleting = false }, SideAction("main", if (original?.rrule.isNullOrBlank()) "Delete" else "Delete series") {
+            deleting -> listOf(SideAction("cancel", "Cancel") { deleting = false }, SideAction("main", if (original?.rrule.isNullOrBlank()) "Delete" else "Delete series", tone = ActionTone.Destructive) {
                 if (id != null) { busy = true; scope.launch {
                     try { repo.delete(id); onClose() }
                     catch (e: CancellationException) { throw e }
@@ -89,8 +92,8 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                     finally { busy = false }
                 } }
             })
-            else -> listOf(SideAction("cancel", "Cancel", onClick = onClose), SideAction("main", "Save", onClick = ::save))
-        }, options = if (id == null || busy || choosingCalendar) emptyList() else listOf(SideAction("delete", "Delete") { deleting = true })) { padding ->
+            else -> listOf(SideAction("cancel", "Cancel", onClick = onClose), SideAction("main", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = ::save))
+        }, options = if (id == null || busy || choosingCalendar) emptyList() else listOf(SideAction("delete", "Delete", tone = ActionTone.Destructive) { deleting = true })) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
             if (choosingCalendar) calendars.forEachIndexed { index, calendar -> item { SidekitItem(calendar.name, Modifier.listFade(list, index), onClick = { calendarId = calendar.id; choosingCalendar = false }) } }
