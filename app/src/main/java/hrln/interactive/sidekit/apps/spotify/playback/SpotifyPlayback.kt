@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 class SpotifyPlayback(
     private val gateway: SpotifyGateway,
     private val scope: CoroutineScope,
-    private val registry: MediaSessionRegistry = MediaSessions
+    private val registry: MediaSessionRegistry = MediaSessions,
+    private val audio: SpotifyAudioSink? = null
 ) : MediaSessionOwner {
     override val sessionId = "sidetracks"
     override val notificationChannelId = "sidetracks"
@@ -35,10 +36,12 @@ class SpotifyPlayback(
         register()
         registry.activate(this)
         playing = true
+        audio?.start()
         try {
             gateway.load(uri, positionMs, autoplay = true)
         } catch (t: Throwable) {
             playing = false
+            audio?.pause()
             registry.deactivate(this)
             throw t
         }
@@ -47,11 +50,13 @@ class SpotifyPlayback(
     suspend fun resume() {
         registry.activate(this)
         playing = true
+        audio?.start()
         gateway.play()
     }
 
     override fun pause() {
         playing = false
+        audio?.pause()
         registry.deactivate(this)
         scope.launch { runCatching { gateway.pause() } }
     }
@@ -62,6 +67,7 @@ class SpotifyPlayback(
 
     suspend fun stop() {
         playing = false
+        audio?.pause()
         registry.deactivate(this)
         gateway.stop()
     }

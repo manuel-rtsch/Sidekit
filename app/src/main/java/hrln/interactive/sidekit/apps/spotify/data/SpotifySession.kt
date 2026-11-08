@@ -4,6 +4,11 @@ import android.content.Context
 import hrln.interactive.sidekit.apps.spotify.auth.EncryptedSpotifyCredentialStore
 import hrln.interactive.sidekit.apps.spotify.auth.SpotifyAuth
 import hrln.interactive.sidekit.apps.spotify.bridge.NativeBridge
+import hrln.interactive.sidekit.apps.spotify.playback.SpotifyAudioSink
+import hrln.interactive.sidekit.apps.spotify.playback.SpotifyPlayback
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +30,15 @@ class SpotifySession(
     }
     val gateway: SpotifyGateway get() = nativeGateway
 
+    private val playbackScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    val playback: SpotifyPlayback by lazy {
+        SpotifyPlayback(
+            gateway = nativeGateway,
+            scope = playbackScope,
+            audio = SpotifyAudioSink(NativeBridge, playbackScope)
+        )
+    }
+
     init {
         if (nativeAvailable) NativeBridge.initialize()
     }
@@ -42,6 +56,13 @@ class SpotifySession(
 
     /** Connects librespot with the current access token, creating the one player on first use. */
     suspend fun ensurePlaybackConnected() = nativeGateway.ensureConnected()
+
+    suspend fun play(uri: String, positionMs: Long = 0L) {
+        ensurePlaybackConnected()
+        playback.start(uri, positionMs)
+    }
+
+    fun pause() = playback.pause()
 
     suspend fun accessToken(): String? = auth.accessToken()
 
