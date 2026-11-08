@@ -4,7 +4,7 @@ mod audio;
 mod engine;
 
 use jni::objects::{JObject, JString};
-use jni::sys::{jboolean, jbyteArray, jfloat, jint, jlong, JNI_FALSE, JNI_TRUE};
+use jni::sys::{jboolean, jbyteArray, jfloat, jlong, JNI_FALSE, JNI_TRUE};
 use jni::JNIEnv;
 use std::time::Duration;
 
@@ -16,7 +16,6 @@ fn string(env: &mut JNIEnv, value: &JString) -> Option<String> {
 pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeInit(
     _env: JNIEnv,
     _this: JObject,
-    _tmp_dir: JString,
 ) -> jboolean {
     #[cfg(target_os = "android")]
     android_logger::init_once(
@@ -66,7 +65,7 @@ pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeB
     mut env: JNIEnv,
     _this: JObject,
     uri: JString,
-    position_ms: jint,
+    position_ms: jlong,
     autoplay: jboolean,
 ) -> jboolean {
     match string(&mut env, &uri)
@@ -105,7 +104,7 @@ pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeB
 pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeSeek(
     _env: JNIEnv,
     _this: JObject,
-    position_ms: jint,
+    position_ms: jlong,
 ) -> jboolean {
     bool_result(engine::seek(position_ms.max(0) as u32))
 }
