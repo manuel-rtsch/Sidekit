@@ -93,7 +93,7 @@ internal fun AppDetailScreen(
                         if (pinned) "Unpin from home" else "Pin to home",
                         Modifier.listFade(list, 1),
                         secondary = if (pinned) "Opens directly, without Sideport" else "Add it to home and the dock",
-                        colour = if (pinned) ItemColour.Muted else ItemColour.Secondary,
+                        colour = if (pinned) ItemColour.Muted else ItemColour.Success,
                         icon = if (pinned) SidekitIcon.Close else SidekitIcon.Add,
                         onClick = { if (pinned) onUnpin() else onPin() }
                     )

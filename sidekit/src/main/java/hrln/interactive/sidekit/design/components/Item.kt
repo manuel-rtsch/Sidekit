@@ -25,12 +25,13 @@ import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
 /** Item "Colour Variant" from the Item component set (62:950). */
-enum class ItemColour { Primary, Secondary, Destructive, Muted }
+enum class ItemColour { Primary, Secondary, Success, Destructive, Muted }
 
 @Composable
 fun ItemColour.container(): Color = when (this) {
     ItemColour.Primary -> SidekitTheme.colors.surfaceA3
     ItemColour.Secondary -> SidekitTheme.colors.primaryA2
+    ItemColour.Success -> SidekitTheme.colors.successA1
     ItemColour.Destructive -> SidekitTheme.colors.dangerA2
     ItemColour.Muted -> SidekitTheme.colors.surfaceA2
 }
