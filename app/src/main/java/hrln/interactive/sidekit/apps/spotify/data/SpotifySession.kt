@@ -12,6 +12,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 
 /**
  * Process-wide Spotify identity. It owns the credential store and token refresh, not the UI; the
@@ -59,7 +60,7 @@ class SpotifySession(
 
     suspend fun play(uri: String, positionMs: Long = 0L) {
         ensurePlaybackConnected()
-        playback.start(uri, positionMs)
+        withContext(Dispatchers.Main.immediate) { playback.start(uri, positionMs) }
     }
 
     fun pause() = playback.pause()
