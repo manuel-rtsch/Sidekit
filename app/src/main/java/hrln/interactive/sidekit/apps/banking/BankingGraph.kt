@@ -25,6 +25,7 @@ import androidx.navigation.navArgument
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.navigation.SubApp
+import hrln.interactive.sidekit.ui.UndoWindowLifecycle
 
 private val ROOT = SubApp.Banking.route
 private val HOME = "$ROOT/home"
@@ -53,8 +54,8 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
                     options = listOfNotNull(
                         SideAction("up", "Up · read-only") { nav.navigateFrom(entry, "$ROOT/up") },
                         if (book.accounts.isNotEmpty()) SideAction("income", "Add income", SidekitIcon.Add) { nav.navigateFrom(entry, payRoute(true)) } else null,
-                        SideAction("lock", "Lock", SidekitIcon.Encrypted) { vm.lock() },
-                    ),
+                        SideAction("lock", "Lock", SidekitIcon.Encrypted) { vm.lock() }
+                    )
                 )
             }
         }
@@ -63,16 +64,27 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
                 BankingAccountsScreen(
                     book = book,
                     onBack = { nav.popFrom(entry) },
-                    onOpen = { vm.selectAccount(it.id); nav.popFrom(entry) },
+                    onOpen = {
+                        vm.selectAccount(it.id)
+                        nav.popFrom(entry)
+                    },
                     onNew = { nav.navigateFrom(entry, accountRoute(-1)) },
                     onEdit = { nav.navigateFrom(entry, accountRoute(it.id)) },
                     onDelete = { vm.deleteAccount(it.id) },
                     undo = state.undo,
-                    onUndo = vm::undo,
+                    onUndo = vm::undo
                 )
             }
         }
-        composable(ACCOUNT, arguments = listOf(navArgument(ARG_ID) { type = NavType.LongType; defaultValue = -1L })) { entry ->
+        composable(
+            ACCOUNT,
+            arguments = listOf(
+                navArgument(ARG_ID) {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { entry ->
             val id = entry.arguments?.getLong(ARG_ID) ?: -1L
             Unlocked(entry, nav) { vm, _, book ->
                 val existing = book.accounts.firstOrNull { it.id == id }
@@ -82,11 +94,19 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
                     onSave = { name, cents ->
                         if (existing != null) vm.editAccount(existing.id, name, cents) else vm.addAccount(name, cents)?.let(vm::selectAccount)
                         nav.popFrom(entry)
-                    },
+                    }
                 )
             }
         }
-        composable(PAY, arguments = listOf(navArgument(ARG_INCOME) { type = NavType.BoolType; defaultValue = false })) { entry ->
+        composable(
+            PAY,
+            arguments = listOf(
+                navArgument(ARG_INCOME) {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { entry ->
             val income = entry.arguments?.getBoolean(ARG_INCOME) ?: false
             Unlocked(entry, nav) { vm, _, book ->
                 BankingPayScreen(
@@ -96,7 +116,7 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
                     onRecord = { account, payee, cents, note ->
                         vm.record(account, payee, cents, note, income)
                         nav.popFrom(entry)
-                    },
+                    }
                 )
             }
         }
@@ -111,10 +131,11 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
 private fun Unlocked(
     entry: NavBackStackEntry,
     nav: NavHostController,
-    content: @Composable (BankingViewModel, BankingUiState, BankBook) -> Unit,
+    content: @Composable (BankingViewModel, BankingUiState, BankBook) -> Unit
 ) {
     val vm = entry.bankingViewModel(nav)
     val state by vm.state.collectAsStateWithLifecycle()
+    UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
     OnAppStop { vm.lock() }
     val leave = { if (nav.currentBackStackEntry?.id == entry.id) nav.popBackStack(ROOT, inclusive = true) }
     when (val load = state.load) {
@@ -140,8 +161,14 @@ private fun LockedRoute(vm: BankingViewModel, onBack: () -> Unit) {
         } else if (signal == null) {
             message = null
             signal = gate.authenticate(
-                onSuccess = { signal = null; vm.unlock() },
-                onFailure = { error -> signal = null; message = error },
+                onSuccess = {
+                    signal = null
+                    vm.unlock()
+                },
+                onFailure = { error ->
+                    signal = null
+                    message = error
+                }
             )
         }
     }

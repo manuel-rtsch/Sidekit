@@ -26,7 +26,7 @@ import hrln.interactive.sidekit.design.theme.SidekitColors
 
 /** Colour role of an action. */
 enum class ActionTone {
-    /** Blue: the screen's main way forward. */
+    /** The theme colour (the user's chosen case colour): the screen's main way forward. */
     Primary,
 
     /** Green: commit (save, send, done). */
@@ -116,6 +116,47 @@ class SideAction(
 
         /** Wide button that returns: left arrow then label. */
         fun back(key: String, label: String, onClick: () -> Unit) = SideAction(key, label, SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, onClick = onClick)
+
+        /**
+         * Commit: green, check at the end, rises from below. The screen names the act, the role
+         * owns the colour — saving looks the same in every sub-app.
+         */
+        fun save(key: String, label: String = "Save", onClick: () -> Unit) =
+            SideAction(key, label, SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onClick)
+
+        /** Commit that leaves the screen: green, arrow at the end, enters from the right. */
+        fun send(key: String, label: String = "Send", onClick: () -> Unit) =
+            SideAction(key, label, SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward, onClick = onClick)
+
+        /**
+         * Take it back: grey, no promise to advance. Cancel and Undo wear the same colour because
+         * they make the same promise — nothing happened. [icon] and [motion] default to the
+         * reversing pair (left arrow, enters from the left); a themed confirm passes
+         * `icon = null, motion = ActionMotion.Up` to stay grey while it dismisses in place.
+         */
+        fun cancel(
+            key: String = "back",
+            label: String = "Cancel",
+            icon: SidekitIcon? = SidekitIcon.ArrowLeftAlt,
+            motion: ActionMotion = ActionMotion.Back,
+            contentDescription: String? = null,
+            onClick: () -> Unit,
+        ) = SideAction(key, label, icon, tone = ActionTone.Muted, motion = motion, contentDescription = contentDescription, onClick = onClick)
+
+        /**
+         * Take a delete back: grey, rises in place, and describes what it restores so the button
+         * reads as "Undo delete Barclays" rather than a bare "Undo".
+         */
+        fun undo(
+            key: String = "undo",
+            label: String = "Undo",
+            contentDescription: String? = null,
+            onClick: () -> Unit,
+        ) = SideAction(key, label, SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = contentDescription, onClick = onClick)
+
+        /** Destroy: red, wherever it appears (bar, confirm, Options). [icon] stays optional. */
+        fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) =
+            SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)
 
         /** Square icon-only button. */
         fun square(

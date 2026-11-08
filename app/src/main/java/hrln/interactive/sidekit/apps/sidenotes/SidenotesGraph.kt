@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import hrln.interactive.sidekit.navigation.SubApp
+import hrln.interactive.sidekit.ui.UndoWindowLifecycle
 
 private val ROOT = SubApp.Sidenotes.route
 private val LIST = "$ROOT/list"
@@ -32,17 +33,23 @@ fun NavGraphBuilder.sidenotesGraph(nav: NavHostController) {
         composable(LIST) { entry ->
             val vm = entry.sidenotesViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
+            UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             SidenotesListScreen(
                 state = state,
                 onOpenNote = { nav.navigateFrom(entry, editRoute(it.id)) },
                 onNewNote = { nav.navigateFrom(entry, editRoute(NEW_NOTE_ID)) },
                 onDelete = { vm.delete(it.id) },
-                onUndoDelete = vm::undoDelete,
+                onUndoDelete = vm::undoDelete
             )
         }
         composable(
             EDIT,
-            arguments = listOf(navArgument(ARG_ID) { type = NavType.LongType; defaultValue = NEW_NOTE_ID }),
+            arguments = listOf(
+                navArgument(ARG_ID) {
+                    type = NavType.LongType
+                    defaultValue = NEW_NOTE_ID
+                }
+            )
         ) { entry ->
             val vm = entry.sidenotesViewModel(nav)
             val argId = entry.arguments?.getLong(ARG_ID) ?: NEW_NOTE_ID
@@ -54,8 +61,14 @@ fun NavGraphBuilder.sidenotesGraph(nav: NavHostController) {
                 isNew = argId == NEW_NOTE_ID,
                 canDelete = noteId != NEW_NOTE_ID,
                 onSave = { noteId = vm.save(noteId, it) },
-                onClose = { vm.close(noteId, it); nav.popFrom(entry) },
-                onDelete = { vm.delete(noteId); nav.popFrom(entry) },
+                onClose = {
+                    vm.close(noteId, it)
+                    nav.popFrom(entry)
+                },
+                onDelete = {
+                    vm.delete(noteId)
+                    nav.popFrom(entry)
+                }
             )
         }
     }

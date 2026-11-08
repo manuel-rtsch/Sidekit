@@ -98,11 +98,11 @@ private fun NeighbourhoodMap(modifier: Modifier = Modifier) {
                 lineTo(370 * u, 140 * u)
                 lineTo(370 * u, 56 * u)
             }
-            drawPath(route, colors.primaryA1, style = Stroke(width = 12 * u, cap = StrokeCap.Round, join = StrokeJoin.Round))
+            drawPath(route, colors.emphasisA1, style = Stroke(width = 12 * u, cap = StrokeCap.Round, join = StrokeJoin.Round))
             // You (start) and destination pins.
             drawCircle(colors.light, radius = 10 * u, center = Offset(230 * u, 215 * u))
             drawCircle(colors.light, radius = 15 * u, center = Offset(370 * u, 56 * u))
-            drawCircle(colors.primaryA1, radius = 11 * u, center = Offset(370 * u, 56 * u))
+            drawCircle(colors.emphasisA1, radius = 11 * u, center = Offset(370 * u, 56 * u))
         }
         SidekitText("Central", Modifier.offset(30.dp, 25.dp), style = SidekitTheme.typography.small)
         SidekitText("Belmore Park", Modifier.offset(28.dp, 85.dp), style = SidekitTheme.typography.tiny, color = colors.surfaceA6)

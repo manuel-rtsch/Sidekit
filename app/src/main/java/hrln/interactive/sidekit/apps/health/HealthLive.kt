@@ -55,7 +55,7 @@ fun LiveHealth(page: String, onHistory: () -> Unit, onGoals: () -> Unit, onBack:
     var goal by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(ledger?.goal) { if (goal.isEmpty()) goal = ledger?.goal?.toString().orEmpty() }
     val actions = when (page) {
-        "goals" -> listOf(SideAction.back("back", "Cancel", onBack), SideAction("save", "Save") { if (ledger != null && vm.saveGoal(goal)) onBack() else message = "Enter a goal from 1 to 100000" })
+        "goals" -> listOf(SideAction.cancel("back", onClick = onBack), SideAction.save("save") { if (ledger != null && vm.saveGoal(goal)) onBack() else message = "Enter a goal from 1 to 100000" })
         "history" -> listOf(SideAction.back("back", "Back", onBack))
         else -> listOfNotNull(SideAction.back("history", "History", onHistory), SideAction.forward("goals", "Goals", onGoals), if (!allowed && available) SideAction("allow", "Allow") { launcher.launch(Manifest.permission.ACTIVITY_RECOGNITION) } else null)
     }

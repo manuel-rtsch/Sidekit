@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitCard
@@ -68,15 +69,10 @@ fun SidenotesListScreen(
     onDelete: (Note) -> Unit,
     onUndoDelete: () -> Unit,
 ) {
-    val undoable = state.recentlyDeleted != null
-    val actions = if (undoable) {
-        listOf(
-            SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Undo delete", onClick = onUndoDelete),
-            SideAction("new", "New", SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = "New Sidenote", onClick = onNewNote),
-        )
-    } else {
-        listOf(SideAction.forward("new", "New Sidenote", onNewNote))
-    }
+    val actions = undoBar(
+        continueWith = SideAction.forward("new", "New Sidenote", onNewNote),
+        undo = if (state.recentlyDeleted != null) SideAction.undo(contentDescription = "Undo delete note", onClick = onUndoDelete) else null,
+    )
 
     SidekitScaffold(title = "My Sidenotes", actions = actions) { padding ->
         if (state.loaded && state.notes.isEmpty()) {
@@ -189,7 +185,7 @@ fun NoteEditorScreen(
             SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save note", onClick = save),
         )
         EditorMode.ConfirmDelete -> listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep note") { confirmingDelete = false },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep note") { confirmingDelete = false },
             SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete", onClick = onDelete),
         )
     }

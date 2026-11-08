@@ -376,7 +376,7 @@ internal fun SideportHubContent(
     BackHandler(enabled = state.confirming != null, onBack = onCancel)
     val actions = state.confirming?.let { removal ->
         listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep ${app.label}", onClick = onCancel),
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep ${app.label}", onClick = onCancel),
             SideAction("forward", removal.verb, SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm ${removal.verb.lowercase()} ${app.label}") {
                 when (removal) {
                     HubRemoval.Remove -> onRemove()
@@ -513,7 +513,7 @@ internal fun SideportChatScreen(key: String, onBack: () -> Unit) {
             message?.let { text -> item(key = "message") { SidekitCard(Modifier.fillMaxWidth(), onClick = { message = null }) { SidekitText(text, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             val messages = chat?.messages.orEmpty()
             itemsIndexed(messages) { _, m ->
-                SidekitCard(Modifier.fillMaxWidth(), color = if (m.mine) SidekitTheme.colors.primaryA1 else SidekitTheme.colors.surfaceA3) {
+                SidekitCard(Modifier.fillMaxWidth(), color = if (m.mine) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         m.sender?.let { SidekitText(it, style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6) }
                         SidekitText(m.text, style = SidekitTheme.typography.bodySmall, maxLines = Int.MAX_VALUE)

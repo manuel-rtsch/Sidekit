@@ -4,19 +4,24 @@ import android.content.Context
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.core.util.AtomicFile
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import org.json.JSONArray
-import org.json.JSONObject
+import hrln.interactive.sidekit.ui.UndoWindow
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.*
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import org.json.JSONArray
+import org.json.JSONObject
 
 data class ClockAlarm(
-    val id: String = UUID.randomUUID().toString(), val hour: Int = 7, val minute: Int = 0,
-    val days: Set<Int> = emptySet(), val enabled: Boolean = true, val nextAt: Long = 0,
+    val id: String = UUID.randomUUID().toString(),
+    val hour: Int = 7,
+    val minute: Int = 0,
+    val days: Set<Int> = emptySet(),
+    val enabled: Boolean = true,
+    val nextAt: Long = 0
 ) {
     val time: String get() = "%02d:%02d".format(hour, minute)
     val repeat: String get() = if (days.isEmpty()) "Once" else days.sorted().joinToString(" ") { DayOfWeek.of(it).name.take(3) }
@@ -39,8 +44,13 @@ data class Ringing(val id: String, val label: String, val at: Long)
 /** A removed alarm that can still be restored. */
 data class PendingDelete(val alarm: ClockAlarm, val token: Long)
 
-data class ClockData(val alarms: List<ClockAlarm> = emptyList(), val timer: ClockTimer = ClockTimer(),
-    val stopwatch: Stopwatch = Stopwatch(), val boot: Int = 0, val ringing: Ringing? = null)
+data class ClockData(
+    val alarms: List<ClockAlarm> = emptyList(),
+    val timer: ClockTimer = ClockTimer(),
+    val stopwatch: Stopwatch = Stopwatch(),
+    val boot: Int = 0,
+    val ringing: Ringing? = null
+)
 
 fun nextAlarm(hour: Int, minute: Int, days: Set<Int>, now: Long, zone: ZoneId = ZoneId.systemDefault()): Long {
     val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
@@ -48,11 +58,18 @@ fun nextAlarm(hour: Int, minute: Int, days: Set<Int>, now: Long, zone: ZoneId = 
         .first { it.toInstant().toEpochMilli() > now && (days.isEmpty() || it.dayOfWeek.value in days) }.toInstant().toEpochMilli()
 }
 
-interface ClockStore { fun read(): ClockData; fun write(data: ClockData) }
+interface ClockStore {
+    fun read(): ClockData
+    fun write(data: ClockData)
+}
 class FileClockStore(file: File) : ClockStore {
     private val file = AtomicFile(file)
     override fun read(): ClockData {
-        val input = try { file.openRead() } catch (_: FileNotFoundException) { return ClockData() }
+        val input = try {
+            file.openRead()
+        } catch (_: FileNotFoundException) {
+            return ClockData()
+        }
         val json = input.bufferedReader().use { JSONObject(it.readText()) }
         require(json.getInt("version") == 1)
         val alarms = json.getJSONArray("alarms")
@@ -60,37 +77,61 @@ class FileClockStore(file: File) : ClockStore {
         val laps = sw.getJSONArray("laps")
         val ring = json.optJSONObject("ringing")
         return ClockData(
-            alarms = List(alarms.length()) { i -> alarms.getJSONObject(i).let { a ->
-                val days = a.getJSONArray("days")
-                ClockAlarm(a.getString("id"), a.getInt("hour"), a.getInt("minute"),
-                    List(days.length()) { days.getInt(it) }.toSet(), a.getBoolean("enabled"), a.getLong("next"))
-            } },
+            alarms = List(alarms.length()) { i ->
+                alarms.getJSONObject(i).let { a ->
+                    val days = a.getJSONArray("days")
+                    ClockAlarm(
+                        a.getString("id"),
+                        a.getInt("hour"),
+                        a.getInt("minute"),
+                        List(days.length()) { days.getInt(it) }.toSet(),
+                        a.getBoolean("enabled"),
+                        a.getLong("next")
+                    )
+                }
+            },
             timer = ClockTimer(json.optLong("timerEnd", -1).takeIf { it >= 0 }, json.getLong("timerRemaining"), json.optLong("timerElapsedEnd", -1).takeIf { it >= 0 }),
             stopwatch = Stopwatch(sw.optLong("start", -1).takeIf { it >= 0 }, sw.getLong("elapsed"), List(laps.length()) { laps.getLong(it) }),
             boot = json.getInt("boot"),
-            ringing = ring?.let { Ringing(it.getString("id"), it.getString("label"), it.getLong("at")) },
+            ringing = ring?.let { Ringing(it.getString("id"), it.getString("label"), it.getLong("at")) }
         )
     }
     override fun write(data: ClockData) {
         val json = JSONObject().put("version", 1).put("boot", data.boot)
             .put("timerEnd", data.timer.endAt ?: -1).put("timerRemaining", data.timer.remaining).put("timerElapsedEnd", data.timer.elapsedEndAt ?: -1)
             .put("stopwatch", JSONObject().put("start", data.stopwatch.startedAt ?: -1).put("elapsed", data.stopwatch.elapsed).put("laps", JSONArray(data.stopwatch.laps)))
-            .put("alarms", JSONArray(data.alarms.map { JSONObject().put("id", it.id).put("hour", it.hour).put("minute", it.minute)
-                .put("days", JSONArray(it.days.toList())).put("enabled", it.enabled).put("next", it.nextAt) }))
+            .put(
+                "alarms",
+                JSONArray(
+                    data.alarms.map {
+                        JSONObject().put("id", it.id).put("hour", it.hour).put("minute", it.minute)
+                            .put("days", JSONArray(it.days.toList())).put("enabled", it.enabled).put("next", it.nextAt)
+                    }
+                )
+            )
         data.ringing?.let { json.put("ringing", JSONObject().put("id", it.id).put("label", it.label).put("at", it.at)) }
         val out = file.startWrite()
-        try { out.write(json.toString().toByteArray()); file.finishWrite(out) }
-        catch (e: Exception) { file.failWrite(out); throw e }
+        try {
+            out.write(json.toString().toByteArray())
+            file.finishWrite(out)
+        } catch (e: Exception) {
+            file.failWrite(out)
+            throw e
+        }
     }
 }
 
-fun interface ClockScheduling { fun reconcile(before: ClockData, after: ClockData) }
+fun interface ClockScheduling {
+    fun reconcile(before: ClockData, after: ClockData)
+}
 class ClockRepository(
-    private val store: ClockStore, private val scope: CoroutineScope, private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val store: ClockStore,
+    private val scope: CoroutineScope,
+    private val io: CoroutineDispatcher = Dispatchers.IO,
     private val scheduling: ClockScheduling = ClockScheduling { _, _ -> },
     private val now: () -> Long = System::currentTimeMillis,
     private val elapsed: () -> Long = SystemClock::elapsedRealtime,
-    private val boot: Int = 0,
+    private val boot: Int = 0
 ) {
     private val mutable = MutableStateFlow<ClockData?>(null)
     val data = mutable.asStateFlow()
@@ -100,12 +141,20 @@ class ClockRepository(
     /** The last removed alarm while Undo is available, or null. */
     val deleted: StateFlow<PendingDelete?> = _deleted.asStateFlow()
 
-    private var undoJob: Job? = null
+    /** The five-second offer; pauses off-screen, commits when Clock is left. */
+    val undoWindow = UndoWindow(scope, UNDO_WINDOW_MS) {
+        synchronized(this) { _deleted.value = null }
+    }
     private val deleteTokens = AtomicLong(0)
     private val persisted = MutableStateFlow<ClockData?>(null)
     init {
         scope.launch(io) {
-            val loaded = try { store.read() } catch (_: Exception) { error.value = "Could not load Clock data."; return@launch }
+            val loaded = try {
+                store.read()
+            } catch (_: Exception) {
+                error.value = "Could not load Clock data."
+                return@launch
+            }
             mutable.value = if (loaded.boot != boot) loaded.copy(boot = boot, stopwatch = loaded.stopwatch.copy(startedAt = null), timer = loaded.timer.copy(elapsedEndAt = loaded.timer.endAt?.let { elapsed() + (it - now()).coerceAtLeast(0) })) else loaded
             var previous = ClockData()
             mutable.filterNotNull().conflate().collect { next ->
@@ -115,7 +164,9 @@ class ClockRepository(
                     previous = next
                     persisted.value = next
                     error.value = null
-                } catch (_: Exception) { error.value = "Clock could not save or schedule. Please retry." }
+                } catch (_: Exception) {
+                    error.value = "Clock could not save or schedule. Please retry."
+                }
             }
         }
     }
@@ -124,32 +175,38 @@ class ClockRepository(
         val updated = alarm.copy(nextAt = nextAlarm(alarm.hour, alarm.minute, alarm.days, now()))
         mutate { it.copy(alarms = (it.alarms.filterNot { a -> a.id == alarm.id } + updated).sortedBy { a -> a.hour * 60 + a.minute }) }
     }
-    fun toggle(id: String) { data.value?.alarms?.find { it.id == id }?.let { save(it.copy(enabled = !it.enabled)) } }
+    fun toggle(id: String) {
+        data.value?.alarms?.find { it.id == id }?.let { save(it.copy(enabled = !it.enabled)) }
+    }
     fun delete(id: String) = mutate { it.copy(alarms = it.alarms.filterNot { a -> a.id == id }, ringing = it.ringing?.takeUnless { r -> r.id == id }) }
 
     /** Removes and unschedules an alarm immediately, keeping it available for Undo. */
     @Synchronized fun deleteWithUndo(id: String) {
         val alarm = data.value?.alarms?.find { it.id == id } ?: return
-        undoJob?.cancel()
         val pending = PendingDelete(alarm, deleteTokens.incrementAndGet())
         delete(id)
         _deleted.value = pending
-        undoJob = scope.launch(io) {
-            delay(UNDO_WINDOW_MS)
-            synchronized(this@ClockRepository) {
-                if (_deleted.value?.token == pending.token) _deleted.value = null
-            }
-        }
+        undoWindow.start()
     }
 
     /** Restores the last removed alarm with its next future occurrence. */
     @Synchronized fun undoDelete() {
         val pending = _deleted.value ?: return
-        undoJob?.cancel()
+        undoWindow.cancel()
         _deleted.value = null
         save(pending.alarm)
     }
-    fun startTimer(duration: Long) { require(duration in 1000..604800000); mutate { it.copy(timer = ClockTimer(endAt = now() + duration, elapsedEndAt = elapsed() + duration)) } }
+
+    /** Leaving Clock finalises the deletion instead of offering Undo when you come back. */
+    fun commitUndo() {
+        undoWindow.cancel()
+        synchronized(this) { _deleted.value = null }
+    }
+
+    fun startTimer(duration: Long) {
+        require(duration in 1000..604800000)
+        mutate { it.copy(timer = ClockTimer(endAt = now() + duration, elapsedEndAt = elapsed() + duration)) }
+    }
     fun pauseTimer() = mutate { it.copy(timer = ClockTimer(remaining = it.timer.remainingAt(now(), elapsed()))) }
     fun cancelTimer() = mutate { it.copy(timer = ClockTimer(), ringing = it.ringing?.takeUnless { r -> r.id == TIMER_ID }) }
     fun toggleStopwatch() = mutate {
@@ -158,6 +215,7 @@ class ClockRepository(
     }
     fun lap() = mutate { if (it.stopwatch.startedAt == null) it else it.copy(stopwatch = it.stopwatch.copy(laps = (listOf(it.stopwatch.elapsedAt(elapsed())) + it.stopwatch.laps).take(100))) }
     fun resetStopwatch() = mutate { it.copy(stopwatch = Stopwatch()) }
+
     @Synchronized fun fire(id: String, trigger: Long): Ringing? {
         val current = data.value ?: return null
         val label: String
@@ -178,12 +236,19 @@ class ClockRepository(
     fun dismiss() = mutate { it.copy(ringing = null) }
     fun snooze() = mutate { current ->
         val ring = current.ringing ?: return@mutate current
-        if (ring.id == TIMER_ID) current.copy(ringing = null, timer = ClockTimer(endAt = now() + 300000, elapsedEndAt = elapsed() + 300000))
-        else current.copy(ringing = null, alarms = current.alarms.map { if (it.id == ring.id) it.copy(enabled = true, nextAt = now() + 300000) else it })
+        if (ring.id == TIMER_ID) {
+            current.copy(ringing = null, timer = ClockTimer(endAt = now() + 300000, elapsedEndAt = elapsed() + 300000))
+        } else {
+            current.copy(ringing = null, alarms = current.alarms.map { if (it.id == ring.id) it.copy(enabled = true, nextAt = now() + 300000) else it })
+        }
     }
     fun timeChanged() = mutate { it.copy(alarms = it.alarms.map { a -> if (!a.enabled) a else a.copy(nextAt = nextAlarm(a.hour, a.minute, a.days, now())) }) }
-    suspend fun awaitSaved() { persisted.first { it != null && it == data.value } }
-    private fun mutate(change: (ClockData) -> ClockData) { mutable.update { it?.let(change) } }
+    suspend fun awaitSaved() {
+        persisted.first { it != null && it == data.value }
+    }
+    private fun mutate(change: (ClockData) -> ClockData) {
+        mutable.update { it?.let(change) }
+    }
     companion object {
         const val TIMER_ID = "timer"
 
@@ -194,8 +259,11 @@ class ClockRepository(
 
 object Clock {
     private var instance: ClockRepository? = null
+
     @Synchronized fun repository(context: Context) = instance ?: ClockRepository(
-        FileClockStore(File(context.filesDir, "clock.json")), CoroutineScope(SupervisorJob() + Dispatchers.IO),
-        scheduling = ClockAlarms(context.applicationContext), boot = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0),
+        FileClockStore(File(context.filesDir, "clock.json")),
+        CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        scheduling = ClockAlarms(context.applicationContext),
+        boot = Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
     ).also { instance = it }
 }

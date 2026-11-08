@@ -81,7 +81,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
         actions = when {
             busy -> listOf(SideAction("main", "Saving…") {})
             choosingCalendar -> listOf(SideAction("main", "Back") { choosingCalendar = false })
-            deleting -> listOf(SideAction("cancel", "Cancel") { deleting = false }, SideAction("main", if (original?.rrule.isNullOrBlank()) "Delete" else "Delete series") {
+            deleting -> listOf(SideAction.cancel("cancel") { deleting = false }, SideAction.delete("main", if (original?.rrule.isNullOrBlank()) "Delete" else "Delete series") {
                 if (id != null) { busy = true; scope.launch {
                     try { repo.delete(id); onClose() }
                     catch (e: CancellationException) { throw e }
@@ -89,8 +89,8 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                     finally { busy = false }
                 } }
             })
-            else -> listOf(SideAction("cancel", "Cancel", onClick = onClose), SideAction("main", "Save", onClick = ::save))
-        }, options = if (id == null || busy || choosingCalendar) emptyList() else listOf(SideAction("delete", "Delete") { deleting = true })) { padding ->
+            else -> listOf(SideAction.cancel("cancel", onClick = onClose), SideAction.save("main", onClick = ::save))
+        }, options = if (id == null || busy || choosingCalendar) emptyList() else listOf(SideAction.delete("delete") { deleting = true })) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
             if (choosingCalendar) calendars.forEachIndexed { index, calendar -> item { SidekitItem(calendar.name, Modifier.listFade(list, index), onClick = { calendarId = calendar.id; choosingCalendar = false }) } }

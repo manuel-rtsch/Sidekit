@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.apps.phonebook.ContactMatch
 import hrln.interactive.sidekit.apps.phonebook.PhoneFormat
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.ItemColour
@@ -192,12 +193,14 @@ fun ConversationScreen(
         }
         // As in Mail and Sideticks, Undo takes the primary action's place while a delete can be undone.
         // A draft already open keeps its Send action so typing isn't stranded.
-        when {
-            draft != null -> add(SideAction("compose", "Send", SidekitIcon.ArrowUpward, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Send message", onClick = onSend))
-            state.canUndo -> add(SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, onClick = onUndoDelete))
-            else -> add(SideAction("compose", "Text", SidekitIcon.ArrowUpward, iconAtEnd = true, motion = ActionMotion.Up, onClick = onStartTyping))
-        }
-        if (draft != null && state.canUndo) add(SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, onClick = onUndoDelete))
+        addAll(
+            undoBar(
+                continueWith =
+                if (draft != null) SideAction("compose", "Send", SidekitIcon.ArrowUpward, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Send message", onClick = onSend)
+                else SideAction("compose", "Text", SidekitIcon.ArrowUpward, iconAtEnd = true, motion = ActionMotion.Up, onClick = onStartTyping),
+                undo = if (draft == null && state.canUndo) SideAction.undo(contentDescription = "Undo delete message", onClick = onUndoDelete) else null,
+            ),
+        )
     }
     val options = listOfNotNull(
         onAttach?.let { SideAction("attachment", "Attach MMS", onClick = it) },

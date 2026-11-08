@@ -360,7 +360,7 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
                         )
                         node.label?.let { SidekitText(it, style = SidekitTheme.typography.small, maxLines = 3) }
                         flags(node).takeIf { it.isNotEmpty() }?.let {
-                            SidekitText(it, style = SidekitTheme.typography.tiny, color = SidekitTheme.colors.primaryA3)
+                            SidekitText(it, style = SidekitTheme.typography.tiny, color = SidekitTheme.colors.emphasisA3)
                         }
                     }
                 }
@@ -392,7 +392,7 @@ fun OriginalPill(label: String, onClick: () -> Unit) {
     Row(
         Modifier
             .clip(RoundedCornerShape(50))
-            .background(SidekitTheme.colors.primaryA1)
+            .background(SidekitTheme.colors.emphasisA1)
             .clickable(onClickLabel = "Show $label in Sidekit", onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

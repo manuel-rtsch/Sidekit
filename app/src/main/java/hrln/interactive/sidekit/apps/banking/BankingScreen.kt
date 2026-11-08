@@ -23,6 +23,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.ItemColour
@@ -70,15 +71,16 @@ const val TRACKER_NOTICE =
 
 private const val TRACKER_CAPTION = "Tracked here · not bank-linked"
 
-/** Undo split shared by every Banking list: "Undo | [main action]". */
-private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> {
-    if (undo == null) return main
-    val keep = main.last()
-    return listOf(
-        SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = undo.label, onClick = onUndo),
-        SideAction(keep.key, keep.label, keep.icon, keep.iconAtEnd, keep.tone, motion = keep.motion, contentDescription = keep.contentDescription, onClick = keep.onClick),
+/**
+ * Undo split shared by every Banking list: the main action holds the left slot and the right slot
+ * offers "Undo delete Barclays" until the window closes. Nothing else is taken away.
+ */
+private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> =
+    if (undo == null) main
+    else undoBar(
+        continueWith = main.last(),
+        undo = SideAction.undo(contentDescription = undo.label, onClick = onUndo),
     )
-}
 
 /**
  * "Banking / Home" (96:959): the selected account's balance, then its transactions (swipe left
@@ -275,11 +277,11 @@ fun BankingPayScreen(
     BackHandler(onBack = onCancel)
     val actions = if (valid) {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, motion = ActionMotion.Back),
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
             SideAction("record", "Record", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = if (incoming) "Record income" else "Record payment", onClick = record),
         )
     } else {
-        listOf(SideAction.back("back", "Cancel", onCancel))
+        listOf(SideAction.cancel("back", onClick = onCancel))
     }
     SidekitScaffold(title = if (incoming) "Add income" else "Pay", actions = actions) { padding ->
         val listState = rememberLazyListState()
@@ -338,11 +340,11 @@ fun BankingAccountEditor(
     BackHandler(onBack = onCancel)
     val actions = if (valid) {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, motion = ActionMotion.Back),
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
             SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save account", onClick = save),
         )
     } else {
-        listOf(SideAction.back("back", "Cancel", onCancel))
+        listOf(SideAction.cancel("back", onClick = onCancel))
     }
     SidekitScaffold(title = if (existing == null) "New account" else "Edit account", actions = actions) { padding ->
         val listState = rememberLazyListState()
@@ -410,7 +412,7 @@ fun BankingUnreadableScreen(onBack: () -> Unit, onErase: () -> Unit) {
     BackHandler { if (confirming) confirming = false else onBack() }
     val actions = if (confirming) {
         listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep the file") { confirming = false },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep the file") { confirming = false },
             SideAction("erase", "Erase", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm erase", onClick = onErase),
         )
     } else {

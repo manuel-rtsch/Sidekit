@@ -138,7 +138,7 @@ fun SidekitTextField(
     val style = remember(textStyle, colors.light) { textStyle.copy(color = colors.light) }
     val scroll = rememberScrollState()
     val layout = remember { mutableStateOf<(() -> TextLayoutResult?)?>(null) }
-    val highlightColor = colors.primaryA1.copy(alpha = 0.55f)
+    val highlightColor = colors.emphasisA1.copy(alpha = 0.55f)
     // Read in the draw phase only: composing a word redraws the field, it doesn't recompose it.
     val highlight: () -> TextRange? = { if (focused && keypad?.session === session) keypad?.engine?.highlight else null }
     BasicTextField(

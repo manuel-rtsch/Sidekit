@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -81,11 +82,11 @@ fun CalculatorScreen(display: String, onKey: (CalcKey) -> Unit, history: List<Ca
             } ?: false
         }.focusable(),
         actions = if (page == "keys") listOf(SideAction("clear", "Clear") { onKey(CalcKey.Clear) }, SideAction("main", "=") { onKey(CalcKey.Equals) })
-        else if (confirmClear) listOf(SideAction("back", "Cancel") { confirmClear = false }, SideAction("main", "Clear") { onClearHistory(); confirmClear = false })
+        else if (confirmClear) listOf(SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmClear = false }, SideAction.delete("main", "Clear history") { onClearHistory(); confirmClear = false })
         else listOf(SideAction("main", "Back") { page = "keys" }),
         options = when (page) {
             "keys" -> listOf(SideAction("history", "History") { page = "history" }, SideAction("help", "Keypad") { page = "help" })
-            "history" -> listOf(SideAction("clear", "Clear history") { confirmClear = true })
+            "history" -> listOf(SideAction.delete("clear", "Clear history") { confirmClear = true })
             else -> emptyList()
         },
     ) { padding ->
@@ -116,7 +117,7 @@ private fun CalcKey.color(): Color {
     return when (this) {
         CalcKey.Backspace -> colors.dangerA2 // Item "Destructive" colour
         CalcKey.Clear, CalcKey.Percent, is CalcKey.Op -> colors.successA1
-        CalcKey.Equals -> colors.primaryA2
+        CalcKey.Equals -> colors.emphasisA2
         is CalcKey.Digit, CalcKey.Sign, CalcKey.Decimal -> colors.surfaceA3
     }
 }

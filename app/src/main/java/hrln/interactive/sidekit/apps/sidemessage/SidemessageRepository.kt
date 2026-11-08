@@ -6,12 +6,15 @@ import androidx.compose.runtime.Immutable
 import androidx.core.util.AtomicFile
 import hrln.interactive.sidekit.apps.phonebook.ContactNames
 import hrln.interactive.sidekit.apps.phonebook.Phonebook
+import hrln.interactive.sidekit.ui.UndoWindow
+import java.io.File
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.abs
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,17 +28,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.IOException
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.math.abs
 
 /** A message handed to the radio that the provider doesn't show yet (Sidekit is not the default SMS app). */
 @Immutable
 data class Outgoing(val token: Long, val address: String, val text: String, val date: Long, val delivery: Delivery)
 
 /** A message waiting out its undo window before its provider row is really removed. */
-data class PendingDelete(val message: Message, val token: Long)
+data class PendingDelete(val message: Message, val token: Long, val threadId: Long)
 
 /** Pinned addresses, one per line. Called off the main thread only. */
 interface PinStore {
@@ -80,7 +79,7 @@ class SidemessageRepository(
     private val contactChanges: () -> Flow<Unit>,
     val scope: CoroutineScope,
     val io: CoroutineDispatcher = Dispatchers.IO,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     private val _pins = MutableStateFlow<List<String>?>(null)
 
@@ -101,8 +100,16 @@ class SidemessageRepository(
     val deleted: StateFlow<PendingDelete?> = _deleted.asStateFlow()
 
     private val deleteLock = Any()
-    private var undoJob: Job? = null
     private val deleteTokens = AtomicLong(0)
+
+    /**
+     * The five-second offer. Paused while the conversation is off-screen; leaving the conversation
+     * commits, because the offer belongs to the thread the delete happened in.
+     */
+    val undoWindow = UndoWindow(scope, UNDO_WINDOW_MS) {
+        val pending = synchronized(deleteLock) { _deleted.value?.also { _deleted.value = null } } ?: return@UndoWindow
+        finishDelete(pending.message)
+    }
 
     private val tokens = AtomicLong(clock())
 
@@ -143,12 +150,14 @@ class SidemessageRepository(
     fun unpin(address: String) = _pins.update { pins -> pins.orEmpty().filterNot { Addresses.key(it) == Addresses.key(address) } }
 
     /** The inbox, reloaded whenever messages or contacts change, while collected. */
-    fun threads(): Flow<List<ThreadSummary>> =
-        merge(source.changes(), contactChanges().onEach { names.clear() })
-            .onStart { names.clear(); emit(Unit) }
-            .conflate()
-            .map { source.threads().map(::summarize) }
-            .flowOn(io)
+    fun threads(): Flow<List<ThreadSummary>> = merge(source.changes(), contactChanges().onEach { names.clear() })
+        .onStart {
+            names.clear()
+            emit(Unit)
+        }
+        .conflate()
+        .map { source.threads().map(::summarize) }
+        .flowOn(io)
 
     fun summarize(raw: RawThread) = ThreadSummary(raw.id, raw.addresses, displayName(raw.addresses), raw.snippet, raw.date, raw.unread)
 
@@ -178,33 +187,34 @@ class SidemessageRepository(
     }
 
     /** Hides a stored message until Undo wins or its window expires. */
-    fun delete(message: Message) {
+    fun delete(message: Message, threadId: Long) {
         if (!transport.isDefault || !message.isStored) return
         synchronized(deleteLock) {
             val previous = _deleted.value
-            undoJob?.cancel()
             val token = deleteTokens.incrementAndGet()
             _pendingKeys.update { it + message.key }
-            _deleted.value = PendingDelete(message, token)
+            _deleted.value = PendingDelete(message, token, threadId)
             if (previous != null) scope.launch(io) { finishDelete(previous.message) }
-            undoJob = scope.launch(io) {
-                delay(UNDO_WINDOW_MS)
-                // Claim the deletion atomically with respect to Undo and a replacement deletion.
-                val pending = synchronized(deleteLock) {
-                    _deleted.value?.takeIf { it.token == token }?.also { _deleted.value = null }
-                } ?: return@launch
-                finishDelete(pending.message)
-            }
+            undoWindow.start()
         }
     }
 
     fun undoDelete() {
         synchronized(deleteLock) {
             val pending = _deleted.value ?: return
-            undoJob?.cancel()
+            undoWindow.cancel()
             _deleted.value = null
             _pendingKeys.update { it - pending.message.key }
         }
+    }
+
+    /** Finalises the offer if it belongs to [threadId]; called when that conversation is left. */
+    fun commitDelete(threadId: Long) {
+        val pending = synchronized(deleteLock) {
+            _deleted.value?.takeIf { it.threadId == threadId }?.also { _deleted.value = null }
+        } ?: return
+        undoWindow.cancel()
+        scope.launch(io) { finishDelete(pending.message) }
     }
 
     private fun finishDelete(message: Message) {
@@ -278,7 +288,7 @@ object Sidemessage {
                 pinStore = FilePinStore(File(app.filesDir, "sidemessage_pins.txt")),
                 names = Phonebook.names(app),
                 contactChanges = { Phonebook.source(app).contactChanges() },
-                scope = CoroutineScope(SupervisorJob()),
+                scope = CoroutineScope(SupervisorJob())
             )
         }.also { repository = it }
     }

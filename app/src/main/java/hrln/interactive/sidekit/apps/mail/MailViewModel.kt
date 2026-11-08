@@ -2,6 +2,7 @@ package hrln.interactive.sidekit.apps.mail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.ui.UndoWindow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class MailViewModel(
     private val repository: MailRepository,
-    val account: MailAccount,
+    val account: MailAccount
 ) : ViewModel() {
     val storageError = repository.error
     private var sending = false
@@ -21,32 +22,52 @@ class MailViewModel(
     private val _undo = MutableStateFlow<Triple<MailMessage, Int, Long>?>(null)
     val undo: StateFlow<Triple<MailMessage, Int, Long>?> = _undo.asStateFlow()
     private var noticeJob: Job? = null
-    private var undoJob: Job? = null
+
+    /** The five-second offer; pauses with the screen instead of burning while Mail is backgrounded. */
+    val undoWindow = UndoWindow(viewModelScope) { _undo.value = null }
 
     fun saveDraft(id: Long?, to: String, subject: String, body: String) {
-        if (messages.value == null) { say("Mail is not ready. Your draft has not been saved"); return }
+        if (messages.value == null) {
+            say("Mail is not ready. Your draft has not been saved")
+            return
+        }
         repository.save(id, to, subject, body, MailFolder.Draft)
         say("Draft saved on this phone")
     }
 
     fun send(id: Long?, to: String, subject: String, body: String) {
-        if (sending || messages.value == null) { say("Mail is busy. Try again shortly"); return }
-        if (to.isBlank()) { say("Add a recipient first"); return }
+        if (sending || messages.value == null) {
+            say("Mail is busy. Try again shortly")
+            return
+        }
+        if (to.isBlank()) {
+            say("Add a recipient first")
+            return
+        }
         sending = true
         val message = repository.save(id, to, subject, body, MailFolder.Outbox)
         viewModelScope.launch {
-          try {
-            when (account.send(message)) {
-                MailSendResult.Sent -> { repository.folder(message.id, MailFolder.Sent); say("Accepted by your SMTP server") }
-                MailSendResult.HandedOff -> {
-                    repository.folder(message.id, MailFolder.HandedOff)
-                    say("Mail app opened; sending isn't confirmed")
+            try {
+                when (account.send(message)) {
+                    MailSendResult.Sent -> {
+                        repository.folder(message.id, MailFolder.Sent)
+                        say("Accepted by your SMTP server")
+                    }
+
+                    MailSendResult.HandedOff -> {
+                        repository.folder(message.id, MailFolder.HandedOff)
+                        say("Mail app opened; sending isn't confirmed")
+                    }
+
+                    MailSendResult.Unavailable -> say("No mail app. Message kept in Outbox")
                 }
-                MailSendResult.Unavailable -> say("No mail app. Message kept in Outbox")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                say("Send failed or confirmation lost. Check Sent before retrying; message kept in Outbox")
+            } finally {
+                sending = false
             }
-          } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-          catch (_: Exception) { say("Send failed or confirmation lost. Check Sent before retrying; message kept in Outbox") }
-          finally { sending = false }
         }
     }
 
@@ -55,36 +76,53 @@ class MailViewModel(
         if (busy.value) return
         busy.value = true
         viewModelScope.launch {
-            try { repository.replaceInbox(account.inbox()); say("Inbox updated · latest 100 messages") }
-            catch (e: kotlinx.coroutines.CancellationException) { throw e }
-            catch (_: Exception) { say("Inbox could not refresh. Check account settings and connection") }
-            finally { busy.value = false }
+            try {
+                repository.replaceInbox(account.inbox())
+                say("Inbox updated · latest 100 messages")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                say("Inbox could not refresh. Check account settings and connection")
+            } finally {
+                busy.value = false
+            }
         }
     }
 
     fun delete(id: Long) {
         val (message, index) = repository.delete(id) ?: return
-        undoJob?.cancel()
-        val token = System.nanoTime()
-        _undo.value = Triple(message, index, token)
-        undoJob = viewModelScope.launch {
-            delay(5_000)
-            if (_undo.value?.third == token) _undo.value = null
-        }
+        _undo.value = Triple(message, index, System.nanoTime())
+        undoWindow.start()
     }
 
     fun undo() {
         val value = _undo.value ?: return
-        undoJob?.cancel()
+        undoWindow.cancel()
         repository.restore(value.first, value.second)
         _undo.value = null
     }
 
+    /** Leaving the list finalises the delete instead of offering Undo on the next screen. */
+    fun commitUndo() {
+        undoWindow.cancel()
+        _undo.value = null
+    }
+
+    fun pauseUndo() = undoWindow.pause()
+
+    fun resumeUndo() = undoWindow.resume()
+
     fun say(text: String) {
         noticeJob?.cancel()
         _notice.value = text
-        noticeJob = viewModelScope.launch { delay(3_000); _notice.value = null }
+        noticeJob = viewModelScope.launch {
+            delay(3_000)
+            _notice.value = null
+        }
     }
 
-    fun dismissNotice() { noticeJob?.cancel(); _notice.value = null }
+    fun dismissNotice() {
+        noticeJob?.cancel()
+        _notice.value = null
+    }
 }

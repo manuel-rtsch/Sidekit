@@ -459,7 +459,7 @@ private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> U
         Modifier.weight(weight),
         color = when (tone) {
             TileTone.Neutral -> colors.surfaceA3
-            TileTone.Play -> colors.successA1
+            TileTone.Play -> colors.emphasisA1
             TileTone.On -> colors.surfaceA5
         },
         iconSize = SidekitTheme.spacing.tileIconSize,

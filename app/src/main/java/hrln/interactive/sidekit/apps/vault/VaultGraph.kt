@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.components.*
@@ -85,14 +86,14 @@ internal fun VaultScreen(vm: VaultViewModel, back: () -> Unit) {
     val actions = when {
         state.busy -> listOf(SideAction("save", "Working…") {})
         !state.unlocked -> listOf(SideAction.back("back", "Home", back), SideAction("unlock", "Unlock", onClick = ::unlock))
-        confirmDelete != null -> listOf(SideAction("back", "Cancel") { confirmDelete = null }, SideAction("delete", "Delete", tone = ActionTone.Destructive) { confirmDelete?.let(vm::delete); confirmDelete = null })
+        confirmDelete != null -> listOf(SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmDelete = null }, SideAction.delete("delete") { confirmDelete?.let(vm::delete); confirmDelete = null })
         confirmDiscard -> listOf(SideAction("back", "Keep editing") { confirmDiscard = false }, SideAction("discard", "Discard", tone = ActionTone.Destructive) { vm.closeEditor(); confirmDiscard = false })
-        state.editing != null -> listOf(SideAction.back("back", "Notes", ::leaveEditor), SideAction("save", "Save", tone = ActionTone.Secondary, onClick = vm::save))
+        state.editing != null -> listOf(SideAction.back("back", "Notes", ::leaveEditor), SideAction.save("save", onClick = vm::save))
         else -> listOf(SideAction("lock", "Lock", onClick = vm::lock), SideAction.forward("new", "New note", { vm.edit() }))
     }
     val list = rememberLazyListState()
     val swipe = rememberSwipeRevealGroup()
-    SidekitScaffold("Vault", actions = actions, options = if (state.editing != null) listOf(SideAction("delete", "Delete") { confirmDelete = state.editing }) else emptyList()) { padding ->
+    SidekitScaffold("Vault", actions = actions, options = if (state.editing != null) listOf(SideAction.delete("delete") { confirmDelete = state.editing }) else emptyList()) { padding ->
         SidekitList(padding, state = list) {
             state.message?.let { item { SidekitCard(Modifier.listFade(list, 0)) { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             when {

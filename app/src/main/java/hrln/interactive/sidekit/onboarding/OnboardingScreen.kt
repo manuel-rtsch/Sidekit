@@ -137,7 +137,7 @@ private fun Copy(title: String, body: String) {
 
 @Composable
 private fun LayoutChoice(list: Boolean, selected: Boolean, choose: () -> Unit) {
-    SidekitTile(Modifier.fillMaxWidth().height(112.dp), color = if (list == selected) SidekitTheme.colors.primaryA1 else SidekitTheme.colors.surfaceA3, onClick = choose) {
+    SidekitTile(Modifier.fillMaxWidth().height(112.dp), color = if (list == selected) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3, onClick = choose) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SidekitText("${if (list == selected) "✓ " else ""}${if (list) "List" else "Grid"}", style = SidekitTheme.typography.headline.copy(fontSize = 30.sp, lineHeight = 36.sp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
