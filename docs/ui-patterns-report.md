@@ -370,6 +370,7 @@ These are preview/screenshot surfaces, but they are the ones a reader compares a
 11. ✅ **Roles, not tones.** A screen names the act (`save`, `send`, `delete`, `cancel`, `undo`) and the design system decides colour, icon and motion. Extending the vocabulary is one companion edit.
 12. ✅ **Content never wears the theme colour.** Selection, progress, routes, markers and highlights use `emphasisA1..3`; `primaryA1..3` is reserved for Primary actions and the colour picker.
 13. ✅ **A pending undo never removes a capability.** The primary keeps its slot; if the screen has no primary, `Back` does.
+14. ✅ **An undo offer belongs to the screen that made it.** Five visible seconds, paused while backgrounded, committed when you leave that screen or app — never a wall-clock timer that outlives what it can restore.
 
 ---
 
@@ -420,7 +421,7 @@ Three shapes were on the table: takeover (4 apps, which dropped the exit), addit
 
 So `New Sidetick | Undo`, `Compose | Undo`, `Back | Undo`. Undo is an offer, not a mode: it is added and never substituted, it always lands on the right, and it never removes a capability. Where a screen has both `Back` and a primary, the primary wins the left slot and the exit button steps aside for the five seconds — the system back still leaves, and the exit returns with the primary. The old takeover shape is gone, and no bar grows past two actions because of Undo.
 
-Implemented as `SideAction.undo` + `undoBar(continueWith, undo)` (`design/action/UndoBar.kt`), replacing four private helpers; `UndoConventionTest` fails on a hand-built Undo action.
+Implemented as `SideAction.undo` + `undoBar(continueWith, undo)` (`design/action/UndoBar.kt`), replacing four private helpers; `UndoConventionTest` fails on a hand-built Undo action. The offer is also scoped in time and place: it runs for five visible seconds, pauses while its screen is off-screen, and is committed when that screen or app is left.
 
 **F2 — Is the action bar or the list the primary control surface?** (~8 vs ~9 vs ~8)
 
@@ -496,16 +497,20 @@ The shared chrome is unusually disciplined for a suite this size: one action typ
 
 ---
 
-## 9. Current state (branch `fix/action-tone-pass`, `eebc3c0`)
+## 9. Current state (branch `fix/action-tone-pass`)
 
 **Bar grammar.** Two slots. Left = the continuation (the primary action if the screen has one, else `Back`); right = the next thing, which while a delete can be undone is `Undo`.
 
-**Undo.** `SideAction.undo` owns the look (Muted, undo glyph, `Up` motion, a description naming what it restores). `undoBar(continueWith, undo)` decides placement and returns one action or two — never three, never zero. All 11 undo sites use it; the four private `withUndo` copies are gone. A pending undo never removes a capability: `New`, `Compose`, `Pay`, `Add`, `New tab` keep their slot; where the screen also had `Back`, the exit button is what steps aside for five seconds. Clock scopes the window to the Alarms tab and Trip to the list the delete happened on, so navigating can no longer blank a tab or evict `Save` from an editor. A draft keeps its two buttons and shows no Undo.
+**Undo.** `SideAction.undo` owns the look (Muted, undo glyph, `Up` motion, a description naming what it restores). `undoBar(continueWith, undo)` decides placement and returns one action or two — never three, never zero. All 11 undo sites use it; the four private `withUndo` copies are gone.
+
+**Undo window.** The five seconds are *visible* time, not wall clock: `UndoWindow` (`ui/UndoWindow.kt`) pauses on `ON_STOP`, resumes with what is left, and `UndoWindowLifecycle` cancels it when its screen is disposed. The offer belongs to the screen where the delete happened — leaving for another screen, tab, conversation or app commits it, so it never reappears with an unknown remainder and never restores something out of sight. Sidemessage keys the pending delete to its thread (the bar could previously appear in a different conversation and pull a message back there). Because Home pops the app's nav entry back to the launcher in Sidekit, leaving to the launcher commits rather than pauses: the safety net covers the visible moment, not the app being closed.
+
+**Capability.** A pending undo never removes a capability: `New`, `Compose`, `Pay`, `Add`, `New tab` keep their slot; where the screen also had `Back`, the exit button is what steps aside for five seconds. Clock scopes the window to the Alarms tab and Trip to the list the delete happened on, so navigating can no longer blank a tab or evict `Save` from an editor. A draft keeps its two buttons and shows no Undo.
 
 **Tones.** Primary = the theme colour, and only actions and the colour picker use it. Secondary = commit (`save`, `send`). Destructive = every delete/clear/remove/uninstall (22 of 22). Muted = `cancel`, `undo`, back-out, alternatives. Content emphasis reads `emphasisA1..3` (fixed dark green), so nothing in the body changes colour with the theme.
 
 **Cancel.** Always Muted, 23 sites, `SideAction.cancel`; a themed confirm passes `icon = null, motion = Up` to stay grey while dismissing in place. Navigation stays Primary.
 
-**Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels) and `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo) run in `:app:testDebugUnitTest`; both caught live drift while the passes were being written.
+**Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first two caught live drift while the passes were being written.
 
 **Still open, in the order §7.5 recommends:** F2 bar vs rows → F3 notice channel → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Arrange Home's commit slot, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.
