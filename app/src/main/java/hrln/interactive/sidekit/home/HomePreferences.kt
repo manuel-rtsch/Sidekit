@@ -2,6 +2,8 @@ package hrln.interactive.sidekit.home
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.UserManager
+import hrln.interactive.sidekit.apps.apps.LaunchableApp
 import hrln.interactive.sidekit.apps.settings.visibilityId
 import hrln.interactive.sidekit.navigation.SubApp
 import org.json.JSONArray
@@ -12,7 +14,8 @@ import org.json.JSONArray
  * A single ordered home list drives everything: both the grid and the list render from the same
  * home order, and the dock is derived as the **first [DOCK_MAX] apps** of that order (no separate
  * pinned set — reordering an app into/out of the top four changes the dock). IDs are the existing
- * [visibilityId] strings (`builtin:Name` for Sidekit apps, `ported:package` for Sideport apps).
+ * [visibilityId] strings (`builtin:Name` for Sidekit apps, `ported:package` for Sideport apps,
+ * `installed:serial:package/activity` for installed apps pinned to start without Sideport).
  *
  * Unknown or uninstalled IDs are kept in storage but skipped at render time, so a reinstalled app
  * returns to its slot. Newly-seen apps that are not yet in the stored order are appended at the end.
@@ -28,6 +31,33 @@ class HomePreferences(context: Context) {
     val homeOrder: List<String>
         get() = read(KEY_HOME_ORDER, SubApp.entries.map { it.visibilityId() })
 
+    /** Appends [id] to the home order, unless it is already there. Used to pin an installed app. */
+    fun pin(id: String) {
+        if (id.isBlank()) return
+        val order = homeOrder
+        if (id in order) return
+        write(KEY_HOME_ORDER, order + id)
+    }
+
+    /** Removes [id] from the home order. Used to unpin an installed app. */
+    fun unpin(id: String) {
+        val order = homeOrder
+        if (id !in order) return
+        write(KEY_HOME_ORDER, order - id)
+    }
+
+    /**
+     * Drops any directly-pinned entry for [packageName], so a package can never be both a direct
+     * launcher entry and a Sideport app. Called when an app is added to Sideport.
+     */
+    fun removeInstalled(packageName: String) {
+        val order = homeOrder
+        val kept = order.filterNot { id ->
+            id.startsWith(INSTALLED_PREFIX) && id.substringAfterLast(':').substringBefore('/') == packageName
+        }
+        if (kept.size != order.size) write(KEY_HOME_ORDER, kept)
+    }
+
     /** Moves [id] by [delta] (positive = later) in the home order, if it is present. */
     fun move(id: String, delta: Int) {
         val order = homeOrder
@@ -35,7 +65,13 @@ class HomePreferences(context: Context) {
         if (index < 0) return
         val target = (index + delta).coerceIn(0, order.lastIndex)
         if (target == index) return
-        write(KEY_HOME_ORDER, order.toMutableList().apply { removeAt(index); add(target, id) })
+        write(
+            KEY_HOME_ORDER,
+            order.toMutableList().apply {
+                removeAt(index)
+                add(target, id)
+            }
+        )
     }
 
     /**
@@ -97,6 +133,20 @@ class HomePreferences(context: Context) {
         /** Maximum number of apps allowed in the dock. */
         const val DOCK_MAX = 4
 
+        const val INSTALLED_PREFIX = "installed:"
+
         private const val KEY_HOME_ORDER = "home_order"
     }
+}
+
+/**
+ * Stable home id for an installed app that opens directly, without Sideport.
+ *
+ * The user serial (not [android.os.UserHandle.hashCode]) identifies the profile so a pinned
+ * work-profile app survives a process restart. The flattened component keeps the entry bound to
+ * the activity the launcher actually starts, not just its package.
+ */
+fun LaunchableApp.homeId(context: Context): String {
+    val serial = context.getSystemService(UserManager::class.java)?.getSerialNumberForUser(user) ?: 0
+    return "installed:$serial:${component.flattenToString()}"
 }

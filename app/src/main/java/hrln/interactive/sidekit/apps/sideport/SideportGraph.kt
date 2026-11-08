@@ -66,6 +66,7 @@ import hrln.interactive.sidekit.design.components.SidekitTextField
 import hrln.interactive.sidekit.design.components.listFade
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.home.HomePreferences
 import hrln.interactive.sidekit.system.SidekitBuild
 import kotlinx.coroutines.launch
 
@@ -268,6 +269,8 @@ internal fun SideportAddScreen(onDone: () -> Unit) {
             itemsIndexed(candidates, key = { _, a -> a.key }) { i, app ->
                 AppRow(app, repository, Modifier.listFade(list, i + 2), onClick = {
                     ported.add(app.component.packageName, app.label)
+                    // One package is either direct or Sideport, never both.
+                    HomePreferences(context).removeInstalled(app.component.packageName)
                     onDone()
                 })
             }

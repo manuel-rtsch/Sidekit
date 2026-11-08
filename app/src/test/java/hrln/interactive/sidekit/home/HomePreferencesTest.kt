@@ -1,7 +1,10 @@
 package hrln.interactive.sidekit.home
 
+import android.content.ComponentName
 import android.content.Context
+import android.os.Process
 import androidx.test.core.app.ApplicationProvider
+import hrln.interactive.sidekit.apps.apps.LaunchableApp
 import hrln.interactive.sidekit.apps.settings.visibilityId
 import hrln.interactive.sidekit.navigation.SubApp
 import org.junit.Assert.assertEquals
@@ -37,15 +40,15 @@ class HomePreferencesTest {
         assertEquals(SubApp.dock.map { it.visibilityId() }, home.dockFor(allIds))
         assertEquals(
             listOf("builtin:Sidemessage", "builtin:Sidenotes", "builtin:Sideticks", "builtin:Phonebook"),
-            home.homeOrder.take(HomePreferences.DOCK_MAX),
+            home.homeOrder.take(HomePreferences.DOCK_MAX)
         )
     }
 
     @Test
     fun `order round-trips through a new instance and the dock follows it`() {
         fresh().also { home ->
-            home.move(allIds[0], 3)                 // Sidemessage +3
-            home.move(allIds[1], 2)                 // Sidenotes  +2
+            home.move(allIds[0], 3) // Sidemessage +3
+            home.move(allIds[1], 2) // Sidenotes  +2
         }
         val restored = fresh()
         // Start: [Sidemessage, Sidenotes, Sideticks, Phonebook, ...]
@@ -60,11 +63,11 @@ class HomePreferencesTest {
     @Test
     fun `move keeps a stable order and clamps at the ends`() {
         val home = fresh()
-        home.move(allIds.first(), -10)        // already at top
+        home.move(allIds.first(), -10) // already at top
         assertEquals(allIds.first(), home.homeOrder.first())
-        home.move(allIds.first(), 200)        // past the end -> last
+        home.move(allIds.first(), 200) // past the end -> last
         assertEquals(allIds.first(), home.homeOrder.last())
-        home.move("builtin:DoesNotExist", 1)  // unknown id is ignored
+        home.move("builtin:DoesNotExist", 1) // unknown id is ignored
         assertEquals(allIds.first(), home.homeOrder.last())
     }
 
@@ -76,13 +79,13 @@ class HomePreferencesTest {
         val defaultDock = home.dockFor(allIds)
         assertEquals(SubApp.dock.map { it.visibilityId() }, defaultDock)
 
-        home.move("builtin:Photos", -1)       // Photos 4 -> 3, trading places with Phonebook
+        home.move("builtin:Photos", -1) // Photos 4 -> 3, trading places with Phonebook
         assertTrue(home.isInDock("builtin:Photos"))
         assertEquals(HomePreferences.DOCK_MAX, home.dockFor(allIds).size)
-        assertEquals("builtin:Photos", home.homeOrder.take(4).last())   // Photos in, Phonebook moved out
+        assertEquals("builtin:Photos", home.homeOrder.take(4).last()) // Photos in, Phonebook moved out
         assertFalse(home.isInDock("builtin:Phonebook"))
 
-        home.move("builtin:Photos", 1)        // back out of the dock
+        home.move("builtin:Photos", 1) // back out of the dock
         assertFalse(home.isInDock("builtin:Photos"))
         assertEquals(defaultDock, home.dockFor(allIds))
     }
@@ -112,8 +115,8 @@ class HomePreferencesTest {
     @Test
     fun `dock renders in home order`() {
         val home = fresh()
-        home.move("builtin:Phonebook", -2)   // [Sidemessage, Phonebook, Sidenotes, Sideticks, ...]
-        home.move("builtin:Sidenotes", 1)    // [Sidemessage, Phonebook, Sideticks, Sidenotes, ...]
+        home.move("builtin:Phonebook", -2) // [Sidemessage, Phonebook, Sidenotes, Sideticks, ...]
+        home.move("builtin:Sidenotes", 1) // [Sidemessage, Phonebook, Sideticks, Sidenotes, ...]
         // The dock is exactly the first four of the rendered order — no separate sort needed.
         assertEquals(home.homeOrderFor(allIds).take(HomePreferences.DOCK_MAX), home.dockFor(allIds))
     }
@@ -129,12 +132,54 @@ class HomePreferencesTest {
     }
 
     @Test
+    fun `pinning appends once and unpinning removes the entry`() {
+        val home = fresh()
+        val app = LaunchableApp(ComponentName("com.example.chat", "Main"), Process.myUserHandle(), "Chat")
+        val id = app.homeId(context)
+        assertFalse(home.homeOrder.contains(id))
+
+        home.pin(id)
+        home.pin(id) // idempotent
+        assertEquals(1, home.homeOrder.count { it == id })
+        assertEquals(id, home.homeOrder.last())
+
+        home.unpin(id)
+        assertFalse(home.homeOrder.contains(id))
+        home.unpin(id) // removing an absent id is harmless
+    }
+
+    @Test
+    fun `removing a pinned package drops only that package's installed entries`() {
+        val home = fresh()
+        val chat = LaunchableApp(ComponentName("com.example.chat", "Main"), Process.myUserHandle(), "Chat")
+        val mail = LaunchableApp(ComponentName("com.example.mail", "Main"), Process.myUserHandle(), "Mail")
+        home.pin(chat.homeId(context))
+        home.pin(mail.homeId(context))
+
+        home.removeInstalled("com.example.chat")
+        assertFalse(home.homeOrder.contains(chat.homeId(context)))
+        assertTrue(home.homeOrder.contains(mail.homeId(context)))
+
+        // Ported and built-in ids are untouched.
+        home.removeInstalled("builtin")
+        assertTrue(home.homeOrder.contains("builtin:Sidemessage"))
+    }
+
+    @Test
+    fun `installed ids carry the profile serial and flattened component`() {
+        val app = LaunchableApp(ComponentName("com.example.chat", "Main"), Process.myUserHandle(), "Chat")
+        val id = app.homeId(context)
+        assertTrue(id.startsWith("installed:"))
+        assertTrue(id.endsWith(":com.example.chat/Main"))
+    }
+
+    @Test
     fun `observer fires on order changes until unregistered`() {
         val home = fresh()
         var calls = 0
         val unregister = home.observe { calls++ }
 
-        home.move(allIds.first(), 1)          // order change
+        home.move(allIds.first(), 1) // order change
         home.move(allIds.first(), 1)
         assertEquals(2, calls)
 

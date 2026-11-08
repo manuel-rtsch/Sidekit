@@ -25,6 +25,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hrln.interactive.sidekit.apps.apps.AppsRepository
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -33,6 +34,7 @@ import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.home.HomeArranger
 import hrln.interactive.sidekit.home.HomePreferences
+import hrln.interactive.sidekit.home.homeId
 import hrln.interactive.sidekit.navigation.SubApp
 
 /**
@@ -52,9 +54,21 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
     val prefs = remember(context) { SidekitPreferences(context) }
     val hidden = rememberHiddenApps(prefs)
     val ported by remember { PortedApps.get(context).apps }.collectAsStateWithLifecycle()
+    val repository = remember(context) { AppsRepository(context.applicationContext) }
+    val installed by remember { repository.apps }.collectAsStateWithLifecycle(emptyList())
     val subsById = remember(SubApp.entries) { SubApp.entries.associateBy { it.visibilityId() } }
     val portedById = remember(ported) { ported.associateBy { it.visibilityId() } }
-    val known = remember(subsById, portedById, hidden) { (subsById.keys + portedById.keys) - hidden }
+    // Only directly-pinned installed apps belong here; unpinned installed apps are not home entries.
+    val installedById = remember(installed, ported) {
+        val pinned = home.homeOrder.filter { it.startsWith(HomePreferences.INSTALLED_PREFIX) }.toSet()
+        val portedPackages = ported.mapTo(HashSet()) { it.packageName }
+        installed.map { it.homeId(context) to it }.toMap()
+            .filterKeys { it in pinned }
+            .filterValues { it.component.packageName !in portedPackages }
+    }
+    val known = remember(subsById, portedById, installedById, hidden) {
+        (subsById.keys + portedById.keys + installedById.keys) - hidden
+    }
     // Editing buffer, seeded from the stored prefs once. Nothing is written until commit() (Done).
     val arranger = remember(home, known) { HomeArranger(home, known) }
     val order = arranger.order
@@ -69,7 +83,10 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
     // Up/Down would do nothing. A frame is needed because LazyColumn composes rows during layout.
     val firstRow = remember { FocusRequester() }
     val list = rememberLazyListState()
-    LaunchedEffect(Unit) { withFrameNanos { }; runCatching { firstRow.requestFocus() } }
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        runCatching { firstRow.requestFocus() }
+    }
     // Moving the selected app reorders the keyed row, but focus alone does not re-run bring-into-view.
     // Keep the list on the selected app so Up/Down never walks the selection off the visible page.
     LaunchedEffect(selected, order) {
@@ -86,29 +103,39 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
             val native = event.nativeKeyEvent
             if (selected != null && native.action == KeyEvent.ACTION_DOWN && native.repeatCount == 0) {
                 when (native.keyCode) {
-                    KeyEvent.KEYCODE_DPAD_UP -> { arranger.moveSelected(-1); true }
-                    KeyEvent.KEYCODE_DPAD_DOWN -> { arranger.moveSelected(+1); true }
+                    KeyEvent.KEYCODE_DPAD_UP -> {
+                        arranger.moveSelected(-1)
+                        true
+                    }
+
+                    KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        arranger.moveSelected(+1)
+                        true
+                    }
+
                     else -> false
                 }
-            } else false
+            } else {
+                false
+            }
         },
         actions = listOf(
             SideAction.back("back", "Settings", ::cancel),
             SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check),
-            SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() }),
-        ),
+            SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() })
+        )
     ) { padding ->
         SidekitList(padding, state = list) {
             item {
                 SidekitText(
                     "Select apps, then move them up or down. First 4 apps are also shown in the dock",
                     style = SidekitTheme.typography.label,
-                    maxLines = Int.MAX_VALUE,
+                    maxLines = Int.MAX_VALUE
                 )
             }
             val last = order.lastIndex
             itemsIndexed(order, key = { _, id -> id }) { index, id ->
-                val label = subsById[id]?.label ?: portedById[id]?.label ?: return@itemsIndexed
+                val label = subsById[id]?.label ?: portedById[id]?.label ?: installedById[id]?.label ?: return@itemsIndexed
                 val enabledUp = index > 0
                 val enabledDown = index < last
                 val isSelected = arranger.isSelected(id)
@@ -117,12 +144,12 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                 Row(
                     Modifier.fillMaxWidth().height(76.dp).listFade(list, index + 1),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap),
+                    horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap)
                 ) {
                     SidekitItem(
                         title = label,
                         modifier = Modifier.weight(1f).then(
-                            if (index == 0) Modifier.focusRequester(firstRow) else Modifier,
+                            if (index == 0) Modifier.focusRequester(firstRow) else Modifier
                         ),
                         secondary = when {
                             isSelected -> "Selected"
@@ -130,7 +157,7 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                             else -> null
                         },
                         colour = if (isSelected) ItemColour.Secondary else ItemColour.Primary,
-                        onClick = { arranger.select(id) },
+                        onClick = { arranger.select(id) }
                     )
                     if (isSelected) {
                         Column {
@@ -153,12 +180,12 @@ private fun ItemArrow(up: Boolean, enabled: Boolean, contentDescription: String,
             .clip(RoundedCornerShape(50))
             .alpha(if (enabled) 1f else 0.3f)
             .then(if (enabled) Modifier.clickable(onClickLabel = contentDescription, onClick = onClick) else Modifier),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         SidekitIconImage(
             SidekitIcon.ArrowUpward,
             contentDescription = contentDescription,
-            modifier = if (up) Modifier else Modifier.graphicsLayer { rotationZ = 180f },
+            modifier = if (up) Modifier else Modifier.graphicsLayer { rotationZ = 180f }
         )
     }
 }
