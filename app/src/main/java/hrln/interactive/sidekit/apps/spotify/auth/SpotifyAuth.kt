@@ -64,6 +64,7 @@ class SpotifyAuth(
         val refreshToken = credentials.refreshToken ?: return@withLock null
         runCatching { tokens.refresh(CLIENT_ID, refreshToken) }
             .getOrNull()
+            ?.let { it.copy(scope = it.scope.ifEmpty { credentials.scope }) }
             ?.also(store::save)
             ?.accessToken
     }
