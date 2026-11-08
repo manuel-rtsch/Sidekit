@@ -2,7 +2,7 @@
 
 **Focus:** action-bar behaviour, button types, how actions are initiated, and how the UI responds to user actions.
 **Scope:** the 25 `SubApp`s in `app/src/main/java/hrln/interactive/sidekit/apps/`, plus the launcher (its dock *is* an action bar) and the shared chrome in `sidekit/src/main/java/hrln/interactive/sidekit/design/`.
-**Repo state:** `~/Projects/Sidekit` (working tree, Nov 2026).
+**Repo state:** `~/Projects/Sidekit`, branch `fix/action-tone-pass` at `eebc3c0` (Nov 2026). The audit below describes the tree as it was found; sections marked **settled** have since been decided and shipped, and the current state is recorded in §9.
 **Method:** read the shared chrome (`ActionBarHost`, `SideAction`, `Scaffold`, `SidekitList`, `Buttons`, `Item`, `Controls`, `SwipeReveal`, `SidekitTextField`, `SidekitIndication`, `SidekitMotion`) and only the UI/behaviour parts of each app's `*Screen(s).kt` / `*Graph.kt`. Repositories, connectors, parsers and media engines were skipped. Line references are `path:line`.
 
 ---
@@ -23,12 +23,12 @@ Five pieces of chrome are owned by the shell, not by the screens:
 
 One type, `SideAction` (`SideAction.kt:74`), with:
 
-- **Tone** — `Primary` (blue), `Secondary` (green, "commit"), `Destructive` (red), `Muted` (grey). Documented intent: *Secondary = save/send/done, Destructive = destroy, Muted = cancel/undo/back-out/alternatives*.
+- **Tone** — `Primary` (**the user's chosen theme colour**, not a fixed blue; it is sage on the reference device), `Secondary` (dark green, "commit"), `Destructive` (red), `Muted` (grey). Documented intent: *Secondary = save/send/done, Destructive = destroy, Muted = cancel/undo/back-out/alternatives*. Content that needs emphasis uses the separate `emphasisA1..3` ramp so it never changes with the theme.
 - **Shape** — `square = true` ⇒ fixed-width, icon-only, height-sized; otherwise flexible width shared by `weight`.
 - **Motion** — `Forward` (enters from right), `Back` (from left), `Up` (rises, for in-place state change), `None`.
 - **Density** — `dense` for T9 suggestion bars.
 - **Art** — custom composable content (album art) instead of an icon.
-- Three factories: `SideAction.forward` (label + trailing arrow), `SideAction.back` (leading arrow + label), `SideAction.square` (`SideAction.kt:96-120`).
+- Factories that name the act and own its colour: `forward`, `back`, `square`, plus `save` (Secondary + check), `send` (Secondary + trailing arrow), `delete` (Destructive), `cancel` (Muted + left arrow, or in-place dismiss with `icon = null`), `undo` (Muted + undo glyph) (`SideAction.kt:112-165`). Screens call a role, not a tone.
 
 Single wide button, two wide buttons, or `n` square buttons are the three shapes the layout actually supports well (`layoutSlots`, `ActionBarHost.kt:322`).
 
@@ -59,29 +59,29 @@ That last point is the single most consequential design decision in this codebas
 
 | App | Home bar | Wide/Square | Options | Confirm style | Feedback channel |
 |---|---|---|---|---|---|
-| Sidemessage | `←Allow / New→` (or `Make default / New→`) | W/W | yes | — | in-bar undo, inline `InfoCard` |
-| Sidenotes | `New Sidenote→` or `Undo / New→` | W/W | editor only | in-bar `Cancel|Delete` | in-bar undo |
-| Sideticks | `Confirm` **then** `Cancel` | W/W | yes | none | rows + undo |
+| Sidemessage | `←Allow / New→` (or `Make default / New→`) | W/W | yes | — | `Text | Undo` in-bar undo, inline `InfoCard` |
+| Sidenotes | `New Sidenote→` or `New | Undo` | W/W | editor only | in-bar `Cancel|Delete` | in-bar undo |
+| Sideticks | `Cancel | Confirm` while drafting, else `New Sidetick→` or `New | Undo` | W/W | yes | none | rows + undo |
 | Phonebook | `Clear / Call` or `Calls→ / Dial→` | W/W, +S | yes | — | body text |
 | Photos | `Albums→` / viewer `Back / ♥ / 🗑` | W/S/S | yes | in-bar `Cancel|Delete` | in-bar |
 | Translate | `←History / Translate→` | W/W | yes | none needed | bar becomes notice |
-| Calculator | `Clear / =` | W/W | yes | in-bar `Cancel|Clear` | display |
-| Mail | `←Folders / Compose→` | W/W | yes | — | bar becomes notice/undo |
+| Calculator | `Clear / =` | W/W | yes | in-bar `Cancel|Clear history` (red) | display |
+| Mail | `←Folders / Compose→` | W/W | yes | — | `Compose | Undo` or notice |
 | Files | `←Browse / Search→` | W/W | yes (sort) | in-bar `Cancel|Remove` | bar becomes notice |
 | Maps | `←Search / Go / Locate` | W/W/W | yes | — | status text in body |
 | Music | `[art] / Search→` (S/W) | S/W | yes | — | body |
-| Clock | per-tab: `New alarm→`, `Pause / Reset`, `Undo` | W/W | yes | in-bar `Cancel|Delete` | in-bar undo |
+| Clock | per-tab: `New alarm→` or `New alarm | Undo`, `Pause / Reset` | W/W | yes | in-bar `Cancel|Delete` | in-bar undo (Alarms tab only) |
 | Video | player: `[←] / Play / [skip]` | S/W/S | yes | — | bar auto-hides |
-| Vault | `Lock / New note→` | W/W | yes | in-bar `Cancel|Delete` | label swap |
-| Trip Planning | `←Saved / Plan→` | W/W | yes | — | in-bar undo, message rows |
-| Banking | `←Accounts / Pay→` | W/W | yes | in-bar `Cancel|Erase` | in-bar undo |
+| Vault | `Lock / New note→` | W/W | yes | in-bar `Cancel|Delete` | label swap; Options Delete is red |
+| Trip Planning | `←Saved / Plan→` | W/W | yes | — | `Plan | Undo` on the list the delete happened on |
+| Banking | `←Accounts / Pay→` | W/W | yes | in-bar `Cancel|Erase` | `Pay | Undo` (exit steps aside) |
 | Settings | `←Home / About→` | W/W | no | none | row secondary text |
-| Web browser | `Tabs / Search→` (+`[←]`) | S+W/W | yes | in-bar `Cancel|Clear` | bar becomes notice/undo |
-| Apps | `←Home` | W | yes | none | hint card |
+| Web browser | `Tabs / Search→` (+`[←]`) | S+W/W | yes | in-bar `Cancel|Clear history` | `New tab | Undo`, `Tabs | Undo`, or notice |
+| Apps | `←Home` | W | yes | none (uninstall unconfirmed) | hint card |
 | Camera | `[Photos] [Shutter] [Record]` | W/W/W (icon-only) | error only | — | options entry |
-| Sideweather | `←Hourly / 5 days→` | W/W | yes | — | in-bar undo |
-| Calendar | `Day / New` | W/W | yes | in-bar `Cancel|Delete` | error row |
-| Compass | `Calibrate / Save` | W/W | yes | — | status text in body |
+| Sideweather | `←Hourly / 5 days→` | W/W | yes | — | `Add | Undo` on Locations (Locate hidden for the window) |
+| Calendar | `Day / New` | W/W | yes | in-bar `Cancel|Delete` (red) | error row |
+| Compass | `Calibrate / Save→` | W/W | yes | — | `Back | Undo`, status text in body |
 | Health | `←History / Goals→` (+Allow) | W/W/W | **no** | none | message row |
 | Sideport | `←Home / Add app→` | W/W | yes | in-bar `Cancel|Remove` | toast-equivalent cards |
 
@@ -243,36 +243,43 @@ Projected apps (`ProjectionScreens.kt:289`) build the bar from the ported app's 
 Grouped by symptom, ordered by how visible they are. Severity: **H** = users will notice and misread, **M** = noticeable on comparison, **L** = polish.
 
 ### A. Three different feedback channels for "something happened" — **H**
+**Settled in part.** Undo is no longer one of the three shapes: every app routes it through `undoBar` (§9), so the divergence left in this section is the *notice* channel (`notice` action vs body card vs body row), which is fork F3 and still open. The pre-work picture:
+
 The same concept is implemented four times:
 
 | Channel | Where | Shape |
 |---|---|---|
 | Bar replaced by a `notice` action | Files `:64`, Web `:145`, Mail `:148`, Translate `:80` | one dense Muted button, tap to dismiss, no other actions available |
-| Bar replaced by `Undo` + main | Banking `:74`, Mail `:149`, Web `:148`, Clock `:130`, Sidenotes, Sideweather | undo *prefixes* in Banking/Mail/Web, *suffixes* in Clock/Compass/Trip/Sideweather/Sidemessage |
+| ~~Bar replaced by `Undo` + main~~ | ~~Banking, Mail, Web, Clock, Sidenotes, Sideweather~~ | superseded: `continueWith | Undo`, Undo always last |
 | In-body `SidekitCard` message | Apps `:59`, Sideport `:143`, Trip `:209`, Banking `NoticeCard` | tap to dismiss |
 | Bare body row / status string | Health `message`, Calendar `error` row, Compass `status`, Sideticks `error` row | not dismissible or dismiss-by-navigation |
 
 Consequences: a Files user learns "the bar tells me what happened"; a Health user learns nothing. The four `withNotice`/`withUndo` copies are duplicated code with subtly different behaviour (`withUndo` in Banking takes `List<SideAction>` and keeps only `main.last()`; in Web it takes a single `SideAction`).
 
-### B. Destructive tone is not applied consistently — **H**
+### B. Destructive tone is not applied consistently — **H → settled**
+All 22 destructive actions now carry `ActionTone.Destructive`, enforced by `ActionToneConventionTest`. What the audit found:
+
 Correctly red: Files `Cancel|Remove`, Banking `Cancel|Erase`, Photos `Cancel|Delete`, Sidenotes `Cancel|Delete`, Clock `Cancel|Delete`, Web `Cancel|Clear history`, Sideport `Cancel|Remove`, Vault `Delete`/`Discard`, Translate `Clear history` option, Keypad `Reset keys` option, Camera stop-recording.
 
-Not red, same semantic:
-- Calendar `Delete` / `Delete series` (`CalendarEditor.kt:86`) — plain Primary, reached through Options.
-- Calculator `Clear` history confirm (`CalculatorScreen.kt:84`) — plain Primary.
-- Apps `Uninstall` option (`AppsGraph.kt:50`) — no tone, and no in-app confirmation (the platform uninstall dialog is the only gate).
-- Vault `Delete` option (`VaultGraph.kt:95`) — no tone (its in-bar counterpart *is* red).
-- Sideticks `Clear All Ticked` (`SideticksScreen.kt:99`) — plain row, no confirm, no undo.
+Not red at the time, all fixed since:
+- Calendar `Delete` / `Delete series` — now Destructive in the confirm bar **and** in Options.
+- Calculator `Clear history` — now Destructive in the confirm bar and in Options (and renamed from "Clear").
+- Apps `Uninstall` — now Destructive; still unconfirmed (it relies on the platform dialog).
+- Vault `Delete` option — now Destructive, matching its bar counterpart.
+- Clock `Delete` option — untinted when the audit was written and missed by it; now Destructive.
+- Sideticks `Clear All Ticked` — **still** a plain row with no tone, no confirm and no undo: rows have no tone variant.
 - Sidenotes/Web/Mail `Delete` via swipe is red in the bar but the *revealed* swipe button is drawn by `SidekitSwipeRow` with its own red, outside `ActionTone`.
 
 Inverse: Sidemessage `Make default` uses **Muted** for a system-level privilege change; Camera's `Photos` uses Muted inside a bar where it is not a fallback but the navigation into the gallery.
 
-### C. "Commit green" (Secondary) is optional — **H**
-Documented as "commit (save, send, done)". Applied in 20 places (Banking, Clock, Notes, Sideticks, Phonebook call, Sidemessage send, Sideport send, Keypad save, Photos/Files/Video allow, Translate allow).
+### C. "Commit green" (Secondary) is optional — **H → settled for commits**
+`SideAction.save` and `SideAction.send` now fix green + check + motion, and the guard test rejects a commit label with any other tone. 26 of 31 commit-labelled actions are green; the five that are not are permission `Allow` prompts. What the audit found:
 
-Missing on the *primary commit* of six form screens: Calendar `Save`, Health `Save`, Compass `Save`, Trip `Save`, Vault `Save` (Secondary but no icon), Mail `Send` (forward arrow instead), Settings `Done` (forward + check).
+Applied in 20 places (Banking, Clock, Notes, Sideticks, Phonebook call, Sidemessage send, Sideport send, Keypad save, Photos/Files/Video allow, Translate allow).
 
-Used for a non-commit: `Allow` on permission gates is Secondary in Photos/Files/Video but Primary in Camera/Phonebook/Sidemessage/Health and Primary-with-dynamic-label in Maps/Compass. So "green" occasionally means "permission", occasionally nothing.
+Missing at the time on the *primary commit* of six form screens: Calendar `Save`, Health `Save`, Compass `Save`, Trip `Save`, Vault `Save` (Secondary but no icon), Mail `Send` (forward arrow instead). All six now go through `save`/`send`. `Settings` `Done` remains a forward action by decision — it leaves the screen, it does not commit.
+
+Still open: `Allow` on permission gates is Secondary in Photos/Files/Video but Primary in Camera/Phonebook/Sidemessage/Health and Primary-with-dynamic-label in Maps/Compass. Green therefore still means "permission" in some screens and the theme colour in others — a decision, not a tint, so the guard test deliberately does not touch it.
 
 ### D. The back affordance has four appearances — **M**
 | Appearance | Example |
@@ -285,12 +292,11 @@ Used for a non-commit: `Allow` on permission gates is Secondary in Photos/Files/
 
 Same gesture, five visual weights, and two contradictory meanings for the left-arrow icon.
 
-### E. Primary position flips — **M**
-Primary last (right) almost everywhere, but:
-- Sideticks puts `Confirm`/`New` **first**, secondary actions after (`SideticksScreen.kt:64`).
+### E. Primary position flips — **M → settled for Undo**
+Primary last (right) everywhere now, and Undo has one position: right, next to it. Sideticks' reversed bar is gone (`Cancel | Confirm` while drafting, `New Sidetick→` otherwise) and Banking no longer drops the back action. Still open:
 - Arrange Home puts `Done` in the middle: `Settings | Done | Reset` (`ArrangeHomeScreen.kt:95`).
-- Clock/Compass/Trip/Sideweather/Sidemessage append `Undo` *after* the primary; Banking/Mail/Web put it *before*.
-- Banking's `withUndo` **drops the back action** rather than appending — the only screen where you cannot leave by the bar while an undo is pending.
+- Sideweather's Locations bar is `Back | Add | Locate` when no undo is pending — three actions, the last whole-bar candidate for a two-slot rule.
+- Camera, Mail compose, Phonebook detail, Maps and Web still run three or four actions for reasons unrelated to Undo.
 
 ### F. Button count/shape: square is under-used and over-used — **M**
 - Camera: three icon-only **wide** buttons with no labels (`CameraScreen.kt:126`) where `SideAction.square` exists and is used for the identical shape in Photos/Video/Music.
@@ -304,7 +310,9 @@ Primary last (right) almost everywhere, but:
 - Three screens hide their *only* destructive action in Options (Calendar Delete, Banking Erase, Apps Uninstall) with **no confirmation**; four others require an in-bar confirmation for the same operation. Confirmation therefore depends on which screen you happened to open, not on the risk.
 - Options entries never show selection state except by Primary tone (Files sort, T9 input mode) — Maps `Centre`, Music `Shuffle: on`, Sideweather `Use °C` are inconsistent about it.
 
-### H. Delete gesture: confirm vs undo — **H**
+### H. Delete gesture: confirm vs undo — **H (gesture unchanged)**
+The *bar shape* that follows a delete is now identical everywhere (`continueWith | Undo`, §9). What is not unified is what the gesture itself asks for:
+
 Same gesture (`SidekitSwipeRow`), three contracts — and one clear majority:
 
 | Swipe → | Apps | Count |
@@ -313,7 +321,7 @@ Same gesture (`SidekitSwipeRow`), three contracts — and one clear majority:
 | delete deferred, bar asks `Cancel | Remove`/`Delete` | Files, Vault | 2 |
 | immediate delete, **no** undo and no confirm | Translate (history) | 1 |
 
-So "swipe = delete + Undo" is the established contract (10 of 13 swipe screens); Files and Vault are the outliers, and Translate is the only silent data loss in the suite. That the majority exists does not remove the ambiguity: the component exposes a single `onDelete` callback (`SwipeReveal.kt:90`) which the undo camp uses to *delete* and the confirm camp uses to *ask*. A full-swipe drag past `FULL_SWIPE_FRACTION = 0.6` (`:195`) calls the same callback as tapping the revealed button (`:224`), so in Files a fast swipe lands on a confirm bar and reads as the gesture having failed. The component makes the ambiguity worse by exposing a single `onDelete` callback (`SwipeReveal.kt:90`) that fires from *two* different user gestures — releasing past `FULL_SWIPE_FRACTION = 0.6` of the row (`:195`), and tapping the revealed button (`:224`) — while Files and Sideport use it to *ask* for confirmation rather than to delete. The callback is therefore misnamed for half its callers, and a full-swipe drag in those screens lands on a confirm bar, which reads as the gesture having failed.
+So "swipe = delete + Undo" is the established contract (10 of 13 swipe screens); Files and Vault are the outliers, and Translate is the only silent data loss in the suite. `SidekitSwipeRow` still exposes a single `onDelete` callback (`SwipeReveal.kt:90`) which the undo camp uses to *delete* and the confirm camp uses to *ask*. A full-swipe drag past `FULL_SWIPE_FRACTION = 0.6` (`:195`) calls the same callback as tapping the revealed button (`:224`), so in Files a fast swipe lands on a confirm bar and reads as the gesture having failed. The component makes the ambiguity worse by exposing a single `onDelete` callback (`SwipeReveal.kt:90`) that fires from *two* different user gestures — releasing past `FULL_SWIPE_FRACTION = 0.6` of the row (`:195`), and tapping the revealed button (`:224`) — while Files and Sideport use it to *ask* for confirmation rather than to delete. The callback is therefore misnamed for half its callers, and a full-swipe drag in those screens lands on a confirm bar, which reads as the gesture having failed.
 
 ### I. Busy/disabled states are ad hoc — **M**
 - `Saving…`/`Working…` with `onClick = {}` in Calendar and Vault; Vault's version removes the Back action entirely.
@@ -348,15 +356,18 @@ These are preview/screenshot surfaces, but they are the ones a reader compares a
 ## 6. Recommended rules (smallest set that removes most of the divergence)
 
 1. **One feedback primitive.** Promote `withNotice` into `design/` and require it: bar-replacement notice for transient success/error, `Undo | main` for reversible deletion, body row only for persistent explanation. Delete the three private copies.
-2. **Tone is a contract, not a suggestion.** Lint against `SideAction(label in setOf("Delete","Remove","Clear","Erase","Uninstall","Discard"))` without `tone = Destructive`. Add `tone` to `SideAction.back` so Muted backs are expressible without hand-building.
+2. ✅ **Tone is a contract, not a suggestion.** Implemented as `ActionToneConventionTest` rather than a linter: it scans app sources for destructive, commit, cancel and undo labels and fails on the wrong tone. Roles (`save`, `send`, `delete`, `cancel`, `undo`) make the tone implicit, so new code cannot forget it. A Muted back is expressed as `SideAction.cancel`, not by hand-building `back`.
 3. **Give `SideAction` an `enabled`/`busy` state** so "Saving…" is not a no-op button and does not have to change the button count.
-4. **Decide "left button = exit, right button = commit" once**, and make the primary always rightmost; undo always leftmost. That fixes Sideticks, Arrange Home, Trip and the undo-position split in one rule.
+4. ✅ **Two slots, decided: left = what you are doing, right = what comes next.** Undo is always right and is only ever added, never substituted (`undoBar`, §9). Primary rightmost. Sideticks, Arrange Home and Trip's undo-position split are fixed by that rule; Arrange Home's `Done` slot is still open.
 5. **One delete contract.** Either "swipe = confirm in bar" everywhere (and disable the pass-the-threshold short-circuit when a confirm is configured), or "swipe = delete + Undo" everywhere. Not both.
 6. **Confirmation for irreversible operations regardless of entry point** — Options-invoked deletes (Calendar, Banking erase, Apps uninstall, Keypad reset, Translate clear) should route through the same `ConfirmBar` as Files/Photos.
 7. **Either populate Options or remove the key per screen.** Health, Settings, Placeholder, Sidenotes list and Mail folders should either gain one entry ("About", "Sort", "Refresh") or the shell should not advertise an empty bar.
 8. **`focusOnKeypad` on every field that is the screen's main input**, and `trailingAction` for screen-scoped utilities (Camera "Photos", Music album art) instead of positional hacks.
 9. **Square = icon-only, always.** Migrate Camera's and Music Now Playing's icon-only wide buttons to `SideAction.square`, or give them labels. Never a third shape.
 10. **Retire the duplicate mock screens** (or generate them from the live action lists) so previews cannot drift from shipped behaviour.
+11. ✅ **Roles, not tones.** A screen names the act (`save`, `send`, `delete`, `cancel`, `undo`) and the design system decides colour, icon and motion. Extending the vocabulary is one companion edit.
+12. ✅ **Content never wears the theme colour.** Selection, progress, routes, markers and highlights use `emphasisA1..3`; `primaryA1..3` is reserved for Primary actions and the colour picker.
+13. ✅ **A pending undo never removes a capability.** The primary keeps its slot; if the screen has no primary, `Back` does.
 
 ---
 
@@ -379,6 +390,11 @@ The point of this section is to separate *fixable drift* from *undecided product
 | Options key exists as the secondary surface | 22/25 apps expose it somewhere |
 | Fixed keys `back` / `forward` / `main` / `left` / `right` reused across screens | every app; `back` is the most reused key |
 | Tones are semantically named and reachable via one enum | 100 % of coloured actions go through `ActionTone` |
+| Destructive labels are red | 22/22 after the tone pass (guard test) |
+| Commit labels are green with a check | 26/31; the remainder are permission prompts |
+| `Cancel` and `Undo` are Muted | 23/23 cancel sites, 11/11 undo sites (guard test) |
+| Undo occupies the right slot and never displaces the primary | 11/11 undo sites via `undoBar` |
+| Emphasis content uses `emphasisA*`, never the theme colour | all migrated; `primaryA*` only in `ActionTone.Primary`, `SidekitLineButton` Primary, `CaseColourScreen` |
 
 ### 7.2 Tier B — majority (≈ 65–90 %, codify with a named exception list)
 
@@ -386,8 +402,8 @@ The point of this section is to separate *fixable drift* from *undecided product
 |---|---|---|
 | Two-slot grammar: exit left, commit right | ~20/25 apps on their main screen | Camera, Sideticks, Music Now Playing, Mail Compose, Arrange Home, Maps (3-wide) |
 | Swipe → delete + `Undo` | 10/13 swipe screens | Files, Vault (confirm instead), Translate (nothing) |
-| Destructive tone on destruction | 17 red actions vs ~8 untoned destructive ones (~68 %) | Calendar, Calculator, Apps, Vault option, Sideticks |
-| Secondary (green) on the commit action | 20/31 commit-labelled actions (~65 %) | Calendar, Health, Compass, Trip, Mail Send, Vault (no icon) |
+| Destructive tone on destruction | ~~17 vs ~8~~ → 22/22 | Sideticks `Clear All Ticked` (row has no tone) |
+| Secondary (green) on the commit action | ~~20/31~~ → 26/31 | permission `Allow` prompts |
 | Undo is `Muted` | 11/11 | — |
 | Notice-style transient message | 4 apps use the bar (Files, Mail, Translate, Web); ~7 use body cards/rows | split — see 7.3 |
 
@@ -395,14 +411,14 @@ The point of this section is to separate *fixable drift* from *undecided product
 
 These are not outlier bugs. Each has two coherent camps of roughly equal size, and every "fix" applied before the decision just reshuffles which camp is wrong.
 
-**F1 — Is Undo a bar takeover, or an extra button?** (4 vs 6, and it changes exit affordance)
+**F1 — Is Undo a bar takeover, or an extra button?** ✅ **settled: neither.**
+Three shapes were on the table: takeover (4 apps, which dropped the exit), additive (6 apps, which grew a third button and put Undo in the middle in Sideweather), and the one that shipped:
 
-| Camp | Apps | Behaviour |
-|---|---|---|
-| Takeover | Banking (`:74`), Mail (`:149`), Web (`:148`), Sidenotes list (`:73`) | `Undo` + main action; **the Back action is dropped** |
-| Additive | Clock (`:130`), Compass (`:78`), Sidemessage (`:197`), Sideticks (`:69`), Trip (`:128`), Sideweather (`:68`) | `Undo` appended; bar grows to 3 (Sideweather puts it in the middle) |
+> The bar keeps two slots. The left slot holds the continuation — the primary action if there is one, otherwise `Back`. While a delete can be undone, the right slot shows `Undo`; otherwise it holds nothing, or the screen's forward action.
 
-Consequence: after deleting something you can leave the screen in six apps and cannot in four. This is an information-architecture question ("is a pending undo a mode?"), not styling.
+So `New Sidetick | Undo`, `Compose | Undo`, `Back | Undo`. Undo is an offer, not a mode: it is added and never substituted, it always lands on the right, and it never removes a capability. Where a screen has both `Back` and a primary, the primary wins the left slot and the exit button steps aside for the five seconds — the system back still leaves, and the exit returns with the primary. The old takeover shape is gone, and no bar grows past two actions because of Undo.
+
+Implemented as `SideAction.undo` + `undoBar(continueWith, undo)` (`design/action/UndoBar.kt`), replacing four private helpers; `UndoConventionTest` fails on a hand-built Undo action.
 
 **F2 — Is the action bar or the list the primary control surface?** (~8 vs ~9 vs ~8)
 
@@ -423,13 +439,8 @@ Consequence: the same two-slot bar sometimes carries the whole interaction and s
 
 The bar camp has the nicer property that the message is where the user is already looking, and the nasty property that it hides the exit for its duration.
 
-**F4 — Is `Cancel` Muted or Primary?** (8 vs 8)
-
-| Muted | Primary |
-|---|---|
-| Files, Banking erase, Photos, Sidenotes, Web, Sideport, Vault delete, Translate | Calendar, Calculator, Clock editor, Keypad mapping, Sideticks, Vault "Keep editing", Banking Pay back-square, trip/health cancels via `back()` |
-
-Same word, opposite visual weight, in the two-button bar that is supposed to be the suite's most stable shape.
+**F4 — Is `Cancel` Muted or Primary?** ✅ **settled: Muted, always.**
+23 sites, one factory. The grammar is now four colours with one meaning each: **sage advances** (Primary, the theme colour), **green commits**, **red destroys**, **grey takes it back** (Cancel, Undo, back-out, alternatives). `Cancel` is grey because it makes the same promise as Undo — nothing happened — and naming it in the bar must never read as a way forward. A themed confirm ("Keep note", "Keep file") stays grey while dismissing in place. `Back` is deliberately *not* Cancel: it stays Primary, because it advances through the hierarchy and never discards typed work by itself. `SideAction.cancel` is the only constructor, and the guard test rejects any other tone on a `Cancel`/`Undo` label.
 
 **F5 — What is Options *for*?** (navigation vs object actions)
 
@@ -464,16 +475,35 @@ Both are internally consistent; they conflict with each other. The rule has to b
 ### 7.5 The decision order
 
 ```
-F2 (bar vs rows)  ──► F1 (undo takeover or additive) ──► F3 (message channel)
-        │                        │
-        └────► F5 (what Options is for) ──► F4 (cancel tone), F6 (motion) ──► Tier D fixes
+F2 (bar vs rows)  ──► F3 (message channel) ──► F5 (what Options is for) ──► F6 (motion)
+        │
+        └────► Tier D fixes (Camera, Translate, busy states, dead Options keys)
+
+F1 (undo shape) and F4 (cancel tone) are decided and shipped, so they no longer gate anything.
 ```
 
-F2 sets how much the bar has to carry; F1 and F3 decide what the bar may sacrifice; F5 decides what is allowed to live in the escape hatch. Only then do the tone, icon and confirmation fixes in Tier B/D become mechanical, and most of §6's recommendations collapse into three or four edits in `design/`.
+F2 sets how much the bar has to carry; F3 decides what may temporarily replace a `notice`; F5 decides what is allowed to live in the escape hatch. Only then do the icon, confirmation and busy-state fixes become mechanical, and most of §6's recommendations collapse into three or four edits in `design/`.
 
 ## 8. Quick verdict
 
-The shared chrome is unusually disciplined for a suite this size: one action type, one layout engine, one Options contract, one focus/press language, no dialogs. Where apps diverge they diverge in **vocabulary, not architecture** — tone for destructive/commit, where Undo sits, which feedback channel is used. Tone, icons and confirmation are outlier work (see §8). Two things are genuinely forked and need a product decision before any code changes: **whether Undo is a bar takeover or an extra button**, and **whether the action bar or the list is the primary control surface**. Those are resolvable with four small additions to `SideAction`/`design/` (`enabled`, `back(tone=…)`, a shared `NoticeBar`, a shared `ConfirmBar`) plus a short style rule list, without touching the morph engine that gives the suite its character.
+The shared chrome is unusually disciplined for a suite this size: one action type, one layout engine, one Options contract, one focus/press language, no dialogs. Where apps diverged they diverged in **vocabulary, not architecture**. Two of those vocabulary questions are now answered in code — destructive/commit tone, and where Undo sits relative to Cancel — so the remaining forks are structural: **whether the action bar or the list is the primary control surface** (F2), **which channel carries a transient notice** (F3), and **what Options is for** (F5), plus whether `ActionMotion` is a contract (F6).
 
-**Highest-value single fix:** unify destructive tone + confirmation, because it is the only inconsistency that can lose user data or, in the Apps/Sideport case, uninstall something without a confirmation step.
-**Highest-value second fix:** a shared notice/undo helper, because four private duplicates already behave differently and are on the most-used screens (Files, Web, Mail, Banking).
+**Highest-value remaining fix:** one notice channel (F3), because three implementations of the same idea sit on the most-used screens (Files, Web, Mail, Banking) and the bar-vs-body split is the last thing that makes two apps feel different after a save.
+
+**Highest-value second fix:** end the fake busy states (Calendar `Saving…`, Vault `Working…`, Trip/Bank/Mail labels that re-fire), because those are the only remaining places where the bar lies about what a tap will do.
+
+---
+
+## 9. Current state (branch `fix/action-tone-pass`, `eebc3c0`)
+
+**Bar grammar.** Two slots. Left = the continuation (the primary action if the screen has one, else `Back`); right = the next thing, which while a delete can be undone is `Undo`.
+
+**Undo.** `SideAction.undo` owns the look (Muted, undo glyph, `Up` motion, a description naming what it restores). `undoBar(continueWith, undo)` decides placement and returns one action or two — never three, never zero. All 11 undo sites use it; the four private `withUndo` copies are gone. A pending undo never removes a capability: `New`, `Compose`, `Pay`, `Add`, `New tab` keep their slot; where the screen also had `Back`, the exit button is what steps aside for five seconds. Clock scopes the window to the Alarms tab and Trip to the list the delete happened on, so navigating can no longer blank a tab or evict `Save` from an editor. A draft keeps its two buttons and shows no Undo.
+
+**Tones.** Primary = the theme colour, and only actions and the colour picker use it. Secondary = commit (`save`, `send`). Destructive = every delete/clear/remove/uninstall (22 of 22). Muted = `cancel`, `undo`, back-out, alternatives. Content emphasis reads `emphasisA1..3` (fixed dark green), so nothing in the body changes colour with the theme.
+
+**Cancel.** Always Muted, 23 sites, `SideAction.cancel`; a themed confirm passes `icon = null, motion = Up` to stay grey while dismissing in place. Navigation stays Primary.
+
+**Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels) and `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo) run in `:app:testDebugUnitTest`; both caught live drift while the passes were being written.
+
+**Still open, in the order §7.5 recommends:** F2 bar vs rows → F3 notice channel → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Arrange Home's commit slot, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.
