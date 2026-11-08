@@ -47,17 +47,15 @@ class AppsUiTest {
 
         // Holding an app opens its page; the actions live there instead of crowding Options.
         compose.onNodeWithText("Firefox").performTouchInput { longClick() }
-        compose.onNodeWithText("Pin to home").assertExists()
-        compose.onNodeWithText("App info").assertExists()
-        compose.onNodeWithText("Uninstall app").assertExists()
+        compose.onNodeWithText("Add to home").assertExists()
 
-        // Pinning writes a direct home entry (no Sideport) into the shared home order.
-        compose.onNodeWithText("Pin to home").performClick()
+        // Adding writes a direct home entry (no Sideport) into the shared home order.
+        compose.onNodeWithText("Add to home").performClick()
         compose.runOnIdle { assertTrue(app.homeId(context) in HomePreferences(context).homeOrder) }
-        compose.onNodeWithText("Unpin from home").assertExists()
+        compose.onNodeWithText("Remove from home").assertExists()
 
-        compose.onNodeWithText("Unpin from home").performClick()
+        compose.onNodeWithText("Remove from home").performClick()
         compose.runOnIdle { assertFalse(app.homeId(context) in HomePreferences(context).homeOrder) }
-        compose.onNodeWithText("Pin to home").assertExists()
+        compose.onNodeWithText("Add to home").assertExists()
     }
 }

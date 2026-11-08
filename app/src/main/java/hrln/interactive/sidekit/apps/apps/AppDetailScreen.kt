@@ -22,7 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
+import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.LineButtonVariant
@@ -53,6 +57,12 @@ internal fun AppDetailScreen(
 ) {
     val context = LocalContext.current
     var message by remember(app.key) { mutableStateOf<String?>(null) }
+    var version by remember(app.key) { mutableStateOf(appVersion(context, app.component.packageName)) }
+    // Coming back from the system uninstaller, the header says whether the app is still there.
+    LifecycleResumeEffect(app.key) {
+        version = appVersion(context, app.component.packageName)
+        onPauseOrDispose {}
+    }
     fun perform(action: () -> Unit) {
         try {
             action()
@@ -61,13 +71,13 @@ internal fun AppDetailScreen(
         }
     }
     val list = rememberLazyListState()
-    SidekitScaffold(
-        app.label,
-        actions = listOf(
-            SideAction.back("back", "Apps", onBack),
-            SideAction.forward("open", "Open", onClick = { perform { source.launch(app) } })
-        )
-    ) { padding ->
+    val actions = listOf(
+        SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back", onBack, tone = ActionTone.Muted, motion = ActionMotion.Back),
+        SideAction.forward("open", "Open", onClick = { perform { source.launch(app) } })
+    )
+    // Like Sideport's hub, the system app page is the one rare action kept in Options.
+    val options = if (version != null) listOf(SideAction("info", "App info", SidekitIcon.Settings) { perform { source.info(app) } }) else emptyList()
+    SidekitScaffold(app.label, actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             message?.let { text ->
                 item(key = "message") {
@@ -76,51 +86,48 @@ internal fun AppDetailScreen(
                     }
                 }
             }
-            item(key = "header") { AppHeader(app, source, Modifier.listFade(list, 0)) }
+            var index = 0
+            val header = index++
+            item(key = "header") { AppHeader(app, version, source, Modifier.listFade(list, header)) }
             if (ported != null) {
+                val sideport = index++
                 item(key = "sideport") {
                     SidekitItem(
                         "In Sideport",
-                        Modifier.listFade(list, 1),
-                        secondary = "Can't also be pinned as a normal app",
-                        colour = ItemColour.Muted,
-                        icon = SidekitIcon.DeployedCode
+                        Modifier.height(CompactRowHeight).listFade(list, sideport),
+                        secondary = "Can't also be added to home",
+                        icon = SidekitIcon.DeployedCode,
+                        colour = ItemColour.Muted
                     )
                 }
             } else {
+                val pin = index++
                 item(key = "pin") {
-                    SidekitItem(
-                        if (pinned) "Unpin from home" else "Pin to home",
-                        Modifier.listFade(list, 1),
-                        secondary = if (pinned) "Opens directly, without Sideport" else "Add it to home and the dock",
-                        colour = if (pinned) ItemColour.Muted else ItemColour.Success,
-                        icon = if (pinned) SidekitIcon.Close else SidekitIcon.Add,
-                        onClick = { if (pinned) onUnpin() else onPin() }
+                    SidekitLineButton(
+                        if (pinned) "Remove from home" else "Add to home",
+                        { if (pinned) onUnpin() else onPin() },
+                        Modifier.height(CompactRowHeight).listFade(list, pin),
+                        variant = LineButtonVariant.Secondary
                     )
                 }
             }
-            item(key = "info") {
-                SidekitItem(
-                    "App info",
-                    Modifier.listFade(list, 2),
-                    icon = SidekitIcon.Settings,
-                    onClick = { perform { source.info(app) } }
-                )
-            }
-            item(key = "uninstall") {
-                SidekitLineButton(
-                    "Uninstall app",
-                    {
-                        perform {
-                            context.startActivity(
-                                Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}"))
-                                    .putExtra(Intent.EXTRA_USER, app.user)
-                            )
-                        }
-                    },
-                    Modifier.height(64.dp).listFade(list, 3),
-                    variant = LineButtonVariant.Destructive
-                )
+            if (version != null) {
+                val uninstall = index++
+                item(key = "uninstall") {
+                    SidekitLineButton(
+                        "Uninstall app",
+                        {
+                            perform {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}"))
+                                        .putExtra(Intent.EXTRA_USER, app.user)
+                                )
+                            }
+                        },
+                        Modifier.height(CompactRowHeight).listFade(list, uninstall),
+                        variant = LineButtonVariant.Destructive
+                    )
+                }
             }
         }
     }
@@ -128,8 +135,7 @@ internal fun AppDetailScreen(
 
 /** The app's icon, installed version, package and profile: what the page title cannot say. */
 @Composable
-private fun AppHeader(app: LaunchableApp, source: AppsSource, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+private fun AppHeader(app: LaunchableApp, version: String?, source: AppsSource, modifier: Modifier = Modifier) {
     val icon = rememberAppIcon(source, app)
     SidekitCard(modifier.fillMaxWidth()) {
         Row(
@@ -140,8 +146,10 @@ private fun AppHeader(app: LaunchableApp, source: AppsSource, modifier: Modifier
                 Image(it.asImageBitmap(), contentDescription = null, modifier = Modifier.size(56.dp))
             }
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                appVersion(context, app.component.packageName)?.let {
-                    SidekitText("Version $it", style = SidekitTheme.typography.body)
+                if (version != null) {
+                    SidekitText("Version $version", style = SidekitTheme.typography.body)
+                } else {
+                    SidekitText("Not installed", style = SidekitTheme.typography.body, color = SidekitTheme.colors.dangerA2)
                 }
                 SidekitText(
                     app.component.packageName,
