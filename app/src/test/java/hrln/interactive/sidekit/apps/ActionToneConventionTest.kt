@@ -28,6 +28,7 @@ class ActionToneConventionTest {
     private val commitHomonyms = setOf(
         "WebBrowserScreen.kt:Save", // bookmark toggle, not a commit
         "ArrangeHomeScreen.kt:Done", // leaves the arrange mode
+        "MailGraph.kt:Save", // saves a draft; the message itself is committed by Send
     )
 
     private companion object {
@@ -83,17 +84,26 @@ class ActionToneConventionTest {
                 file = file.name,
                 line = text.take(match.range.first).count { it == '\n' } + 1,
                 labels = labels,
-                tone = toneOf(body),
+                tone = if (roleOf(match.value) != null) COMPUTED else toneOf(args),
                 text = body,
             )
         }
     }
 
-    /** Explicit tone if it is a literal; null when absent or computed (ported apps map it). */
-    private fun toneOf(body: String): String? {
-        val dynamic = Regex("""tone\s*=\s*(?!ActionTone\.)""").containsMatchIn(body)
-        if (dynamic) return COMPUTED
-        return Regex("""ActionTone\.(Primary|Secondary|Destructive|Muted)""").find(body)?.value
+    /**
+     * The tone argument, if it is a literal. Null when absent; [COMPUTED] when a screen works the
+     * tone out at runtime (the ported apps map the original app's tone) — nothing to assert there.
+     */
+    /**
+     * The role factory used, if any (`SideAction.save` / `send` / `delete`). A role fixes the tone
+     * in one place, so the call site has nothing left to get wrong.
+     */
+    private fun roleOf(callee: String): String? =
+        Regex("""SideAction\.(save|send|delete)\(""").matchEntire(callee)?.groupValues?.get(1)
+
+    private fun toneOf(args: List<String>): String? {
+        val arg = args.firstOrNull { it.trimStart().startsWith("tone") } ?: return null
+        return Regex("""ActionTone\.(Primary|Secondary|Destructive|Muted)""").find(arg)?.value ?: COMPUTED
     }
 
     private fun sourceFiles(): List<File> {
