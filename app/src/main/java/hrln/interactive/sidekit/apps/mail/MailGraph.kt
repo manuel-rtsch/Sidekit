@@ -147,7 +147,7 @@ private fun mailActions(
     notice: String?, dismiss: () -> Unit, hasUndo: Boolean, undo: () -> Unit, first: SideAction, second: SideAction,
 ): List<SideAction> = when {
     notice != null -> listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, onClick = dismiss))
-    hasUndo -> undoBar(exit = first, primary = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
+    hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
     else -> listOf(first, second)
 }
 

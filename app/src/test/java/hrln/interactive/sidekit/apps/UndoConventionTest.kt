@@ -18,39 +18,28 @@ class UndoConventionTest {
     private fun action(key: String, label: String) = SideAction(key, label) {}
 
     @Test
-    fun `undo takes the right slot and leaves the exit alone`() {
-        val bar = undoBar(exit = action("back", "Back"), primary = action("new", "New"), undo = SideAction.undo {})
-        assertEquals(listOf("back", "undo"), bar.map { it.key })
+    fun `undo joins the primary on the right and adds nothing else`() {
+        val bar = undoBar(continueWith = action("new", "New"), undo = SideAction.undo {})
+        assertEquals(listOf("new", "undo"), bar.map { it.key })
     }
 
     @Test
-    fun `the primary returns when there is nothing to undo`() {
-        val bar = undoBar(exit = action("back", "Back"), primary = action("new", "New"), undo = null)
-        assertEquals(listOf("back", "new"), bar.map { it.key })
+    fun `the primary keeps the left slot and the exit steps aside`() {
+        val bar = undoBar(continueWith = action("compose", "Compose"), undo = SideAction.undo {})
+        assertEquals(listOf("compose", "undo"), bar.map { it.key })
+        assertEquals(2, bar.size)
     }
 
     @Test
-    fun `a root list with no exit shows undo alone`() {
-        val bar = undoBar(primary = action("new", "New"), undo = SideAction.undo {})
-        assertEquals(listOf("undo"), bar.map { it.key })
+    fun `the bar is unchanged when there is nothing to undo`() {
+        val bar = undoBar(continueWith = action("back", "Back"), undo = null)
+        assertEquals(listOf("back"), bar.map { it.key })
     }
 
     @Test
-    fun `a draft keeps Send and adds undo third`() {
-        val bar = undoBar(
-            exit = action("back", "Back"),
-            primary = action("send", "Send"),
-            undo = SideAction.undo {},
-            keepPrimary = true,
-        )
-        assertEquals(listOf("back", "send", "undo"), bar.map { it.key })
-    }
-
-    @Test
-    fun `undo is muted and rises in place`() {
-        val undo = SideAction.undo(contentDescription = "Undo delete Barclays") {}
-        assertEquals(ActionTone.Muted, undo.tone)
-        assertEquals("Undo delete Barclays", undo.contentDescription)
+    fun `a draft never grows an undo button`() {
+        val bar = undoBar(continueWith = action("send", "Send"), undo = null)
+        assertEquals(listOf("send"), bar.map { it.key })
     }
 
     /**

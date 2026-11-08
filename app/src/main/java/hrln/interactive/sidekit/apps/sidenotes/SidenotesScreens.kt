@@ -70,7 +70,7 @@ fun SidenotesListScreen(
     onUndoDelete: () -> Unit,
 ) {
     val actions = undoBar(
-        primary = SideAction.forward("new", "New Sidenote", onNewNote),
+        continueWith = SideAction.forward("new", "New Sidenote", onNewNote),
         undo = if (state.recentlyDeleted != null) SideAction.undo(contentDescription = "Undo delete note", onClick = onUndoDelete) else null,
     )
 

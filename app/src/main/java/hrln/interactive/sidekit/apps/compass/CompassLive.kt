@@ -77,7 +77,7 @@ fun CompassBookmarks(onBack: () -> Unit) {
     var deleted by remember { mutableStateOf<HeadingBookmark?>(null) }
     LaunchedEffect(deleted) { if (deleted != null) { delay(5_000); deleted = null } }
     SidekitScaffold("Saved headings", actions = undoBar(
-            exit = SideAction.back("back", "Back", onBack),
+            continueWith = SideAction.back("back", "Back", onBack),
             undo = deleted?.let { p -> SideAction.undo(contentDescription = "Undo delete heading") { store.edit { (it + p).sortedByDescending { b -> b.time } }; deleted = null } },
         )) { padding ->
         SidekitList(padding, state = list) {

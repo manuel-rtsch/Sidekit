@@ -66,12 +66,9 @@ fun NavGraphBuilder.sideweatherGraph(nav: NavHostController) {
                         val locate = locationAction(vm.repository::select) { message = it }
                         val list = rememberLazyListState()
                         val group = rememberSwipeRevealGroup()
-                        SidekitScaffold("Locations", actions = undoBar(
-                            exit = SideAction.back("back", "Back", back),
-                            primary = SideAction("add", "Add") { nav.navigate("$root/search") },
-                            undo = deleted?.let { p -> SideAction.undo(contentDescription = "Undo delete ${p.name}") { vm.repository.select(p); deleted = null } },
-                            trailing = listOf(locate),
-                        )) { padding ->
+                        val add = SideAction("add", "Add") { nav.navigate("$root/search") }
+                        val undo = deleted?.let { p -> SideAction.undo(contentDescription = "Undo delete ${p.name}") { vm.repository.select(p); deleted = null } }
+                        SidekitScaffold("Locations", actions = if (undo == null) listOf(SideAction.back("back", "Back", back), add, locate) else undoBar(add, undo)) { padding ->
                             SidekitList(padding, state = list) {
                                 item { OutdoorInfo(error ?: message, modifier = Modifier.listFade(list, 0)) }
                                 val places = settings?.places.orEmpty()

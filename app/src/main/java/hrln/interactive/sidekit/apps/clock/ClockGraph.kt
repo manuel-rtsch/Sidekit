@@ -127,10 +127,10 @@ internal fun ClockScreen(onEdit: (String) -> Unit, repository: ClockRepository? 
                 add(SideAction("reset", if (current.stopwatch.startedAt == null) "Reset" else "Lap") { if (current.stopwatch.startedAt == null) repo.resetStopwatch() else repo.lap() })
             }
         }
-        // As in Sideticks, Undo takes the bar's only slot while an alarm delete can be undone.
-        // The window belongs to the Alarms tab; it never blanks Timer or Stopwatch.
+        // As in Sideticks, Undo joins the bar while an alarm delete can be undone; "New alarm"
+        // keeps the left slot. The window belongs to the Alarms tab; Timer and Stopwatch never
+        // grow an undo button.
         if (tab == "Alarms" && deletedPending != null) {
-            clear()
             add(SideAction.undo(contentDescription = "Undo delete alarm", onClick = repo::undoDelete))
         }
     }

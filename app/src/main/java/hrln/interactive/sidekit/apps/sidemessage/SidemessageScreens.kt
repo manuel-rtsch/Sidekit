@@ -195,11 +195,10 @@ fun ConversationScreen(
         // A draft already open keeps its Send action so typing isn't stranded.
         addAll(
             undoBar(
-                primary =
+                continueWith =
                 if (draft != null) SideAction("compose", "Send", SidekitIcon.ArrowUpward, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Send message", onClick = onSend)
                 else SideAction("compose", "Text", SidekitIcon.ArrowUpward, iconAtEnd = true, motion = ActionMotion.Up, onClick = onStartTyping),
-                undo = if (state.canUndo) SideAction.undo(contentDescription = "Undo delete message", onClick = onUndoDelete) else null,
-                keepPrimary = draft != null,
+                undo = if (draft == null && state.canUndo) SideAction.undo(contentDescription = "Undo delete message", onClick = onUndoDelete) else null,
             ),
         )
     }

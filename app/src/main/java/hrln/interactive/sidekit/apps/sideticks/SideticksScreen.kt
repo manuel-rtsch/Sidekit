@@ -63,15 +63,17 @@ fun SideticksScreen(
         modifier = Modifier.focusRequester(screenFocus).focusable(),
         title = "My Sideticks",
         actions = buildList {
-            addAll(
-                undoBar(
-                    exit = if (state.draft != null) SideAction.cancel("cancel", onClick = onCancel) else null,
-                    primary =
-                    if (state.draft != null) SideAction("main", "Confirm", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onConfirmDraft)
-                    else SideAction("main", "New Sidetick", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Up, onClick = onNewTick),
-                    undo = if (state.draft == null && state.recentlyDeleted.isNotEmpty()) SideAction.undo(contentDescription = "Undo delete tick", onClick = onUndo) else null,
-                ),
-            )
+            if (state.draft != null) {
+                add(SideAction.cancel("cancel", onClick = onCancel))
+                add(SideAction("main", "Confirm", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onConfirmDraft))
+            } else {
+                addAll(
+                    undoBar(
+                        continueWith = SideAction("main", "New Sidetick", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Up, onClick = onNewTick),
+                        undo = if (state.recentlyDeleted.isNotEmpty()) SideAction.undo(contentDescription = "Undo delete tick", onClick = onUndo) else null,
+                    ),
+                )
+            }
             if (needsNotifications && state.dueText != null) add(SideAction("allow", "Allow", onClick = onNotifications))
         },
         options = if (state.draft != null) listOf(SideAction("due", if (state.dueText == null) "Due time" else "No due time") { onDue(if (state.dueText == null) "" else null) })

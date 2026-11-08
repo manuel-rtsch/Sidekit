@@ -72,14 +72,14 @@ const val TRACKER_NOTICE =
 private const val TRACKER_CAPTION = "Tracked here · not bank-linked"
 
 /**
- * Undo split shared by every Banking list: the exit stays on the left, and the right slot offers
- * "Undo delete Barclays" until the window closes. The main action returns after it.
+ * Undo split shared by every Banking list: the main action holds the left slot and the right slot
+ * offers "Undo delete Barclays" until the window closes. Nothing else is taken away.
  */
 private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> =
-    undoBar(
-        exit = main.firstOrNull(),
-        primary = main.getOrNull(1),
-        undo = undo?.let { u -> SideAction.undo(contentDescription = u.label, onClick = onUndo) },
+    if (undo == null) main
+    else undoBar(
+        continueWith = main.last(),
+        undo = SideAction.undo(contentDescription = undo.label, onClick = onUndo),
     )
 
 /**

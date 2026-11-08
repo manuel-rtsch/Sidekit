@@ -131,7 +131,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                     // it must not evict Save from the editor if the user navigates during the window.
                     val undoAction = undo?.takeIf { page == "places" || page == "saved" }
                         ?.let { restore -> SideAction.undo { restore(); undo = null } }
-                    undoBar(exit = actions.firstOrNull(), primary = actions.getOrNull(1), undo = undoAction)
+                    if (undoAction == null) actions else undoBar(continueWith = actions.last(), undo = undoAction)
                 }
                 val options = if (page == "places") listOf(SideAction("useAs", if (useAsStart) "Use as destination" else "Use as start") { useAsStart = !useAsStart }) else if (page == "detail") listOf(SideAction("edit", "Edit") { vm.edit(vm.selected); nav.navigate("$root/plan") }) else if (page == "plan") listOf(
                     SideAction("fromSearch", "Find From stop") { vm.search(true) { nav.navigate("$root/stops") } },
