@@ -26,7 +26,7 @@ import hrln.interactive.sidekit.design.theme.SidekitColors
 
 /** Colour role of an action. */
 enum class ActionTone {
-    /** Blue: the screen's main way forward. */
+    /** The theme colour (the user's chosen case colour): the screen's main way forward. */
     Primary,
 
     /** Green: commit (save, send, done). */
@@ -142,6 +142,17 @@ class SideAction(
             contentDescription: String? = null,
             onClick: () -> Unit,
         ) = SideAction(key, label, icon, tone = ActionTone.Muted, motion = motion, contentDescription = contentDescription, onClick = onClick)
+
+        /**
+         * Take a delete back: grey, rises in place, and describes what it restores so the button
+         * reads as "Undo delete Barclays" rather than a bare "Undo".
+         */
+        fun undo(
+            key: String = "undo",
+            label: String = "Undo",
+            contentDescription: String? = null,
+            onClick: () -> Unit,
+        ) = SideAction(key, label, SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = contentDescription, onClick = onClick)
 
         /** Destroy: red, wherever it appears (bar, confirm, Options). [icon] stays optional. */
         fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) =

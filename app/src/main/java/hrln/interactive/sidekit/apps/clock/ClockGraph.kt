@@ -29,6 +29,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
@@ -126,8 +127,12 @@ internal fun ClockScreen(onEdit: (String) -> Unit, repository: ClockRepository? 
                 add(SideAction("reset", if (current.stopwatch.startedAt == null) "Reset" else "Lap") { if (current.stopwatch.startedAt == null) repo.resetStopwatch() else repo.lap() })
             }
         }
-        // As in Sideticks, Undo takes a place in the bar while a delete can be undone.
-        if (deletedPending != null) add(SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, onClick = repo::undoDelete))
+        // As in Sideticks, Undo takes the bar's only slot while an alarm delete can be undone.
+        // The window belongs to the Alarms tab; it never blanks Timer or Stopwatch.
+        if (tab == "Alarms" && deletedPending != null) {
+            clear()
+            add(SideAction.undo(contentDescription = "Undo delete alarm", onClick = repo::undoDelete))
+        }
     }
     SidekitScaffold(modifier = Modifier.focusRequester(focus).focusable(), title = if (permissionPage) "Clock access" else tab, actions = actions,
         options = if (permissionPage) emptyList() else listOf(SideAction("access", "Alarm access") { permissionPage = true })) { padding ->

@@ -9,6 +9,7 @@ import java.time.ZoneId
 import hrln.interactive.sidekit.design.components.SidekitTextField
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import androidx.compose.foundation.layout.Row
@@ -62,11 +63,15 @@ fun SideticksScreen(
         modifier = Modifier.focusRequester(screenFocus).focusable(),
         title = "My Sideticks",
         actions = buildList {
-            add(
-            if (state.draft != null) SideAction("main", "Confirm", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onConfirmDraft)
-            else SideAction("main", "New Sidetick", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Up, onClick = onNewTick))
-            if (state.draft != null) add(SideAction.cancel("cancel", onClick = onCancel))
-            else if (state.recentlyDeleted.isNotEmpty()) add(SideAction("undo", "Undo", tone = ActionTone.Muted, onClick = onUndo))
+            addAll(
+                undoBar(
+                    exit = if (state.draft != null) SideAction.cancel("cancel", onClick = onCancel) else null,
+                    primary =
+                    if (state.draft != null) SideAction("main", "Confirm", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onConfirmDraft)
+                    else SideAction("main", "New Sidetick", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Up, onClick = onNewTick),
+                    undo = if (state.draft == null && state.recentlyDeleted.isNotEmpty()) SideAction.undo(contentDescription = "Undo delete tick", onClick = onUndo) else null,
+                ),
+            )
             if (needsNotifications && state.dueText != null) add(SideAction("allow", "Allow", onClick = onNotifications))
         },
         options = if (state.draft != null) listOf(SideAction("due", if (state.dueText == null) "Due time" else "No due time") { onDue(if (state.dueText == null) "" else null) })

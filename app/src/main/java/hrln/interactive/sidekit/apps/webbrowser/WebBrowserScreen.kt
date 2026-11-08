@@ -56,6 +56,7 @@ import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.ItemColour
@@ -145,11 +146,8 @@ private fun StartTile(page: WebPage, onLink: () -> Unit, modifier: Modifier = Mo
 private fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> =
     if (notice == null) actions else listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, motion = ActionMotion.Up, onClick = onDismiss))
 
-private fun withUndo(undo: BrowserUndo?, onUndo: () -> Unit, main: SideAction): List<SideAction> =
-    if (undo == null) listOf(main) else listOf(
-        SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Undo", onClick = onUndo),
-        main,
-    )
+private fun withUndo(undo: BrowserUndo?, onUndo: () -> Unit, exit: SideAction?, primary: SideAction?): List<SideAction> =
+    undoBar(exit = exit, primary = primary, undo = undo?.let { SideAction.undo(contentDescription = "Undo", onClick = onUndo) })
 
 /**
  * The browser. One route; the page, tab list, bookmarks and history are modes of it so the live
@@ -417,11 +415,12 @@ private fun TabsScreen(
     onDismissNotice: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    val main = if (undo != null) {
-        withUndo(undo, onUndo, SideAction("forward", "New tab", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Forward, onClick = onNew))
-    } else {
-        listOf(SideAction.back("back", "Page", onBack), SideAction("forward", "New tab", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Forward, onClick = onNew))
-    }
+    val main = withUndo(
+        undo,
+        onUndo,
+        exit = SideAction.back("back", "Page", onBack),
+        primary = SideAction("forward", "New tab", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Forward, onClick = onNew),
+    )
     SidekitScaffold(title = if (data.tabs.size == 1) "1 tab" else "${data.tabs.size} tabs", actions = withNotice(notice, onDismissNotice, main)) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
@@ -471,7 +470,7 @@ private fun BookmarksScreen(
     onUndo: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
-    SidekitScaffold(title = "Bookmarks", actions = withUndo(undo, onUndo, SideAction.back("back", "Tabs", onBack))) { padding ->
+    SidekitScaffold(title = "Bookmarks", actions = withUndo(undo, onUndo, exit = SideAction.back("back", "Tabs", onBack), primary = null)) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
         SidekitList(padding, state = listState) {

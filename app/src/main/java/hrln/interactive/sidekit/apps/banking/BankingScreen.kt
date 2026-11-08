@@ -23,6 +23,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.ActionMotion
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.ItemColour
@@ -70,15 +71,16 @@ const val TRACKER_NOTICE =
 
 private const val TRACKER_CAPTION = "Tracked here · not bank-linked"
 
-/** Undo split shared by every Banking list: "Undo | [main action]". */
-private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> {
-    if (undo == null) return main
-    val keep = main.last()
-    return listOf(
-        SideAction("undo", "Undo", SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = undo.label, onClick = onUndo),
-        SideAction(keep.key, keep.label, keep.icon, keep.iconAtEnd, keep.tone, motion = keep.motion, contentDescription = keep.contentDescription, onClick = keep.onClick),
+/**
+ * Undo split shared by every Banking list: the exit stays on the left, and the right slot offers
+ * "Undo delete Barclays" until the window closes. The main action returns after it.
+ */
+private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> =
+    undoBar(
+        exit = main.firstOrNull(),
+        primary = main.getOrNull(1),
+        undo = undo?.let { u -> SideAction.undo(contentDescription = u.label, onClick = onUndo) },
     )
-}
 
 /**
  * "Banking / Home" (96:959): the selected account's balance, then its transactions (swipe left

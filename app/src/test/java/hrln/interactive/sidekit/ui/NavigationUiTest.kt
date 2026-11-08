@@ -59,7 +59,7 @@ class NavigationUiTest {
         compose.onNodeWithText("Groceries").performTouchInput { swipeLeft(startX = right - 10f, endX = right - 200f) }
         compose.onNode(hasClickLabel("Delete Groceries")).performClick()
         compose.onNodeWithText("Groceries").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Undo delete").performClick()
+        compose.onNodeWithContentDescription("Undo delete note").performClick()
         compose.onNodeWithText("Groceries").assertIsDisplayed()
 
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
