@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
+import hrln.interactive.sidekit.home.HomePreferences
 import java.io.File
 import java.util.zip.ZipFile
 import kotlinx.coroutines.Dispatchers
@@ -138,6 +139,8 @@ object ApkInstaller {
 
                 PackageInstaller.STATUS_SUCCESS -> {
                     PortedApps.get(context).add(pkg, label)
+                    // One package is either direct or Sideport, never both.
+                    HomePreferences(context).removeInstalled(pkg)
                     _status.value = InstallStatus.Installed(pkg, label)
                 }
 
