@@ -59,35 +59,37 @@ That last point is the single most consequential design decision in this codebas
 
 | App | Home bar | Wide/Square | Options | Confirm style | Feedback channel |
 |---|---|---|---|---|---|
-| Sidemessage | `←Allow / New→` (or `Make default / New→`) | W/W | yes | — | `Text | Undo` in-bar undo, inline `InfoCard` |
-| Sidenotes | `New Sidenote→` or `New | Undo` | W/W | editor only | in-bar `Cancel|Delete` | in-bar undo |
-| Sideticks | `Cancel | Confirm` while drafting, else `New Sidetick→` or `New | Undo` | W/W | yes | none | rows + undo |
+| Sidemessage | `←Allow / New→` (or `Make default / New→`) | W/W | yes | — | `Text|Undo` in-bar undo, inline `InfoCard` |
+| Sidenotes | `New Sidenote→` or `New|Undo` | W/W | editor only | in-bar `Cancel|Delete` | in-bar undo |
+| Sideticks | `Cancel|Confirm` while drafting, else `New Sidetick→` or `New|Undo` | W/W | yes | none | rows + undo |
 | Phonebook | `Clear / Call` or `Calls→ / Dial→` | W/W, +S | yes | — | body text |
 | Photos | `Albums→` / viewer `Back / ♥ / 🗑` | W/S/S | yes | in-bar `Cancel|Delete` | in-bar |
 | Translate | `←History / Translate→` | W/W | yes | none needed | bar becomes notice |
 | Calculator | `Clear / =` | W/W | yes | in-bar `Cancel|Clear history` (red) | display |
-| Mail | `←Folders / Compose→` | W/W | yes | — | `Compose | Undo` or notice |
+| Mail | `←Folders / Compose→` | W/W | yes | — | `Compose|Undo` or notice |
 | Files | `←Browse / Search→` | W/W | yes (sort) | in-bar `Cancel|Remove` | bar becomes notice |
 | Maps | `←Search / Go / Locate` | W/W/W | yes | — | status text in body |
 | Music | `[art] / Search→` (S/W) | S/W | yes | — | body |
-| Clock | per-tab: `New alarm→` or `New alarm | Undo`, `Pause / Reset` | W/W | yes | in-bar `Cancel|Delete` | in-bar undo (Alarms tab only) |
+| Clock | per-tab: `New alarm→` or `New alarm|Undo`, `Pause / Reset` | W/W | yes | in-bar `Cancel|Delete` | in-bar undo (Alarms tab only) |
 | Video | player: `[←] / Play / [skip]` | S/W/S | yes | — | bar auto-hides |
 | Vault | `Lock / New note→` | W/W | yes | in-bar `Cancel|Delete` | label swap; Options Delete is red |
-| Trip Planning | `←Saved / Plan→` | W/W | yes | — | `Plan | Undo` on the list the delete happened on |
-| Banking | `←Accounts / Pay→` | W/W | yes | in-bar `Cancel|Erase` | `Pay | Undo` (exit steps aside) |
+| Trip Planning | `←Saved / Plan→` | W/W | yes | — | `Plan|Undo` on the list the delete happened on |
+| Banking | `←Accounts / Pay→` | W/W | yes | in-bar `Cancel|Erase` | `Pay|Undo` (exit steps aside) |
 | Settings | `←Home / About→` | W/W | no | none | row secondary text |
-| Web browser | `Tabs / Search→` (+`[←]`) | S+W/W | yes | in-bar `Cancel|Clear history` | `New tab | Undo`, `Tabs | Undo`, or notice |
+| Web browser | `Tabs / Search→` (+`[←]`) | S+W/W | yes | in-bar `Cancel|Clear history` | `New tab|Undo`, `Tabs|Undo`, or notice |
 | Apps | `←Home` | W | yes | none (uninstall unconfirmed) | hint card |
 | Camera | `[Photos] [Shutter] [Record]` | W/W/W (icon-only) | error only | — | options entry |
-| Sideweather | `←Hourly / 5 days→` | W/W | yes | — | `Add | Undo` on Locations (Locate hidden for the window) |
+| Sideweather | `←Hourly / 5 days→` | W/W | yes | — | `Add|Undo` on Locations (Locate hidden for the window) |
 | Calendar | `Day / New` | W/W | yes | in-bar `Cancel|Delete` (red) | error row |
-| Compass | `Calibrate / Save→` | W/W | yes | — | `Back | Undo`, status text in body |
+| Compass | `Calibrate / Save→` | W/W | yes | — | `Back|Undo`, status text in body |
 | Health | `←History / Goals→` (+Allow) | W/W/W | **no** | none | message row |
 | Sideport | `←Home / Add app→` | W/W | yes | in-bar `Cancel|Remove` | toast-equivalent cards |
 
 ---
 
 ## 3. Per-app walkthroughs
+
+*These describe the tree as audited, with the line references of that moment. The tone, Cancel and Undo clauses are the "before" picture — see §9 for the shapes that shipped.*
 
 ### 3.1 Sidemessage
 Bar is state-derived (`SidemessageScreens.kt:80`): no SMS permission → `Allow` (Primary) + `New→`; not default handler → `Make default` (Muted, `weight = 1.2`) + `New→`; otherwise a single `New Message→`. Keys are fixed `left`/`new`, so the left button morphs in place between "Allow", "Make default" and (in other states) "Clear".
@@ -250,7 +252,7 @@ The same concept is implemented four times:
 | Channel | Where | Shape |
 |---|---|---|
 | Bar replaced by a `notice` action | Files `:64`, Web `:145`, Mail `:148`, Translate `:80` | one dense Muted button, tap to dismiss, no other actions available |
-| ~~Bar replaced by `Undo` + main~~ | ~~Banking, Mail, Web, Clock, Sidenotes, Sideweather~~ | superseded: `continueWith | Undo`, Undo always last |
+| ~~Bar replaced by `Undo` + main~~ | ~~Banking, Mail, Web, Clock, Sidenotes, Sideweather~~ | superseded: `continueWith|Undo`, Undo always last |
 | In-body `SidekitCard` message | Apps `:59`, Sideport `:143`, Trip `:209`, Banking `NoticeCard` | tap to dismiss |
 | Bare body row / status string | Health `message`, Calendar `error` row, Compass `status`, Sideticks `error` row | not dismissible or dismiss-by-navigation |
 
