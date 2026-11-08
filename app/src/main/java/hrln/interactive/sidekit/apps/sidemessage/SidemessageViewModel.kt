@@ -37,7 +37,7 @@ data class InboxUiState(
     val loaded: Boolean = false,
     val pinned: List<PinnedTile> = emptyList(),
     /** Conversations not pinned to the top, newest first. */
-    val threads: List<ThreadSummary> = emptyList(),
+    val threads: List<ThreadSummary> = emptyList()
 )
 
 data class NewMessageUiState(
@@ -45,7 +45,7 @@ data class NewMessageUiState(
     val query: String = "",
     /** The query as a phone number, if it is one. */
     val number: String? = null,
-    val matches: List<ContactMatch> = emptyList(),
+    val matches: List<ContactMatch> = emptyList()
 )
 
 /** Inbox and New Message: one per visit to Sidemessage, shared by its screens. */
@@ -54,7 +54,7 @@ class SidemessageViewModel(
     private val repo: SidemessageRepository,
     contacts: PhonebookSource,
     io: CoroutineDispatcher = Dispatchers.IO,
-    compute: CoroutineDispatcher = Dispatchers.Default,
+    compute: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
     private val access = MutableStateFlow(SmsAccess())
     private val contactsAllowed = MutableStateFlow(false)
@@ -78,9 +78,15 @@ class SidemessageViewModel(
         NewMessageUiState(allowed, q, numberFrom(q), T9Search.filterText(list.orEmpty(), q).take(MAX_MATCHES))
     }.flowOn(compute).stateIn(viewModelScope, SharingStarted.WhileSubscribed(), NewMessageUiState())
 
-    fun setAccess(canRead: Boolean, isDefault: Boolean) { access.value = SmsAccess(canRead, isDefault) }
-    fun setContactsAccess(granted: Boolean) { contactsAllowed.value = granted }
-    fun setQuery(text: String) { query.value = text }
+    fun setAccess(canRead: Boolean, isDefault: Boolean) {
+        access.value = SmsAccess(canRead, isDefault)
+    }
+    fun setContactsAccess(granted: Boolean) {
+        contactsAllowed.value = granted
+    }
+    fun setQuery(text: String) {
+        query.value = text
+    }
 
     fun pin(address: String) = repo.pin(address)
     fun unpin(address: String) = repo.unpin(address)
@@ -112,7 +118,7 @@ data class ConversationUiState(
     val draft: String? = null,
     val pinned: Boolean = false,
     /** A deleted message is still waiting out its undo window. */
-    val canUndo: Boolean = false,
+    val canUndo: Boolean = false
 )
 
 private data class Page(val messages: List<Message>, val hasMore: Boolean, val loaded: Boolean = true, val hasNewer: Boolean = false)
@@ -129,7 +135,7 @@ class ConversationViewModel(
     val addresses: List<String>,
     threadId: Long,
     initialDraft: String? = null,
-    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val io: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
     private val access = MutableStateFlow(SmsAccess())
     private val window = MutableStateFlow(Window(PAGE))
@@ -147,10 +153,13 @@ class ConversationViewModel(
     }
 
     private val page: Flow<Page> = access.flatMapLatest { acc ->
-        if (!acc.canRead) flowOf(Page(emptyList(), hasMore = false))
-        else combine(repo.source.changes().onStart { emit(Unit) }.conflate(), window) { _, n -> n }
-            .mapLatest { n -> load(n, acc.isDefault) }
-            .flowOn(io)
+        if (!acc.canRead) {
+            flowOf(Page(emptyList(), hasMore = false))
+        } else {
+            combine(repo.source.changes().onStart { emit(Unit) }.conflate(), window) { _, n -> n }
+                .mapLatest { n -> load(n, acc.isDefault) }
+                .flowOn(io)
+        }
     }
 
     private fun load(window: Window, isDefault: Boolean): Page {
@@ -166,7 +175,9 @@ class ConversationViewModel(
         if (isDefault && markedSnapshot != snapshot) {
             markedSnapshot = snapshot
             repo.source.markRead(id)
-        } else if (!isDefault) markedSnapshot = null
+        } else if (!isDefault) {
+            markedSnapshot = null
+        }
         return Page(shown, hasMore = messages.size > window.limit, hasNewer = window.before != null)
     }
 
@@ -179,23 +190,32 @@ class ConversationViewModel(
         ConversationUiState(t, acc, p.loaded, list, p.hasMore, p.hasNewer, d, repo.isPinned(addresses))
     }
 
-    val state: StateFlow<ConversationUiState> = combine(conversation, repo.deleted) { current, deleted ->
-        current.copy(canUndo = deleted != null)
+    val state: StateFlow<ConversationUiState> = combine(conversation, repo.deleted, thread) { current, deleted, id ->
+        current.copy(canUndo = deleted?.threadId == id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ConversationUiState(addresses.joinToString(", ")))
 
-    fun setAccess(canRead: Boolean, isDefault: Boolean) { access.value = SmsAccess(canRead, isDefault) }
+    fun setAccess(canRead: Boolean, isDefault: Boolean) {
+        access.value = SmsAccess(canRead, isDefault)
+    }
 
     /** Pages in older messages (called as the user scrolls back towards the start). */
     fun loadOlder() = window.update {
-        if (it.limit < MAX_LOADED) it.copy(limit = (it.limit + PAGE).coerceAtMost(MAX_LOADED))
-        else Window(PAGE, oldest ?: it.before)
+        if (it.limit < MAX_LOADED) {
+            it.copy(limit = (it.limit + PAGE).coerceAtMost(MAX_LOADED))
+        } else {
+            Window(PAGE, oldest ?: it.before)
+        }
     }
 
-    fun loadLatest() { window.value = Window(PAGE) }
+    fun loadLatest() {
+        window.value = Window(PAGE)
+    }
 
     fun startTyping() = draft.update { it ?: "" }
     fun updateDraft(text: String) = draft.update { if (it == null) it else text }
-    fun stopTyping() { draft.value = null }
+    fun stopTyping() {
+        draft.value = null
+    }
 
     /** Sends the draft unless blank, and closes the compose box. */
     fun send() {
@@ -207,7 +227,10 @@ class ConversationViewModel(
     fun retry(message: Message) = repo.retry(message, addresses, thread.value)
 
     /** Deletes [message] after the undo window; [undoDelete] puts it back. */
-    fun delete(message: Message) = repo.delete(message)
+    fun delete(message: Message) = repo.delete(message, thread.value)
+
+    /** Leaving the conversation commits the offer instead of showing it in another thread. */
+    fun commitUndo() = repo.commitDelete(thread.value)
 
     fun undoDelete() = repo.undoDelete()
 

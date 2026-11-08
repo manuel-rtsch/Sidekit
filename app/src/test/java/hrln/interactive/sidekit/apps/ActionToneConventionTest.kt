@@ -1,8 +1,8 @@
 package hrln.interactive.sidekit.apps
 
+import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.File
 
 /**
  * Guards the two tone conventions the suite already follows by majority:
@@ -19,7 +19,7 @@ class ActionToneConventionTest {
     private val destructiveLabels = setOf(
         "delete", "delete series", "delete all", "remove", "remove all", "erase",
         "erase and start over", "uninstall", "discard", "clear history", "clear all ticked",
-        "reset keys",
+        "reset keys"
     )
 
     private val commitLabels = setOf("save", "send", "done", "confirm", "record")
@@ -31,7 +31,7 @@ class ActionToneConventionTest {
     private val commitHomonyms = setOf(
         "WebBrowserScreen.kt:Save", // bookmark toggle, not a commit
         "ArrangeHomeScreen.kt:Done", // leaves the arrange mode
-        "MailGraph.kt:Save", // saves a draft; the message itself is committed by Send
+        "MailGraph.kt:Save" // saves a draft; the message itself is committed by Send
     )
 
     private companion object {
@@ -51,7 +51,7 @@ class ActionToneConventionTest {
         assertTrue(
             "Destructive actions must use tone = ActionTone.Destructive:\n" +
                 offences.joinToString("\n") { "${it.file}:${it.line} ${it.labels}" },
-            offences.isEmpty(),
+            offences.isEmpty()
         )
     }
 
@@ -65,7 +65,7 @@ class ActionToneConventionTest {
         assertTrue(
             "Commit actions must use tone = ActionTone.Secondary:\n" +
                 offences.joinToString("\n") { "${it.file}:${it.line} ${it.labels}" },
-            offences.isEmpty(),
+            offences.isEmpty()
         )
     }
 
@@ -78,7 +78,7 @@ class ActionToneConventionTest {
         assertTrue(
             "Cancel and Undo must use tone = ActionTone.Muted:\n" +
                 offences.joinToString("\n") { "${it.file}:${it.line} ${it.labels} ${it.tone}" },
-            offences.isEmpty(),
+            offences.isEmpty()
         )
     }
 
@@ -101,21 +101,15 @@ class ActionToneConventionTest {
                 line = text.take(match.range.first).count { it == '\n' } + 1,
                 labels = labels,
                 tone = if (roleOf(match.value) != null) COMPUTED else toneOf(args),
-                text = body,
+                text = body
             )
         }
     }
 
-    /**
-     * The tone argument, if it is a literal. Null when absent; [COMPUTED] when a screen works the
-     * tone out at runtime (the ported apps map the original app's tone) — nothing to assert there.
-     */
-    /**
-     * The role factory used, if any (`SideAction.save` / `send` / `delete`). A role fixes the tone
-     * in one place, so the call site has nothing left to get wrong.
-     */
-    private fun roleOf(callee: String): String? =
-        Regex("""SideAction\.(save|send|delete|cancel)\(""").matchEntire(callee)?.groupValues?.get(1)
+    // The tone argument, if it is a literal. Null when absent; COMPUTED when a screen works the
+    // tone out at runtime (the ported apps map the original app's tone) — nothing to assert there.
+    // The role factory, if any (SideAction.save / send / delete), fixes the tone in one place.
+    private fun roleOf(callee: String): String? = Regex("""SideAction\.(save|send|delete|cancel)\(""").matchEntire(callee)?.groupValues?.get(1)
 
     private fun toneOf(args: List<String>): String? {
         val arg = args.firstOrNull { it.trimStart().startsWith("tone") } ?: return null
@@ -137,10 +131,20 @@ class ActionToneConventionTest {
         var i = open
         while (i < text.length) {
             when (text[i]) {
-                '"' -> { i = skipString(text, i) }
-                '\'' -> { i = skipChar(text, i) }
+                '"' -> {
+                    i = skipString(text, i)
+                }
+
+                '\'' -> {
+                    i = skipChar(text, i)
+                }
+
                 '(' -> depth++
-                ')' -> { depth--; if (depth == 0) return i }
+
+                ')' -> {
+                    depth--
+                    if (depth == 0) return i
+                }
             }
             i++
         }
@@ -179,11 +183,33 @@ class ActionToneConventionTest {
         while (i < body.length) {
             val c = body[i]
             when {
-                c == '"' -> { val end = skipString(body, i); current.append(body, i, end + 1); i = end }
-                c == '\'' -> { val end = skipChar(body, i); current.append(body, i, end + 1); i = end }
-                c in "([{" -> { depth++; current.append(c) }
-                c in ")]}" -> { depth--; current.append(c) }
-                c == ',' && depth == 0 -> { out += current.toString(); current.clear() }
+                c == '"' -> {
+                    val end = skipString(body, i)
+                    current.append(body, i, end + 1)
+                    i = end
+                }
+
+                c == '\'' -> {
+                    val end = skipChar(body, i)
+                    current.append(body, i, end + 1)
+                    i = end
+                }
+
+                c in "([{" -> {
+                    depth++
+                    current.append(c)
+                }
+
+                c in ")]}" -> {
+                    depth--
+                    current.append(c)
+                }
+
+                c == ',' && depth == 0 -> {
+                    out += current.toString()
+                    current.clear()
+                }
+
                 else -> current.append(c)
             }
             i++

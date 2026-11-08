@@ -2,21 +2,19 @@ package hrln.interactive.sidekit.apps.sidenotes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import hrln.interactive.sidekit.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 data class SidenotesUiState(
     val notes: List<Note> = emptyList(),
     /** False until the notes file has been read; the list shows nothing rather than "empty". */
     val loaded: Boolean = true,
     /** Set for a few seconds after a delete, while the action bar offers Undo. */
-    val recentlyDeleted: Note? = null,
+    val recentlyDeleted: Note? = null
 )
 
 /** Id used for a note that hasn't been saved yet. */
@@ -24,17 +22,19 @@ const val NEW_NOTE_ID = -1L
 
 class SidenotesViewModel(
     private val repository: NotesRepository,
-    private val undoWindowMs: Long = UNDO_WINDOW_MS,
+    private val undoWindowMs: Long = UNDO_WINDOW_MS
 ) : ViewModel() {
     private val recentlyDeleted = MutableStateFlow<Note?>(null)
-    private var undoJob: Job? = null
+
+    /** The five-second offer; pauses off-screen, commits when the list is left. */
+    val undoWindow = UndoWindow(viewModelScope, undoWindowMs) { recentlyDeleted.value = null }
 
     val state: StateFlow<SidenotesUiState> = combine(repository.notes, recentlyDeleted) { notes, deleted ->
         SidenotesUiState(notes.orEmpty(), notes != null, deleted)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        SidenotesUiState(repository.notes.value.orEmpty(), repository.notes.value != null, null),
+        SidenotesUiState(repository.notes.value.orEmpty(), repository.notes.value != null, null)
     )
 
     fun note(id: Long): Note? = repository.get(id)
@@ -57,17 +57,19 @@ class SidenotesViewModel(
     fun delete(id: Long) {
         val note = repository.delete(id) ?: return
         recentlyDeleted.value = note
-        undoJob?.cancel()
-        undoJob = viewModelScope.launch {
-            delay(undoWindowMs)
-            recentlyDeleted.value = null
-        }
+        undoWindow.start()
     }
 
     fun undoDelete() {
         val note = recentlyDeleted.value ?: return
-        undoJob?.cancel()
+        undoWindow.cancel()
         repository.restore(note)
+        recentlyDeleted.value = null
+    }
+
+    /** Leaving the list finalises the deletion instead of offering Undo in the editor. */
+    fun commitUndo() {
+        undoWindow.cancel()
         recentlyDeleted.value = null
     }
 
@@ -85,11 +87,11 @@ object SidenotesSampleData {
             5,
             "Note #1\nI was over at the park yesterday so soon I guess I should leave.\nGet more milk tomorrow I really eed some.\n" +
                 "Tomorrow grab new shit from the new shop. and then I will have to go over to my brother",
-            T + 5,
+            T + 5
         ),
         Note(4, "Tax No\n24587087607670", T + 4),
         Note(3, "Note #2\nDont forget to go over to the", T + 3),
         Note(2, "Tax No\n24587087607670", T + 2),
-        Note(1, "Tax No\n24587087607670", T + 1),
+        Note(1, "Tax No\n24587087607670", T + 1)
     )
 }

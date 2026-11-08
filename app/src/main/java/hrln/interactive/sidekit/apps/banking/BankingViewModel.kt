@@ -2,8 +2,7 @@ package hrln.interactive.sidekit.apps.banking
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import hrln.interactive.sidekit.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,17 +15,19 @@ data class BankingUndo(val label: String, val removed: BankBook)
 
 data class BankingUiState(
     val load: BankingRepository.Load = BankingRepository.Load.Locked,
-    val undo: BankingUndo? = null,
+    val undo: BankingUndo? = null
 ) {
     val book: BankBook? get() = (load as? BankingRepository.Load.Open)?.book
 }
 
 class BankingViewModel(
     private val repository: BankingRepository,
-    private val undoWindowMs: Long = UNDO_WINDOW_MS,
+    private val undoWindowMs: Long = UNDO_WINDOW_MS
 ) : ViewModel() {
     private val undo = MutableStateFlow<BankingUndo?>(null)
-    private var undoJob: Job? = null
+
+    /** The offer shown in the bar; timed in visible time so leaving Banking keeps it. */
+    val undoWindow = UndoWindow(viewModelScope, undoWindowMs) { undo.value = null }
 
     val state: StateFlow<BankingUiState> = combine(repository.state, undo) { load, u -> BankingUiState(load, u) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BankingUiState(repository.state.value))
@@ -39,7 +40,7 @@ class BankingViewModel(
     }
 
     fun lock() {
-        undoJob?.cancel()
+        undoWindow.cancel()
         undo.value = null
         repository.lock()
     }
@@ -52,8 +53,7 @@ class BankingViewModel(
 
     fun selectAccount(id: Long) = repository.selectAccount(id)
 
-    fun record(accountId: Long, payee: String, cents: Long, note: String, incoming: Boolean): Long? =
-        repository.record(accountId, payee, cents, note, incoming)
+    fun record(accountId: Long, payee: String, cents: Long, note: String, incoming: Boolean): Long? = repository.record(accountId, payee, cents, note, incoming)
 
     fun deleteAccount(id: Long) {
         val removed = repository.deleteAccount(id) ?: return
@@ -67,18 +67,20 @@ class BankingViewModel(
 
     fun undo() {
         val u = undo.value ?: return
-        undoJob?.cancel()
+        undoWindow.cancel()
         repository.restore(u.removed)
         undo.value = null
     }
 
     private fun offerUndo(u: BankingUndo) {
         undo.value = u
-        undoJob?.cancel()
-        undoJob = viewModelScope.launch {
-            delay(undoWindowMs)
-            undo.value = null
-        }
+        undoWindow.start()
+    }
+
+    /** Leaving Banking for another screen finalises the deletion instead of offering it there. */
+    fun commitUndo() {
+        undoWindow.cancel()
+        undo.value = null
     }
 
     /** Leaving Banking locks it: the decrypted book doesn't outlive the visit. */

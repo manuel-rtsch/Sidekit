@@ -28,9 +28,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import hrln.interactive.sidekit.design.action.ActionMotion
-import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
@@ -43,13 +43,18 @@ import hrln.interactive.sidekit.design.components.rememberSwipeRevealGroup
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
+import hrln.interactive.sidekit.ui.UndoWindowLifecycle
 
 private val ROOT = SubApp.Mail.route
 private val HOME = "$ROOT/home"
 private val FOLDERS = "$ROOT/folders"
 private val FOLDER = "$ROOT/folder/{folder}"
 private val COMPOSE = "$ROOT/compose?id={id}"
-object MailTags { const val TO = "mail_to"; const val SUBJECT = "mail_subject"; const val BODY = "mail_body" }
+object MailTags {
+    const val TO = "mail_to"
+    const val SUBJECT = "mail_subject"
+    const val BODY = "mail_body"
+}
 
 fun NavGraphBuilder.mailGraph(nav: NavHostController) {
     navigation(startDestination = HOME, route = ROOT) {
@@ -60,30 +65,58 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val storageError by vm.storageError.collectAsStateWithLifecycle()
             val notice = storageError ?: storedNotice
             val undo by vm.undo.collectAsStateWithLifecycle()
-            val actions = mailActions(notice, vm::dismissNotice, undo != null, vm::undo,
+            UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
+            val actions = mailActions(
+                notice,
+                vm::dismissNotice,
+                undo != null,
+                vm::undo,
                 SideAction.back("folders", "Folders") { nav.navigate(FOLDERS) },
-                SideAction.forward("compose", "Compose", onClick = { nav.navigate("$ROOT/compose") }),
+                SideAction.forward("compose", "Compose", onClick = { nav.navigate("$ROOT/compose") })
             )
-            SidekitScaffold(title = "Mail", actions = actions, options = listOf(
-                SideAction("refresh", "Refresh inbox") { vm.refresh() },
-                SideAction("account", "Account") { nav.navigate("$ROOT/account") },
-            )) { padding ->
+            SidekitScaffold(
+                title = "Mail",
+                actions = actions,
+                options = listOf(
+                    SideAction("refresh", "Refresh inbox") { vm.refresh() },
+                    SideAction("account", "Account") { nav.navigate("$ROOT/account") }
+                )
+            ) { padding ->
                 MessageList(padding, messages, null, vm::delete) { nav.navigate(if (it.folder == MailFolder.Inbox || it.folder == MailFolder.Sent) "$ROOT/read/${it.id}" else "$ROOT/compose?id=${it.id}") }
             }
         }
         composable("$ROOT/account") {
             val vm = mailViewModel()
-            MailAccountScreen(vm.account as ImapSmtpAccount, { nav.popBackStack() }, { vm.refresh(); nav.popBackStack() })
+            MailAccountScreen(vm.account as ImapSmtpAccount, { nav.popBackStack() }, {
+                vm.refresh()
+                nav.popBackStack()
+            })
         }
         composable("$ROOT/read/{id}") { entry ->
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
             val message = messages?.firstOrNull { it.id == entry.arguments?.getString("id")?.toLongOrNull() }
-            SidekitScaffold("Mail", actions = listOf(SideAction.back("back", "Back") { nav.popBackStack() }, SideAction("reply", "Reply") {
-                message?.let { vm.saveDraft(null, runCatching { javax.mail.internet.InternetAddress.parse(it.sender).firstOrNull()?.address.orEmpty() }.getOrDefault(""), "Re: ${it.subject}", ""); nav.navigate("$ROOT/compose?id=${vm.messages.value?.firstOrNull()?.id}") }
-            })) { padding ->
+            SidekitScaffold(
+                "Mail",
+                actions = listOf(
+                    SideAction.back("back", "Back") { nav.popBackStack() },
+                    SideAction("reply", "Reply") {
+                        message?.let {
+                            vm.saveDraft(null, runCatching { javax.mail.internet.InternetAddress.parse(it.sender).firstOrNull()?.address.orEmpty() }.getOrDefault(""), "Re: ${it.subject}", "")
+                            nav.navigate("$ROOT/compose?id=${vm.messages.value?.firstOrNull()?.id}")
+                        }
+                    }
+                )
+            ) { padding ->
                 SidekitList(padding) {
-                    item { SidekitCard(Modifier.fillMaxWidth()) { Column { SidekitText(message?.sender ?: "Message unavailable", maxLines = Int.MAX_VALUE); SidekitText(message?.subject.orEmpty(), maxLines = Int.MAX_VALUE) } } }
+                    item {
+                        SidekitCard(Modifier.fillMaxWidth()) {
+                            Column {
+                                SidekitText(message?.sender ?: "Message unavailable", maxLines = Int.MAX_VALUE)
+                                SidekitText(message?.subject.orEmpty(), maxLines = Int.MAX_VALUE)
+                            }
+                        }
+                    }
                     item { SidekitText(message?.body.orEmpty(), maxLines = Int.MAX_VALUE) }
                 }
             }
@@ -111,25 +144,40 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val storageError by vm.storageError.collectAsStateWithLifecycle()
             val notice = storageError ?: storedNotice
             val undo by vm.undo.collectAsStateWithLifecycle()
+            UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             val folder = MailFolder.valueOf(entry.arguments?.getString("folder") ?: MailFolder.Draft.name)
-            val actions = mailActions(notice, vm::dismissNotice, undo != null, vm::undo,
+            val actions = mailActions(
+                notice,
+                vm::dismissNotice,
+                undo != null,
+                vm::undo,
                 SideAction.back("back", "Folders") { nav.popBackStack() },
-                SideAction.forward("compose", "Compose", onClick = { nav.navigate("$ROOT/compose") }),
+                SideAction.forward("compose", "Compose", onClick = { nav.navigate("$ROOT/compose") })
             )
             SidekitScaffold(title = folder.label, actions = actions) { padding ->
                 MessageList(padding, messages, folder, vm::delete) { nav.navigate(if (it.folder == MailFolder.Inbox || it.folder == MailFolder.Sent) "$ROOT/read/${it.id}" else "$ROOT/compose?id=${it.id}") }
             }
         }
-        composable(COMPOSE, arguments = listOf(navArgument("id") { type = NavType.LongType; defaultValue = -1L })) { entry ->
+        composable(
+            COMPOSE,
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { entry ->
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
             val id = entry.arguments?.getLong("id")?.takeIf { it >= 0 }
             val existing = messages.orEmpty().firstOrNull { it.id == id }
             if (messages == null) return@composable
             ComposeScreen(existing, onCancel = { nav.popBackStack() }, onSave = { to, subject, body ->
-                vm.saveDraft(id, to, subject, body); nav.popBackStack()
+                vm.saveDraft(id, to, subject, body)
+                nav.popBackStack()
             }, onSend = { to, subject, body ->
-                vm.send(id, to, subject, body); nav.popBackStack(HOME, inclusive = false)
+                vm.send(id, to, subject, body)
+                nav.popBackStack(HOME, inclusive = false)
             })
         }
     }
@@ -144,7 +192,12 @@ private fun mailViewModel(): MailViewModel {
 }
 
 private fun mailActions(
-    notice: String?, dismiss: () -> Unit, hasUndo: Boolean, undo: () -> Unit, first: SideAction, second: SideAction,
+    notice: String?,
+    dismiss: () -> Unit,
+    hasUndo: Boolean,
+    undo: () -> Unit,
+    first: SideAction,
+    second: SideAction
 ): List<SideAction> = when {
     notice != null -> listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, onClick = dismiss))
     hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
@@ -157,7 +210,7 @@ private fun MessageList(
     messages: List<MailMessage>?,
     folder: MailFolder?,
     onDelete: (Long) -> Unit,
-    onOpen: (MailMessage) -> Unit,
+    onOpen: (MailMessage) -> Unit
 ) {
     val shown = messages.orEmpty().filter { folder == null || it.folder == folder }
     val state = rememberLazyListState()
@@ -168,8 +221,10 @@ private fun MessageList(
                 SidekitText("Inbox cache · refresh to check your server. Swipe deletes the cached copy only.", style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
             }
         }
-        if (messages != null && shown.isEmpty()) item(key = "empty") {
-            SidekitItem(if (folder == null) "No local messages" else "No ${folder.label.lowercase()}", Modifier.listFade(state, 1), secondary = "Compose creates a draft on this phone")
+        if (messages != null && shown.isEmpty()) {
+            item(key = "empty") {
+                SidekitItem(if (folder == null) "No local messages" else "No ${folder.label.lowercase()}", Modifier.listFade(state, 1), secondary = "Compose creates a draft on this phone")
+            }
         }
         itemsIndexed(shown, key = { _, it -> it.id }) { index, message ->
             SidekitSwipeRow(key = message.id, group = swipe, onDelete = { onDelete(message.id) }, modifier = Modifier.animateItem().listFade(state, index + 1), deleteLabel = "Delete message") {
@@ -184,17 +239,20 @@ private fun ComposeScreen(
     existing: MailMessage?,
     onCancel: () -> Unit,
     onSave: (String, String, String) -> Unit,
-    onSend: (String, String, String) -> Unit,
+    onSend: (String, String, String) -> Unit
 ) {
     var to by remember(existing?.id) { mutableStateOf(existing?.to.orEmpty()) }
     var subject by remember(existing?.id) { mutableStateOf(existing?.subject.orEmpty()) }
     var body by remember(existing?.id) { mutableStateOf(existing?.body.orEmpty()) }
     BackHandler(onBack = onCancel)
-    SidekitScaffold(title = if (existing == null) "Compose" else existing.folder.label, actions = listOf(
-        SideAction.cancel("cancel", onClick = onCancel),
-        SideAction("save", "Save", tone = ActionTone.Muted) { onSave(to, subject, body) },
-        SideAction.send("send") { onSend(to, subject, body) },
-    )) { padding ->
+    SidekitScaffold(
+        title = if (existing == null) "Compose" else existing.folder.label,
+        actions = listOf(
+            SideAction.cancel("cancel", onClick = onCancel),
+            SideAction("save", "Save", tone = ActionTone.Muted) { onSave(to, subject, body) },
+            SideAction.send("send") { onSend(to, subject, body) }
+        )
+    ) { padding ->
         val state = rememberLazyListState()
         SidekitList(padding, state = state) {
             item(key = "to") { MailField("To", to, { to = it }, Modifier.listFade(state, 0).testTag(MailTags.TO), true, true) }
@@ -214,7 +272,7 @@ private fun MailField(
     onValue: (String) -> Unit,
     modifier: Modifier,
     singleLine: Boolean,
-    autoFocus: Boolean,
+    autoFocus: Boolean
 ) {
     SidekitCard(modifier.fillMaxWidth().heightIn(min = SidekitTheme.spacing.itemHeight), color = SidekitTheme.colors.surfaceA2) {
         SidekitTextField(value, onValue, Modifier.fillMaxWidth(), placeholder = placeholder, singleLine = singleLine, focusOnKeypad = autoFocus, autoFocus = autoFocus)

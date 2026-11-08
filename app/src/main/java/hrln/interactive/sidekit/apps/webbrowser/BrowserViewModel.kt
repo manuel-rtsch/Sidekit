@@ -2,6 +2,7 @@ package hrln.interactive.sidekit.apps.webbrowser
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.ui.UndoWindow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,8 +24,9 @@ sealed interface BrowserUndo {
 
 class BrowserViewModel(
     private val repository: BrowserRepository,
-    private val undoWindowMs: Long = UNDO_WINDOW_MS,
-) : ViewModel(), BrowserHost {
+    private val undoWindowMs: Long = UNDO_WINDOW_MS
+) : ViewModel(),
+    BrowserHost {
     val data: StateFlow<BrowserData?> = repository.data
 
     private val _mode = MutableStateFlow(BrowserMode.Page)
@@ -44,8 +46,10 @@ class BrowserViewModel(
     private val _generation = MutableStateFlow(0)
     val generation: StateFlow<Int> = _generation.asStateFlow()
 
-    private var undoJob: Job? = null
     private var noticeJob: Job? = null
+
+    /** The five-second offer; pauses off-screen, commits when the browser is left. */
+    val undoWindow = UndoWindow(viewModelScope, undoWindowMs) { _undo.value = null }
 
     fun show(mode: BrowserMode) {
         _mode.value = mode
@@ -88,7 +92,7 @@ class BrowserViewModel(
 
     fun undo() {
         val u = _undo.value ?: return
-        undoJob?.cancel()
+        undoWindow.cancel()
         when (u) {
             is BrowserUndo.Tab -> repository.restoreTab(u.tab, u.index)
             is BrowserUndo.Saved -> repository.restoreBookmark(u.bookmark)
@@ -145,11 +149,13 @@ class BrowserViewModel(
 
     private fun offerUndo(u: BrowserUndo) {
         _undo.value = u
-        undoJob?.cancel()
-        undoJob = viewModelScope.launch {
-            delay(undoWindowMs)
-            _undo.value = null
-        }
+        undoWindow.start()
+    }
+
+    /** Leaving the browser finalises the deletion instead of offering Undo later. */
+    fun commitUndo() {
+        undoWindow.cancel()
+        _undo.value = null
     }
 
     companion object {
