@@ -1,10 +1,11 @@
 # Sidetracks — Provenance and Clean-Room Record
 
-**Purpose:** record where the Sidetracks specification and implementation came from, so the
-project can show that no GPLv3 code from the Sidespot reference application entered Sidekit.
+**Purpose:** record where the Sidetracks specification and implementation came from, and how the
+Sidespot reference application is kept outside Sidekit's version-controlled source, so no GPLv3
+code enters Sidekit.
 
 Companion: `docs/spotify/SPEC.md`. Licensing and native decisions:
-`SIDESPOT_SIDEKIT_PLAN.md` §3 and §5.
+`docs/spotify/PLAN.md` §3 and §5.
 
 ---
 
@@ -14,23 +15,26 @@ Companion: `docs/spotify/SPEC.md`. Licensing and native decisions:
 |---|---|---|
 | **Sidekit** | MIT (`/LICENSE`, © 2026 Harlen Postill) | Sidetracks is part of Sidekit and ships under MIT. |
 | **librespot** | MIT | Used directly as a pinned upstream submodule. Copyright and licence notice preserved; see §6. |
-| **Sidespot** | GPLv3 | **Not used.** No source, resources, build files, or documentation are copied, vendored, linked, or consulted during implementation. |
+| **Sidespot** | GPLv3 | **Reference only.** Included locally at `.sidespot/` as a clean-room implementation reference, but excluded from Git and never committed. Not linked, imported, or shipped. |
 
-MIT is compatible with the MIT dependency. Because no Sidespot code is reused, Sidekit does not
-acquire GPLv3 obligations.
+MIT is compatible with the MIT dependency. Because Sidespot is never committed or linked into
+Sidekit, and no Sidespot code is copied into the implementation, Sidekit does not acquire GPLv3
+obligations.
 
 ---
 
 ## 2. Roles
 
-| Role | Responsibility | May read Sidespot source? |
+| Role | Responsibility | May read the `.sidespot/` reference? |
 |---|---|---|
 | Specification author | Write `SPEC.md` from public behaviour, public documentation, and Sidekit itself. | **No** |
-| Implementer (Kotlin/native) | Implement from `SPEC.md` and `SIDESPOT_SIDEKIT_PLAN.md`. | **No** |
+| Implementer (Kotlin/native) | Implement from `SPEC.md` and `docs/spotify/PLAN.md`. | **No** |
 | Reviewer | Check that no copied material entered the tree. | Only for the similarity review in §5, after implementation, and must not feed observations back into implementation. |
 
 One person may hold more than one role, but the clean-room rule is the same: **the implementer
-works from the specification, not from the other app's source.**
+works from the specification, not from the reference application's source.** The `.sidespot/`
+directory exists so a reviewer can compare behaviour and check for copying; it is not an
+implementation input.
 
 ---
 
@@ -38,7 +42,7 @@ works from the specification, not from the other app's source.**
 
 | Source | What was taken |
 |---|---|
-| `SIDESPOT_SIDEKIT_PLAN.md` | Scope, licensing strategy, architecture, milestones, native surface. |
+| `docs/spotify/PLAN.md` | Scope, licensing strategy, architecture, milestones, native surface. |
 | Sidekit source (this repository) | Design law (§2 of the spec), component APIs, existing screen shapes, naming, test harnesses. |
 | `docs/ui-patterns-report.md`, `docs/ui-patterns-issue.md` | Action-bar grammar, options contract, focus/feedback rules, known divergences to avoid. |
 | Spotify public platform documentation | Item types, library/search capability names, OAuth flow shape, `spotify:` URI form. |
@@ -47,16 +51,22 @@ works from the specification, not from the other app's source.**
 
 **Date of specification:** 2026-11-08.
 
-**Not consulted:** the Sidespot repository (source, resources, build files, documentation), or
-any fork of it. No Sidespot screenshots, strings, or assets were used.
+**Not consulted while writing the specification:** the Sidespot repository (source, resources,
+build files, documentation), or any fork of it. No Sidespot screenshots, strings, or assets were
+used.
+
+**Reference availability:** `.sidespot/` is present in the working tree for review and behavioural
+comparison. It is listed in `.gitignore`, is never staged or committed, and is not a Git remote,
+submodule, package, or build dependency. Delete it at any time without affecting the build.
 
 ---
 
 ## 4. Clean-room rules for implementation
 
-1. Do not add the Sidespot repository as a Git remote, submodule, package, or source dependency.
+1. Keep `.sidespot/` untracked: it is in `.gitignore`, is never committed, and must not be added
+   as a Git remote, submodule, package, source dependency, Gradle include, or Cargo path.
 2. Do not copy source files, identifiers, symbol names, comments, error strings, drawables,
-   layouts, or build configuration from Sidespot.
+   layouts, or build configuration from Sidespot. Consult the specification, not its source.
 3. Do not copy its design document. `docs/spotify/SPEC.md` is written from Sidekit's design system
    and public behaviour; where it differs from another client, **Sidekit wins**.
 4. JNI symbols follow Sidekit's own scheme:
@@ -76,10 +86,10 @@ any fork of it. No Sidespot screenshots, strings, or assets were used.
 
 ## 5. Similarity review (run before merge)
 
-- [ ] No Sidespot file names or directory names in the tree.
-- [ ] No `sidespot`, `com.sidespot`, or `SideSpot` identifiers in code, resources, comments, or
-  test names (`git grep -i sidespot` should match only this document and the plan's licensing
-  text).
+- [ ] `.sidespot/` is absent from `git ls-files` and appears in `.gitignore`.
+- [ ] No `sidespot`, `com.sidespot`, or `SideSpot` identifiers in committed code, resources,
+  comments, or test names (`git grep -i sidespot` should match only provenance/plan licensing
+  text). The untracked `.sidespot/` directory is excluded from this check.
 - [ ] No identical JNI symbol names, class names, or private helper structure where an
   independent design would plausibly differ.
 - [ ] No copied comments, log lines, error strings, or user-facing copy.
@@ -132,3 +142,4 @@ Signed:        ______________________________________________
 | Date | Change |
 |---|---|
 | 2026-11-08 | Initial spec and provenance record; Sidekit MIT confirmed; `MediaSessionOwner`, `NativeLibraries`, `RemoteArtwork`, `SecretCipher` landed as upstream seams. |
+| 2026-11-09 | Sidespot moved to untracked `.sidespot/` as a review-only clean-room reference. It is gitignored and never committed; no Sidespot source or assets enter Sidekit. |

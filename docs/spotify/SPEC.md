@@ -5,7 +5,7 @@
 **Package:** `hrln.interactive.sidekit.apps.spotify`
 **Route root:** `app/sidetracks`
 **Native library:** `libsidekit_spotify.so`
-**Reference plan:** `SIDESPOT_SIDEKIT_PLAN.md` (decision, milestones, native layer)
+**Reference plan:** `docs/spotify/PLAN.md` (decision, milestones, native layer)
 **Provenance:** `docs/spotify/PROVENANCE.md`
 
 This document specifies **behaviour and UI**, not the native bridge. The librespot/JNI surface,
@@ -529,7 +529,7 @@ uses manual `viewModelFactory` wiring, Compose, and plain repositories; Sidetrac
 
 Models are the plan's `SpotifyTrack`, `SpotifyAlbum`, `SpotifyArtist`, `SpotifyPlaylist`,
 `SpotifyShow`, `SpotifyEpisode`, `SpotifyPage<T>`, `SpotifySearchResults`
-(`SIDESPOT_SIDEKIT_PLAN.md` §9). The UI never sees native DTOs.
+(`docs/spotify/PLAN.md` §9). The UI never sees native DTOs.
 
 - `SpotifyGateway` is the only interface the UI depends on; `NativeSpotifyGateway` implements it;
   `FakeSpotifyGateway` drives tests and screenshots.
@@ -601,7 +601,7 @@ Open, to settle before Milestone 3:
 ## 13. Out of scope for this document
 
 Native/JNI design, librespot patching, Gradle/Rust integration, OAuth redirect mechanics, and
-audio-sink implementation are specified in `SIDESPOT_SIDEKIT_PLAN.md` §5, §10. This document
+audio-sink implementation are specified in `docs/spotify/PLAN.md` §5, §10. This document
 assumes those exist behind `SpotifyGateway`.
 
 ---
