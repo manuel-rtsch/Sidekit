@@ -21,3 +21,6 @@ build/
 
 # Local clean-room reference (never committed)
 /.sidespot/
+
+# Rust build output
+native/**/target/

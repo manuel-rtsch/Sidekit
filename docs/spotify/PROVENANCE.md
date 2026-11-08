@@ -107,12 +107,11 @@ Record the result:
 
 ## 6. Third-party notices
 
-When the native library is added:
+The native library is `native/sidekit-spotify`:
 
-- Copy librespot's MIT licence text into the repository (e.g. `native/spotify/LICENSE-librespot`)
-  and reference it from the app's notices/about screen if Sidekit has one.
-- Pin the librespot commit in `native/librespot` and record it in `docs/spotify/LIBRESPOT_PATCHES.md`
-  together with any patch.
+- librespot 0.8.0 is consumed from crates.io and pinned by `native/sidekit-spotify/Cargo.lock`.
+  Its MIT licence is copied to `native/sidekit-spotify/LICENSE-librespot`.
+- No librespot patches are applied, so there is no `docs/spotify/LIBRESPOT_PATCHES.md`.
 - Do not describe Sidetracks as an official Spotify client. Document the account/protocol risk
   from the plan (§3, "Spotify account risk").
 
@@ -143,3 +142,4 @@ Signed:        ______________________________________________
 |---|---|
 | 2026-11-08 | Initial spec and provenance record; Sidekit MIT confirmed; `MediaSessionOwner`, `NativeLibraries`, `RemoteArtwork`, `SecretCipher` landed as upstream seams. |
 | 2026-11-09 | Sidespot moved to untracked `.sidespot/` as a review-only clean-room reference. It is gitignored and never committed; no Sidespot source or assets enter Sidekit. |
+| 2026-11-08 | Added the clean-room librespot 0.8.0 native crate, pinned by `Cargo.lock`, with upstream MIT notice. No Sidespot native code used. |

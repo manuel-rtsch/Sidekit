@@ -87,6 +87,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     packaging { resources.merges += setOf("META-INF/NOTICE.md", "META-INF/LICENSE.md", "META-INF/LICENSE.txt", "META-INF/NOTICE.txt") }
+    sourceSets["main"].jniLibs.directories.add(layout.buildDirectory.dir("generated/spotifyJniLibs").get().asFile.absolutePath)
     buildFeatures {
         compose = true
     }
@@ -99,6 +100,43 @@ android {
             }
         }
     }
+}
+
+// Sidetracks' librespot bridge. The generated ABI directory is a normal jniLibs source, so an
+// unsupported ABI simply has no .so and the Kotlin bridge reports it as unavailable.
+val spotifyJniLibs = layout.buildDirectory.dir("generated/spotifyJniLibs")
+val cargo = listOf(
+    File(System.getProperty("user.home"), ".cargo/bin/cargo"),
+    File("/usr/bin/cargo"),
+    File("/usr/local/bin/cargo")
+).firstOrNull { it.canExecute() }
+
+val buildSpotifyNative = tasks.register<Exec>("buildSpotifyNative") {
+    description = "Build libsidekit_spotify.so for arm64-v8a and x86_64."
+    group = "native"
+    enabled = cargo != null
+    if (cargo == null) {
+        logger.warn("Sidetracks: cargo is unavailable; libsidekit_spotify.so will not be packaged.")
+    }
+    workingDir = rootProject.file("native/sidekit-spotify")
+    commandLine(
+        cargo?.absolutePath.orEmpty(),
+        "ndk",
+        "-t", "arm64-v8a",
+        "-t", "x86_64",
+        "-o", spotifyJniLibs.get().asFile.absolutePath,
+        "build", "--release"
+    )
+    environment("ANDROID_NDK_HOME", androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath)
+    inputs.dir(rootProject.file("native/sidekit-spotify/src"))
+    inputs.files(rootProject.file("native/sidekit-spotify/Cargo.toml"), rootProject.file("native/sidekit-spotify/Cargo.lock"))
+    outputs.dir(spotifyJniLibs)
+}
+
+tasks.matching {
+    it.name.startsWith("merge") && (it.name.endsWith("NativeLibs") || it.name.endsWith("JniLibFolders"))
+}.configureEach {
+    dependsOn(buildSpotifyNative)
 }
 
 dependencies {
