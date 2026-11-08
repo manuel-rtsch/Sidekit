@@ -349,7 +349,7 @@ private fun AddressRow(
     onEditing: (Boolean) -> Unit,
     onDone: () -> Unit,
 ) {
-    val progressColor = SidekitTheme.colors.primaryA1
+    val progressColor = SidekitTheme.colors.emphasisA1
     SidekitTile(
         Modifier
             .fillMaxWidth()

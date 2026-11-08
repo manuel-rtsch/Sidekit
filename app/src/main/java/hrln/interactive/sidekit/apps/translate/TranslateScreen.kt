@@ -165,7 +165,7 @@ private fun LanguageRow(language: String, talking: Boolean, onMic: () -> Unit, o
             icon = if (talking) SidekitIcon.MicOff else SidekitIcon.Mic,
             contentDescription = if (talking) "Stop listening to $language" else "Speak $language",
             modifier = Modifier.size(SidekitTheme.spacing.itemHeight),
-            color = if (talking) colors.dangerA2 else colors.primaryA1,
+            color = if (talking) colors.dangerA2 else colors.emphasisA1,
             iconSize = 44.dp,
             onClick = onMic,
         )

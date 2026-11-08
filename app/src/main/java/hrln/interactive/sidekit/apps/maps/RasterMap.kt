@@ -100,7 +100,7 @@ fun RasterMap(center: Place, current: Place?, destination: Place?, zoomChange: I
                 val at = Offset((size.width / 2 + wrapX(p.x) * 256).toFloat(), (size.height / 2 + (p.y - v.y) * 256).toFloat())
                 drawCircle(colors.light, 9.dp.toPx(), at); drawCircle(color, 6.dp.toPx(), at)
             }
-            current?.let { marker(it, colors.primaryA1) }
+            current?.let { marker(it, colors.emphasisA1) }
             destination?.let { marker(it, colors.dangerA1) }
         }
         Box(Modifier.align(androidx.compose.ui.Alignment.BottomEnd).background(colors.surfaceA1).clickable {

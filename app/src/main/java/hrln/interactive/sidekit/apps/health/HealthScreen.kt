@@ -100,7 +100,7 @@ internal fun StepsCard(steps: StepsToday) {
                     .background(colors.surfaceA1)
                     .semantics { progressBarRangeInfo = ProgressBarRangeInfo(steps.progress, 0f..1f) },
             ) {
-                Box(Modifier.fillMaxHeight().fillMaxWidth(steps.progress).clip(barShape).background(colors.primaryA1))
+                Box(Modifier.fillMaxHeight().fillMaxWidth(steps.progress).clip(barShape).background(colors.emphasisA1))
             }
         }
     }

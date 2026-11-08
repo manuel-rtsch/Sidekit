@@ -72,7 +72,7 @@ internal fun KeypadDemo(module: KeypadModule) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 row.forEach { key ->
-                    SidekitTile(Modifier.weight(1f).height(34.dp), color = if (selected == key.label) SidekitTheme.colors.primaryA1 else SidekitTheme.colors.surfaceA3, onClick = { selected = key.label }) {
+                    SidekitTile(Modifier.weight(1f).height(34.dp), color = if (selected == key.label) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3, onClick = { selected = key.label }) {
                         SidekitText(key.label, style = caption)
                     }
                 }

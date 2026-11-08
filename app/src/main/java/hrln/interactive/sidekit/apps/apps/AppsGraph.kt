@@ -15,7 +15,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -46,7 +45,7 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     val app = selected
     val options = if (app == null) emptyList() else listOf(
         SideAction("info", "App info") { perform { vm.repository.info(app) } },
-        SideAction("uninstall", "Uninstall", tone = ActionTone.Destructive) {
+        SideAction.delete("uninstall", "Uninstall") {
             perform { context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}")).putExtra(Intent.EXTRA_USER, app.user)) }
         },
     )

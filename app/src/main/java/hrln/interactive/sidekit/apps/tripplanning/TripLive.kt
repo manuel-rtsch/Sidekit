@@ -15,9 +15,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import hrln.interactive.sidekit.apps.maps.*
-import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
-import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -121,7 +119,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                 fun plan() { vm.edit(null); nav.navigate("$root/plan") }
                 val actions = when (page) {
                     "home" -> listOf(SideAction.back("saved", "Saved") { nav.navigate("$root/saved") }, SideAction.forward("plan", "Plan", ::plan))
-                    "plan" -> listOf(SideAction.back("back", "Cancel", back), SideAction("save", if (vm.saving) "Saving…" else "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up) { vm.save(back) })
+                    "plan" -> listOf(SideAction.back("back", "Cancel", back), SideAction.save("save", if (vm.saving) "Saving…" else "Save") { vm.save(back) })
                     "places" -> listOf(SideAction.back("back", "Back", back), SideAction("add", "Add") { nav.navigate("$root/search") })
                     "detail" -> listOf(SideAction.back("back", "Back", back), SideAction("replan", "Plan again") { vm.edit(vm.selected); nav.navigate("$root/plan") })
                     "departures" -> listOf(SideAction.back("back", "Back", back), SideAction("refresh", if (vm.busy) "Loading…" else "Refresh") { vm.board {} })

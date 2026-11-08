@@ -30,7 +30,7 @@ enum class ItemColour { Primary, Secondary, Destructive, Muted }
 @Composable
 fun ItemColour.container(): Color = when (this) {
     ItemColour.Primary -> SidekitTheme.colors.surfaceA3
-    ItemColour.Secondary -> SidekitTheme.colors.primaryA2
+    ItemColour.Secondary -> SidekitTheme.colors.emphasisA2
     ItemColour.Destructive -> SidekitTheme.colors.dangerA2
     ItemColour.Muted -> SidekitTheme.colors.surfaceA2
 }

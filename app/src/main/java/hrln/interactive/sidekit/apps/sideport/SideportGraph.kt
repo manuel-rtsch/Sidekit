@@ -510,7 +510,7 @@ internal fun SideportChatScreen(key: String, onBack: () -> Unit) {
             message?.let { text -> item(key = "message") { SidekitCard(Modifier.fillMaxWidth(), onClick = { message = null }) { SidekitText(text, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             val messages = chat?.messages.orEmpty()
             itemsIndexed(messages) { _, m ->
-                SidekitCard(Modifier.fillMaxWidth(), color = if (m.mine) SidekitTheme.colors.primaryA1 else SidekitTheme.colors.surfaceA3) {
+                SidekitCard(Modifier.fillMaxWidth(), color = if (m.mine) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         m.sender?.let { SidekitText(it, style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6) }
                         SidekitText(m.text, style = SidekitTheme.typography.bodySmall, maxLines = Int.MAX_VALUE)

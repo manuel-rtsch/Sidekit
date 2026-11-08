@@ -60,7 +60,7 @@ fun CalendarScreen(
                                 event.start < date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() && event.end > begins
                             }
                             SidekitTile(Modifier.weight(1f).height(SidekitTheme.spacing.itemHeight),
-                                color = if (date == state.date) SidekitTheme.colors.primaryA1 else SidekitTheme.colors.surfaceA3,
+                                color = if (date == state.date) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3,
                                 onClick = { onDate(date) }, onClickLabel = date.toString()) {
                                 SidekitText(if (date.month == first.month) "${date.dayOfMonth}${if (hasEvents) "·" else ""}" else "", style = SidekitTheme.typography.caption)
                             }
@@ -87,7 +87,7 @@ private fun WeekStrip(week: List<CalendarDay>, selectedIndex: Int, onSelectDay: 
         week.forEachIndexed { index, day ->
             val selected = index == selectedIndex
             SidekitTile(Modifier.weight(1f).height(SidekitTheme.spacing.itemHeight).semantics { this.selected = selected },
-                color = if (selected) SidekitTheme.colors.primaryA1 else SidekitTheme.colors.surfaceA3,
+                color = if (selected) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3,
                 onClick = { onSelectDay(index) }, onClickLabel = "${day.weekday} ${day.date}") {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     SidekitText(day.weekday, style = SidekitTheme.typography.caption)

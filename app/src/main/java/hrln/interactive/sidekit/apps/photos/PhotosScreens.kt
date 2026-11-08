@@ -388,7 +388,7 @@ private fun FullPhoto(item: MediaItem, onPlayVideo: () -> Unit) {
         }
         if (item.isVideo) {
             Box(
-                Modifier.size(SidekitTheme.spacing.itemHeight).clip(SidekitTheme.shapes.item).background(SidekitTheme.colors.primaryA1),
+                Modifier.size(SidekitTheme.spacing.itemHeight).clip(SidekitTheme.shapes.item).background(SidekitTheme.colors.emphasisA1),
                 contentAlignment = Alignment.Center,
             ) { SidekitIconImage(SidekitIcon.PlayArrow, size = SidekitTheme.spacing.tileIconSize) }
         }

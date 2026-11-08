@@ -102,7 +102,7 @@ internal fun CompassDial(degrees: () -> Float, modifier: Modifier = Modifier) {
                 val south = Path().apply {
                     moveTo(115 * u, 134 * u); lineTo(153 * u, 134 * u); lineTo(134 * u, 215 * u); close()
                 }
-                drawPath(north, colors.primaryA1)
+                drawPath(north, colors.emphasisA1)
                 drawPath(south, colors.surfaceA6)
             }
             drawCircle(colors.light, radius = 7 * u, center = c)

@@ -72,7 +72,7 @@ private fun StraightLine(from: Place, to: Place) {
     val declination = remember(from) { GeomagneticField(from.latitude.toFloat(), from.longitude.toFloat(), 0f, System.currentTimeMillis()).declination }
     var accuracy by remember { mutableIntStateOf(0) }
     WhileVisible(sensor) { sensor.accuracy.collect { accuracy = it } }
-    val color = SidekitTheme.colors.primaryA1
+    val color = SidekitTheme.colors.emphasisA1
     SidekitTile(Modifier.fillMaxWidth().height(230.dp)) {
         Column {
             SidekitText("${result[0].toInt()} m · ${((result[1] + 360) % 360).toInt()}° true", Modifier.padding(SidekitTheme.spacing.itemPadding))

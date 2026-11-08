@@ -288,18 +288,11 @@ private enum class PlayTileColour { None, Light, Strong }
 @Composable
 private fun RowScope.IconTile(icon: SidekitIcon, label: String, onClick: () -> Unit, colour: PlayTileColour = PlayTileColour.None) {
     val colors = SidekitTheme.colors
-    SidekitIconItem(
-        icon,
-        label,
-        Modifier.weight(1f),
-        color = when (colour) {
-            PlayTileColour.None -> colors.surfaceA3
-            PlayTileColour.Light -> colors.primaryA2
-            PlayTileColour.Strong -> colors.primaryA1
-        },
-        iconSize = SidekitTheme.spacing.tileIconSize,
-        onClick = onClick
-    )
+    SidekitIconItem(icon, label, Modifier.weight(1f), color = when (colour) {
+        PlayTileColour.None -> colors.surfaceA3
+        PlayTileColour.Light -> colors.emphasisA2
+        PlayTileColour.Strong -> colors.emphasisA1
+    }, iconSize = SidekitTheme.spacing.tileIconSize, onClick = onClick)
 }
 
 private fun LazyListScope.libraryRows(items: List<LibraryItem>, listState: LazyListState, firstIndex: Int, actions: MusicActions) {

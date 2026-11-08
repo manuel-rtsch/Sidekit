@@ -86,7 +86,7 @@ fun SidekitSliderItem(
             Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(value.coerceIn(0f, 1f))
-                .background(colors.primaryA1),
+                .background(colors.emphasisA1),
         )
         Row(
             modifier = Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding),

@@ -33,7 +33,19 @@ data class SidekitColors(
     val surfaceA6: Color = Color(0xFF8B8B8B),
     val dark: Color = Color(0xFF000000),
     val light: Color = Color(0xFFFFFFFF),
-)
+) {
+    /**
+     * Content emphasis: the selected day, a progress fill, a route, your own message, a marker.
+     *
+     * Deliberately the same dark green a commit action wears, and deliberately *not* [primaryA1]:
+     * primary is the case colour and changes with the hardware, so content painted in it would
+     * change meaning per skin. Emphasis is fixed; only actions and the colour picker may use
+     * primary.
+     */
+    val emphasisA1: Color get() = successA1
+    val emphasisA2: Color get() = successA2
+    val emphasisA3: Color get() = successA3
+}
 
 /** Luminance above which content on a fill should switch from white to black. */
 private const val CONTENT_LUMINANCE = 0.3f

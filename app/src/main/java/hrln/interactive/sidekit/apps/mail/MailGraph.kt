@@ -192,7 +192,7 @@ private fun ComposeScreen(
     SidekitScaffold(title = if (existing == null) "Compose" else existing.folder.label, actions = listOf(
         SideAction.back("cancel", "Cancel", onCancel),
         SideAction("save", "Save", tone = ActionTone.Muted) { onSave(to, subject, body) },
-        SideAction("send", "Send", SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward) { onSend(to, subject, body) },
+        SideAction.send("send") { onSend(to, subject, body) },
     )) { padding ->
         val state = rememberLazyListState()
         SidekitList(padding, state = state) {

@@ -192,9 +192,9 @@ private fun ClockEditor(id: String, onClose: () -> Unit) {
         onClose()
     }
     SidekitScaffold(modifier = Modifier.focusRequester(focus).focusable(), title = if (id == "new") "New alarm" else "Edit alarm",
-        actions = if (deleting) listOf(SideAction("cancel", "Cancel", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back) { deleting = false }, SideAction("main", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { repo.deleteWithUndo(id); onClose() })
-        else listOf(SideAction("cancel", "Cancel", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, onClick = onClose), SideAction("main", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = ::save)),
-        options = if (id == "new") emptyList() else listOf(SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { deleting = true })) { padding ->
+        actions = if (deleting) listOf(SideAction("cancel", "Cancel", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back) { deleting = false }, SideAction.delete("main", icon = SidekitIcon.DeleteForever) { repo.deleteWithUndo(id); onClose() })
+        else listOf(SideAction("cancel", "Cancel", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, onClick = onClose), SideAction.save("main", onClick = ::save)),
+        options = if (id == "new") emptyList() else listOf(SideAction.delete("delete", icon = SidekitIcon.DeleteForever) { deleting = true })) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
             item { SidekitCard(Modifier.listFade(list, 0).fillMaxWidth()) { SidekitTextField(time, { time = it }, placeholder = "HH:mm", singleLine = true, focusOnKeypad = true, autoFocus = id == "new", onDone = { focus.requestFocus() }) } }
