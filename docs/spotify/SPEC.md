@@ -1,6 +1,6 @@
 # Sidetracks — Feature Specification
 
-**Status:** Draft for implementation review
+**Status:** Draft for implementation review — UI mockup delivered
 **App label:** Sidetracks (temporary; see §12)
 **Package:** `hrln.interactive.sidekit.apps.spotify`
 **Route root:** `app/sidetracks`
@@ -603,3 +603,23 @@ Open, to settle before Milestone 3:
 Native/JNI design, librespot patching, Gradle/Rust integration, OAuth redirect mechanics, and
 audio-sink implementation are specified in `SIDESPOT_SIDEKIT_PLAN.md` §5, §10. This document
 assumes those exist behind `SpotifyGateway`.
+
+---
+
+## 14. Mockup status
+
+A reviewable UI mockup now exists on branch `feat/sidetracks-mockup` (mockup commit `33c4b59`),
+installed as a `hrln.interactive.sidekit.dev` build on the attached Sidephone.
+
+- All nine screens in §5 are implemented with Sidekit chrome and components.
+- Mock data, cover art and a state holder simulate library, search, queue, history, shuffle,
+  repeat, save/follow, notices and sign-out; no native library or Spotify credentials are used.
+- The launcher entry sits immediately after Music with `SidekitIcon.QueueMusic`.
+- Roborazzi baselines are in `app/screenshots/sidetracks_*.png`; the screenshot test and
+  `:app:compileDebugKotlin` pass.
+- The device was keyguard-locked during installation review, so on-device tap-through is still
+  outstanding; screenshot review covered layout, typography and action-bar behaviour.
+
+The mockup keeps the §9 component boundaries, so the next step can replace the mock data and
+playback state with the real `SpotifyGateway`, auth and playback service without reworking screens.
+
