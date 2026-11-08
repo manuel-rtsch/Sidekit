@@ -28,10 +28,11 @@ class MusicService : Service() {
     override fun onCreate() {
         super.onCreate()
         running = this
+        val playback = MusicPlayback.get(this)
         val manager = getSystemService(NotificationManager::class.java)
-        if (manager.getNotificationChannel(CHANNEL) == null) {
+        if (manager.getNotificationChannel(playback.notificationChannelId) == null) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Music playback", NotificationManager.IMPORTANCE_LOW).apply {
+                NotificationChannel(playback.notificationChannelId, playback.notificationChannelName, NotificationManager.IMPORTANCE_LOW).apply {
                     setShowBadge(false)
                 },
             )
@@ -42,7 +43,7 @@ class MusicService : Service() {
         val playback = MusicPlayback.get(this)
         // Started with startForegroundService: must enter the foreground before anything else.
         // (Even when about to stop: a service started that way that never does is a crash.)
-        startForeground(NOTIFICATION_ID, notification(playback, playback.state.value), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        startForeground(playback.notificationId, notification(playback, playback.state.value), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> playback.togglePlayPause()
             ACTION_NEXT -> playback.next()
@@ -65,9 +66,9 @@ class MusicService : Service() {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
-            state.isPlaying -> startForeground(NOTIFICATION_ID, notification(playback, state), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            state.isPlaying -> startForeground(playback.notificationId, notification(playback, state), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             else -> {
-                getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(playback, state))
+                getSystemService(NotificationManager::class.java).notify(playback.notificationId, notification(playback, state))
                 stopForeground(STOP_FOREGROUND_DETACH)
             }
         }
@@ -81,7 +82,7 @@ class MusicService : Service() {
             Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        return Notification.Builder(this, CHANNEL)
+        return Notification.Builder(this, playback.notificationChannelId)
             .setSmallIcon(SidekitIcon.MusicNote2.drawable)
             .setContentTitle(track?.title.orEmpty())
             .setContentText(track?.artist.orEmpty())
@@ -113,8 +114,6 @@ class MusicService : Service() {
     )
 
     companion object {
-        private const val CHANNEL = "music"
-        private const val NOTIFICATION_ID = 0x6D75 // "mu"
         private const val ACTION_PLAY_PAUSE = "hrln.interactive.sidekit.music.PLAY_PAUSE"
         private const val ACTION_NEXT = "hrln.interactive.sidekit.music.NEXT"
         private const val ACTION_PREVIOUS = "hrln.interactive.sidekit.music.PREVIOUS"
