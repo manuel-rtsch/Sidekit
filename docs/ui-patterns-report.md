@@ -357,7 +357,7 @@ These are preview/screenshot surfaces, but they are the ones a reader compares a
 
 ## 6. Recommended rules (smallest set that removes most of the divergence)
 
-1. **One feedback primitive.** Promote `withNotice` into `design/` and require it: bar-replacement notice for transient success/error, `Undo | main` for reversible deletion, body row only for persistent explanation. Delete the three private copies.
+1. **One feedback primitive.** Undo is done (`undoBar`); the notice half is not. Promote `withNotice` into `design/` and require it: bar-replacement notice for transient success/error, `continueWith | Undo` for reversible deletion, body row only for persistent explanation. Delete the three private copies.
 2. ✅ **Tone is a contract, not a suggestion.** Implemented as `ActionToneConventionTest` rather than a linter: it scans app sources for destructive, commit, cancel and undo labels and fails on the wrong tone. Roles (`save`, `send`, `delete`, `cancel`, `undo`) make the tone implicit, so new code cannot forget it. A Muted back is expressed as `SideAction.cancel`, not by hand-building `back`.
 3. **Give `SideAction` an `enabled`/`busy` state** so "Saving…" is not a no-op button and does not have to change the button count.
 4. ✅ **Two slots, decided: left = what you are doing, right = what comes next.** Undo is always right and is only ever added, never substituted (`undoBar`, §9). Primary rightmost. Sideticks, Arrange Home and Trip's undo-position split are fixed by that rule; Arrange Home's `Done` slot is still open.
