@@ -109,7 +109,7 @@ class ActionToneConventionTest {
     // The tone argument, if it is a literal. Null when absent; COMPUTED when a screen works the
     // tone out at runtime (the ported apps map the original app's tone) — nothing to assert there.
     // The role factory, if any (SideAction.save / send / delete), fixes the tone in one place.
-    private fun roleOf(callee: String): String? = Regex("""SideAction\.(save|send|delete|cancel)\(""").matchEntire(callee)?.groupValues?.get(1)
+    private fun roleOf(callee: String): String? = Regex("""SideAction\.(save|send|delete|cancel|undo)\(""").matchEntire(callee)?.groupValues?.get(1)
 
     private fun toneOf(args: List<String>): String? {
         val arg = args.firstOrNull { it.trimStart().startsWith("tone") } ?: return null
