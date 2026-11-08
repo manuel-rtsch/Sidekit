@@ -41,7 +41,7 @@ fun SpotifySearchScreen(
     onDismissNotice: () -> Unit
 ) {
     var expandedTracks by remember(state.query) { mutableStateOf(false) }
-    val results = MockSpotifyDataSource.search(state.query, state.searchScopes)
+    val results = state.searchResults
     val actions = withNotice(
         state.notice,
         onDismissNotice,
@@ -91,6 +91,10 @@ fun SpotifySearchScreen(
 
                 state.query.trim().length < 2 -> item(key = "short") {
                     EmptyMessage("Keep typing", "Type at least two letters to search")
+                }
+
+                state.searchPending && results.isEmpty -> item(key = "loading") {
+                    EmptyMessage("Searching…", "Spotify is looking for matches")
                 }
 
                 results.isEmpty -> item(key = "noResults") {

@@ -2,6 +2,10 @@ package hrln.interactive.sidekit.apps.spotify
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.apps.spotify.data.SpotifyCatalog
+import hrln.interactive.sidekit.apps.spotify.data.SpotifyHistoryRepository
+import hrln.interactive.sidekit.apps.spotify.data.SpotifyQueueRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +18,10 @@ data class SpotifyUiState(
     val current: SpotifyMediaItem? = null,
     val upcoming: List<SpotifyMediaItem> = emptyList(),
     val history: List<SpotifyMediaItem> = emptyList(),
+    val recent: List<SpotifyTrack> = emptyList(),
+    val libraryItems: List<Any> = emptyList(),
+    val searchResults: SpotifySearchResults = SpotifySearchResults(),
+    val searchPending: Boolean = false,
     val isPlaying: Boolean = false,
     val positionMs: Long = 0L,
     val shuffle: Boolean = false,
@@ -32,17 +40,26 @@ data class SpotifyUiState(
 }
 
 /**
- * One state holder for the mockup. It owns the queue, a reasonable simulation of playback and
- * every optimistic save/follow, so navigation never resets the visible account.
+ * State holder for the Sidetracks UI. Catalog reads, queue ordering and local history live in
+ * their own domain objects; this class only maps them to the single immutable screen state and
+ * implements the optimistic save/follow behaviour the action bars expect.
  */
-class SpotifyViewModel : ViewModel() {
+class SpotifyViewModel(
+    private val catalog: SpotifyCatalog = MockSpotifyDataSource,
+    private val history: SpotifyHistoryRepository = SpotifyHistoryRepository()
+) : ViewModel() {
     private val _state = MutableStateFlow(SpotifyUiState())
     val state: StateFlow<SpotifyUiState> = _state.asStateFlow()
 
-    private var context: List<SpotifyMediaItem> = emptyList()
-    private var contextIndex = 0
+    private val queue = SpotifyQueueRepository()
+    private var searchJob: Job? = null
 
     init {
+        if (history.items().isEmpty()) {
+            // Seed the reference account in the same order the fixture lists it: most recent first.
+            catalog.recentlyPlayed().asReversed().forEach { history.record(it, 0L) }
+        }
+        loadAccount()
         viewModelScope.launch {
             while (true) {
                 delay(1_000L)
@@ -55,6 +72,14 @@ class SpotifyViewModel : ViewModel() {
 
     fun notice(text: String) = _state.update { it.copy(notice = text) }
 
+    fun collection(type: SpotifyCollectionType, id: String): SpotifyCollection? = catalog.collection(type, id)
+
+    fun artist(id: String): SpotifyArtist? = catalog.artist(id)
+
+    fun albumsBy(artist: SpotifyArtist): List<SpotifyAlbum> = catalog.albumsBy(artist)
+
+    fun topTracks(artist: SpotifyArtist): List<SpotifyTrack> = catalog.topTracks(artist)
+
     fun play(items: List<SpotifyMediaItem>, index: Int) {
         if (index !in items.indices) return
         val item = items[index]
@@ -62,38 +87,36 @@ class SpotifyViewModel : ViewModel() {
             notice("Not available on this account")
             return
         }
-        val previous = _state.value.current
-        context = items
-        contextIndex = index
-        _state.update {
-            it.copy(
-                current = item,
-                upcoming = items.drop(index + 1),
-                history = if (previous == null || previous.id == item.id) it.history else (listOf(previous) + it.history).take(HISTORY_LIMIT),
-                isPlaying = true,
-                positionMs = 0L,
-                notice = null
-            )
-        }
+        val snapshot = queue.play(items, index)
+        recorded(item)
+        applyQueue(snapshot, positionMs = 0L, playing = true)
+        _state.update { it.copy(notice = null) }
     }
 
     fun playItem(item: SpotifyMediaItem) = play(listOf(item), 0)
 
     fun playCollection(collection: SpotifyCollection, index: Int) = play(collection.items, index)
 
-    fun playArtist(artist: SpotifyArtist) = play(MockSpotifyDataSource.topTracks(artist), 0)
+    fun playArtist(artist: SpotifyArtist) = play(catalog.topTracks(artist), 0)
 
     fun playLibraryTrack(track: SpotifyTrack) {
-        val recent = MockSpotifyDataSource.recentlyPlayed
-        val at = recent.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: 0
-        play(recent, at)
+        val recent = _state.value.recent
+        val at = recent.indexOfFirst { it.id == track.id }
+        if (at >= 0) play(recent, at) else playItem(track)
     }
 
     fun togglePlayPause() = _state.update {
         if (it.current == null) it else it.copy(isPlaying = !it.isPlaying)
     }
 
-    fun next() = advance(auto = false)
+    fun next() {
+        val before = _state.value.current
+        val snapshot = queue.next(auto = false)
+        if (snapshot.current !== before) {
+            snapshot.current?.let(::recorded)
+            applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+        }
+    }
 
     fun previous() {
         val s = _state.value
@@ -102,19 +125,12 @@ class SpotifyViewModel : ViewModel() {
             _state.update { it.copy(positionMs = 0L) }
             return
         }
-        val previous = s.history.firstOrNull()
-        if (previous == null) {
+        val snapshot = queue.previous(s.positionMs)
+        if (snapshot.current !== s.current) {
+            snapshot.current?.let(::recorded)
+            applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+        } else {
             _state.update { it.copy(positionMs = 0L) }
-            return
-        }
-        _state.update {
-            it.copy(
-                current = previous,
-                upcoming = listOfNotNull(s.current) + it.upcoming,
-                history = it.history.drop(1),
-                positionMs = 0L,
-                isPlaying = previous.playable
-            )
         }
     }
 
@@ -123,12 +139,9 @@ class SpotifyViewModel : ViewModel() {
         it.copy(positionMs = positionMs.coerceIn(0L, duration))
     }
 
-    fun toggleShuffle() = _state.update {
-        val on = !it.shuffle
-        it.copy(shuffle = on, upcoming = if (on) it.upcoming.shuffled() else it.upcoming)
-    }
+    fun toggleShuffle() = applyQueue(queue.toggleShuffle())
 
-    fun cycleRepeat() = _state.update { it.copy(repeat = it.repeat.next()) }
+    fun cycleRepeat() = applyQueue(queue.cycleRepeat())
 
     fun toggleSaveCurrent() {
         val item = _state.value.current ?: return
@@ -171,23 +184,37 @@ class SpotifyViewModel : ViewModel() {
         it.copy(followedArtistIds = ids, notice = if (wasFollowing) "Unfollowed ${artist.name}" else "Following ${artist.name}")
     }
 
-    fun setFilter(filter: LibraryFilter) = _state.update { it.copy(filter = filter) }
+    fun setFilter(filter: LibraryFilter) = _state.update {
+        it.copy(filter = filter, libraryItems = catalog.library(filter))
+    }
 
-    fun setQuery(query: String) = _state.update { it.copy(query = query) }
+    fun setQuery(query: String) {
+        _state.update { it.copy(query = query) }
+        search(debounceMs = 250L)
+    }
 
-    fun clearQuery() = _state.update { it.copy(query = "") }
+    fun clearQuery() {
+        searchJob?.cancel()
+        _state.update { it.copy(query = "", searchResults = SpotifySearchResults(), searchPending = false) }
+    }
 
-    fun toggleScope(scope: SearchScope) = _state.update {
-        val scopes = if (scope in it.searchScopes) it.searchScopes - scope else it.searchScopes + scope
-        it.copy(searchScopes = scopes)
+    fun toggleScope(scope: SearchScope) {
+        _state.update {
+            val scopes = if (scope in it.searchScopes) it.searchScopes - scope else it.searchScopes + scope
+            it.copy(searchScopes = scopes)
+        }
+        search(debounceMs = 0L)
     }
 
     fun cycleAudioQuality() = _state.update { it.copy(audioQuality = it.audioQuality.next()) }
 
     fun setVolume(value: Float) = _state.update { it.copy(volume = value.coerceIn(0f, 1f)) }
 
-    fun clearHistory() = _state.update {
-        it.copy(history = emptyList(), notice = "Listening history cleared")
+    fun clearHistory() {
+        history.clear()
+        val snapshot = queue.clearHistory()
+        applyQueue(snapshot)
+        _state.update { it.copy(recent = emptyList(), notice = "Listening history cleared") }
     }
 
     fun clearCache() = _state.update { it.copy(notice = "Artwork cache cleared") }
@@ -196,25 +223,28 @@ class SpotifyViewModel : ViewModel() {
         it.copy(notice = "Added to Late Night Drive")
     }
 
-    fun moveToNext(item: SpotifyMediaItem) = _state.update {
-        if (item.id == it.current?.id) it else it.copy(upcoming = listOf(item) + it.upcoming.filterNot { queued -> queued.id == item.id })
+    fun moveToNext(item: SpotifyMediaItem) {
+        applyQueue(queue.playNext(item))
+        _state.update { it.copy(notice = "Playing next") }
     }
 
-    fun removeUpcoming(item: SpotifyMediaItem) = _state.update {
-        it.copy(upcoming = it.upcoming.filterNot { queued -> queued.id == item.id }, notice = "Removed from queue")
+    fun removeUpcoming(item: SpotifyMediaItem) {
+        applyQueue(queue.removeUpcoming(item))
+        _state.update { it.copy(notice = "Removed from queue") }
     }
 
-    fun addToQueue(item: SpotifyMediaItem) = _state.update {
-        it.copy(upcoming = it.upcoming + item, notice = "Added to queue")
+    fun addToQueue(item: SpotifyMediaItem) {
+        applyQueue(queue.addToQueue(item))
+        _state.update { it.copy(notice = "Added to queue") }
     }
 
     fun clearUpcoming(): List<SpotifyMediaItem> {
-        val removed = _state.value.upcoming
-        _state.update { it.copy(upcoming = emptyList()) }
+        val removed = queue.clearUpcoming()
+        applyQueue(queue.snapshot)
         return removed
     }
 
-    fun restoreUpcoming(items: List<SpotifyMediaItem>) = _state.update { it.copy(upcoming = items + it.upcoming) }
+    fun restoreUpcoming(items: List<SpotifyMediaItem>) = applyQueue(queue.restoreUpcoming(items))
 
     fun jumpTo(id: String) {
         val s = _state.value
@@ -222,36 +252,83 @@ class SpotifyViewModel : ViewModel() {
             _state.update { it.copy(positionMs = 0L, isPlaying = true) }
             return
         }
-        val at = s.upcoming.indexOfFirst { it.id == id }
-        if (at >= 0) {
-            val skipped = s.upcoming.take(at)
-            val target = s.upcoming[at]
-            _state.update {
-                it.copy(
-                    current = target,
-                    upcoming = it.upcoming.drop(at + 1),
-                    history = (listOfNotNull(it.current) + skipped).take(HISTORY_LIMIT),
-                    positionMs = 0L,
-                    isPlaying = target.playable
-                )
-            }
-            return
+        val snapshot = queue.jumpTo(id)
+        if (snapshot.current !== s.current) {
+            snapshot.current?.let(::recorded)
+            applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
         }
-        s.history.firstOrNull { it.id == id }?.let { playItem(it) }
     }
 
     fun signOut() {
+        queue.stop()
         _state.update {
             SpotifyUiState(
                 signedIn = false,
                 savedTrackIds = emptySet(),
                 savedCollectionKeys = emptySet(),
-                followedArtistIds = emptySet()
+                followedArtistIds = emptySet(),
+                recent = history.items().filterIsInstance<SpotifyTrack>()
             )
         }
     }
 
-    fun signIn() = _state.update { SpotifyUiState(signedIn = true) }
+    fun signIn() {
+        _state.update { SpotifyUiState(signedIn = true) }
+        loadAccount()
+    }
+
+    private fun loadAccount() {
+        _state.update {
+            it.copy(
+                recent = history.items().filterIsInstance<SpotifyTrack>().ifEmpty { catalog.recentlyPlayed() },
+                libraryItems = catalog.library(it.filter)
+            )
+        }
+    }
+
+    private fun applyQueue(
+        snapshot: SpotifyQueueRepository.Snapshot,
+        positionMs: Long? = null,
+        playing: Boolean? = null
+    ) = _state.update {
+        it.copy(
+            current = snapshot.current,
+            upcoming = snapshot.upcoming,
+            history = snapshot.history,
+            shuffle = snapshot.shuffle,
+            repeat = snapshot.repeat,
+            positionMs = positionMs ?: it.positionMs,
+            isPlaying = playing ?: it.isPlaying
+        )
+    }
+
+    private fun recorded(item: SpotifyMediaItem) {
+        if (item !is SpotifyTrack) return
+        history.record(item, System.currentTimeMillis())
+        _state.update { it.copy(recent = history.items().filterIsInstance<SpotifyTrack>()) }
+    }
+
+    private fun search(debounceMs: Long) {
+        searchJob?.cancel()
+        val query = _state.value.query
+        if (query.trim().length < 2) {
+            _state.update { it.copy(searchResults = SpotifySearchResults(), searchPending = false) }
+            return
+        }
+        _state.update { it.copy(searchPending = true) }
+        searchJob = viewModelScope.launch {
+            delay(debounceMs)
+            val scopes = _state.value.searchScopes
+            val results = catalog.search(query, scopes)
+            _state.update {
+                if (it.query == query && it.searchScopes == scopes) {
+                    it.copy(searchResults = results, searchPending = false)
+                } else {
+                    it
+                }
+            }
+        }
+    }
 
     private fun tick() {
         val s = _state.value
@@ -263,39 +340,35 @@ class SpotifyViewModel : ViewModel() {
         } else {
             when (s.repeat) {
                 RepeatMode.Track -> _state.update { it.copy(positionMs = 0L) }
-                RepeatMode.Context -> if (context.isNotEmpty()) play(context, 0) else advance(auto = true)
-                RepeatMode.Off -> advance(auto = true)
+                RepeatMode.Context -> advance(auto = true, forceContextLoop = true)
+                RepeatMode.Off -> advance(auto = true, forceContextLoop = false)
             }
         }
     }
 
-    private fun advance(auto: Boolean) {
+    private fun advance(auto: Boolean, forceContextLoop: Boolean) {
         val s = _state.value
         val current = s.current ?: return
-        val next = s.upcoming.firstOrNull()
-        if (next != null) {
-            _state.update {
-                it.copy(
-                    current = next,
-                    upcoming = it.upcoming.drop(1),
-                    history = (listOf(current) + it.history).take(HISTORY_LIMIT),
-                    positionMs = 0L,
-                    isPlaying = next.playable
-                )
-            }
+        val hasNext = s.upcoming.isNotEmpty()
+        if (!hasNext && forceContextLoop) {
+            val snapshot = queue.next(auto = true)
+            snapshot.current?.let(::recorded)
+            applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
             return
         }
-        if (!auto) return
-        when (s.repeat) {
-            RepeatMode.Context -> if (context.isNotEmpty()) play(context, 0)
-            RepeatMode.Track -> _state.update { it.copy(positionMs = 0L) }
-            RepeatMode.Off -> _state.update { it.copy(isPlaying = false, positionMs = 0L) }
+        if (!hasNext && !auto) return
+        if (!hasNext) {
+            _state.update { it.copy(isPlaying = false, positionMs = 0L) }
+            return
+        }
+        val snapshot = queue.next(auto = true)
+        if (snapshot.current !== current) {
+            snapshot.current?.let(::recorded)
+            applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+        } else {
+            _state.update { it.copy(isPlaying = false, positionMs = 0L) }
         }
     }
 
     private fun collectionKey(collection: SpotifyCollection) = "${collection.type.route}:${collection.id}"
-
-    private companion object {
-        const val HISTORY_LIMIT = 20
-    }
 }

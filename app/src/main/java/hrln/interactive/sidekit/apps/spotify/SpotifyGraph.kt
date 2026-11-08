@@ -81,7 +81,7 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
             val state by vm.state.collectAsStateWithLifecycle()
             val type = SpotifyCollectionType.entries.firstOrNull { it.route == entry.arguments?.getString("type") }
             val id = entry.arguments?.getString("id").orEmpty()
-            val collection = type?.let { MockSpotifyDataSource.collection(it, id) }
+            val collection = type?.let { vm.collection(it, id) }
             if (collection == null) {
                 MissingCollectionScreen(onBack = { nav.popBackStack() })
             } else {
@@ -105,12 +105,12 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
         composable(ARTIST, arguments = artistArgs) { entry ->
             val vm = entry.spotifyViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            val artist = MockSpotifyDataSource.artist(entry.arguments?.getString("id").orEmpty())
+            val artist = vm.artist(entry.arguments?.getString("id").orEmpty())
             if (artist == null) {
                 MissingCollectionScreen(onBack = { nav.popBackStack() })
             } else {
-                val albums = MockSpotifyDataSource.albumsBy(artist)
-                val tracks = MockSpotifyDataSource.topTracks(artist)
+                val albums = vm.albumsBy(artist)
+                val tracks = vm.topTracks(artist)
                 ArtistScreen(
                     artist,
                     albums,

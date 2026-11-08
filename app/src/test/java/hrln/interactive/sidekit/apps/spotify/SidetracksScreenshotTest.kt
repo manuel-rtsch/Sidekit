@@ -27,10 +27,13 @@ class SidetracksScreenshotTest {
         current = current,
         upcoming = recent.drop(1),
         history = recent.drop(3),
+        recent = recent,
+        libraryItems = MockSpotifyDataSource.library(LibraryFilter.Albums),
+        searchResults = MockSpotifyDataSource.search("night", SearchScope.entries.toSet()),
         isPlaying = true,
         positionMs = 68_000L,
         savedTrackIds = setOf(current.id),
-        filter = LibraryFilter.Albums,
+        filter = LibraryFilter.Albums
     )
 
     @Test fun home() = shoot("sidetracks_home") {
@@ -41,7 +44,7 @@ class SidetracksScreenshotTest {
             onSearch = {},
             onSettings = {},
             onPlay = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -57,7 +60,7 @@ class SidetracksScreenshotTest {
             onArtist = {},
             onShow = {},
             onLoadMore = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -73,7 +76,7 @@ class SidetracksScreenshotTest {
             onQueue = {},
             onNowPlaying = {},
             onLoadMore = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -90,7 +93,7 @@ class SidetracksScreenshotTest {
             onAlbum = {},
             onFollow = {},
             onNowPlaying = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -106,7 +109,7 @@ class SidetracksScreenshotTest {
             onAlbum = {},
             onPlaylist = {},
             onShow = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -125,7 +128,7 @@ class SidetracksScreenshotTest {
             onAlbum = {},
             onArtist = {},
             onAddToPlaylist = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -140,7 +143,7 @@ class SidetracksScreenshotTest {
             onClearUpcoming = { emptyList() },
             onRestoreUpcoming = {},
             onShuffle = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -154,7 +157,7 @@ class SidetracksScreenshotTest {
             onClearHistory = {},
             onSignOut = {},
             onNotice = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 
@@ -164,7 +167,7 @@ class SidetracksScreenshotTest {
             onBack = {},
             onLogIn = {},
             onCopyLink = {},
-            onDismissNotice = {},
+            onDismissNotice = {}
         )
     }
 }

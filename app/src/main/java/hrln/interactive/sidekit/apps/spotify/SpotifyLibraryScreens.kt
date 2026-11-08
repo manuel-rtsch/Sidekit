@@ -39,7 +39,7 @@ fun SidetracksHomeScreen(
     onPlay: (SpotifyTrack) -> Unit,
     onDismissNotice: () -> Unit
 ) {
-    val recent = MockSpotifyDataSource.recentlyPlayed.take(10)
+    val recent = state.recent.take(10)
     val bar = withNotice(
         state.notice,
         onDismissNotice,
@@ -138,7 +138,7 @@ fun LibraryScreen(
         val first = remember { FocusRequester() }
         LaunchedEffect(state.filter) { runCatching { first.requestFocus() } }
         SidekitList(padding, state = listState) {
-            val items = MockSpotifyDataSource.library(state.filter)
+            val items = state.libraryItems
             if (items.isEmpty()) {
                 item(key = "empty") { EmptyMessage(state.filter.empty, "Search to find something to save") }
             }
