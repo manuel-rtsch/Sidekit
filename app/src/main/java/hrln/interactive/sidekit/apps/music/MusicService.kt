@@ -34,7 +34,7 @@ class MusicService : Service() {
             manager.createNotificationChannel(
                 NotificationChannel(playback.notificationChannelId, playback.notificationChannelName, NotificationManager.IMPORTANCE_LOW).apply {
                     setShowBadge(false)
-                },
+                }
             )
         }
     }
@@ -66,7 +66,9 @@ class MusicService : Service() {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
+
             state.isPlaying -> startForeground(playback.notificationId, notification(playback, state), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+
             else -> {
                 getSystemService(NotificationManager::class.java).notify(playback.notificationId, notification(playback, state))
                 stopForeground(STOP_FOREGROUND_DETACH)
@@ -80,7 +82,7 @@ class MusicService : Service() {
             this,
             0,
             Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            PendingIntent.FLAG_IMMUTABLE,
+            PendingIntent.FLAG_IMMUTABLE
         )
         return Notification.Builder(this, playback.notificationChannelId)
             .setSmallIcon(SidekitIcon.MusicNote2.drawable)
@@ -97,8 +99,8 @@ class MusicService : Service() {
                 Notification.Action.Builder(
                     Icon.createWithResource(this, if (state.isPlaying) SidekitIcon.Pause.drawable else SidekitIcon.PlayArrow.drawable),
                     if (state.isPlaying) "Pause" else "Play",
-                    action(ACTION_PLAY_PAUSE),
-                ).build(),
+                    action(ACTION_PLAY_PAUSE)
+                ).build()
             )
             .addAction(Notification.Action.Builder(Icon.createWithResource(this, SidekitIcon.SkipNext.drawable), "Next", action(ACTION_NEXT)).build())
             .setStyle(Notification.MediaStyle().setMediaSession(playback.sessionToken).setShowActionsInCompactView(0, 1, 2))
@@ -110,7 +112,7 @@ class MusicService : Service() {
         this,
         action.hashCode(),
         Intent(this, MusicService::class.java).setAction(action),
-        PendingIntent.FLAG_IMMUTABLE,
+        PendingIntent.FLAG_IMMUTABLE
     )
 
     companion object {

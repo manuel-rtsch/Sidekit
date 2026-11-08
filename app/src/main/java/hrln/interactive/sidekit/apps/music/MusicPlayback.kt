@@ -38,7 +38,7 @@ data class PlaybackState(
     val isPlaying: Boolean = false,
     val positionMs: Long = 0,
     val anchorAt: Long = 0,
-    val durationMs: Long = 0,
+    val durationMs: Long = 0
 ) {
     val track: Track? get() = queue.current
 
@@ -78,7 +78,9 @@ interface MusicPlayer {
  *
  * Main thread only.
  */
-class MusicPlayback private constructor(private val context: Context) : MusicPlayer, MediaSessionOwner {
+class MusicPlayback private constructor(private val context: Context) :
+    MusicPlayer,
+    MediaSessionOwner {
     override val sessionId = "music"
     override val notificationChannelId = "music"
     override val notificationChannelName = "Music playback"
@@ -286,14 +288,17 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
     }
 
     private fun session(): MediaSession = session ?: MediaSession(context, "SideKit Music").also { s ->
-        s.setCallback(object : MediaSession.Callback() {
-            override fun onPlay() = play()
-            override fun onPause() = pause()
-            override fun onSkipToNext() = next()
-            override fun onSkipToPrevious() = previous()
-            override fun onSeekTo(pos: Long) = seekTo(pos)
-            override fun onStop() = stop()
-        }, main)
+        s.setCallback(
+            object : MediaSession.Callback() {
+                override fun onPlay() = play()
+                override fun onPause() = pause()
+                override fun onSkipToNext() = next()
+                override fun onSkipToPrevious() = previous()
+                override fun onSeekTo(pos: Long) = seekTo(pos)
+                override fun onStop() = stop()
+            },
+            main
+        )
         s.isActive = true
         session = s
     }
@@ -312,7 +317,7 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
                     .putString(MediaMetadata.METADATA_KEY_ALBUM, track.album)
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, s.durationMs.takeIf { it > 0 } ?: track.durationMs)
                     .apply { art?.let { putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, it) } }
-                    .build(),
+                    .build()
             )
         }
         session.setPlaybackState(
@@ -320,10 +325,10 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
                 .setActions(
                     SessionState.ACTION_PLAY or SessionState.ACTION_PAUSE or SessionState.ACTION_PLAY_PAUSE or
                         SessionState.ACTION_SKIP_TO_NEXT or SessionState.ACTION_SKIP_TO_PREVIOUS or
-                        SessionState.ACTION_SEEK_TO or SessionState.ACTION_STOP,
+                        SessionState.ACTION_SEEK_TO or SessionState.ACTION_STOP
                 )
                 .setState(if (s.isPlaying) SessionState.STATE_PLAYING else SessionState.STATE_PAUSED, s.positionMs, if (s.isPlaying) 1f else 0f, s.anchorAt)
-                .build(),
+                .build()
         )
     }
 

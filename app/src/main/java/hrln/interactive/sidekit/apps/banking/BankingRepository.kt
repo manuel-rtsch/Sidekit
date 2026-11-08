@@ -4,6 +4,12 @@ import android.content.Context
 import androidx.core.util.AtomicFile
 import hrln.interactive.sidekit.apps.integrations.KeystoreCipher
 import hrln.interactive.sidekit.apps.integrations.SecretCipher
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.security.GeneralSecurityException
+import java.security.KeyStore
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,12 +20,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.security.GeneralSecurityException
-import java.security.KeyStore
-import java.util.concurrent.atomic.AtomicReference
 
 /** Connector metadata for the editable manual book. Up bank snapshots use [UpBankConnector]
  * separately so imported balances cannot be changed by local ledger entries. */
@@ -94,7 +94,7 @@ class BankingRepository(
     scope: CoroutineScope,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val clock: () -> Long = System::currentTimeMillis,
-    val connector: BankConnector = ManualTracker,
+    val connector: BankConnector = ManualTracker
 ) {
     sealed interface Load {
         data object Locked : Load
@@ -190,7 +190,7 @@ class BankingRepository(
             b.copy(
                 accounts = accounts,
                 transactions = b.transactions.filter { it.accountId != id },
-                selectedAccountId = if (b.selectedAccountId == id) accounts.firstOrNull()?.id else b.selectedAccountId,
+                selectedAccountId = if (b.selectedAccountId == id) accounts.firstOrNull()?.id else b.selectedAccountId
             )
         }
         return removed
@@ -251,7 +251,7 @@ object Banking {
     fun repository(context: Context): BankingRepository = repository ?: synchronized(this) {
         repository ?: BankingRepository(
             EncryptedFileBankStore(File(context.applicationContext.filesDir, "banking.sealed"), KeystoreCipher()),
-            CoroutineScope(SupervisorJob()),
+            CoroutineScope(SupervisorJob())
         ).also { repository = it }
     }
 }
