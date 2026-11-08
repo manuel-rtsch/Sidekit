@@ -22,6 +22,9 @@ sealed interface SpotifyMediaItem {
     val durationMs: Long
     val playable: Boolean
     val explicit: Boolean
+
+    /** Canonical Spotify URI for the real catalog; null for the local mockup fixtures. */
+    val uri: String? get() = null
 }
 
 data class SpotifyTrack(
@@ -33,7 +36,8 @@ data class SpotifyTrack(
     override val artRes: Int,
     override val durationMs: Long,
     override val explicit: Boolean = false,
-    override val playable: Boolean = true
+    override val playable: Boolean = true,
+    override val uri: String? = null
 ) : SpotifyMediaItem {
     override val creator: String get() = artist
 }
@@ -46,7 +50,8 @@ data class SpotifyEpisode(
     val published: String,
     override val artRes: Int,
     override val durationMs: Long,
-    val video: Boolean = false
+    val video: Boolean = false,
+    override val uri: String? = null
 ) : SpotifyMediaItem {
     override val creator: String get() = show
     override val artistId: String? get() = null

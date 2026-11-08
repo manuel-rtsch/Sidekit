@@ -3,6 +3,8 @@ package hrln.interactive.sidekit.apps.spotify
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyCatalog
+import hrln.interactive.sidekit.apps.spotify.data.SpotifyFailure
+import hrln.interactive.sidekit.apps.spotify.data.SpotifyGatewayException
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyHistoryRepository
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyQueueRepository
 import hrln.interactive.sidekit.apps.spotify.data.SpotifySession
@@ -101,6 +103,7 @@ class SpotifyViewModel(
         recorded(item)
         applyQueue(snapshot, positionMs = 0L, playing = true)
         _state.update { it.copy(notice = null) }
+        startRemote(item, 0L)
     }
 
     fun playItem(item: SpotifyMediaItem) = play(listOf(item), 0)
@@ -115,8 +118,21 @@ class SpotifyViewModel(
         if (at >= 0) play(recent, at) else playItem(track)
     }
 
-    fun togglePlayPause() = _state.update {
-        if (it.current == null) it else it.copy(isPlaying = !it.isPlaying)
+    fun togglePlayPause() {
+        val s = _state.value
+        val item = s.current ?: return
+        val play = !s.isPlaying
+        _state.update { it.copy(isPlaying = play) }
+        if (item.uri == null || session == null) return
+        viewModelScope.launch {
+            try {
+                if (play) session.resume() else session.pause()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(isPlaying = false, notice = playbackNotice(e)) }
+            }
+        }
     }
 
     fun next() {
@@ -125,6 +141,7 @@ class SpotifyViewModel(
         if (snapshot.current !== before) {
             snapshot.current?.let(::recorded)
             applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+            snapshot.current?.let { startRemote(it, 0L) }
         }
     }
 
@@ -133,20 +150,35 @@ class SpotifyViewModel(
         if (s.current == null) return
         if (s.positionMs > 3_000L) {
             _state.update { it.copy(positionMs = 0L) }
+            s.current?.uri?.let { uri ->
+                session?.let { session ->
+                    viewModelScope.launch { runCatching { session.seek(0L) } }
+                }
+            }
             return
         }
         val snapshot = queue.previous(s.positionMs)
         if (snapshot.current !== s.current) {
             snapshot.current?.let(::recorded)
             applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+            snapshot.current?.let { startRemote(it, 0L) }
         } else {
             _state.update { it.copy(positionMs = 0L) }
+            s.current?.uri?.let { uri ->
+                session?.let { session ->
+                    viewModelScope.launch { runCatching { session.seek(0L) } }
+                }
+            }
         }
     }
 
-    fun seekTo(positionMs: Long) = _state.update {
-        val duration = it.current?.durationMs ?: 0L
-        it.copy(positionMs = positionMs.coerceIn(0L, duration))
+    fun seekTo(positionMs: Long) {
+        val current = _state.value.current ?: return
+        val target = positionMs.coerceIn(0L, current.durationMs)
+        _state.update { it.copy(positionMs = target) }
+        if (current.uri != null && session != null) {
+            viewModelScope.launch { runCatching { session.seek(target) } }
+        }
     }
 
     fun toggleShuffle() = applyQueue(queue.toggleShuffle())
@@ -266,6 +298,7 @@ class SpotifyViewModel(
         if (snapshot.current !== s.current) {
             snapshot.current?.let(::recorded)
             applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+            snapshot.current?.let { startRemote(it, 0L) }
         }
     }
 
@@ -351,7 +384,18 @@ class SpotifyViewModel(
         searchJob = viewModelScope.launch {
             delay(debounceMs)
             val scopes = _state.value.searchScopes
-            val results = catalog.search(query, scopes)
+            val results = try {
+                if (session != null && session.signedIn.value) {
+                    SpotifySearchResults(tracks = session.searchTracks(query))
+                } else {
+                    catalog.search(query, scopes)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(notice = playbackNotice(e)) }
+                SpotifySearchResults()
+            }
             _state.update {
                 if (it.query == query && it.searchScopes == scopes) {
                     it.copy(searchResults = results, searchPending = false)
@@ -386,6 +430,7 @@ class SpotifyViewModel(
             val snapshot = queue.next(auto = true)
             snapshot.current?.let(::recorded)
             applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+            snapshot.current?.let { startRemote(it, 0L) }
             return
         }
         if (!hasNext && !auto) return
@@ -397,9 +442,35 @@ class SpotifyViewModel(
         if (snapshot.current !== current) {
             snapshot.current?.let(::recorded)
             applyQueue(snapshot, positionMs = 0L, playing = snapshot.current?.playable == true)
+            snapshot.current?.let { startRemote(it, 0L) }
         } else {
             _state.update { it.copy(isPlaying = false, positionMs = 0L) }
         }
+    }
+
+    /** Starts a real Spotify item; mock fixtures have no URI and keep the local simulation. */
+    private fun startRemote(item: SpotifyMediaItem, positionMs: Long) {
+        val uri = item.uri ?: return
+        val session = session ?: return
+        viewModelScope.launch {
+            try {
+                session.play(uri, positionMs)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(isPlaying = false, notice = playbackNotice(e)) }
+            }
+        }
+    }
+
+    private fun playbackNotice(error: Exception): String = when ((error as? SpotifyGatewayException)?.failure) {
+        SpotifyFailure.Unavailable -> "Spotify playback is unavailable in this build"
+        SpotifyFailure.NotConnected -> "Playback is not ready — try again"
+        SpotifyFailure.AuthenticationExpired -> "Spotify session expired — sign in again"
+        SpotifyFailure.Network -> "Couldn't reach Spotify"
+        SpotifyFailure.RateLimited -> "Spotify is busy — try again"
+        SpotifyFailure.TrackUnavailable -> "This track isn't available"
+        SpotifyFailure.Unknown, null -> error.message ?: "Playback failed"
     }
 
     private fun collectionKey(collection: SpotifyCollection) = "${collection.type.route}:${collection.id}"

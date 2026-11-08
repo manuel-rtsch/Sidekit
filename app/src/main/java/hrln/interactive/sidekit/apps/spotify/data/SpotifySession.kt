@@ -31,6 +31,8 @@ class SpotifySession(
     }
     val gateway: SpotifyGateway get() = nativeGateway
 
+    private val webApi by lazy { SpotifyWebApi { accessToken() } }
+
     private val playbackScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val playback: SpotifyPlayback by lazy {
         SpotifyPlayback(
@@ -63,9 +65,18 @@ class SpotifySession(
         withContext(Dispatchers.Main.immediate) { playback.start(uri, positionMs) }
     }
 
+    suspend fun resume() {
+        ensurePlaybackConnected()
+        withContext(Dispatchers.Main.immediate) { playback.resume() }
+    }
+
+    suspend fun seek(positionMs: Long) = playback.seek(positionMs)
+
     fun pause() = playback.pause()
 
     suspend fun accessToken(): String? = auth.accessToken()
+
+    suspend fun searchTracks(query: String): List<hrln.interactive.sidekit.apps.spotify.SpotifyTrack> = webApi.searchTracks(query)
 
     private object NoopCredentialStore : hrln.interactive.sidekit.apps.spotify.auth.SpotifyCredentialStore {
         override fun read(): hrln.interactive.sidekit.apps.spotify.auth.SpotifyCredentials? = null
