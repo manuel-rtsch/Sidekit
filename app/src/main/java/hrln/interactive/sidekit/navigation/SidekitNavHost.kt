@@ -32,6 +32,7 @@ import hrln.interactive.sidekit.apps.sideport.SideportLinks
 import hrln.interactive.sidekit.apps.sideport.openPorted
 import hrln.interactive.sidekit.apps.sideport.sideportGraph
 import hrln.interactive.sidekit.apps.sideticks.sideticksGraph
+import hrln.interactive.sidekit.apps.spotify.sidetracksGraph
 import hrln.interactive.sidekit.apps.sideweather.sideweatherGraph
 import hrln.interactive.sidekit.apps.translate.translateGraph
 import hrln.interactive.sidekit.apps.tripplanning.tripPlanningGraph
@@ -85,6 +86,7 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
         translateGraph(navController)
         calculatorGraph(navController)
         musicGraph(navController)
+        sidetracksGraph(navController)
         cameraGraph(navController)
         sideweatherGraph(navController)
         // Sidephone everyday apps (96:419)
