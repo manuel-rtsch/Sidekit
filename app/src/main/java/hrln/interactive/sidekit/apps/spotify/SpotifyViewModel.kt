@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyCatalog
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyHistoryRepository
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyQueueRepository
+import hrln.interactive.sidekit.apps.spotify.data.SpotifySession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,7 @@ data class SpotifyUiState(
     val libraryItems: List<Any> = emptyList(),
     val searchResults: SpotifySearchResults = SpotifySearchResults(),
     val searchPending: Boolean = false,
+    val authPending: Boolean = false,
     val isPlaying: Boolean = false,
     val positionMs: Long = 0L,
     val shuffle: Boolean = false,
@@ -46,15 +49,22 @@ data class SpotifyUiState(
  */
 class SpotifyViewModel(
     private val catalog: SpotifyCatalog = MockSpotifyDataSource,
-    private val history: SpotifyHistoryRepository = SpotifyHistoryRepository()
+    private val history: SpotifyHistoryRepository = SpotifyHistoryRepository(),
+    private val session: SpotifySession? = null,
+    private val openBrowser: (suspend (String) -> Unit)? = null
 ) : ViewModel() {
-    private val _state = MutableStateFlow(SpotifyUiState())
+    private val _state = MutableStateFlow(SpotifyUiState(signedIn = session?.signedIn?.value ?: true))
     val state: StateFlow<SpotifyUiState> = _state.asStateFlow()
 
     private val queue = SpotifyQueueRepository()
     private var searchJob: Job? = null
 
     init {
+        session?.let {
+            viewModelScope.launch {
+                it.signedIn.collect { signed -> _state.update { state -> state.copy(signedIn = signed) } }
+            }
+        }
         if (history.items().isEmpty()) {
             // Seed the reference account in the same order the fixture lists it: most recent first.
             catalog.recentlyPlayed().asReversed().forEach { history.record(it, 0L) }
@@ -260,6 +270,7 @@ class SpotifyViewModel(
     }
 
     fun signOut() {
+        session?.signOut()
         queue.stop()
         _state.update {
             SpotifyUiState(
@@ -273,8 +284,29 @@ class SpotifyViewModel(
     }
 
     fun signIn() {
-        _state.update { SpotifyUiState(signedIn = true) }
-        loadAccount()
+        val session = session
+        val openBrowser = openBrowser
+        if (session == null || openBrowser == null) {
+            // Screenshot and unit builds keep the local reference account.
+            _state.update { SpotifyUiState(signedIn = true) }
+            loadAccount()
+            return
+        }
+        if (_state.value.authPending) return
+        _state.update { it.copy(authPending = true, notice = null) }
+        viewModelScope.launch {
+            try {
+                session.signIn(openBrowser)
+                _state.update { it.copy(signedIn = true, authPending = false) }
+                loadAccount()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(authPending = false, notice = e.message ?: "Sign-in failed")
+                }
+            }
+        }
     }
 
     private fun loadAccount() {

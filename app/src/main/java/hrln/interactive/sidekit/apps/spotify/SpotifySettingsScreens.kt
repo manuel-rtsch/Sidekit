@@ -208,7 +208,11 @@ fun SpotifySignInScreen(
                 SidekitItem(
                     "Status",
                     Modifier.listFade(listState, 2),
-                    secondary = if (state.signedIn) "Connected" else "Waiting",
+                    secondary = when {
+                        state.authPending -> "Waiting for browser"
+                        state.signedIn -> "Connected"
+                        else -> "Waiting"
+                    },
                     secondaryToEnd = true,
                     colour = ItemColour.Muted
                 )

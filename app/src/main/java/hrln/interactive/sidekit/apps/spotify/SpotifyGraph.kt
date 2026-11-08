@@ -1,10 +1,13 @@
 package hrln.interactive.sidekit.apps.spotify
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -16,6 +19,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.apps.spotify.data.SpotifySessions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.navigation.LAUNCHER_ROUTE
 import hrln.interactive.sidekit.navigation.SubApp
@@ -206,16 +210,18 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
         composable(SIGN_IN) { entry ->
             val vm = entry.spotifyViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            SpotifySignInScreen(
-                state,
-                onBack = { nav.popBackStack(LAUNCHER_ROUTE, inclusive = false) },
-                onLogIn = {
-                    vm.signIn()
+            LaunchedEffect(state.signedIn) {
+                if (state.signedIn) {
                     nav.navigate(HOME) {
                         popUpTo(HOME) { inclusive = false }
                         launchSingleTop = true
                     }
-                },
+                }
+            }
+            SpotifySignInScreen(
+                state,
+                onBack = { nav.popBackStack(LAUNCHER_ROUTE, inclusive = false) },
+                onLogIn = vm::signIn,
                 onCopyLink = { vm.notice("Login link copied") },
                 onDismissNotice = vm::dismissNotice
             )
@@ -237,8 +243,21 @@ private fun MissingCollectionScreen(onBack: () -> Unit) {
 @Composable
 private fun NavBackStackEntry.spotifyViewModel(nav: NavHostController): SpotifyViewModel {
     val parent = remember(this) { nav.getBackStackEntry(ROOT) }
+    val context = LocalContext.current.applicationContext
+    val session = remember(context) { SpotifySessions.get(context) }
+    val openBrowser: suspend (String) -> Unit = remember(context) {
+        { url ->
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
     return viewModel(
         parent,
-        factory = remember { viewModelFactory { initializer { SpotifyViewModel() } } }
+        factory = remember(session, openBrowser) {
+            viewModelFactory {
+                initializer { SpotifyViewModel(session = session, openBrowser = openBrowser) }
+            }
+        }
     )
 }
