@@ -275,11 +275,11 @@ fun BankingPayScreen(
     BackHandler(onBack = onCancel)
     val actions = if (valid) {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, motion = ActionMotion.Back),
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
             SideAction("record", "Record", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = if (incoming) "Record income" else "Record payment", onClick = record),
         )
     } else {
-        listOf(SideAction.back("back", "Cancel", onCancel))
+        listOf(SideAction.cancel("back", onClick = onCancel))
     }
     SidekitScaffold(title = if (incoming) "Add income" else "Pay", actions = actions) { padding ->
         val listState = rememberLazyListState()
@@ -338,11 +338,11 @@ fun BankingAccountEditor(
     BackHandler(onBack = onCancel)
     val actions = if (valid) {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, motion = ActionMotion.Back),
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
             SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save account", onClick = save),
         )
     } else {
-        listOf(SideAction.back("back", "Cancel", onCancel))
+        listOf(SideAction.cancel("back", onClick = onCancel))
     }
     SidekitScaffold(title = if (existing == null) "New account" else "Edit account", actions = actions) { padding ->
         val listState = rememberLazyListState()
@@ -410,7 +410,7 @@ fun BankingUnreadableScreen(onBack: () -> Unit, onErase: () -> Unit) {
     BackHandler { if (confirming) confirming = false else onBack() }
     val actions = if (confirming) {
         listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep the file") { confirming = false },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep the file") { confirming = false },
             SideAction("erase", "Erase", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm erase", onClick = onErase),
         )
     } else {

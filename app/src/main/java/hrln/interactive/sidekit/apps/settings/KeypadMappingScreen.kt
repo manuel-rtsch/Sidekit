@@ -172,7 +172,7 @@ private fun heard(mapper: KeyMapper, module: KeypadModule, control: KeypadContro
 @Composable
 internal fun KeyCaptureContent(module: KeypadModule, control: KeypadControl, step: CaptureStep, cancel: () -> Unit, retry: () -> Unit, save: () -> Unit) {
     val heard = step as? CaptureStep.Heard
-    val actions = if (heard == null) listOf(SideAction.back("cancel", "Cancel", cancel))
+    val actions = if (heard == null) listOf(SideAction.cancel("cancel", onClick = cancel))
     else listOf(
         SideAction("retry", "Try again", SidekitIcon.Undo, tone = ActionTone.Muted, onClick = retry),
         SideAction("save", "Save", SidekitIcon.Check, tone = ActionTone.Secondary, onClick = save),

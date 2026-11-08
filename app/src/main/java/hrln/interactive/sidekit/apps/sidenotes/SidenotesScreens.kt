@@ -189,7 +189,7 @@ fun NoteEditorScreen(
             SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save note", onClick = save),
         )
         EditorMode.ConfirmDelete -> listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep note") { confirmingDelete = false },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep note") { confirmingDelete = false },
             SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete", onClick = onDelete),
         )
     }

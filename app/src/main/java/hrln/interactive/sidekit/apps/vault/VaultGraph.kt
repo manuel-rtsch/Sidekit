@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.components.*
@@ -85,7 +86,7 @@ internal fun VaultScreen(vm: VaultViewModel, back: () -> Unit) {
     val actions = when {
         state.busy -> listOf(SideAction("save", "Working…") {})
         !state.unlocked -> listOf(SideAction.back("back", "Home", back), SideAction("unlock", "Unlock", onClick = ::unlock))
-        confirmDelete != null -> listOf(SideAction("back", "Cancel") { confirmDelete = null }, SideAction.delete("delete") { confirmDelete?.let(vm::delete); confirmDelete = null })
+        confirmDelete != null -> listOf(SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmDelete = null }, SideAction.delete("delete") { confirmDelete?.let(vm::delete); confirmDelete = null })
         confirmDiscard -> listOf(SideAction("back", "Keep editing") { confirmDiscard = false }, SideAction("discard", "Discard", tone = ActionTone.Destructive) { vm.closeEditor(); confirmDiscard = false })
         state.editing != null -> listOf(SideAction.back("back", "Notes", ::leaveEditor), SideAction.save("save", onClick = vm::save))
         else -> listOf(SideAction("lock", "Lock", onClick = vm::lock), SideAction.forward("new", "New note", { vm.edit() }))

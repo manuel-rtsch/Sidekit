@@ -24,6 +24,9 @@ class ActionToneConventionTest {
 
     private val commitLabels = setOf("save", "send", "done", "confirm", "record")
 
+    /** Reversing actions: they must never look like a way forward or a promise to commit. */
+    private val mutedLabels = setOf("cancel", "undo")
+
     /** Labels that share a word with a commit action but are not one. */
     private val commitHomonyms = setOf(
         "WebBrowserScreen.kt:Save", // bookmark toggle, not a commit
@@ -66,6 +69,19 @@ class ActionToneConventionTest {
         )
     }
 
+    @Test
+    fun `reversing actions are muted`() {
+        val offences = actions().filter { action ->
+            action.tone != COMPUTED &&
+                action.labels.any { it.lowercase() in mutedLabels } && action.tone != "ActionTone.Muted"
+        }
+        assertTrue(
+            "Cancel and Undo must use tone = ActionTone.Muted:\n" +
+                offences.joinToString("\n") { "${it.file}:${it.line} ${it.labels} ${it.tone}" },
+            offences.isEmpty(),
+        )
+    }
+
     private fun actions(): List<Action> = sourceFiles().flatMap { file ->
         val text = file.readText()
         val call = Regex("""SideAction(?:\.\w+)?\(""").findAll(text)
@@ -99,7 +115,7 @@ class ActionToneConventionTest {
      * in one place, so the call site has nothing left to get wrong.
      */
     private fun roleOf(callee: String): String? =
-        Regex("""SideAction\.(save|send|delete)\(""").matchEntire(callee)?.groupValues?.get(1)
+        Regex("""SideAction\.(save|send|delete|cancel)\(""").matchEntire(callee)?.groupValues?.get(1)
 
     private fun toneOf(args: List<String>): String? {
         val arg = args.firstOrNull { it.trimStart().startsWith("tone") } ?: return null

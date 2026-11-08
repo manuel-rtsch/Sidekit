@@ -192,8 +192,8 @@ private fun ClockEditor(id: String, onClose: () -> Unit) {
         onClose()
     }
     SidekitScaffold(modifier = Modifier.focusRequester(focus).focusable(), title = if (id == "new") "New alarm" else "Edit alarm",
-        actions = if (deleting) listOf(SideAction("cancel", "Cancel", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back) { deleting = false }, SideAction.delete("main", icon = SidekitIcon.DeleteForever) { repo.deleteWithUndo(id); onClose() })
-        else listOf(SideAction("cancel", "Cancel", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, onClick = onClose), SideAction.save("main", onClick = ::save)),
+        actions = if (deleting) listOf(SideAction.cancel("cancel") { deleting = false }, SideAction.delete("main", icon = SidekitIcon.DeleteForever) { repo.deleteWithUndo(id); onClose() })
+        else listOf(SideAction.cancel("cancel", onClick = onClose), SideAction.save("main", onClick = ::save)),
         options = if (id == "new") emptyList() else listOf(SideAction.delete("delete", icon = SidekitIcon.DeleteForever) { deleting = true })) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {

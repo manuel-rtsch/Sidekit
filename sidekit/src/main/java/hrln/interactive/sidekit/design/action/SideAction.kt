@@ -128,6 +128,21 @@ class SideAction(
         fun send(key: String, label: String = "Send", onClick: () -> Unit) =
             SideAction(key, label, SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward, onClick = onClick)
 
+        /**
+         * Take it back: grey, no promise to advance. Cancel and Undo wear the same colour because
+         * they make the same promise — nothing happened. [icon] and [motion] default to the
+         * reversing pair (left arrow, enters from the left); a themed confirm passes
+         * `icon = null, motion = ActionMotion.Up` to stay grey while it dismisses in place.
+         */
+        fun cancel(
+            key: String = "back",
+            label: String = "Cancel",
+            icon: SidekitIcon? = SidekitIcon.ArrowLeftAlt,
+            motion: ActionMotion = ActionMotion.Back,
+            contentDescription: String? = null,
+            onClick: () -> Unit,
+        ) = SideAction(key, label, icon, tone = ActionTone.Muted, motion = motion, contentDescription = contentDescription, onClick = onClick)
+
         /** Destroy: red, wherever it appears (bar, confirm, Options). [icon] stays optional. */
         fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) =
             SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)

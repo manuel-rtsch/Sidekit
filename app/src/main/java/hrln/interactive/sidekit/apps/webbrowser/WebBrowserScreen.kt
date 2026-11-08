@@ -283,7 +283,7 @@ private fun PageScreen(
     val actions = when {
         // With a touch keyboard (T9 has its own bar while typing).
         editing -> listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up) { typed = ""; focusManager.clearFocus() },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up) { typed = ""; focusManager.clearFocus() },
             SideAction("forward", "Go", SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Go", onClick = submit),
         )
         else -> listOfNotNull(
@@ -499,7 +499,7 @@ private fun HistoryScreen(
     BackHandler { if (confirming) confirming = false else onBack() }
     val actions = if (confirming) {
         listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep history") { confirming = false },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep history") { confirming = false },
             SideAction("forward", "Clear", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm clear history") { confirming = false; onClear() },
         )
     } else {

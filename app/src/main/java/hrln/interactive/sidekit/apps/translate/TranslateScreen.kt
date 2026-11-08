@@ -33,7 +33,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitCard
@@ -69,7 +68,7 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
         TranslateSpeechEffects(vm, state.talking, state.microphonePermissionNeeded, state.source.language, state.target.language)
         val baseActions = when (state.mode) {
             TranslateMode.Translate -> if (state.translating) {
-                listOf(SideAction("translate", "Cancel", tone = ActionTone.Muted, onClick = vm::cancelTranslation))
+                listOf(SideAction.cancel("translate", onClick = vm::cancelTranslation))
             } else listOf(
                 SideAction.back("history", "History") { vm.show(TranslateMode.History) },
                 SideAction.forward("translate", "Translate", vm::translate),
@@ -79,7 +78,7 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
         val actions = when {
             state.error != null -> listOf(SideAction("notice", state.error!!, tone = ActionTone.Muted, dense = true, onClick = vm::dismissError))
             state.microphonePermissionNeeded -> listOf(
-                SideAction("cancel", "Cancel", tone = ActionTone.Muted) { vm.microphonePermissionResult(false) },
+                SideAction.cancel("cancel") { vm.microphonePermissionResult(false) },
                 SideAction("allow", "Allow", tone = ActionTone.Secondary) { permission.launch(Manifest.permission.RECORD_AUDIO) },
             )
             else -> baseActions

@@ -373,7 +373,7 @@ internal fun SideportHubContent(
     BackHandler(enabled = state.confirming != null, onBack = onCancel)
     val actions = state.confirming?.let { removal ->
         listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep ${app.label}", onClick = onCancel),
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep ${app.label}", onClick = onCancel),
             SideAction("forward", removal.verb, SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm ${removal.verb.lowercase()} ${app.label}") {
                 when (removal) {
                     HubRemoval.Remove -> onRemove()

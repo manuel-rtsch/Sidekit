@@ -333,7 +333,7 @@ fun PhotoViewScreen(
     val actions = when {
         current == null -> listOf(SideAction.back("back", "Back", onBack))
         mode == ViewerMode.ConfirmDelete -> listOf(
-            SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep ${kind(current)}") { mode = ViewerMode.Normal },
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep ${kind(current)}") { mode = ViewerMode.Normal },
             SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete") {
                 mode = ViewerMode.Normal
                 onDelete(current)

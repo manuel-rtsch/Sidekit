@@ -66,7 +66,7 @@ private fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<Sid
 
 /** "Cancel | Delete" confirmation, in the bar instead of a dialog. */
 private fun confirmActions(verb: String, name: String, onCancel: () -> Unit, onConfirm: () -> Unit) = listOf(
-    SideAction("back", "Cancel", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Keep $name", onClick = onCancel),
+    SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep $name", onClick = onCancel),
     SideAction("forward", verb, SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm ${verb.lowercase()} $name", onClick = onConfirm),
 )
 

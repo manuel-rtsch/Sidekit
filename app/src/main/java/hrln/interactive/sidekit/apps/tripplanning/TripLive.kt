@@ -119,7 +119,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                 fun plan() { vm.edit(null); nav.navigate("$root/plan") }
                 val actions = when (page) {
                     "home" -> listOf(SideAction.back("saved", "Saved") { nav.navigate("$root/saved") }, SideAction.forward("plan", "Plan", ::plan))
-                    "plan" -> listOf(SideAction.back("back", "Cancel", back), SideAction.save("save", if (vm.saving) "Saving…" else "Save") { vm.save(back) })
+                    "plan" -> listOf(SideAction.cancel("back", onClick = back), SideAction.save("save", if (vm.saving) "Saving…" else "Save") { vm.save(back) })
                     "places" -> listOf(SideAction.back("back", "Back", back), SideAction("add", "Add") { nav.navigate("$root/search") })
                     "detail" -> listOf(SideAction.back("back", "Back", back), SideAction("replan", "Plan again") { vm.edit(vm.selected); nav.navigate("$root/plan") })
                     "departures" -> listOf(SideAction.back("back", "Back", back), SideAction("refresh", if (vm.busy) "Loading…" else "Refresh") { vm.board {} })

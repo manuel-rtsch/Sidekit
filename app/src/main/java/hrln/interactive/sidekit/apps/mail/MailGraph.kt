@@ -190,7 +190,7 @@ private fun ComposeScreen(
     var body by remember(existing?.id) { mutableStateOf(existing?.body.orEmpty()) }
     BackHandler(onBack = onCancel)
     SidekitScaffold(title = if (existing == null) "Compose" else existing.folder.label, actions = listOf(
-        SideAction.back("cancel", "Cancel", onCancel),
+        SideAction.cancel("cancel", onClick = onCancel),
         SideAction("save", "Save", tone = ActionTone.Muted) { onSave(to, subject, body) },
         SideAction.send("send") { onSend(to, subject, body) },
     )) { padding ->
