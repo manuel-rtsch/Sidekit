@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.apps.media.RemoteArtworkImage
 import hrln.interactive.sidekit.apps.media.formatDuration
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
@@ -63,14 +64,15 @@ import hrln.interactive.sidekit.design.components.SidekitTile
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
-/** Square remote-style artwork, backed here by the mockup's bundled covers. */
+/** Square artwork: remote when the catalog has a URL, otherwise a local fixture or icon. */
 @Composable
 fun SpotifyCover(
     @DrawableRes artRes: Int,
     modifier: Modifier = Modifier,
     shape: androidx.compose.ui.graphics.Shape = SidekitTheme.shapes.control,
     bordered: Boolean = false,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    artUrl: String? = null
 ) {
     val colors = SidekitTheme.colors
     Box(
@@ -79,12 +81,27 @@ fun SpotifyCover(
             .background(colors.surfaceA2)
             .then(if (bordered) Modifier.border(1.dp, colors.light, shape) else Modifier)
     ) {
-        Image(
-            painter = painterResource(artRes),
-            contentDescription = contentDescription,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
+        when {
+            artUrl != null -> RemoteArtworkImage(
+                artUrl,
+                Modifier.fillMaxSize(),
+                placeholder = SidekitIcon.Album,
+                contentDescription = contentDescription
+            )
+
+            artRes != 0 -> Image(
+                painter = painterResource(artRes),
+                contentDescription = contentDescription,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            else -> SidekitIconImage(
+                SidekitIcon.Album,
+                Modifier.align(Alignment.Center),
+                contentDescription = contentDescription
+            )
+        }
     }
 }
 
@@ -120,7 +137,7 @@ fun SpotifyMediaRow(
             horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
             if (showArt) {
-                SpotifyCover(item.artRes, Modifier.size(68.dp))
+                SpotifyCover(item.artRes, Modifier.size(68.dp), artUrl = item.artUrl)
             } else if (index != null) {
                 Box(Modifier.size(30.dp), contentAlignment = Alignment.Center) {
                     SidekitText("${index + 1}", style = SidekitTheme.typography.label, color = colors.surfaceA6)
@@ -199,7 +216,7 @@ fun NowPlayingTile(
                     SidekitIconImage(SidekitIcon.MusicNote2, size = 36.dp)
                 }
             } else {
-                SpotifyCover(current.artRes, Modifier.size(72.dp))
+                SpotifyCover(current.artRes, Modifier.size(72.dp), artUrl = current.artUrl)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 SidekitText(
@@ -224,9 +241,9 @@ fun LibraryTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ArtworkTile(@DrawableRes artRes: Int, label: String, modifier: Modifier = Modifier) {
+fun ArtworkTile(@DrawableRes artRes: Int, label: String, modifier: Modifier = Modifier, artUrl: String? = null) {
     SidekitTile(modifier) {
-        SpotifyCover(artRes, Modifier.fillMaxSize(), shape = SidekitTheme.shapes.item, contentDescription = label)
+        SpotifyCover(artRes, Modifier.fillMaxSize(), shape = SidekitTheme.shapes.item, contentDescription = label, artUrl = artUrl)
     }
 }
 
@@ -361,6 +378,7 @@ fun SpotifyLibraryRow(
     title: String,
     secondary: String,
     modifier: Modifier = Modifier,
+    artUrl: String? = null,
     onClick: () -> Unit
 ) {
     val colors = SidekitTheme.colors
@@ -370,7 +388,7 @@ fun SpotifyLibraryRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            SpotifyCover(artRes, Modifier.size(68.dp))
+            SpotifyCover(artRes, Modifier.size(68.dp), artUrl = artUrl)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SidekitText(title, style = SidekitTheme.typography.bodySmall, maxLines = 1)
                 SidekitText(secondary, style = SidekitTheme.typography.caption, color = colors.surfaceA6, maxLines = 1)

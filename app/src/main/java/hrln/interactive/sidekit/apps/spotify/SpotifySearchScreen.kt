@@ -117,28 +117,28 @@ fun SpotifySearchScreen(
                     if (results.artists.isNotEmpty()) {
                         item(key = "artistsLabel") { SectionLabel("Artists") }
                         itemsIndexed(results.artists, key = { _, artist -> "r${artist.id}" }) { index, artist ->
-                            SpotifyLibraryRow(artist.artRes, artist.name, "${artist.albumIds.size} albums", Modifier.listFade(listState, slot + index)) { onArtist(artist) }
+                            SpotifyLibraryRow(artist.artRes, artist.name, "Artist", Modifier.listFade(listState, slot + index), artUrl = artist.artUrl) { onArtist(artist) }
                         }
                         slot += results.artists.size
                     }
                     if (results.albums.isNotEmpty()) {
                         item(key = "albumsLabel") { SectionLabel("Albums") }
                         itemsIndexed(results.albums, key = { _, album -> "a${album.id}" }) { index, album ->
-                            SpotifyLibraryRow(album.artRes, album.title, "${album.artist} · ${album.year}", Modifier.listFade(listState, slot + index)) { onAlbum(album) }
+                            SpotifyLibraryRow(album.artRes, album.title, "${album.artist} · ${album.year}", Modifier.listFade(listState, slot + index), artUrl = album.artUrl) { onAlbum(album) }
                         }
                         slot += results.albums.size
                     }
                     if (results.playlists.isNotEmpty()) {
                         item(key = "playlistsLabel") { SectionLabel("Playlists") }
                         itemsIndexed(results.playlists, key = { _, playlist -> "p${playlist.id}" }) { index, playlist ->
-                            SpotifyLibraryRow(playlist.artRes, playlist.name, "${playlist.owner} · ${playlist.tracks.size} tracks", Modifier.listFade(listState, slot + index)) { onPlaylist(playlist) }
+                            SpotifyLibraryRow(playlist.artRes, playlist.name, "${playlist.owner} · ${playlist.trackCount} tracks", Modifier.listFade(listState, slot + index), artUrl = playlist.artUrl) { onPlaylist(playlist) }
                         }
                         slot += results.playlists.size
                     }
                     if (results.shows.isNotEmpty()) {
                         item(key = "showsLabel") { SectionLabel("Shows") }
                         itemsIndexed(results.shows, key = { _, show -> "s${show.id}" }) { index, show ->
-                            SpotifyLibraryRow(show.artRes, show.name, show.publisher, Modifier.listFade(listState, slot + index)) { onShow(show) }
+                            SpotifyLibraryRow(show.artRes, show.name, show.publisher, Modifier.listFade(listState, slot + index), artUrl = show.artUrl) { onShow(show) }
                         }
                     }
                 }

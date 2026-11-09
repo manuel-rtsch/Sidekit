@@ -19,7 +19,8 @@ import kotlinx.coroutines.withContext
  * ViewModel observes [signedIn] and asks for an access token when a real gateway is connected.
  */
 class SpotifySession(
-    private val auth: SpotifyAuth = SpotifyAuth(NoopCredentialStore)
+    private val auth: SpotifyAuth = SpotifyAuth(NoopCredentialStore),
+    private val tmpDir: String? = null
 ) {
     private val _signedIn = MutableStateFlow(auth.hasCredentials())
     val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
@@ -32,6 +33,9 @@ class SpotifySession(
     val gateway: SpotifyGateway get() = nativeGateway
 
     private val webApi by lazy { SpotifyWebApi { accessToken() } }
+    val catalog: SpotifyCatalog by lazy {
+        if (nativeAvailable) NativeSpotifyCatalog(NativeBridge) { nativeGateway.ensureSession() } else SpotifyWebCatalog(webApi)
+    }
 
     private val playbackScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val playback: SpotifyPlayback by lazy {
@@ -43,7 +47,10 @@ class SpotifySession(
     }
 
     init {
-        if (nativeAvailable) NativeBridge.initialize()
+        if (nativeAvailable) {
+            tmpDir?.let(NativeBridge::setTmpDir)
+            NativeBridge.initialize()
+        }
     }
 
     suspend fun signIn(openBrowser: suspend (String) -> Unit) {
@@ -52,6 +59,7 @@ class SpotifySession(
     }
 
     fun signOut() {
+        nativeGateway.reset()
         NativeBridge.disconnect()
         auth.clear()
         _signedIn.value = false
@@ -76,7 +84,10 @@ class SpotifySession(
 
     suspend fun accessToken(): String? = auth.accessToken()
 
-    suspend fun searchTracks(query: String): List<hrln.interactive.sidekit.apps.spotify.SpotifyTrack> = webApi.searchTracks(query)
+    suspend fun setVolume(volume: Float) = playback.setVolume(volume)
+
+    /** One librespot player event, or null when nothing has happened since the last poll. */
+    fun pollPlaybackEvent(): String? = if (nativeAvailable) NativeBridge.pollEvent() else null
 
     private object NoopCredentialStore : hrln.interactive.sidekit.apps.spotify.auth.SpotifyCredentialStore {
         override fun read(): hrln.interactive.sidekit.apps.spotify.auth.SpotifyCredentials? = null
@@ -92,7 +103,8 @@ object SpotifySessions {
 
     fun get(context: Context): SpotifySession = instance ?: synchronized(this) {
         instance ?: SpotifySession(
-            SpotifyAuth(EncryptedSpotifyCredentialStore(context.applicationContext))
+            SpotifyAuth(EncryptedSpotifyCredentialStore(context.applicationContext)),
+            context.applicationContext.cacheDir.absolutePath
         ).also { instance = it }
     }
 }

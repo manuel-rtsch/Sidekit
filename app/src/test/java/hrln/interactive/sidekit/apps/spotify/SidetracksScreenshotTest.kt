@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,8 +29,8 @@ class SidetracksScreenshotTest {
         upcoming = recent.drop(1),
         history = recent.drop(3),
         recent = recent,
-        libraryItems = MockSpotifyDataSource.library(LibraryFilter.Albums),
-        searchResults = MockSpotifyDataSource.search("night", SearchScope.entries.toSet()),
+        libraryItems = runBlocking { MockSpotifyDataSource.library(LibraryFilter.Albums) },
+        searchResults = runBlocking { MockSpotifyDataSource.search("night", SearchScope.entries.toSet()) },
         isPlaying = true,
         positionMs = 68_000L,
         savedTrackIds = setOf(current.id),
@@ -43,6 +44,7 @@ class SidetracksScreenshotTest {
             onLibrary = {},
             onSearch = {},
             onSettings = {},
+            onRefresh = {},
             onPlay = {},
             onDismissNotice = {}
         )
@@ -59,14 +61,13 @@ class SidetracksScreenshotTest {
             onAlbum = {},
             onArtist = {},
             onShow = {},
-            onLoadMore = {},
             onDismissNotice = {}
         )
     }
 
     @Test fun album() = shoot("sidetracks_album") {
         CollectionScreen(
-            MockSpotifyDataSource.collection(SpotifyCollectionType.Album, "night_signals")!!,
+            runBlocking { MockSpotifyDataSource.collection(SpotifyCollectionType.Album, "night_signals") }!!,
             state,
             onBack = {},
             onPlay = {},
@@ -75,7 +76,6 @@ class SidetracksScreenshotTest {
             onArtist = {},
             onQueue = {},
             onNowPlaying = {},
-            onLoadMore = {},
             onDismissNotice = {}
         )
     }
@@ -84,8 +84,8 @@ class SidetracksScreenshotTest {
         val artist = MockSpotifyDataSource.artists.first()
         ArtistScreen(
             artist,
-            MockSpotifyDataSource.albumsBy(artist),
-            MockSpotifyDataSource.topTracks(artist),
+            runBlocking { MockSpotifyDataSource.albumsBy(artist) },
+            runBlocking { MockSpotifyDataSource.topTracks(artist) },
             state,
             onBack = {},
             onPlay = {},
@@ -127,7 +127,6 @@ class SidetracksScreenshotTest {
             onQueue = {},
             onAlbum = {},
             onArtist = {},
-            onAddToPlaylist = {},
             onDismissNotice = {}
         )
     }
@@ -166,7 +165,6 @@ class SidetracksScreenshotTest {
             SpotifyUiState(signedIn = false),
             onBack = {},
             onLogIn = {},
-            onCopyLink = {},
             onDismissNotice = {}
         )
     }

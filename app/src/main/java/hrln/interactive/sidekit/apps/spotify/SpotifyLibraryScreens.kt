@@ -36,6 +36,7 @@ fun SidetracksHomeScreen(
     onLibrary: () -> Unit,
     onSearch: () -> Unit,
     onSettings: () -> Unit,
+    onRefresh: () -> Unit,
     onPlay: (SpotifyTrack) -> Unit,
     onDismissNotice: () -> Unit
 ) {
@@ -51,7 +52,7 @@ fun SidetracksHomeScreen(
                 artKey = state.current?.id,
                 art = {
                     if (state.current != null) {
-                        SpotifyCover(state.current.artRes, Modifier.height(SidekitTheme.spacing.tileIconSize))
+                        SpotifyCover(state.current.artRes, Modifier.height(SidekitTheme.spacing.tileIconSize), artUrl = state.current.artUrl)
                     } else {
                         hrln.interactive.sidekit.design.components.SidekitIconImage(SidekitIcon.MusicNote2)
                     }
@@ -64,7 +65,10 @@ fun SidetracksHomeScreen(
     SidekitScaffold(
         title = "Sidetracks",
         actions = bar,
-        options = listOf(SideAction("settings", "Settings", SidekitIcon.Settings, onClick = onSettings))
+        options = listOf(
+            SideAction("refresh", "Refresh", SidekitIcon.Undo, onClick = onRefresh),
+            SideAction("settings", "Settings", SidekitIcon.Settings, onClick = onSettings)
+        )
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
@@ -102,7 +106,6 @@ fun LibraryScreen(
     onAlbum: (SpotifyAlbum) -> Unit,
     onArtist: (SpotifyArtist) -> Unit,
     onShow: (SpotifyShow) -> Unit,
-    onLoadMore: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val colors = SidekitTheme.colors
@@ -146,26 +149,11 @@ fun LibraryScreen(
                 val modifier = Modifier.listFade(listState, index).then(if (index == 0) Modifier.focusRequester(first) else Modifier)
                 when (item) {
                     is SpotifyTrack -> SpotifyMediaRow(item, modifier, secondary = item.artist, onClick = { onTrack(item) })
-                    is SpotifyPlaylist -> SpotifyLibraryRow(item.artRes, item.name, "${item.owner} · ${item.tracks.size} tracks", modifier) { onPlaylist(item) }
-                    is SpotifyAlbum -> SpotifyLibraryRow(item.artRes, item.title, "${item.artist} · ${item.year}", modifier) { onAlbum(item) }
-                    is SpotifyArtist -> SpotifyLibraryRow(item.artRes, item.name, "${item.albumIds.size} albums", modifier) { onArtist(item) }
-                    is SpotifyShow -> SpotifyLibraryRow(item.artRes, item.name, item.publisher, modifier) { onShow(item) }
+                    is SpotifyPlaylist -> SpotifyLibraryRow(item.artRes, item.name, "${item.owner} · ${item.trackCount} tracks", modifier, artUrl = item.artUrl) { onPlaylist(item) }
+                    is SpotifyAlbum -> SpotifyLibraryRow(item.artRes, item.title, "${item.artist} · ${item.year}", modifier, artUrl = item.artUrl) { onAlbum(item) }
+                    is SpotifyArtist -> SpotifyLibraryRow(item.artRes, item.name, "Artist", modifier, artUrl = item.artUrl) { onArtist(item) }
+                    is SpotifyShow -> SpotifyLibraryRow(item.artRes, item.name, item.publisher, modifier, artUrl = item.artUrl) { onShow(item) }
                     else -> Unit
-                }
-            }
-            if (items.isNotEmpty()) {
-                item(key = "more") {
-                    TerminalRow(
-                        "Load more",
-                        secondary = when (state.filter) {
-                            LibraryFilter.LikedSongs -> "${items.size} liked songs"
-                            LibraryFilter.Playlists -> "${items.size} playlists"
-                            LibraryFilter.Albums -> "${items.size} albums"
-                            LibraryFilter.Artists -> "${items.size} artists"
-                            LibraryFilter.Shows -> "${items.size} shows"
-                        },
-                        onClick = onLoadMore
-                    )
                 }
             }
         }
@@ -183,7 +171,6 @@ fun CollectionScreen(
     onArtist: () -> Unit,
     onQueue: () -> Unit,
     onNowPlaying: () -> Unit,
-    onLoadMore: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val colors = SidekitTheme.colors
@@ -210,7 +197,7 @@ fun CollectionScreen(
         SidekitList(padding, state = listState) {
             item(key = "tiles") {
                 SidekitItemRow(Modifier.listFade(listState, 0)) {
-                    ArtworkTile(collection.artRes, "${collection.title} artwork", Modifier.weight(1f))
+                    ArtworkTile(collection.artRes, "${collection.title} artwork", Modifier.weight(1f), collection.artUrl)
                     PlayTile(onPlay, Modifier.weight(1f).focusRequester(playFocus))
                     SpotifyIconTile(
                         if (saved) SidekitIcon.Check else SidekitIcon.Bookmark,
@@ -238,11 +225,10 @@ fun CollectionScreen(
                     Modifier.listFade(listState, index + 2),
                     index = index,
                     showArt = false,
-                    secondary = if (item is SpotifyEpisode) item.published else item.creator,
+                    secondary = if (item is SpotifyEpisode) formatPublishedDate(item.published) else item.creator,
                     onClick = { onItem(index) }
                 )
             }
-            item(key = "more") { TerminalRow("Load more", onClick = onLoadMore) }
         }
     }
 }
@@ -276,7 +262,7 @@ fun ArtistScreen(
             item(key = "tiles") {
                 SidekitItemRow(Modifier.listFade(listState, 0)) {
                     PlayTile(onPlay, Modifier.weight(1f))
-                    ArtworkTile(artist.artRes, "${artist.name} artwork", Modifier.weight(1f))
+                    ArtworkTile(artist.artRes, "${artist.name} artwork", Modifier.weight(1f), artist.artUrl)
                 }
             }
             item(key = "topLabel") { SectionLabel("Top tracks") }
@@ -288,8 +274,9 @@ fun ArtistScreen(
                 SpotifyLibraryRow(
                     album.artRes,
                     album.title,
-                    "${album.year} · ${album.tracks.size} tracks",
-                    Modifier.listFade(listState, index + tracks.size + 3)
+                    "${album.year}" + if (album.trackCount > 0) " · ${album.trackCount} tracks" else "",
+                    Modifier.listFade(listState, index + tracks.size + 3),
+                    artUrl = album.artUrl
                 ) { onAlbum(album) }
             }
         }

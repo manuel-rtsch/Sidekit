@@ -53,7 +53,12 @@ class NativeSpotifyGatewayTest {
         var loadOk = true
 
         override fun initialize() = isAvailable
+        override fun setTmpDir(path: String) = Unit
         override fun connect(accessToken: String): Boolean {
+            token = accessToken
+            return isAvailable
+        }
+        override fun setAccessToken(accessToken: String): Boolean {
             token = accessToken
             return isAvailable
         }
@@ -71,5 +76,11 @@ class NativeSpotifyGatewayTest {
         override fun readAudio(timeoutMs: Long): ByteArray? = null
         override fun audioFormat(): String? = null
         override fun pollEvent(): String? = null
+        override fun catalogLibrary(filter: String): String? = null
+        override fun catalogCollection(kind: String, id: String): String? = null
+        override fun catalogArtist(id: String): String? = null
+        override fun catalogAlbumsBy(id: String): String? = null
+        override fun catalogTopTracks(id: String): String? = null
+        override fun catalogSearch(query: String, scopes: String, limit: Long): String? = null
     }
 }

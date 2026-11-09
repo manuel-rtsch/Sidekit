@@ -111,7 +111,10 @@ The native library is `native/sidekit-spotify`:
 
 - librespot 0.8.0 is consumed from crates.io and pinned by `native/sidekit-spotify/Cargo.lock`.
   Its MIT licence is copied to `native/sidekit-spotify/LICENSE-librespot`.
-- No librespot patches are applied, so there is no `docs/spotify/LIBRESPOT_PATCHES.md`.
+- One minimal librespot patch is applied through `native/vendor/librespot-core`: the platform
+  constant in `config.rs` is set to `"linux"` so Login5/client-token requests match the
+  desktop/keymaster OAuth client id. The vendored copy retains librespot's MIT `LICENSE`, and the
+  patch is documented in `docs/spotify/LIBRESPOT_PATCHES.md`. No Sidespot code is involved.
 - Do not describe Sidetracks as an official Spotify client. Document the account/protocol risk
   from the plan (§3, "Spotify account risk").
 
@@ -143,3 +146,4 @@ Signed:        ______________________________________________
 | 2026-11-08 | Initial spec and provenance record; Sidekit MIT confirmed; `MediaSessionOwner`, `NativeLibraries`, `RemoteArtwork`, `SecretCipher` landed as upstream seams. |
 | 2026-11-09 | Sidespot moved to untracked `.sidespot/` as a review-only clean-room reference. It is gitignored and never committed; no Sidespot source or assets enter Sidekit. |
 | 2026-11-08 | Added the clean-room librespot 0.8.0 native crate, pinned by `Cargo.lock`, with upstream MIT notice. No Sidespot native code used. |
+| 2026-11-09 | Added the authenticated first-party catalog (SpClient/Pathfinder) and one documented librespot-core platform patch; vendored copy keeps its MIT licence. |

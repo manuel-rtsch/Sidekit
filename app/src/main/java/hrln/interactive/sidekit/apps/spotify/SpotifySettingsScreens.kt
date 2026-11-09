@@ -79,7 +79,7 @@ fun SpotifySettingsScreen(
         title = "Settings",
         actions = actions,
         options = listOf(
-            SideAction("about", "About", SidekitIcon.Docs, onClick = { onNotice("Sidetracks 0.1 · a Sidekit UI mockup") }),
+            SideAction("about", "About", SidekitIcon.Docs, onClick = { onNotice("Sidetracks · a Sidekit sub-app") }),
             SideAction("cache", "Clear cache", SidekitIcon.DeleteForever, onClick = onClearCache)
         )
     ) { padding ->
@@ -146,7 +146,7 @@ fun SpotifySettingsScreen(
                 SidekitItem(
                     "Account",
                     Modifier.listFade(listState, 5),
-                    secondary = if (state.signedIn) "Signed in as You" else "Not signed in",
+                    secondary = if (state.signedIn) "Signed in" else "Not signed in",
                     secondaryToEnd = true
                 )
             }
@@ -167,7 +167,6 @@ fun SpotifySignInScreen(
     state: SpotifyUiState,
     onBack: () -> Unit,
     onLogIn: () -> Unit,
-    onCopyLink: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val colors = SidekitTheme.colors
@@ -178,8 +177,7 @@ fun SpotifySignInScreen(
     )
     SidekitScaffold(
         title = "Sign in",
-        actions = actions,
-        options = listOf(SideAction("copy", "Copy link", SidekitIcon.Docs, onClick = onCopyLink))
+        actions = actions
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {

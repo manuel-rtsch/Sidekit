@@ -54,7 +54,6 @@ fun SpotifyNowPlayingScreen(
     onQueue: () -> Unit,
     onAlbum: () -> Unit,
     onArtist: () -> Unit,
-    onAddToPlaylist: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val current = state.current
@@ -84,7 +83,6 @@ fun SpotifyNowPlayingScreen(
             add(SideAction("queue", "Queue", SidekitIcon.QueueMusic, onClick = onQueue))
             if (current is SpotifyTrack) add(SideAction("album", "Album", SidekitIcon.Album, onClick = onAlbum))
             if (current.artistId != null) add(SideAction("artist", "Artist", SidekitIcon.Artist, onClick = onArtist))
-            add(SideAction("playlist", "Add to playlist", SidekitIcon.Add, onClick = onAddToPlaylist))
         }
     }
     SidekitScaffold(title = null, actions = actions, options = options) { padding ->
@@ -105,7 +103,8 @@ fun SpotifyNowPlayingScreen(
                         Modifier.size(art),
                         shape = SidekitTheme.shapes.item,
                         bordered = true,
-                        contentDescription = "${current.title} artwork"
+                        contentDescription = "${current.title} artwork",
+                        artUrl = current.artUrl
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

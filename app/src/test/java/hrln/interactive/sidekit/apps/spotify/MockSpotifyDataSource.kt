@@ -4,8 +4,8 @@ import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyCatalog
 
 /**
- * The mockup's account. Everything here is local, fixed data shaped like the gateway response:
- * the UI can be reviewed on a device without a Spotify login, a native library, or a network.
+ * The screenshot suite's account. Everything here is local, fixed data shaped like the gateway
+ * response: the UI can be reviewed without a Spotify login, a native library, or a network.
  */
 object MockSpotifyDataSource : SpotifyCatalog {
     private fun t(
@@ -179,15 +179,15 @@ object MockSpotifyDataSource : SpotifyCatalog {
         nightSignals[5], glassHours[1], coastline[6], roomsWeLeft[5]
     )
 
-    override fun recentlyPlayed(): List<SpotifyTrack> = recentlyPlayed
+    override suspend fun recentlyPlayed(): List<SpotifyTrack> = recentlyPlayed
 
     fun album(id: String): SpotifyAlbum? = albums.firstOrNull { it.id == id }
     fun playlist(id: String): SpotifyPlaylist? = playlists.firstOrNull { it.id == id }
     fun show(id: String): SpotifyShow? = shows.firstOrNull { it.id == id }
-    override fun artist(id: String): SpotifyArtist? = artists.firstOrNull { it.id == id }
+    override suspend fun artist(id: String): SpotifyArtist? = artists.firstOrNull { it.id == id }
     fun track(id: String): SpotifyTrack? = albums.flatMap { it.tracks }.firstOrNull { it.id == id }
 
-    override fun collection(type: SpotifyCollectionType, id: String): SpotifyCollection? = when (type) {
+    override suspend fun collection(type: SpotifyCollectionType, id: String): SpotifyCollection? = when (type) {
         SpotifyCollectionType.Album -> album(id)?.let {
             SpotifyCollection(type, id, it.title, "${it.artist} · ${it.year} · ${it.tracks.size} tracks", it.artRes, it.tracks, it.artistId)
         }
@@ -201,13 +201,13 @@ object MockSpotifyDataSource : SpotifyCatalog {
         }
     }
 
-    override fun topTracks(artist: SpotifyArtist): List<SpotifyTrack> = topTracks(artist, 10)
+    override suspend fun topTracks(artist: SpotifyArtist): List<SpotifyTrack> = topTracks(artist, 10)
 
     fun topTracks(artist: SpotifyArtist, limit: Int): List<SpotifyTrack> = albums.filter { it.id in artist.albumIds }.flatMap { it.tracks }.take(limit)
 
-    override fun albumsBy(artist: SpotifyArtist): List<SpotifyAlbum> = artist.albumIds.mapNotNull(::album)
+    override suspend fun albumsBy(artist: SpotifyArtist): List<SpotifyAlbum> = artist.albumIds.mapNotNull(::album)
 
-    override fun library(filter: LibraryFilter): List<Any> = when (filter) {
+    override suspend fun library(filter: LibraryFilter): List<Any> = when (filter) {
         LibraryFilter.LikedSongs -> liked
         LibraryFilter.Playlists -> playlists
         LibraryFilter.Albums -> albums
@@ -215,7 +215,7 @@ object MockSpotifyDataSource : SpotifyCatalog {
         LibraryFilter.Shows -> shows
     }
 
-    override fun search(query: String, scopes: Set<SearchScope>): SpotifySearchResults {
+    override suspend fun search(query: String, scopes: Set<SearchScope>): SpotifySearchResults {
         val q = query.trim()
         if (q.length < 2) return SpotifySearchResults()
         fun match(vararg text: String) = text.any { it.contains(q, ignoreCase = true) }

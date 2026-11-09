@@ -1,6 +1,6 @@
 # Sidekit Spotify Sub-App — Planning Document
 
-**Status:** Draft plan — Milestone 0.5 landed; UI mockup delivered; SPEC and PROVENANCE drafted  
+**Status:** Implemented on `feat/sidetracks` — Milestones 0–3 landed, Milestone 4 partially landed; remaining work tracked in `docs/spotify/STATUS.md`
 **Working name:** Sidetracks (temporary; internal package remains `spotify`)  
 **Target workspace:** `/home/manuel/Projects/Sidekit`  
 **Reference application:** `.sidespot/` (behavior reference only)  
@@ -861,18 +861,34 @@ Resolve before Milestone 2:
 
 ---
 
-## 15. Immediate Next Steps
+## 15. Current Next Steps
 
-0. ✅ MIT license recorded in `docs/spotify/SPEC.md`; `docs/spotify/PROVENANCE.md` started. No further license decision needed.
-1. ✅ Milestone 0.5 landed on `refactor/media-session-seams` (6 commits): `MediaSessionOwner`/registry, audio-focus decision, service/notification ids from the owner, `KeystoreCipher` promotion, `NativeLibraries` guarded loading, `RemoteArtwork`. See the milestone for what was deliberately *not* built (no focus-arbiter class).
-2. ✅ `docs/spotify/SPEC.md` written on `docs/sidetracks-spec`, mapping every component to *reuse / extend / new* and deliberately rejecting Spotify patterns that do not fit Sidekit's minimal UI. `SPEC.md` is the implementation contract; this plan remains authoritative for licensing and native architecture.
-3. Add a pinned upstream librespot submodule under `native/librespot`.
-4. Build a minimal Rust/JNI library with `nativeInit`, `sessionConnect`, `playerCreate`, `playerLoad`, and an audio sink.
-5. Add the Gradle Cargo task for `arm64-v8a`.
-6. Play one known Spotify track end-to-end on the Sidephone.
-7. Only after that spike, start the Kotlin domain layer and Sidekit screens.
+Done since this plan was drafted:
 
-The spike should be treated as a go/no-go checkpoint. If librespot cannot authenticate or deliver stable audio on the target device, stop before building the UI and resolve that first.
+0. ✅ MIT license recorded in `docs/spotify/SPEC.md`; `docs/spotify/PROVENANCE.md` started.
+1. ✅ Milestone 0.5 landed: `MediaSessionOwner`/registry, audio-focus decision, service/notification
+   ids, `KeystoreCipher` promotion, `NativeLibraries` guarded loading, `RemoteArtwork`.
+2. ✅ `docs/spotify/SPEC.md` written; `PROVENANCE.md` records the clean-room boundary.
+3. ✅ librespot 0.8.0 integrated through `native/sidekit-spotify` (cargo-ndk, arm64-v8a and
+   x86_64), with one documented `librespot-core` platform patch.
+4. ✅ Native session, JNI bridge, streaming `AudioTrack` sink, and player events work on the
+   Sidephone.
+5. ✅ Kotlin domain/UI layer, OAuth sign-in, encrypted credentials, catalog reads, search,
+   collections, artist pages, Now Playing, Queue, Settings, and real playback are in place.
+6. ✅ Catalog reads moved from the public Web API to librespot SpClient/Pathfinder, removing the
+   HTTP 429 failures.
+
+Remaining work is now tracked as prioritized tasks in `docs/spotify/STATUS.md` §Remaining work.
+The immediate sequence is:
+
+1. Foreground playback service, media notification, and explicit audio-focus integration.
+2. Saved-state write-back (like/save/follow/playlist membership).
+3. Playback lifecycle hardening (token expiry, initial volume, quality → bitrate).
+4. Pagination for library, collections, and search.
+5. Recently-played decision, queue/shuffle ownership, owner-name resolution, and test coverage.
+
+The native spike is no longer a go/no-go gate; it is working. Treat the foreground service and
+saved-state write-back as the next go/no-go gates for daily use.
 
 ---
 

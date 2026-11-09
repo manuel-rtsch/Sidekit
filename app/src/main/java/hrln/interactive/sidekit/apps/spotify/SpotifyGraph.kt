@@ -19,6 +19,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.apps.media.RemoteArtwork
 import hrln.interactive.sidekit.apps.spotify.data.SpotifySessions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.navigation.LAUNCHER_ROUTE
@@ -59,6 +60,7 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onLibrary = { nav.navigate(LIBRARY) },
                 onSearch = { nav.navigate(SEARCH) },
                 onSettings = { nav.navigate(SETTINGS) },
+                onRefresh = vm::refresh,
                 onPlay = vm::playLibraryTrack,
                 onDismissNotice = vm::dismissNotice
             )
@@ -76,7 +78,6 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onAlbum = { nav.navigate(collectionRoute(SpotifyCollectionType.Album, it.id)) },
                 onArtist = { nav.navigate(artistRoute(it.id)) },
                 onShow = { nav.navigate(collectionRoute(SpotifyCollectionType.Show, it.id)) },
-                onLoadMore = { vm.notice("Everything in this filter is already loaded") },
                 onDismissNotice = vm::dismissNotice
             )
         }
@@ -85,9 +86,10 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
             val state by vm.state.collectAsStateWithLifecycle()
             val type = SpotifyCollectionType.entries.firstOrNull { it.route == entry.arguments?.getString("type") }
             val id = entry.arguments?.getString("id").orEmpty()
+            LaunchedEffect(type, id) { type?.let { vm.ensureCollection(it, id) } }
             val collection = type?.let { vm.collection(it, id) }
             if (collection == null) {
-                MissingCollectionScreen(onBack = { nav.popBackStack() })
+                MissingCollectionScreen(onBack = { nav.popBackStack() }, loading = type?.let { "${it.route}:$id" in state.pendingCollections } == true)
             } else {
                 CollectionScreen(
                     collection,
@@ -101,7 +103,6 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                     },
                     onQueue = { collection.items.firstOrNull()?.let(vm::addToQueue) },
                     onNowPlaying = { nav.navigate(NOW_PLAYING) },
-                    onLoadMore = { vm.notice("Everything in this collection is already loaded") },
                     onDismissNotice = vm::dismissNotice
                 )
             }
@@ -109,9 +110,11 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
         composable(ARTIST, arguments = artistArgs) { entry ->
             val vm = entry.spotifyViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            val artist = vm.artist(entry.arguments?.getString("id").orEmpty())
+            val artistId = entry.arguments?.getString("id").orEmpty()
+            LaunchedEffect(artistId) { vm.ensureArtist(artistId) }
+            val artist = vm.artist(artistId)
             if (artist == null) {
-                MissingCollectionScreen(onBack = { nav.popBackStack() })
+                MissingCollectionScreen(onBack = { nav.popBackStack() }, loading = artistId in state.pendingArtists)
             } else {
                 val albums = vm.albumsBy(artist)
                 val tracks = vm.topTracks(artist)
@@ -169,7 +172,6 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onArtist = {
                     state.current?.artistId?.let { nav.navigate(artistRoute(it)) }
                 },
-                onAddToPlaylist = vm::addCurrentToPlaylist,
                 onDismissNotice = vm::dismissNotice
             )
         }
@@ -222,7 +224,6 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 state,
                 onBack = { nav.popBackStack(LAUNCHER_ROUTE, inclusive = false) },
                 onLogIn = vm::signIn,
-                onCopyLink = { vm.notice("Login link copied") },
                 onDismissNotice = vm::dismissNotice
             )
         }
@@ -230,12 +231,16 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
 }
 
 @Composable
-private fun MissingCollectionScreen(onBack: () -> Unit) {
+private fun MissingCollectionScreen(onBack: () -> Unit, loading: Boolean = false) {
     SidekitScaffold(title = "Sidetracks", actions = spotifyBack("Back", onBack)) { padding ->
         androidx.compose.foundation.layout.Box(
             androidx.compose.ui.Modifier.padding(padding)
         ) {
-            EmptyMessage("This collection isn't available", "Go back and choose another")
+            if (loading) {
+                EmptyMessage("Loading…", "Fetching from Spotify")
+            } else {
+                EmptyMessage("This collection isn't available", "Go back and choose another")
+            }
         }
     }
 }
@@ -254,9 +259,16 @@ private fun NavBackStackEntry.spotifyViewModel(nav: NavHostController): SpotifyV
     }
     return viewModel(
         parent,
-        factory = remember(session, openBrowser) {
+        factory = remember(session, openBrowser, context) {
             viewModelFactory {
-                initializer { SpotifyViewModel(session = session, openBrowser = openBrowser) }
+                initializer {
+                    SpotifyViewModel(
+                        catalog = session.catalog,
+                        session = session,
+                        openBrowser = openBrowser,
+                        clearArtworkCache = { RemoteArtwork.clear(context) }
+                    )
+                }
             }
         }
     )

@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +25,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.core.util.AtomicFile
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.icons.SidekitIcon
@@ -111,8 +114,17 @@ object RemoteArtwork {
     }
 
     private fun readDisk(context: Context, url: String, w: Int, h: Int): Bitmap? = try {
-        BitmapFactory.decodeFile(File(cacheDir(context), fileName(url, w, h)).absolutePath)
+        val file = File(cacheDir(context), fileName(url, w, h))
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        val options = BitmapFactory.Options().apply {
+            inPreferredConfig = Bitmap.Config.RGB_565
+            inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, w, h)
+        }
+        BitmapFactory.decodeFile(file.absolutePath, options)
     } catch (_: Exception) {
+        null
+    } catch (_: OutOfMemoryError) {
         null
     }
 
@@ -122,11 +134,21 @@ object RemoteArtwork {
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
         val options = BitmapFactory.Options().apply {
+            inPreferredConfig = Bitmap.Config.RGB_565
             inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, w, h)
         }
-        val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
+        val decoded = try {
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+        } catch (_: OutOfMemoryError) {
+            null
+        } ?: return null
         // cropTo recycles the source; store the cropped result so the next restart decodes it directly.
-        val bitmap = Thumbnails.cropTo(decoded, w, h)
+        val bitmap = try {
+            Thumbnails.cropTo(decoded, w, h)
+        } catch (_: OutOfMemoryError) {
+            decoded.recycle()
+            return null
+        }
         writeDisk(context, url, w, h, bitmap)
         return bitmap
     }
@@ -207,10 +229,29 @@ object RemoteArtwork {
 }
 
 /**
- * Draws [url] filling this box, with a Sidekit icon until it arrives (or if it never does).
- * Requests cancel when the composable leaves composition, and a hit in the memory cache paints
- * without a recomposition of the row.
+ * Draws [url] filling the space this composable is given, with a Sidekit icon until it arrives
+ * (or if it never does). Requests cancel when the composable leaves composition, and a hit in the
+ * memory cache paints without a recomposition of the row.
  */
+@Composable
+fun RemoteArtworkImage(
+    url: String?,
+    modifier: Modifier = Modifier,
+    placeholder: SidekitIcon = SidekitIcon.Album,
+    contentDescription: String? = null
+) {
+    BoxWithConstraints(modifier) {
+        RemoteArtworkImage(
+            url = url,
+            width = maxWidth.value.coerceIn(1f, 1024f).dp,
+            height = maxHeight.value.coerceIn(1f, 1024f).dp,
+            modifier = Modifier.fillMaxSize(),
+            placeholder = placeholder,
+            contentDescription = contentDescription
+        )
+    }
+}
+
 @Composable
 fun RemoteArtworkImage(
     url: String?,

@@ -13,7 +13,13 @@ object NativeBridge : SpotifyNative {
 
     override fun initialize(): Boolean = isAvailable && runCatching { nativeInit() }.getOrDefault(false)
 
+    override fun setTmpDir(path: String) {
+        if (isAvailable) runCatching { nativeSetTmpDir(path) }
+    }
+
     override fun connect(accessToken: String): Boolean = isAvailable && runCatching { nativeConnect(accessToken) }.getOrDefault(false)
+
+    override fun setAccessToken(accessToken: String): Boolean = isAvailable && runCatching { nativeSetAccessToken(accessToken) }.getOrDefault(false)
 
     override fun disconnect() {
         if (isAvailable) runCatching { nativeDisconnect() }
@@ -41,8 +47,22 @@ object NativeBridge : SpotifyNative {
 
     override fun pollEvent(): String? = if (isAvailable) runCatching { nativePollEvent() }.getOrNull() else null
 
+    override fun catalogLibrary(filter: String): String? = if (isAvailable) runCatching { nativeCatalogLibrary(filter) }.getOrNull() else null
+
+    override fun catalogCollection(kind: String, id: String): String? = if (isAvailable) runCatching { nativeCatalogCollection(kind, id) }.getOrNull() else null
+
+    override fun catalogArtist(id: String): String? = if (isAvailable) runCatching { nativeCatalogArtist(id) }.getOrNull() else null
+
+    override fun catalogAlbumsBy(id: String): String? = if (isAvailable) runCatching { nativeCatalogAlbumsBy(id) }.getOrNull() else null
+
+    override fun catalogTopTracks(id: String): String? = if (isAvailable) runCatching { nativeCatalogTopTracks(id) }.getOrNull() else null
+
+    override fun catalogSearch(query: String, scopes: String, limit: Long): String? = if (isAvailable) runCatching { nativeCatalogSearch(query, scopes, limit) }.getOrNull() else null
+
     private external fun nativeInit(): Boolean
+    private external fun nativeSetTmpDir(path: String)
     private external fun nativeConnect(accessToken: String): Boolean
+    private external fun nativeSetAccessToken(accessToken: String): Boolean
     private external fun nativeDisconnect()
     private external fun nativeCreatePlayer(): Boolean
     private external fun nativeLoad(uri: String, positionMs: Long, autoplay: Boolean): Boolean
@@ -54,4 +74,10 @@ object NativeBridge : SpotifyNative {
     private external fun nativeReadAudio(timeoutMs: Long): ByteArray?
     private external fun nativeAudioFormat(): String?
     private external fun nativePollEvent(): String?
+    private external fun nativeCatalogLibrary(filter: String): String?
+    private external fun nativeCatalogCollection(kind: String, id: String): String?
+    private external fun nativeCatalogArtist(id: String): String?
+    private external fun nativeCatalogAlbumsBy(id: String): String?
+    private external fun nativeCatalogTopTracks(id: String): String?
+    private external fun nativeCatalogSearch(query: String, scopes: String, limit: Long): String?
 }

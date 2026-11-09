@@ -1,6 +1,7 @@
 //! JNI surface for Sidetracks. All state lives in `engine`; these functions only translate.
 
 mod audio;
+mod catalog;
 mod engine;
 
 use jni::objects::{JObject, JString};
@@ -10,6 +11,16 @@ use std::time::Duration;
 
 fn string(env: &mut JNIEnv, value: &JString) -> Option<String> {
     env.get_string(value).ok().map(Into::into)
+}
+
+fn catalog_result(env: &mut JNIEnv, result: Result<String, String>) -> jni::sys::jstring {
+    let value = match result {
+        Ok(value) => value,
+        Err(error) => serde_json::json!({ "error": error }).to_string(),
+    };
+    env.new_string(value)
+        .map(|value| value.into_raw())
+        .unwrap_or(std::ptr::null_mut())
 }
 
 #[no_mangle]
@@ -29,6 +40,17 @@ pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeB
 }
 
 #[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeSetTmpDir(
+    mut env: JNIEnv,
+    _this: JObject,
+    path: JString,
+) {
+    if let Some(path) = string(&mut env, &path) {
+        engine::set_tmp_dir(&path);
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeConnect(
     mut env: JNIEnv,
     _this: JObject,
@@ -38,6 +60,18 @@ pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeB
         Some(Ok(())) => JNI_TRUE,
         _ => JNI_FALSE,
     }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeSetAccessToken(
+    mut env: JNIEnv,
+    _this: JObject,
+    token: JString,
+) -> jni::sys::jboolean {
+    let Some(token) = string(&mut env, &token) else {
+        return JNI_FALSE;
+    };
+    bool_result(engine::set_access_token(&token))
 }
 
 #[no_mangle]
@@ -157,6 +191,106 @@ pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeB
         },
         None => std::ptr::null_mut(),
     }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeCatalogLibrary(
+    mut env: JNIEnv,
+    _this: JObject,
+    filter: JString,
+) -> jni::sys::jstring {
+    let Some(filter) = string(&mut env, &filter) else {
+        return std::ptr::null_mut();
+    };
+    let result = engine::with_session_and_token(|session, token| {
+        engine::run(catalog::library(session, token, &filter))
+    });
+    catalog_result(&mut env, result)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeCatalogCollection(
+    mut env: JNIEnv,
+    _this: JObject,
+    kind: JString,
+    id: JString,
+) -> jni::sys::jstring {
+    let (Some(kind), Some(id)) = (string(&mut env, &kind), string(&mut env, &id)) else {
+        return std::ptr::null_mut();
+    };
+    let result = engine::with_session_and_token(|session, token| {
+        engine::run(catalog::collection(session, token, &kind, &id))
+    });
+    catalog_result(&mut env, result)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeCatalogArtist(
+    mut env: JNIEnv,
+    _this: JObject,
+    id: JString,
+) -> jni::sys::jstring {
+    let Some(id) = string(&mut env, &id) else {
+        return std::ptr::null_mut();
+    };
+    let result = engine::with_session_and_token(|session, token| {
+        engine::run(catalog::artist(session, token, &id))
+    });
+    catalog_result(&mut env, result)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeCatalogAlbumsBy(
+    mut env: JNIEnv,
+    _this: JObject,
+    id: JString,
+) -> jni::sys::jstring {
+    let Some(id) = string(&mut env, &id) else {
+        return std::ptr::null_mut();
+    };
+    let result = engine::with_session_and_token(|session, token| {
+        engine::run(catalog::albums_by(session, token, &id))
+    });
+    catalog_result(&mut env, result)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeCatalogTopTracks(
+    mut env: JNIEnv,
+    _this: JObject,
+    id: JString,
+) -> jni::sys::jstring {
+    let Some(id) = string(&mut env, &id) else {
+        return std::ptr::null_mut();
+    };
+    let result = engine::with_session_and_token(|session, token| {
+        engine::run(catalog::top_tracks(session, token, &id))
+    });
+    catalog_result(&mut env, result)
+}
+
+#[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeCatalogSearch(
+    mut env: JNIEnv,
+    _this: JObject,
+    query: JString,
+    scopes: JString,
+    limit: jlong,
+) -> jni::sys::jstring {
+    let (Some(query), Some(scopes)) = (string(&mut env, &query), string(&mut env, &scopes)) else {
+        return std::ptr::null_mut();
+    };
+    let scopes: Vec<String> = serde_json::from_str(&scopes).unwrap_or_default();
+    let result = engine::with_session_and_token(|session, token| {
+        engine::run(catalog::search(
+            session,
+            token,
+            &query,
+            limit as i32,
+            &scopes,
+        ))
+    });
+    catalog_result(&mut env, result)
 }
 
 fn bool_result(result: Result<(), String>) -> jboolean {
