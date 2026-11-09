@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.home.HomePreferences
@@ -73,7 +74,8 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     }
 
     val list = rememberLazyListState()
-    SidekitScaffold("Apps", actions = listOf(SideAction.back("back", "Home", back))) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Home", back)))
+    SidekitScaffold("Apps", actions = actions) { padding ->
         SidekitList(padding, state = list) {
             item { AppSearchField(query) { vm.query.value = it } }
             item {
@@ -85,7 +87,7 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
                     )
                 }
             }
-            (message ?: state.error)?.let { item { SidekitCard(onClick = { message = null }) { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
+            state.error?.let { item { SidekitCard { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             if (!state.loaded && state.error == null) item { SidekitItem("Loading apps…") }
             if (state.loaded && state.apps.isEmpty()) item { SidekitItem("No matching apps") }
             itemsIndexed(state.apps, key = { _, it -> it.key }) { index, target ->

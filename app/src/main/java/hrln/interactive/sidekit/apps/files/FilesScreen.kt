@@ -21,6 +21,7 @@ import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -59,9 +60,6 @@ object FilesTags {
     const val SEARCH = "files_search"
     const val LIST = "files_list"
 }
-
-/** The bar for a moment after something happened, else [actions]. Tapping the message dismisses it. */
-private fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> = if (notice == null) actions else listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, motion = ActionMotion.Up, onClick = onDismiss))
 
 /** "Cancel | Delete" confirmation, in the bar instead of a dialog. */
 private fun confirmActions(verb: String, name: String, onCancel: () -> Unit, onConfirm: () -> Unit) = listOf(

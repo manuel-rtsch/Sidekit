@@ -35,6 +35,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitIconItem
@@ -83,7 +84,7 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
             TranslateMode.History, TranslateMode.Large -> listOf(SideAction.back("back", "Translate") { vm.show(TranslateMode.Translate) })
         }
         val actions = when {
-            state.error != null -> listOf(SideAction("notice", state.error!!, tone = ActionTone.Muted, dense = true, onClick = vm::dismissError))
+            state.error != null -> withNotice(state.error, vm::dismissError, emptyList())
 
             state.microphonePermissionNeeded -> listOf(
                 SideAction.cancel("cancel") { vm.microphonePermissionResult(false) },

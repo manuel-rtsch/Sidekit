@@ -27,10 +27,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
@@ -199,7 +199,7 @@ private fun mailActions(
     first: SideAction,
     second: SideAction
 ): List<SideAction> = when {
-    notice != null -> listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, onClick = dismiss))
+    notice != null -> withNotice(notice, dismiss, emptyList())
     hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
     else -> listOf(first, second)
 }

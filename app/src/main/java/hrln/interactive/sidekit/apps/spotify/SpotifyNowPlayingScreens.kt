@@ -31,6 +31,7 @@ import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitItemRow
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold

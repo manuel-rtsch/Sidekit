@@ -54,6 +54,7 @@ import hrln.interactive.sidekit.apps.sideport.ui.PortedAppIcon
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.LineButtonVariant
 import hrln.interactive.sidekit.design.components.SidekitCard
@@ -138,23 +139,17 @@ internal fun SideportHomeScreen(onHome: () -> Unit, onAdd: () -> Unit, onHub: (S
     }
     var message by remember { mutableStateOf<String?>(null) }
     val list = rememberLazyListState()
-    SidekitScaffold(
-        "Sideport",
-        actions = listOf(SideAction.back("home", "Home", onHome), SideAction.forward("add", "Add app", onAdd))
-    ) { padding ->
+    val actions = withNotice(
+        message ?: installMessage(install),
+        {
+            message = null
+            ApkInstaller.clear()
+        },
+        listOf(SideAction.back("home", "Home", onHome), SideAction.forward("add", "Add app", onAdd))
+    )
+    SidekitScaffold("Sideport", actions = actions) { padding ->
         SidekitList(padding, state = list) {
             var index = 0
-            (message ?: installMessage(install))?.let { text ->
-                val i = index++
-                item(key = "message") {
-                    SidekitCard(Modifier.fillMaxWidth().listFade(list, i), onClick = {
-                        message = null
-                        ApkInstaller.clear()
-                    }) {
-                        SidekitText(text, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE)
-                    }
-                }
-            }
             if (apps.isEmpty()) {
                 val i = index++
                 item(key = "intro") {

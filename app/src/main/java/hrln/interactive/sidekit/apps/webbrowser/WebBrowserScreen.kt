@@ -59,6 +59,7 @@ import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -143,9 +144,6 @@ private fun StartTile(page: WebPage, onLink: () -> Unit, modifier: Modifier = Mo
         }
     }
 }
-
-/** The bar for a moment after something happened (download started, link has no app). */
-private fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> = if (notice == null) actions else listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, motion = ActionMotion.Up, onClick = onDismiss))
 
 private fun withUndo(undo: BrowserUndo?, onUndo: () -> Unit, continueWith: SideAction): List<SideAction> = undoBar(continueWith = continueWith, undo = undo?.let { SideAction.undo(contentDescription = "Undo", onClick = onUndo) })
 

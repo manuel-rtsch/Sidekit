@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitItemRow
 import hrln.interactive.sidekit.design.components.SidekitList
