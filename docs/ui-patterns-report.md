@@ -187,7 +187,7 @@ Swipe → immediate delete + Undo (no confirm), unlike Files.
 
 ### 3.19 Settings
 Home (`SettingsScreen.kt:76`): `←Home | About→`. Sub-screens: single Back. Rows change value **in place** on tap (list/grid, keypad, input mode) and show a secondary line — no bar involvement, no confirmation.
-`ArrangeHomeScreen.kt:95` is the only 3-wide bar with a genuine hierarchy problem: `←Settings | Done→ | Reset`, i.e. the commit sits in the middle and the reset trailing — and it is the only screen where a destructive-ish reset is last.
+`ArrangeHomeScreen.kt:121` now keeps a two-slot bar, `←Settings | Done→`, and moves `Reset` into Options. The commit is last and the reset is no longer a trailing bar action.
 `SidekitLineButton` (the in-body full-width button, `design/components/Buttons.kt:31`) appears only in Settings and Sideport: "Original blue" (`CaseColourScreen.kt:97`), "Show all apps" (`HiddenAppsScreen.kt:46`), "Reset … keys" (`KeypadMappingScreen.kt:103`), two in `SideportGraph.kt:387,396`, and ported-app `ButtonBlock`s (`ProjectionScreens.kt:244`).
 Keypad mapping (`:73`): Back + Options (`Reset keys` Destructive, `Use automatic` Muted); the learn-a-key flow is `Cancel` / `Try again`(Muted) + `Save`(Secondary).
 
@@ -296,18 +296,17 @@ Same gesture, five visual weights, and two contradictory meanings for the left-a
 
 ### E. Primary position flips — **M → settled for Undo**
 Primary last (right) everywhere now, and Undo has one position: right, next to it. Sideticks' reversed bar is gone (`Cancel | Confirm` while drafting, `New Sidetick→` otherwise) and Banking no longer drops the back action. Still open:
-- Arrange Home puts `Done` in the middle: `Settings | Done | Reset` (`ArrangeHomeScreen.kt:95`).
 - Sideweather's Locations bar is `Back | Add | Locate` when no undo is pending — three actions, the last whole-bar candidate for a two-slot rule.
 - Camera, Mail compose, Phonebook detail, Maps and Web still run three or four actions for reasons unrelated to Undo.
 
 ### F. Button count/shape: square is under-used and over-used — **M**
 - Camera: three icon-only **wide** buttons with no labels (`CameraScreen.kt:126`) where `SideAction.square` exists and is used for the identical shape in Photos/Video/Music.
 - Music Now Playing: square back + three wide icon-only buttons — four buttons, none green, none labelled.
-- 3-wide text buttons appear in Mail Compose, Arrange Home, Sideticks, Maps (Search/Go/Locate), Phonebook detail, Web (3–4), Trip locations. At 480 px with `actionButtonPadding = 34.dp` these labels are the ones most likely to wrap to two lines (the `ActionLabel` fallback silently steps down the type scale).
+- 3-wide text buttons appear in Mail Compose, Sideticks, Maps (Search/Go/Locate), Phonebook detail, Web (3–4), Trip locations. At 480 px with `actionButtonPadding = 34.dp` these labels are the ones most likely to wrap to two lines (the `ActionLabel` fallback silently steps down the type scale).
 - Square buttons also carry `.weight` nowhere, so a bar of `square` + 2 wide gives the wide buttons 50/50 regardless of label length (Bank Pay, Video player, Photos viewer).
 
 ### G. Options coverage and overlap — **H**
-- No Options at all: the entire Health app, the entire Settings app, Placeholder, the Sidenotes list (only the editor has one), and the Mail folders list. On those screens the Options key answers "No options here" for 1.2 s — a dead key.
+- No Options at all: the entire Health app, most of Settings (only Arrange apps has an entry), Placeholder, the Sidenotes list (only the editor has one), and the Mail folders list. On those screens the Options key answers "No options here" for 1.2 s — a dead key.
 - Options is used for **different kinds of things** with no rule: navigation (Calendar Agenda, Trip Find From/To), creation (Music New playlist), toggles (Web zoom, Sideweather units, Music shuffle, Maps Centre), destructive (Banking erase, Translate clear, Keypad reset), state (Clock alarm access, Files sort), and an error log (Camera).
 - Three screens hide their *only* destructive action in Options (Calendar Delete, Banking Erase, Apps Uninstall) with **no confirmation**; four others require an in-bar confirmation for the same operation. Confirmation therefore depends on which screen you happened to open, not on the risk.
 - Options entries never show selection state except by Primary tone (Files sort, T9 input mode) — Maps `Centre`, Music `Shuffle: on`, Sideweather `Use °C` are inconsistent about it.
@@ -466,7 +465,7 @@ Both are internally consistent; they conflict with each other. The rule has to b
 | **Translate swipe** (`TranslateScreen.kt:201`) | Only silent deletion in the suite (no undo, no confirm) | Route through the F1/F3 decision |
 | **Files / Vault swipe confirm** (`FilesScreen.kt:187`, `VaultGraph.kt:107`) | The only two swipe-to-confirm screens against a 10-app undo majority | Align after F1 |
 | **Sideticks** (`SideticksScreen.kt:64,99`) | Primary action first; `Clear All Ticked` is a plain row with no tone/confirm/undo; the only app whose bar order is reversed | Adopt the Tier A order; route clear through the delete contract |
-| **Arrange Home** (`ArrangeHomeScreen.kt:95`) | Only 3-wide bar with `Done` in the middle and reset last; only Settings screen using in-body line buttons | Commit last, reset first |
+| **Arrange Home** (`ArrangeHomeScreen.kt:121`) | Was the only 3-wide bar with `Done` in the middle and reset last; only Settings screen using in-body line buttons | **Resolved:** bar is `←Settings | Done→`, `Reset` moved to Options |
 | **Mail Compose** (`MailGraph.kt:192`) | Only 3-wide text form; the only `Muted` Save; no green Send | Two slots + Options, or make the third shape official |
 | **Calculator** (`CalculatorScreen.kt:74,160`) | Only right-aligned title; a private `CalcKey.color()` colour language parallel to `ActionTone` | Keep the title quirk, map keys onto tones |
 | **Calendar** (`CalendarEditor.kt:82,93`) | `Delete` with no tone, `Save` with no tone, delete reachable only through Options without confirmation | Tone pass |
@@ -513,4 +512,6 @@ The shared chrome is unusually disciplined for a suite this size: one action typ
 
 **Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first two caught live drift while the passes were being written.
 
-**Still open, in the order §7.5 recommends:** F2 bar vs rows → F3 notice channel → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Arrange Home's commit slot, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.
+**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier.
+
+**Still open, in the order §7.5 recommends:** F2 bar vs rows → F3 notice channel → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.

@@ -240,9 +240,9 @@ Each app starts with a short note on the patterns it currently uses, then the co
 
 ### Settings, Apps & Utilities
 
-**Settings** — `←Home | About→`, sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→ | Reset` with the commit in the middle. No Options anywhere. The only other user of in-body line buttons is Sideport.
+**Settings** — `←Home | About→`, sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` with `Reset` in Options. The only other user of in-body line buttons is Sideport.
 
-- [ ] Move `Done` to the right in Arrange Home.
+- [x] Move `Done` to the right in Arrange Home. (Done: `Reset` moved to Options.)
 - [ ] Decide whether sub-screens get an Options entry or an explicit "nothing here".
 
 **Apps** — Single `←Home`. Long-press selects a row, then Options offers `App info` and `Uninstall`. Nothing shows the selection. `Uninstall` is untinted and unconfirmed.
