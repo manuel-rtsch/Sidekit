@@ -1,9 +1,9 @@
-# Sidetracks — Feature Specification
+# Sideplay — Feature Specification
 
 **Status:** Draft for implementation review — UI mockup delivered
-**App label:** Sidetracks (temporary; see §12)
+**App label:** Sideplay (temporary; see §12)
 **Package:** `hrln.interactive.sidekit.apps.spotify`
-**Route root:** `app/sidetracks`
+**Route root:** `app/sideplay`
 **Native library:** `libsidekit_spotify.so`
 **Reference plan:** `docs/spotify/PLAN.md` (decision, milestones, native layer)
 **Provenance:** `docs/spotify/PROVENANCE.md`
@@ -16,7 +16,7 @@ for anything the user can see, and the plan wins for licensing and native archit
 
 ## 1. What this app is
 
-Sidetracks gives one Spotify account a Sidekit-shaped client: **your library, search, playback,
+Sideplay gives one Spotify account a Sidekit-shaped client: **your library, search, playback,
 and a queue**. It is not a reproduction of Spotify's home feed, and it does not reproduce another
 Spotify client's screen-for-screen layout.
 
@@ -40,7 +40,7 @@ Everything that does not serve that question is deferred (§3).
 These are constraints, not preferences. A design that violates them is wrong even if it looks
 like Spotify.
 
-| # | Law | Consequence for Sidetracks |
+| # | Law | Consequence for Sideplay |
 |---|---|---|
 | 1 | **Chrome belongs to the shell.** Title at top, body in the middle, action bar at the bottom, drawn by `SidekitCanvas`. | No app-owned bottom bar, no floating action button, no custom top app bar. |
 | 2 | **No dialogs, toasts, or snackbars.** No Compose Sidekit app uses one; the only dialogs in the repo are in the emulator's ported `Activity`, which is not a Sidekit screen. | Confirmations and errors are an action-bar notice (replacing the bar, dismissed by tap/Back) or a list row. Never a popup. |
@@ -67,7 +67,7 @@ below is a deliberate decision, with the Sidekit reason.
 
 ### 3.1 In scope for v1
 
-| Capability | Shape in Sidetracks |
+| Capability | Shape in Sideplay |
 |---|---|
 | Sign in with Spotify | System browser + return; no password field (§5.9). |
 | Recently played | Home list, recency-ordered, capped (§5.1). |
@@ -83,7 +83,7 @@ below is a deliberate decision, with the Sidekit reason.
 
 ### 3.2 Deliberately rejected (not "later")
 
-| Spotify norm | Why Sidetracks does not have it |
+| Spotify norm | Why Sideplay does not have it |
 |---|---|
 | Algorithmic home with curated shelves ("Made for you", "Jump back in") | It is an infinite personalised feed. Sidekit home screens are short, static, and predictable; a feed cannot be made minimal by shrinking it. Home shows **your** recency, nothing inferred. |
 | Horizontal carousels of covers | Violates the 480 px single-column rule and the focus model; every carousel is a second scroll axis. Albums/playlists are rows. |
@@ -118,7 +118,7 @@ below is a deliberate decision, with the Sidekit reason.
 ### 4.1 Navigation tree
 
 ```text
-app/sidetracks                     Home
+app/sideplay                     Home
 ├── library                        Library (filter in Options)
 │   ├── collection/{type}/{id}     Album | Playlist | Show
 │   └── artist/{id}                Artist
@@ -148,7 +148,7 @@ Rules:
 
 ### 4.2 Launch and gating
 
-1. The launcher opens `app/sidetracks`.
+1. The launcher opens `app/sideplay`.
 2. If no credential is stored → `sign-in`.
 3. If a credential exists but the session cannot connect → Home in an **offline/error state**
    (§6.5), not a redirect to sign-in. Only an unrecoverable auth failure clears credentials and
@@ -164,7 +164,7 @@ Notation: **Bar** = action bar slots (left | right). **Options** = keypad Option
 Every screen uses `SidekitScaffold`, `SidekitList`, `SidekitItem`/`SidekitTile`, and
 `Modifier.listFade(state, index)` exactly as existing apps do.
 
-### 5.1 Home — "Sidetracks"
+### 5.1 Home — "Sideplay"
 
 **Purpose:** resume what you were doing, and get to Library/Search in one press.
 
@@ -361,7 +361,7 @@ tracks; then a section "History" capped at 20. No drag-handle reordering.
 
 **Body:**
 
-1. Short explanation: "Sidetracks plays from your Spotify account. Your password is entered in
+1. Short explanation: "Sideplay plays from your Spotify account. Your password is entered in
    the browser, never here."
 2. A single `SidekitCard`/`SidekitItem` row: "Log in with Spotify" (link arrow).
 3. Status row while waiting: "Waiting for the browser…" then "Connected" or an error row.
@@ -428,9 +428,9 @@ reach the UI.
 ### 7.1 One media session
 
 - `SpotifyPlayback` registers a `MediaSessionOwner` in `MediaSessions` once, with
-  `sessionId = "spotify"`, channel `"sidetracks"`, and notification id `0x5354` ("ST") —
+  `sessionId = "spotify"`, channel `"sideplay"`, and notification id `0x5354` ("ST") —
   deliberately not Music's `0x6D75` ("mu").
-- Starting Sidetracks playback pauses Music; starting Music pauses Sidetracks. The registry
+- Starting Sideplay playback pauses Music; starting Music pauses Sideplay. The registry
   enforces this in-process; Android audio focus enforces it across processes.
 - Only one notification and one platform `MediaSession` may be active.
 
@@ -502,8 +502,8 @@ Every component is one of **reuse** (exists, use as-is), **extend** (exists, sma
 
 | Component | Change |
 |---|---|
-| `SubApp` | Add `Sidetracks` immediately after `Music` (§12) |
-| `SidekitNavHost` | Register `sidetracksGraph(nav)` |
+| `SubApp` | Add `Sideplay` immediately after `Music` (§12) |
+| `SidekitNavHost` | Register `sideplayGraph(nav)` |
 | `MediaSessions` | No change; Spotify registers as another owner |
 | `MusicService` shape | Copied **structurally**, not shared: a separate `SpotifyPlaybackService` reads its ids from its own owner |
 
@@ -511,8 +511,8 @@ Every component is one of **reuse** (exists, use as-is), **extend** (exists, sma
 
 | Area | Files |
 |---|---|
-| Graph/routes | `SpotifyGraph.kt` (expose `sidetracksGraph`), route constants |
-| Screens | `SidetracksHomeScreen.kt`, `LibraryScreen.kt`, `CollectionScreen.kt`, `ArtistScreen.kt`, `SearchScreen.kt`, `NowPlayingScreen.kt`, `QueueScreen.kt`, `SettingsScreen.kt`, `SignInScreen.kt` |
+| Graph/routes | `SpotifyGraph.kt` (expose `sideplayGraph`), route constants |
+| Screens | `SideplayHomeScreen.kt`, `LibraryScreen.kt`, `CollectionScreen.kt`, `ArtistScreen.kt`, `SearchScreen.kt`, `NowPlayingScreen.kt`, `QueueScreen.kt`, `SettingsScreen.kt`, `SignInScreen.kt` |
 | ViewModel/state | `SpotifyViewModel.kt` or per-screen state holders; `FakeSpotifyGateway` for tests |
 | Auth | `auth/SpotifyAuth.kt`, `auth/SpotifyCredentialStore.kt` (wraps `PrivateSettings`) |
 | Bridge | `bridge/NativeBridge.kt`, `bridge/NativeModels.kt`, `bridge/PlaybackEvent.kt` |
@@ -521,7 +521,7 @@ Every component is one of **reuse** (exists, use as-is), **extend** (exists, sma
 | UI helpers | `ui/SpotifyRows.kt`, `ui/Notice.kt` (or promote the existing private `withNotice`) |
 
 **Not used:** Room, Coil/Glide/OkHttp, Hilt/Koin/Dagger, media3, Material3 components. Sidekit
-uses manual `viewModelFactory` wiring, Compose, and plain repositories; Sidetracks follows.
+uses manual `viewModelFactory` wiring, Compose, and plain repositories; Sideplay follows.
 
 ---
 
@@ -561,7 +561,7 @@ selection; Settings; Sign in idle/waiting/failed; D-pad focus on the first row o
 
 Login/logout/re-login; playback with screen off; notification actions; headphone unplug;
 Bluetooth route change; call interruption; network loss mid-track; process death; Music ↔
-Sidetracks mutual pause; x86_64 build without the native library.
+Sideplay mutual pause; x86_64 build without the native library.
 
 ### 11.4 Acceptance criteria (UI)
 
@@ -579,7 +579,7 @@ Sidetracks mutual pause; x86_64 build without the native library.
 
 | # | Decision |
 |---|---|
-| 1 | Label **Sidetracks** (temporary). Enum `Sidetracks`, route `app/sidetracks`, package stays `spotify`. |
+| 1 | Label **Sideplay** (temporary). Enum `Sideplay`, route `app/sideplay`, package stays `spotify`. |
 | 2 | Grid position: immediately after Music. Not in the dock. |
 | 3 | Home is recency + tiles only; no algorithmic shelves. |
 | 4 | Library is one screen with an Options filter; no tabs. |
@@ -608,14 +608,14 @@ assumes those exist behind `SpotifyGateway`.
 
 ## 14. Mockup status
 
-A reviewable UI mockup now exists on branch `feat/sidetracks-mockup` (mockup commit `33c4b59`),
+A reviewable UI mockup now exists on branch `feat/sideplay-mockup` (mockup commit `33c4b59`),
 installed as a `hrln.interactive.sidekit.dev` build on the attached Sidephone.
 
 - All nine screens in §5 are implemented with Sidekit chrome and components.
 - Mock data, cover art and a state holder simulate library, search, queue, history, shuffle,
   repeat, save/follow, notices and sign-out; no native library or Spotify credentials are used.
 - The launcher entry sits immediately after Music with `SidekitIcon.QueueMusic`.
-- Roborazzi baselines are in `app/screenshots/sidetracks_*.png`; the screenshot test and
+- Roborazzi baselines are in `app/screenshots/sideplay_*.png`; the screenshot test and
   `:app:compileDebugKotlin` pass.
 - The device was keyguard-locked during installation review, so on-device tap-through is still
   outstanding; screenshot review covered layout, typography and action-bar behaviour.

@@ -115,7 +115,7 @@ android {
     }
 }
 
-// Sidetracks' librespot bridge. The generated ABI directory is a normal jniLibs source, so an
+// Sideplay' librespot bridge. The generated ABI directory is a normal jniLibs source, so an
 // unsupported ABI simply has no .so and the Kotlin bridge reports it as unavailable.
 val spotifyJniLibs = layout.buildDirectory.dir("generated/spotifyJniLibs")
 val cargo = listOf(
@@ -129,7 +129,7 @@ val buildSpotifyNative = tasks.register<Exec>("buildSpotifyNative") {
     group = "native"
     enabled = cargo != null
     if (cargo == null) {
-        logger.warn("Sidetracks: cargo is unavailable; libsidekit_spotify.so will not be packaged.")
+        logger.warn("Sideplay: cargo is unavailable; libsidekit_spotify.so will not be packaged.")
     }
     workingDir = rootProject.file("native/sidekit-spotify")
     commandLine(

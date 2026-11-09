@@ -109,7 +109,7 @@ class SpotifyAuth(
         val target = requestLine.split(' ').getOrNull(1) ?: return SpotifyPkce.Callback.Ignored
         val result = SpotifyPkce.parseCallback(target, expectedState)
         val message = when (result) {
-            is SpotifyPkce.Callback.Code -> "Signed in to Sidetracks. You can close this page."
+            is SpotifyPkce.Callback.Code -> "Signed in to Sideplay. You can close this page."
             is SpotifyPkce.Callback.Failure -> "Sign-in did not complete. You can close this page."
             SpotifyPkce.Callback.Ignored -> "Waiting for Spotify…"
         }
@@ -121,7 +121,7 @@ class SpotifyAuth(
         val body = """
             <!doctype html><meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>Sidetracks</title>
+            <title>Sideplay</title>
             <body style="font-family:sans-serif;background:#111;color:#eee;padding:2rem">
             <p>$message</p>
         """.trimIndent()

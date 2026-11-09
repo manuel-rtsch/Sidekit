@@ -1,10 +1,10 @@
 # Sidekit Spotify Sub-App — Planning Document
 
-**Status:** Draft plan — Milestone 0.5 landed; UI mockup delivered; SPEC and PROVENANCE drafted  
-**Working name:** Sidetracks (temporary; internal package remains `spotify`)  
-**Target workspace:** `/home/manuel/Projects/Sidekit`  
-**Reference application:** `.sidespot/` (behavior reference only)  
-**Native dependency:** librespot (MIT), used directly  
+**Status:** Draft plan — Milestone 0.5 landed; UI mockup delivered; SPEC and PROVENANCE drafted
+**Working name:** Sideplay (temporary; internal package remains `spotify`)
+**Target workspace:** `/home/manuel/Projects/Sidekit`
+**Reference application:** `.sidespot/` (behavior reference only)
+**Native dependency:** librespot (MIT), used directly
 **Goal:** Add Spotify playback, library browsing, search, and queue management to Sidekit as a first-class sub-app, implemented with Sidekit's design system and architecture.
 
 ---
@@ -203,7 +203,7 @@ These are app-agnostic Sidekit changes, not Spotify code. They are listed here s
 | `apps/music/MusicService.kt` | Uses the session/notification registry instead of hardcoded constants. |
 | `apps/integrations/KeystoreCipher.kt` | Moved from `apps/banking/BankingRepository.kt`; `PrivateSettings` follows. |
 | `design/RemoteArtwork.kt` *or* dependency decision | Remote HTTPS artwork with memory + disk cache, placeholders, cancellation. |
-| `navigation/SubApp.kt`, `navigation/SidekitNavHost.kt` | `Sidetracks` tile immediately after `Music` and `sidetracksGraph(...)` wiring, together, in Milestone 2. |
+| `navigation/SubApp.kt`, `navigation/SidekitNavHost.kt` | `Sideplay` tile immediately after `Music` and `sideplayGraph(...)` wiring, together, in Milestone 2. |
 
 ---
 
@@ -555,8 +555,8 @@ No Coil/Glide/OkHttp is added. The component is app-neutral; Music can adopt it 
 
 Register the app through Sidekit's existing conventions:
 
-1. Add `Sidetracks("Sidetracks", SidekitIcon.QueueMusic)` to `navigation/SubApp.kt` immediately after `Music`. The constant name sets the route (`app/sidetracks`), so it and the label move together if the temporary name changes.
-2. Add a `sidetracksGraph(navController)` function in `apps/spotify/`.
+1. Add `Sideplay("Sideplay", SidekitIcon.QueueMusic)` to `navigation/SubApp.kt` immediately after `Music`. The constant name sets the route (`app/sideplay`), so it and the label move together if the temporary name changes.
+2. Add a `sideplayGraph(navController)` function in `apps/spotify/`.
 3. Register it in `SidekitNavHost` in the same commit as the enum entry, so the tile is never a dead route.
 4. No Home tile work: the launcher reads `SubApp` directly. Do not add a dock entry.
 5. Add screenshot tests for the new screens and regenerate launcher baselines once, in that same commit.
@@ -750,7 +750,7 @@ Small, app-agnostic changes to Sidekit that the Spotify app depends on. Land the
 4. ✅ **Secret store promotion.** `KeystoreCipher` and the cipher interface moved to `apps/integrations/SecretCipher.kt` (`SecretCipher` + `KeystoreCipher`). Banking keeps `typealias BookCipher = SecretCipher`; the default alias remains `sidekit_banking` so existing sealed files open. `PrivateSettings` now imports from its own package.
 5. ✅ **Remote image decision.** Decision: Sidekit-owned bounded cache, no new image dependency. New `apps/media/RemoteArtwork.kt`: memory LRU sized like `Thumbnails`, 16 MB disk cache in `cacheDir/artwork` keyed by url+size and trimmed oldest-first, two concurrent fetches with 10 s timeouts and an 8 MB cap, cancellation disconnects the socket, bounds + `inSampleSize` decode cropped into RGB_565. `RemoteArtworkImage` composable with a Sidekit icon placeholder. Spotify rows use this; Music keeps `Thumbnails`.
 6. ✅ **Native availability convention.** New `system/NativeLibraries.kt` (`load`/`isAvailable`, caches success and failure, thread-safe). `EmulatorCore` exposes `available` instead of throwing from `init`, and `EmulatorActivity` shows "not available in this build". Spotify's bridge must use the same loader — never `System.loadLibrary` from an initialiser.
-7. ✅ **Registration conventions.** Decided (see §14, Resolved launcher placement): label **Sidetracks** (temporary), enum constant `Sidetracks`, route `app/sidetracks`, grid position immediately after `Music`, not in the dock, `designed = true`. `SubApp` remains the single source of launcher order, route (`"app/${name.lowercase()}"`), dock list, and placeholder filter; no enum refactor needed. In Milestone 2 the enum entry, `sidetracksGraph(navController)`, `SidekitNavHost` registration, and regenerated launcher baselines must land together so no placeholder tile is ever reachable. Note this couples display name to route: renaming the enum later changes the deep-link route, which is acceptable pre-release.
+7. ✅ **Registration conventions.** Decided (see §14, Resolved launcher placement): label **Sideplay** (temporary), enum constant `Sideplay`, route `app/sideplay`, grid position immediately after `Music`, not in the dock, `designed = true`. `SubApp` remains the single source of launcher order, route (`"app/${name.lowercase()}"`), dock list, and placeholder filter; no enum refactor needed. In Milestone 2 the enum entry, `sideplayGraph(navController)`, `SidekitNavHost` registration, and regenerated launcher baselines must land together so no placeholder tile is ever reachable. Note this couples display name to route: renaming the enum later changes the deep-link route, which is acceptable pre-release.
 
 Deliberately **not** in this milestone: a unified `MediaProvider` abstraction, any change to the MediaStore `Track` model, or any Spotify-named type in shared code.
 
@@ -842,7 +842,7 @@ The largest schedule risk is not UI; it is debugging real Spotify playback, OAut
 
 Resolve before Milestone 2:
 
-1. ~~**Display name:** "Spotify", "Sidespot", or another name.~~ Resolved: **Sidetracks**, temporary and subject to change. Display-only except for the route: `SubApp` entry `Sidetracks(...)` yields `app/sidetracks`. Package `hrln.interactive.sidekit.apps.spotify`, native `libsidekit_spotify.so`, and JNI symbols are unchanged. If the name changes later, rename the enum constant and label together (the route follows); no file path or JNI symbol changes. Icon: `SidekitIcon.QueueMusic` keeps it visually distinct from Music's `MusicNote2`; swap if design prefers another.
+1. ~~**Display name:** "Spotify", "Sidespot", or another name.~~ Resolved: **Sideplay**, temporary and subject to change. Display-only except for the route: `SubApp` entry `Sideplay(...)` yields `app/sideplay`. Package `hrln.interactive.sidekit.apps.spotify`, native `libsidekit_spotify.so`, and JNI symbols are unchanged. If the name changes later, rename the enum constant and label together (the route follows); no file path or JNI symbol changes. Icon: `SidekitIcon.QueueMusic` keeps it visually distinct from Music's `MusicNote2`; swap if design prefers another.
 2. ~~**Sidekit license:** choose before distribution.~~ Resolved: MIT, already in the repository root.
 3. **Local Music coexistence:** recommended v1 approach is separate providers with mutual pause, not a unified media model.
 
@@ -865,7 +865,7 @@ Resolve before Milestone 2:
 
 0. ✅ MIT license recorded in `docs/spotify/SPEC.md`; `docs/spotify/PROVENANCE.md` started. No further license decision needed.
 1. ✅ Milestone 0.5 landed on `refactor/media-session-seams` (6 commits): `MediaSessionOwner`/registry, audio-focus decision, service/notification ids from the owner, `KeystoreCipher` promotion, `NativeLibraries` guarded loading, `RemoteArtwork`. See the milestone for what was deliberately *not* built (no focus-arbiter class).
-2. ✅ `docs/spotify/SPEC.md` written on `docs/sidetracks-spec`, mapping every component to *reuse / extend / new* and deliberately rejecting Spotify patterns that do not fit Sidekit's minimal UI. `SPEC.md` is the implementation contract; this plan remains authoritative for licensing and native architecture.
+2. ✅ `docs/spotify/SPEC.md` written on `docs/sideplay-spec`, mapping every component to *reuse / extend / new* and deliberately rejecting Spotify patterns that do not fit Sidekit's minimal UI. `SPEC.md` is the implementation contract; this plan remains authoritative for licensing and native architecture.
 3. Add a pinned upstream librespot submodule under `native/librespot`.
 4. Build a minimal Rust/JNI library with `nativeInit`, `sessionConnect`, `playerCreate`, `playerLoad`, and an audio sink.
 5. Add the Gradle Cargo task for `arm64-v8a`.
@@ -878,16 +878,16 @@ The spike should be treated as a go/no-go checkpoint. If librespot cannot authen
 
 ## 16. UI Mockup Delivered
 
-**Branch:** `feat/sidetracks-mockup`  
-**Commits:** `33c4b59 Add the Sidetracks UI mockup`, `c2b3e5c Document the Sidetracks mockup`  
+**Branch:** `feat/sideplay-mockup`
+**Commits:** `33c4b59 Add the Sideplay UI mockup`, `c2b3e5c Document the Sideplay mockup`
 **Installed build:** `hrln.interactive.sidekit.dev` — `1.2.3-68-gc2b3e5c-dev`
 
-- Added Sidetracks as a real Sidekit sub-app: package `apps/spotify`, launcher entry immediately after Music (`SidekitIcon.QueueMusic`), route `app/sidetracks`, and `sidetracksGraph(...)` registration.
+- Added Sideplay as a real Sidekit sub-app: package `apps/spotify`, launcher entry immediately after Music (`SidekitIcon.QueueMusic`), route `app/sideplay`, and `sideplayGraph(...)` registration.
 - Implemented all specified screens: Home, Library, Collection, Artist, Search, Now Playing, Queue, Settings and Sign In.
 - Used Sidekit chrome/components throughout: `SidekitScaffold`, `SidekitList`, `SidekitItem`, `SidekitTile`, `SidekitTextField`, action bars, Options, list fade and focus patterns.
 - Added a mock account, library, search data, generated cover art and a shared state holder that simulates queue, history, shuffle, repeat, save/follow, notices and sign-out.
-- Added Roborazzi coverage for all nine screens; baselines are in `Sidekit/app/screenshots/sidetracks_*.png`.
-- Verified with `:app:compileDebugKotlin` and `:app:testDebugUnitTest --tests ...SidetracksScreenshotTest`, then installed the `dev` APK on the attached Sidephone.
+- Added Roborazzi coverage for all nine screens; baselines are in `Sidekit/app/screenshots/sideplay_*.png`.
+- Verified with `:app:compileDebugKotlin` and `:app:testDebugUnitTest --tests ...SideplayScreenshotTest`, then installed the `dev` APK on the attached Sidephone.
 - The device keyguard was active during tap-through, so the installed build was not manually exercised; the same screens were rendered and reviewed through the screenshot harness.
 
 Next implementation step is unchanged: replace `MockSpotifyDataSource`/the mock playback state with the real `SpotifyGateway`, auth and playback service behind the existing UI.

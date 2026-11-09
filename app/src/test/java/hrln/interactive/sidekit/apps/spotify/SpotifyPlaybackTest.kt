@@ -34,7 +34,7 @@ class SpotifyPlaybackTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `starting another owner pauses Sidetracks`() = runTest {
+    fun `starting another owner pauses Sideplay`() = runTest {
         val gateway = FakeGateway()
         val registry = MediaSessionRegistry()
         val playback = SpotifyPlayback(gateway, CoroutineScope(StandardTestDispatcher(testScheduler)), registry)

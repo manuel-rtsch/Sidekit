@@ -1,4 +1,4 @@
-//! JNI surface for Sidetracks. All state lives in `engine`; these functions only translate.
+//! JNI surface for Sideplay. All state lives in `engine`; these functions only translate.
 
 mod audio;
 mod catalog;

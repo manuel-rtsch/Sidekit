@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.apps.sideweather
 
 import androidx.compose.foundation.background
-import hrln.interactive.sidekit.design.action.SideAction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,10 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import hrln.interactive.sidekit.design.components.listFade
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -22,10 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.components.SidekitText
+import hrln.interactive.sidekit.design.components.listFade
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
@@ -44,12 +44,12 @@ fun SideweatherHomeScreen(
     summary: List<WeatherRow>,
     onHourly: () -> Unit,
     onFiveDay: () -> Unit,
-    options: List<SideAction> = emptyList(),
+    options: List<SideAction> = emptyList()
 ) {
     SidekitScaffold(
         title = "Sideweather",
         options = options,
-        actions = listOf(SideAction.back("back", "Hourly", onHourly), SideAction.forward("forward", "5 days", onFiveDay)),
+        actions = listOf(SideAction.back("back", "Hourly", onHourly), SideAction.forward("forward", "5 days", onFiveDay))
     ) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
@@ -70,7 +70,7 @@ private fun ConditionsCard(current: CurrentConditions) {
             .clip(SidekitTheme.shapes.item)
             .background(colors.surfaceA3)
             .padding(horizontal = SidekitTheme.spacing.itemPadding)
-            .padding(top = 14.dp),
+            .padding(top = 14.dp)
     ) {
         SidekitText(current.place, style = type.caption)
         Spacer(Modifier.height(2.dp))
@@ -91,7 +91,7 @@ private fun ConditionsCard(current: CurrentConditions) {
 fun ForecastScreen(title: String, rows: List<WeatherRow>, onBack: () -> Unit, onLocations: () -> Unit) {
     SidekitScaffold(
         title = title,
-        actions = listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Locations", onLocations)),
+        actions = listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Locations", onLocations))
     ) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
@@ -105,7 +105,7 @@ fun ForecastScreen(title: String, rows: List<WeatherRow>, onBack: () -> Unit, on
 fun LocationsScreen(locations: List<WeatherRow>, hint: String, onBack: () -> Unit, onAdd: () -> Unit) {
     SidekitScaffold(
         title = "Locations",
-        actions = listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Add", onAdd)),
+        actions = listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Add", onAdd))
     ) { padding ->
         SidekitList(padding) {
             items(locations) { SidekitItem(title = it.label, secondary = it.detail) }

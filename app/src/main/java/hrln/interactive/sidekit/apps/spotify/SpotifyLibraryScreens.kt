@@ -30,7 +30,7 @@ import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
 @Composable
-fun SidetracksHomeScreen(
+fun SideplayHomeScreen(
     state: SpotifyUiState,
     onNowPlaying: () -> Unit,
     onLibrary: () -> Unit,
@@ -52,7 +52,7 @@ fun SidetracksHomeScreen(
         )
     )
     SidekitScaffold(
-        title = "Sidetracks",
+        title = "Sideplay",
         actions = bar,
         options = listOf(
             SideAction("refresh", "Refresh", SidekitIcon.Undo, onClick = onRefresh),
@@ -119,7 +119,7 @@ fun LibraryScreen(
     val actions = withNotice(
         state.notice,
         onDismissNotice,
-        listOf(spotifyBack("Sidetracks", onBack).first(), SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch))
+        listOf(spotifyBack("Sideplay", onBack).first(), SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch))
     )
     val filters = LibraryFilter.entries.map { filter ->
         SideAction(

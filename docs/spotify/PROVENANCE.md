@@ -1,6 +1,6 @@
-# Sidetracks — Provenance and Clean-Room Record
+# Sideplay — Provenance and Clean-Room Record
 
-**Purpose:** record where the Sidetracks specification and implementation came from, and how the
+**Purpose:** record where the Sideplay specification and implementation came from, and how the
 Sidespot reference application is kept outside Sidekit's version-controlled source, so no GPLv3
 code enters Sidekit.
 
@@ -11,9 +11,9 @@ Companion: `docs/spotify/SPEC.md`. Licensing and native decisions:
 
 ## 1. The two licences that matter
 
-| Project | Licence | How Sidetracks uses it |
+| Project | Licence | How Sideplay uses it |
 |---|---|---|
-| **Sidekit** | MIT (`/LICENSE`, © 2026 Harlen Postill) | Sidetracks is part of Sidekit and ships under MIT. |
+| **Sidekit** | MIT (`/LICENSE`, © 2026 Harlen Postill) | Sideplay is part of Sidekit and ships under MIT. |
 | **librespot** | MIT | Used directly as a pinned upstream submodule. Copyright and licence notice preserved; see §6. |
 | **Sidespot** | GPLv3 | **Reference only.** Included locally at `.sidespot/` as a clean-room implementation reference, but excluded from Git and never committed. Not linked, imported, or shipped. |
 
@@ -112,7 +112,7 @@ The native library is `native/sidekit-spotify`:
 - librespot 0.8.0 is consumed from crates.io and pinned by `native/sidekit-spotify/Cargo.lock`.
   Its MIT licence is copied to `native/sidekit-spotify/LICENSE-librespot`.
 - No librespot patches are applied, so there is no `docs/spotify/LIBRESPOT_PATCHES.md`.
-- Do not describe Sidetracks as an official Spotify client. Document the account/protocol risk
+- Do not describe Sideplay as an official Spotify client. Document the account/protocol risk
   from the plan (§3, "Spotify account risk").
 
 ---

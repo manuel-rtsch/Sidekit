@@ -82,7 +82,7 @@ data class SpotifyUiState(
 }
 
 /**
- * State holder for the Sidetracks UI. Catalog reads, queue ordering and local history live in
+ * State holder for the Sideplay UI. Catalog reads, queue ordering and local history live in
  * their own domain objects; this class only maps them to the single immutable screen state and
  * implements the optimistic save/follow behaviour the action bars expect.
  */
@@ -146,7 +146,7 @@ class SpotifyViewModel(
         }
     }
 
-    /** Adopts the process-wide player and queue after the Sidetracks screen was recreated. */
+    /** Adopts the process-wide player and queue after the Sideplay screen was recreated. */
     private fun restorePlaybackState() {
         val session = session ?: return
         val playback = session.playback
@@ -1054,7 +1054,7 @@ class SpotifyViewModel(
 
             "stopped" -> if (matchesCurrent(event)) {
                 // Stop from the notification or lock screen: clear both the UI and the queue so
-                // reopening Sidetracks cannot restore the track that was stopped.
+                // reopening Sideplay cannot restore the track that was stopped.
                 session?.playback?.updateState(false, 0L)
                 applyQueue(queue.stop(), positionMs = 0L, playing = false)
             }

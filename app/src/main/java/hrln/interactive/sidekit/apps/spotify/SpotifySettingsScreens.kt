@@ -76,7 +76,7 @@ fun SpotifySettingsScreen(
         title = "Settings",
         actions = actions,
         options = listOf(
-            SideAction("about", "About", SidekitIcon.Docs, onClick = { onNotice("Sidetracks · a Sidekit sub-app") }),
+            SideAction("about", "About", SidekitIcon.Docs, onClick = { onNotice("Sideplay · a Sidekit sub-app") }),
             SideAction("cache", "Clear cache", SidekitIcon.DeleteForever, onClick = onClearCache)
         )
     ) { padding ->
@@ -164,7 +164,7 @@ fun SpotifySignInScreen(
             item(key = "explain") {
                 SidekitCard(Modifier.listFade(listState, 0).fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SidekitText("Sidetracks plays from your Spotify account.", style = SidekitTheme.typography.bodySmall, maxLines = 2)
+                        SidekitText("Sideplay plays from your Spotify account.", style = SidekitTheme.typography.bodySmall, maxLines = 2)
                         SidekitText(
                             "Your password is entered in the browser, never here.",
                             style = SidekitTheme.typography.caption,

@@ -52,8 +52,7 @@ class PermissionGate internal constructor(initial: Boolean) {
     fun request() = launch()
 }
 
-fun Context.hasPermissions(vararg permissions: String) =
-    permissions.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
+fun Context.hasPermissions(vararg permissions: String) = permissions.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
 
 @Composable
 fun rememberPermissionGate(vararg permissions: String, onResult: (Boolean) -> Unit = {}): PermissionGate {
@@ -116,8 +115,7 @@ object PhoneFormat {
         iso.uppercase(Locale.ROOT).also { region = it }
     }
 
-    fun format(number: String, region: String): String =
-        if (number.isBlank()) number else PhoneNumberUtils.formatNumber(number, region) ?: number
+    fun format(number: String, region: String): String = if (number.isBlank()) number else PhoneNumberUtils.formatNumber(number, region) ?: number
 }
 
 /**
@@ -130,7 +128,7 @@ fun Modifier.keypadDigits(
     onKey: (Char) -> Unit,
     onDelete: () -> Unit,
     onLongZero: (() -> Unit)? = null,
-    enabled: Boolean = true,
+    enabled: Boolean = true
 ): Modifier {
     if (!enabled) return this
     val focus = remember { FocusRequester() }

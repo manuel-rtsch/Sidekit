@@ -1,7 +1,7 @@
 package hrln.interactive.sidekit.apps.mail
 
-import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import hrln.interactive.sidekit.design.action.SideAction
@@ -21,16 +21,36 @@ fun MailAccountScreen(account: ImapSmtpAccount, onBack: () -> Unit, onConnected:
     var message by remember { mutableStateOf("IMAP over TLS (993). SMTP TLS (465) or STARTTLS (587). Use your provider's app password. OAuth-only accounts require provider registration.") }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    SidekitScaffold("Mail account", actions = listOf(SideAction.back("back", "Back", onBack), SideAction("connect", if (busy) "Connecting…" else "Connect") {
-        if (!busy) { busy = true; scope.launch {
-            try {
-                account.connect(MailConfig(email.trim(), username.trim().ifBlank { email.trim() }, password.ifEmpty { config?.password.orEmpty() }, imap.trim(), smtp.trim(), port.toIntOrNull() ?: 0, imapPort.toIntOrNull() ?: 0))
-                password = ""; onConnected()
-            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-            catch (_: Exception) { message = "Connection failed. Check hosts, ports, username and app password; both servers must accept the account." }
-            finally { busy = false }
-        } }
-    }), options = listOf(SideAction("disconnect", "Disconnect") { account.disconnect(); onBack() })) { padding ->
+    SidekitScaffold(
+        "Mail account",
+        actions = listOf(
+            SideAction.back("back", "Back", onBack),
+            SideAction("connect", if (busy) "Connecting…" else "Connect") {
+                if (!busy) {
+                    busy = true
+                    scope.launch {
+                        try {
+                            account.connect(MailConfig(email.trim(), username.trim().ifBlank { email.trim() }, password.ifEmpty { config?.password.orEmpty() }, imap.trim(), smtp.trim(), port.toIntOrNull() ?: 0, imapPort.toIntOrNull() ?: 0))
+                            password = ""
+                            onConnected()
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            message = "Connection failed. Check hosts, ports, username and app password; both servers must accept the account."
+                        } finally {
+                            busy = false
+                        }
+                    }
+                }
+            }
+        ),
+        options = listOf(
+            SideAction("disconnect", "Disconnect") {
+                account.disconnect()
+                onBack()
+            }
+        )
+    ) { padding ->
         SidekitList(padding) {
             item { SidekitCard(Modifier.fillMaxWidth()) { SidekitText(message, maxLines = Int.MAX_VALUE) } }
             item { SidekitTextField(email, { email = it }, Modifier.fillMaxWidth(), placeholder = "Email", singleLine = true) }

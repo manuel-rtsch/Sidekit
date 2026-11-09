@@ -1,6 +1,6 @@
 # libsidekit_spotify
 
-The Sidetracks native bridge. It links librespot 0.8.0 and exposes the JNI surface declared in
+The Sideplay native bridge. It links librespot 0.8.0 and exposes the JNI surface declared in
 `apps/spotify/bridge/NativeBridge.kt`.
 
 ## Toolchain
@@ -37,4 +37,4 @@ incompatible `vergen-lib`. Do not update that crate without rebuilding Android t
 
 One minimal librespot-core patch is applied through `native/vendor/librespot-core` (platform
 constant set to `"linux"` so Login5/client-token requests match the desktop client id). It is
-documented in `docs/spotify/SIDETRACKS.md` §6. Upstream MIT licence: `LICENSE-librespot`.
+documented in `docs/spotify/SIDEPLAY.md` §6. Upstream MIT licence: `LICENSE-librespot`.

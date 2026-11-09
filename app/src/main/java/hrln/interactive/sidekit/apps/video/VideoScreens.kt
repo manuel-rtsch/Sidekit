@@ -88,16 +88,19 @@ fun VideoListScreen(
     onPlay: (Video) -> Unit,
     onBack: () -> Unit,
     access: Access = Access.Granted,
-    onAllow: () -> Unit = {},
+    onAllow: () -> Unit = {}
 ) {
     if (access != Access.Granted) {
         SidekitScaffold(
             title = "Video",
             actions = listOf(
                 SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Home", onBack, motion = ActionMotion.Back),
-                if (access == Access.Blocked) SideAction.forward("allow", "Open settings", onAllow, icon = SidekitIcon.Settings)
-                else SideAction("allow", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, contentDescription = "Allow access to videos", onClick = onAllow),
-            ),
+                if (access == Access.Blocked) {
+                    SideAction.forward("allow", "Open settings", onAllow, icon = SidekitIcon.Settings)
+                } else {
+                    SideAction("allow", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, contentDescription = "Allow access to videos", onClick = onAllow)
+                }
+            )
         ) { padding ->
             PermissionRationale("See your videos", "Video plays the clips saved on this phone, including ones you film with Camera.", access, padding)
         }
@@ -120,7 +123,7 @@ fun VideoListScreen(
                         Box(Modifier.size(THUMB_W, THUMB_H).clip(SidekitTheme.shapes.control).background(SidekitTheme.colors.surfaceA2)) {
                             Thumbnail(video.uri, THUMB_W, THUMB_H, Modifier.fillMaxSize())
                         }
-                    },
+                    }
                 )
             }
         }
@@ -194,17 +197,39 @@ fun VideoPlayerScreen(player: VideoPlayer, onBack: () -> Unit) {
                 poke()
                 when (event.nativeKeyEvent.keyCode) {
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_5, KeyEvent.KEYCODE_SPACE,
-                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK -> { player.togglePlay(); true }
-                    KeyEvent.KEYCODE_MEDIA_PLAY -> { player.play(); true }
-                    KeyEvent.KEYCODE_MEDIA_PAUSE -> { player.pause(); true }
-                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_4, KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> { player.seekBy(-SEEK_STEP_MS); tick++; true }
-                    KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_6, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, KeyEvent.KEYCODE_MEDIA_NEXT -> { player.seekBy(SEEK_STEP_MS); tick++; true }
+                    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK -> {
+                        player.togglePlay()
+                        true
+                    }
+
+                    KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                        player.play()
+                        true
+                    }
+
+                    KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                        player.pause()
+                        true
+                    }
+
+                    KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_4, KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                        player.seekBy(-SEEK_STEP_MS)
+                        tick++
+                        true
+                    }
+
+                    KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_6, KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                        player.seekBy(SEEK_STEP_MS)
+                        tick++
+                        true
+                    }
+
                     else -> false
                 }
             }
             .focusable()
             .pointerInput(Unit) { detectTapGestures { if (visible && playing) visible = false else poke() } },
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         VideoSurface(player, Modifier.then(if (player.aspect > 0f) Modifier.aspectRatio(player.aspect) else Modifier.fillMaxSize()))
         if (player.failed) {
@@ -214,29 +239,52 @@ fun VideoPlayerScreen(player: VideoPlayer, onBack: () -> Unit) {
             player = player,
             tick = tick,
             visible = showControls,
-            onSeek = { poke(); player.seekTo(it); tick++ },
+            onSeek = {
+                poke()
+                player.seekTo(it)
+                tick++
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = SidekitTheme.spacing.pagePadding)
-                .padding(bottom = SidekitTheme.spacing.pagePadding * 2 + SidekitTheme.spacing.actionBarHeight),
+                .padding(bottom = SidekitTheme.spacing.pagePadding * 2 + SidekitTheme.spacing.actionBarHeight)
         )
     }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
-    val actions = if (!showControls) emptyList() else listOf(
-        SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to videos", onBack, motion = ActionMotion.Back),
-        SideAction(
-            "play",
-            if (playing) "Pause" else "Play",
-            if (playing) SidekitIcon.Pause else SidekitIcon.PlayArrow,
-            motion = ActionMotion.Up,
-            contentDescription = if (playing) "Pause video" else "Play video",
-        ) { poke(); player.togglePlay() },
-        SideAction.square("skip", SidekitIcon.SkipNext, "Forward 10 seconds", { poke(); player.seekBy(SEEK_STEP_MS); tick++ }, tone = ActionTone.Muted),
-    )
+    val actions = if (!showControls) {
+        emptyList()
+    } else {
+        listOf(
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to videos", onBack, motion = ActionMotion.Back),
+            SideAction(
+                "play",
+                if (playing) "Pause" else "Play",
+                if (playing) SidekitIcon.Pause else SidekitIcon.PlayArrow,
+                motion = ActionMotion.Up,
+                contentDescription = if (playing) "Pause video" else "Play video"
+            ) {
+                poke()
+                player.togglePlay()
+            },
+            SideAction.square("skip", SidekitIcon.SkipNext, "Forward 10 seconds", {
+                poke()
+                player.seekBy(SEEK_STEP_MS)
+                tick++
+            }, tone = ActionTone.Muted)
+        )
+    }
     val options = listOf(
-        SideAction("back10", "Back 10 s", SidekitIcon.SkipPrevious) { poke(); player.seekBy(-SEEK_STEP_MS); tick++ },
-        SideAction("restart", "Restart", SidekitIcon.Undo) { poke(); player.seekTo(0); player.play() },
+        SideAction("back10", "Back 10 s", SidekitIcon.SkipPrevious) {
+            poke()
+            player.seekBy(-SEEK_STEP_MS)
+            tick++
+        },
+        SideAction("restart", "Restart", SidekitIcon.Undo) {
+            poke()
+            player.seekTo(0)
+            player.play()
+        }
     )
     PublishChrome(header = null, actions = actions, options = options)
 }
@@ -254,7 +302,7 @@ private fun VideoSurface(player: VideoPlayer, modifier: Modifier) {
                     override fun surfaceDestroyed(holder: SurfaceHolder) = player.attach(null)
                 })
             }
-        },
+        }
     )
 }
 
@@ -278,7 +326,7 @@ private fun SeekLine(player: VideoPlayer, tick: Long, visible: Boolean, onSeek: 
                 compositingStrategy = CompositingStrategy.ModulateAlpha
             },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap),
+        horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap)
     ) {
         SidekitText(formatDuration(position), style = SidekitTheme.typography.label)
         Box(
@@ -287,17 +335,27 @@ private fun SeekLine(player: VideoPlayer, tick: Long, visible: Boolean, onSeek: 
                 .height(36.dp)
                 .semantics { contentDescription = "Seek" }
                 .then(
-                    if (!visible || duration <= 0) Modifier else Modifier
-                        .pointerInput(duration) {
-                            detectTapGestures { onSeek(((it.x / size.width).coerceIn(0f, 1f) * duration).toLong()) }
-                        }
-                        .pointerInput(duration) {
-                            detectHorizontalDragGestures(
-                                onDragStart = { dragging = true; dragFraction = (it.x / size.width).coerceIn(0f, 1f) },
-                                onDragEnd = { dragging = false; onSeek((dragFraction * duration).toLong()) },
-                                onDragCancel = { dragging = false },
-                            ) { change, _ -> dragFraction = (change.position.x / size.width).coerceIn(0f, 1f) }
-                        },
+                    if (!visible || duration <= 0) {
+                        Modifier
+                    } else {
+                        Modifier
+                            .pointerInput(duration) {
+                                detectTapGestures { onSeek(((it.x / size.width).coerceIn(0f, 1f) * duration).toLong()) }
+                            }
+                            .pointerInput(duration) {
+                                detectHorizontalDragGestures(
+                                    onDragStart = {
+                                        dragging = true
+                                        dragFraction = (it.x / size.width).coerceIn(0f, 1f)
+                                    },
+                                    onDragEnd = {
+                                        dragging = false
+                                        onSeek((dragFraction * duration).toLong())
+                                    },
+                                    onDragCancel = { dragging = false }
+                                ) { change, _ -> dragFraction = (change.position.x / size.width).coerceIn(0f, 1f) }
+                            }
+                    }
                 )
                 .drawBehind {
                     val h = 6.dp.toPx()
@@ -305,7 +363,7 @@ private fun SeekLine(player: VideoPlayer, tick: Long, visible: Boolean, onSeek: 
                     val r = CornerRadius(h / 2, h / 2)
                     drawRoundRect(colors.surfaceA4, Offset(0f, top), Size(size.width, h), r)
                     drawRoundRect(colors.light, Offset(0f, top), Size(size.width * fraction.coerceIn(0f, 1f), h), r)
-                },
+                }
         )
         SidekitText(formatDuration(duration), style = SidekitTheme.typography.label)
     }
@@ -319,7 +377,7 @@ object VideoSampleData {
         Video(2, "17 Jul 2026, 20:42", 7_000),
         Video(3, "Beach day", 185_000),
         Video(4, "20 Jul 2026, 13:23", 63_000),
-        Video(5, "Concert", 3_725_000),
+        Video(5, "Concert", 3_725_000)
     )
 }
 

@@ -403,12 +403,12 @@ class SpotifyWebApi(private val accessToken: suspend () -> String?) {
                 status == 401 -> fail(SpotifyFailure.AuthenticationExpired, "Sign in again")
 
                 status == 429 -> {
-                    android.util.Log.w("SidetracksApi", "$url -> 429 retryAfter=${connection.getHeaderField("Retry-After")} ${text.take(300)}")
+                    android.util.Log.w("SideplayApi", "$url -> 429 retryAfter=${connection.getHeaderField("Retry-After")} ${text.take(300)}")
                     fail(SpotifyFailure.RateLimited, "Spotify is rate-limiting requests")
                 }
 
                 status !in 200..299 -> {
-                    android.util.Log.w("SidetracksApi", "$url -> $status ${text.take(300)}")
+                    android.util.Log.w("SideplayApi", "$url -> $status ${text.take(300)}")
                     fail(SpotifyFailure.Network, "Spotify returned HTTP $status")
                 }
 

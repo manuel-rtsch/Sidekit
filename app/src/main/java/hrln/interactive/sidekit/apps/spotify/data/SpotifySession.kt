@@ -34,6 +34,8 @@ class SpotifySession(
 
     private val appContext = context?.applicationContext
     private val settingsStore = appContext?.let { SpotifySettingsStore(it) }
+
+    // Legacy file names kept so existing dev installs keep their queue and history.
     private val queueStore = appContext?.let { FileSpotifyQueueStore(File(it.filesDir, "sidetracks-queue.bin")) }
     private val historyStore = appContext?.let { FileSpotifyHistoryStore(File(it.filesDir, "sidetracks-history.bin")) }
     private val _settings = MutableStateFlow(settingsStore?.read() ?: SpotifySettings())
@@ -52,7 +54,7 @@ class SpotifySession(
     }
     val writer: SpotifyLibraryWriter? get() = catalog as? SpotifyLibraryWriter
 
-    /** Process-wide queue and history so leaving Sidetracks does not forget what is playing. */
+    /** Process-wide queue and history so leaving Sideplay does not forget what is playing. */
     val queue = SpotifyQueueRepository(
         load = { queueStore?.read() ?: SpotifyQueueRepository.Snapshot() },
         save = { queueStore?.write(it) }

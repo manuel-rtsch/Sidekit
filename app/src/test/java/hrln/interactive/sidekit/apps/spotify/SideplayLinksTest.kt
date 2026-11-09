@@ -8,13 +8,13 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class SidetracksLinksTest {
+class SideplayLinksTest {
     @Test fun `the playback notification action asks for now playing`() {
-        assertTrue(SidetracksLinks.handle(Intent(SidetracksLinks.ACTION_OPEN_NOW_PLAYING)))
+        assertTrue(SideplayLinks.handle(Intent(SideplayLinks.ACTION_OPEN_NOW_PLAYING)))
     }
 
     @Test fun `unrelated intents are ignored`() {
-        assertFalse(SidetracksLinks.handle(Intent(Intent.ACTION_VIEW)))
-        assertFalse(SidetracksLinks.handle(null))
+        assertFalse(SideplayLinks.handle(Intent(Intent.ACTION_VIEW)))
+        assertFalse(SideplayLinks.handle(null))
     }
 }

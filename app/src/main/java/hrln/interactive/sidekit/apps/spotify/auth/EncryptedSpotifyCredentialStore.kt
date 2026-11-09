@@ -10,6 +10,7 @@ import org.json.JSONObject
  */
 class EncryptedSpotifyCredentialStore(
     context: Context,
+    // Legacy name kept so existing dev installs keep their Spotify session.
     name: String = "sidetracks_spotify"
 ) : SpotifyCredentialStore {
     private val settings = PrivateSettings(context.applicationContext, name)

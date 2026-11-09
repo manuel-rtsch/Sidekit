@@ -2,7 +2,7 @@
 //!
 //! The public Web API has a shared quota that is exhausted by ordinary desktop-client
 //! credentials. The first-party endpoints used by the Spotify clients do not share that quota, so
-//! Sidetracks reads its library, search, artist and collection data through them instead.
+//! Sideplay reads its library, search, artist and collection data through them instead.
 
 use std::collections::HashSet;
 

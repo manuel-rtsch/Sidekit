@@ -28,7 +28,7 @@ import hrln.interactive.sidekit.navigation.SubApp
 import hrln.interactive.sidekit.ui.UndoWindowLifecycle
 import kotlinx.coroutines.flow.MutableStateFlow
 
-private val ROOT = SubApp.Sidetracks.route
+private val ROOT = SubApp.Sideplay.route
 private val HOME = "$ROOT/home"
 private val LIBRARY = "$ROOT/library"
 private val COLLECTION = "$ROOT/collection/{type}/{id}"
@@ -43,11 +43,11 @@ private fun collectionRoute(type: SpotifyCollectionType, id: String) = "$ROOT/co
 private fun artistRoute(id: String) = "$ROOT/artist/$id"
 
 /**
- * A tap on the playback notification opens Sidetracks at Now Playing instead of the launcher.
+ * A tap on the playback notification opens Sideplay at Now Playing instead of the launcher.
  * The activity records the request here; the nav host consumes it once it is composed.
  */
-object SidetracksLinks {
-    const val ACTION_OPEN_NOW_PLAYING = "hrln.interactive.sidekit.action.SIDETRACKS_NOW_PLAYING"
+object SideplayLinks {
+    const val ACTION_OPEN_NOW_PLAYING = "hrln.interactive.sidekit.action.SIDEPLAY_NOW_PLAYING"
 
     private val pending = MutableStateFlow(false)
 
@@ -75,8 +75,8 @@ private val collectionArgs = listOf(
 )
 private val artistArgs = listOf(navArgument("id") { type = NavType.StringType })
 
-/** Registers Sidetracks as one Sidekit sub-app. All screens share one mock account state holder. */
-fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
+/** Registers Sideplay as one Sidekit sub-app. All screens share one mock account state holder. */
+fun NavGraphBuilder.sideplayGraph(nav: NavHostController) {
     navigation(startDestination = HOME, route = ROOT) {
         composable(HOME) { entry ->
             val vm = entry.spotifyViewModel(nav)
@@ -84,7 +84,7 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
             LaunchedEffect(state.signedIn) {
                 if (!state.signedIn) nav.navigate(SIGN_IN) { launchSingleTop = true }
             }
-            SidetracksHomeScreen(
+            SideplayHomeScreen(
                 state,
                 onNowPlaying = { nav.navigate(NOW_PLAYING) },
                 onLibrary = { nav.navigate(LIBRARY) },
@@ -290,7 +290,7 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
 
 @Composable
 private fun MissingCollectionScreen(onBack: () -> Unit, loading: Boolean = false) {
-    SidekitScaffold(title = "Sidetracks", actions = spotifyBack("Back", onBack)) { padding ->
+    SidekitScaffold(title = "Sideplay", actions = spotifyBack("Back", onBack)) { padding ->
         androidx.compose.foundation.layout.Box(
             androidx.compose.ui.Modifier.padding(padding)
         ) {

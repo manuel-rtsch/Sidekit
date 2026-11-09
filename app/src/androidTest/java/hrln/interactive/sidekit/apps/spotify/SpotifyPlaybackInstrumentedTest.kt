@@ -61,7 +61,7 @@ class SpotifyPlaybackInstrumentedTest {
     }
 
     @Test
-    fun activatingAnotherMediaOwnerPausesSidetracks() {
+    fun activatingAnotherMediaOwnerPausesSideplay() {
         val gateway = FakeGateway()
         val registry = MediaSessionRegistry()
         val playback = SpotifyPlayback(gateway, scope, registry, context = silentContext)

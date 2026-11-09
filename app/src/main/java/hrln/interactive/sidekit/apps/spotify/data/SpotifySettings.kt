@@ -13,10 +13,11 @@ data class SpotifySettings(
 
 /**
  * Settings live in the same encrypted, atomic store as credentials. They are not secrets, but the
- * store already exists, needs no extra dependency and keeps all Sidetracks state in one place.
+ * store already exists, needs no extra dependency and keeps all Sideplay state in one place.
  */
 class SpotifySettingsStore(
     context: Context,
+    // Legacy name kept so existing dev installs keep their audio-quality setting.
     name: String = "sidetracks_settings"
 ) {
     private val settings = PrivateSettings(context.applicationContext, name)

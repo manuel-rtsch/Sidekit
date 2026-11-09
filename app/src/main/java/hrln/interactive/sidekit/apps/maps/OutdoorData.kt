@@ -9,13 +9,13 @@ import android.net.Uri
 import android.os.CancellationSignal
 import android.util.AtomicFile
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.coroutines.resume
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import org.json.JSONObject
 
 data class Place(val name: String, val latitude: Double, val longitude: Double) {
     val key get() = "$latitude,$longitude"
@@ -26,20 +26,34 @@ data class Place(val name: String, val latitude: Double, val longitude: Double) 
 }
 
 /** Small app stores: IO loading, immutable snapshots, conflated atomic writes. */
-class OutdoorStore<T>(file: File, private val decode: (JSONObject) -> T, private val encode: (T) -> JSONObject,
-                      initial: T, scope: CoroutineScope, io: CoroutineDispatcher = Dispatchers.IO) {
+class OutdoorStore<T>(
+    file: File,
+    private val decode: (JSONObject) -> T,
+    private val encode: (T) -> JSONObject,
+    initial: T,
+    scope: CoroutineScope,
+    io: CoroutineDispatcher = Dispatchers.IO
+) {
     private val disk = AtomicFile(file)
     private val mutable = MutableStateFlow<T?>(null)
     private val pendingEdits = mutableListOf<(T) -> T>()
     val state = mutable.asStateFlow()
     val error = MutableStateFlow<String?>(null)
     private val persisted = MutableStateFlow<T?>(null)
-    suspend fun flush() { val value = mutable.value ?: return; persisted.first { it == value } }
+    suspend fun flush() {
+        val value = mutable.value ?: return
+        persisted.first { it == value }
+    }
     init {
         scope.launch(io) {
-            val loaded = try { disk.openRead().bufferedReader().use { decode(JSONObject(it.readText())) } }
-                catch (_: java.io.FileNotFoundException) { initial }
-                catch (_: Exception) { error.value = "Could not read saved data"; initial }
+            val loaded = try {
+                disk.openRead().bufferedReader().use { decode(JSONObject(it.readText())) }
+            } catch (_: java.io.FileNotFoundException) {
+                initial
+            } catch (_: Exception) {
+                error.value = "Could not read saved data"
+                initial
+            }
             synchronized(this@OutdoorStore) {
                 mutable.value = pendingEdits.fold(loaded) { value, change -> change(value) }
                 pendingEdits.clear()
@@ -56,11 +70,15 @@ class OutdoorStore<T>(file: File, private val decode: (JSONObject) -> T, private
                         written = value
                         persisted.value = value
                         error.value = null
-                    } catch (_: Exception) { out?.let(disk::failWrite); error.value = "Could not save; please retry" }
+                    } catch (_: Exception) {
+                        out?.let(disk::failWrite)
+                        error.value = "Could not save; please retry"
+                    }
                 }
             }
         }
     }
+
     @Synchronized
     fun edit(change: (T) -> T) {
         val current = mutable.value
@@ -72,7 +90,13 @@ const val OUTDOOR_AGENT = "Sidekit/1.0 (Android; hrln.interactive.sidekit)"
 
 suspend fun fetchJson(url: String): JSONObject = withContext(Dispatchers.IO) {
     val connection = URL(url).openConnection() as HttpURLConnection
-    val cancellation = launch(start = CoroutineStart.UNDISPATCHED) { try { awaitCancellation() } finally { connection.disconnect() } }
+    val cancellation = launch(start = CoroutineStart.UNDISPATCHED) {
+        try {
+            awaitCancellation()
+        } finally {
+            connection.disconnect()
+        }
+    }
     try {
         connection.connectTimeout = 8_000
         connection.readTimeout = 8_000
@@ -81,16 +105,21 @@ suspend fun fetchJson(url: String): JSONObject = withContext(Dispatchers.IO) {
         val text = connection.inputStream.bufferedReader().use { it.readText() }
         ensureActive()
         JSONObject(text)
-    } finally { cancellation.cancel(); connection.disconnect() }
+    } finally {
+        cancellation.cancel()
+        connection.disconnect()
+    }
 }
 
 suspend fun searchPlaces(query: String): List<Place> {
     if (query.trim().length < 2) return emptyList()
     val json = fetchJson("https://geocoding-api.open-meteo.com/v1/search?name=${Uri.encode(query.trim())}&count=10&language=en&format=json")
     val rows = json.optJSONArray("results") ?: return emptyList()
-    return List(rows.length()) { i -> rows.getJSONObject(i).let {
-        Place(listOf(it.getString("name"), it.optString("admin1"), it.optString("country")).filter(String::isNotBlank).distinct().joinToString(", "), it.getDouble("latitude"), it.getDouble("longitude"))
-    } }
+    return List(rows.length()) { i ->
+        rows.getJSONObject(i).let {
+            Place(listOf(it.getString("name"), it.optString("admin1"), it.optString("country")).filter(String::isNotBlank).distinct().joinToString(", "), it.getDouble("latitude"), it.getDouble("longitude"))
+        }
+    }
 }
 
 fun hasLocation(context: Context) = hasPreciseLocation(context) ||
@@ -107,34 +136,43 @@ suspend fun locate(context: Context): Place? = withTimeoutOrNull(15_000) {
     if (!hasLocation(context)) return@withTimeoutOrNull null
     val manager = context.getSystemService(LocationManager::class.java)
     val fine = hasPreciseLocation(context)
-    val providers = (if (fine) listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
-                     else listOf(LocationManager.NETWORK_PROVIDER)).filter { manager.isProviderEnabled(it) }
+    val providers = (
+        if (fine) {
+            listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
+        } else {
+            listOf(LocationManager.NETWORK_PROVIDER)
+        }
+        ).filter { manager.isProviderEnabled(it) }
     // Request providers together so a slow network fix cannot consume the GPS timeout.
     val fix = channelFlow<android.location.Location?> {
-        providers.forEach { provider -> launch {
-            val location = suspendCancellableCoroutine<android.location.Location?> { continuation ->
-                val signal = CancellationSignal()
-                continuation.invokeOnCancellation { signal.cancel() }
-                try {
-                    manager.getCurrentLocation(provider, signal, context.mainExecutor) { location ->
-                        if (continuation.isActive) continuation.resume(location)
+        providers.forEach { provider ->
+            launch {
+                val location = suspendCancellableCoroutine<android.location.Location?> { continuation ->
+                    val signal = CancellationSignal()
+                    continuation.invokeOnCancellation { signal.cancel() }
+                    try {
+                        manager.getCurrentLocation(provider, signal, context.mainExecutor) { location ->
+                            if (continuation.isActive) continuation.resume(location)
+                        }
+                    } catch (_: SecurityException) {
+                        continuation.resume(null)
+                    } catch (_: IllegalArgumentException) {
+                        continuation.resume(null)
                     }
-                } catch (_: SecurityException) {
-                    continuation.resume(null)
-                } catch (_: IllegalArgumentException) {
-                    continuation.resume(null)
                 }
+                send(location)
             }
-            send(location)
-        } }
+        }
     }.firstOrNull { it != null }
     fix?.let { Place("Current location", it.latitude, it.longitude) }
 }
 
 fun openDirections(context: Context, to: Place): Boolean {
     for (uri in listOf("google.navigation:q=${to.latitude},${to.longitude}", "geo:${to.latitude},${to.longitude}?q=${to.latitude},${to.longitude}(${Uri.encode(to.name)})")) {
-        try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri))); return true }
-        catch (_: android.content.ActivityNotFoundException) { }
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+            return true
+        } catch (_: android.content.ActivityNotFoundException) { }
     }
     return false
 }

@@ -14,7 +14,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class SidetracksScreenshotTest {
+class SideplayScreenshotTest {
     @get:Rule val compose = createComposeRule()
 
     private fun shoot(name: String, content: @Composable () -> Unit) {
@@ -37,8 +37,8 @@ class SidetracksScreenshotTest {
         filter = LibraryFilter.Albums
     )
 
-    @Test fun home() = shoot("sidetracks_home") {
-        SidetracksHomeScreen(
+    @Test fun home() = shoot("sideplay_home") {
+        SideplayHomeScreen(
             state,
             onNowPlaying = {},
             onLibrary = {},
@@ -52,7 +52,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun library() = shoot("sidetracks_library_albums") {
+    @Test fun library() = shoot("sideplay_library_albums") {
         LibraryScreen(
             state,
             onBack = {},
@@ -69,7 +69,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun album() = shoot("sidetracks_album") {
+    @Test fun album() = shoot("sideplay_album") {
         CollectionScreen(
             runBlocking { MockSpotifyDataSource.collection(SpotifyCollectionType.Album, "night_signals") }!!,
             state,
@@ -88,7 +88,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun artist() = shoot("sidetracks_artist") {
+    @Test fun artist() = shoot("sideplay_artist") {
         val artist = MockSpotifyDataSource.artists.first()
         ArtistScreen(
             artist,
@@ -112,7 +112,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun search() = shoot("sidetracks_search") {
+    @Test fun search() = shoot("sideplay_search") {
         SpotifySearchScreen(
             state.copy(query = "night"),
             onBack = {},
@@ -130,7 +130,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun nowPlaying() = shoot("sidetracks_now_playing") {
+    @Test fun nowPlaying() = shoot("sideplay_now_playing") {
         SpotifyNowPlayingScreen(
             state,
             onBack = {},
@@ -149,7 +149,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun queue() = shoot("sidetracks_queue") {
+    @Test fun queue() = shoot("sideplay_queue") {
         QueueScreen(
             state,
             onBack = {},
@@ -165,7 +165,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun settings() = shoot("sidetracks_settings") {
+    @Test fun settings() = shoot("sideplay_settings") {
         SpotifySettingsScreen(
             state,
             onBack = {},
@@ -178,7 +178,7 @@ class SidetracksScreenshotTest {
         )
     }
 
-    @Test fun signIn() = shoot("sidetracks_sign_in") {
+    @Test fun signIn() = shoot("sideplay_sign_in") {
         SpotifySignInScreen(
             SpotifyUiState(signedIn = false),
             onBack = {},

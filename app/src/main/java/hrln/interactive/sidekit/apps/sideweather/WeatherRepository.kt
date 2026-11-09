@@ -3,12 +3,12 @@ package hrln.interactive.sidekit.apps.sideweather
 import android.content.Context
 import android.util.AtomicFile
 import hrln.interactive.sidekit.apps.maps.*
+import java.io.File
+import kotlin.math.roundToInt
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-import kotlin.math.roundToInt
 
 data class WeatherSettings(val places: List<Place> = emptyList(), val selected: String? = null, val fahrenheit: Boolean = false)
 data class Forecast(val received: Long, val data: JSONObject) {
@@ -39,11 +39,25 @@ data class Forecast(val received: Long, val data: JSONObject) {
         }
     }
 }
-fun sky(code: Int) = when (code) { 0 -> "Clear"; 1, 2 -> "Partly cloudy"; 3 -> "Cloudy"; 45, 48 -> "Fog"; in 51..67 -> "Rain"; in 71..77 -> "Snow"; in 80..82 -> "Showers"; 85, 86 -> "Snow showers"; in 95..99 -> "Thunderstorm"; else -> "Unknown" }
+fun sky(code: Int) = when (code) {
+    0 -> "Clear"
+    1, 2 -> "Partly cloudy"
+    3 -> "Cloudy"
+    45, 48 -> "Fog"
+    in 51..67 -> "Rain"
+    in 71..77 -> "Snow"
+    in 80..82 -> "Showers"
+    85, 86 -> "Snow showers"
+    in 95..99 -> "Thunderstorm"
+    else -> "Unknown"
+}
 
-class WeatherRepository(private val directory: File, scope: CoroutineScope,
-                        private val fetch: suspend (String) -> JSONObject = ::fetchJson,
-                        private val clock: () -> Long = System::currentTimeMillis) {
+class WeatherRepository(
+    private val directory: File,
+    scope: CoroutineScope,
+    private val fetch: suspend (String) -> JSONObject = ::fetchJson,
+    private val clock: () -> Long = System::currentTimeMillis
+) {
     val settings = OutdoorStore(File(directory, "weather-places.json"), { j ->
         val a = j.getJSONArray("places")
         WeatherSettings(List(a.length()) { Place.parse(a.getJSONObject(it)) }, j.optString("selected").takeIf(String::isNotBlank), j.optBoolean("fahrenheit"))
@@ -54,19 +68,29 @@ class WeatherRepository(private val directory: File, scope: CoroutineScope,
         synchronized(memory) { memory.get(place.key) } ?: try {
             val j = file(place).openRead().bufferedReader().use { JSONObject(it.readText()) }
             Forecast(j.getLong("received"), j.getJSONObject("data")).also { synchronized(memory) { memory.put(place.key, it) } }
-        } catch (_: Exception) { null }
+        } catch (_: Exception) {
+            null
+        }
     }
     suspend fun refresh(place: Place): Forecast {
         cached(place)?.takeUnless { it.stale(clock()) }?.let { return it }
         val url = "https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=5"
         val result = Forecast(clock(), fetch(url))
         // Parse before replacing a usable cached response.
-        result.current(place, false); result.summary(false); result.hourly(false); result.daily(false)
+        result.current(place, false)
+        result.summary(false)
+        result.hourly(false)
+        result.daily(false)
         withContext(Dispatchers.IO) {
             val disk = file(place)
             val out = disk.startWrite()
-            try { out.write(JSONObject().put("received", result.received).put("data", result.data).toString().toByteArray()); disk.finishWrite(out) }
-            catch (e: Exception) { disk.failWrite(out); throw e }
+            try {
+                out.write(JSONObject().put("received", result.received).put("data", result.data).toString().toByteArray())
+                disk.finishWrite(out)
+            } catch (e: Exception) {
+                disk.failWrite(out)
+                throw e
+            }
             synchronized(memory) { memory.put(place.key, result) }
             directory.listFiles()?.filter { it.name.startsWith("weather-") && it.name != "weather-places.json" && it.extension == "json" }
                 ?.sortedByDescending { it.lastModified() }?.drop(30)?.forEach { it.delete() }
@@ -74,7 +98,10 @@ class WeatherRepository(private val directory: File, scope: CoroutineScope,
         return result
     }
     fun select(place: Place) = settings.edit { it.copy(places = (it.places.filterNot { p -> p.key == place.key || (place.name == "Current location" && p.name == place.name) } + place).takeLast(30), selected = place.key) }
-    fun delete(place: Place) = settings.edit { val places = it.places.filterNot { p -> p.key == place.key }; it.copy(places = places, selected = if (it.selected == place.key) places.firstOrNull()?.key else it.selected) }
+    fun delete(place: Place) = settings.edit {
+        val places = it.places.filterNot { p -> p.key == place.key }
+        it.copy(places = places, selected = if (it.selected == place.key) places.firstOrNull()?.key else it.selected)
+    }
     companion object {
         @Volatile private var instance: WeatherRepository? = null
         fun get(context: Context): WeatherRepository = instance ?: synchronized(this) { instance ?: WeatherRepository(context.applicationContext.filesDir, CoroutineScope(SupervisorJob() + Dispatchers.IO)).also { instance = it } }

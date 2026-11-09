@@ -62,13 +62,13 @@ class SpotifyPlaybackServiceInstrumentedTest {
             }
 
             val notification = waitForNotification()
-            assertEquals("sidetracks", notification.channelId)
+            assertEquals("sideplay", notification.channelId)
             assertEquals("Service track", notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString())
             assertEquals("Artist", notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString())
             assertEquals(listOf("Previous", "Pause", "Next"), notification.actions.map { it.title.toString() })
             assertNotNull(notification.contentIntent)
             assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
-            assertTrue(manager.getNotificationChannel("sidetracks") != null)
+            assertTrue(manager.getNotificationChannel("sideplay") != null)
         }
     }
 

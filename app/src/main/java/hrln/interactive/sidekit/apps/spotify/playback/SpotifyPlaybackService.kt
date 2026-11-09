@@ -11,12 +11,12 @@ import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
 import android.os.IBinder
 import hrln.interactive.sidekit.MainActivity
-import hrln.interactive.sidekit.apps.spotify.SidetracksLinks
+import hrln.interactive.sidekit.apps.spotify.SideplayLinks
 import hrln.interactive.sidekit.apps.spotify.data.SpotifySessions
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 
 /**
- * Keeps Sidetracks playing when SideKit is not in front. It mirrors [SpotifyPlayback]'s media
+ * Keeps Sideplay playing when SideKit is not in front. It mirrors [SpotifyPlayback]'s media
  * session in a platform media-style notification and forwards transport actions back to the
  * process-wide player.
  */
@@ -88,13 +88,13 @@ class SpotifyPlaybackService : Service() {
             this,
             0,
             Intent(this, MainActivity::class.java)
-                .setAction(SidetracksLinks.ACTION_OPEN_NOW_PLAYING)
+                .setAction(SideplayLinks.ACTION_OPEN_NOW_PLAYING)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE
         )
         return Notification.Builder(this, playback.notificationChannelId)
             .setSmallIcon(SidekitIcon.MusicNote2.drawable)
-            .setContentTitle(playback.current?.title ?: "Sidetracks")
+            .setContentTitle(playback.current?.title ?: "Sideplay")
             .setContentText(playback.current?.creator.orEmpty())
             .setLargeIcon(playback.notificationArt)
             .setContentIntent(open)
@@ -142,10 +142,10 @@ class SpotifyPlaybackService : Service() {
     )
 
     companion object {
-        private const val ACTION_PLAY_PAUSE = "hrln.interactive.sidekit.sidetracks.PLAY_PAUSE"
-        private const val ACTION_NEXT = "hrln.interactive.sidekit.sidetracks.NEXT"
-        private const val ACTION_PREVIOUS = "hrln.interactive.sidekit.sidetracks.PREVIOUS"
-        private const val ACTION_STOP = "hrln.interactive.sidekit.sidetracks.STOP"
+        private const val ACTION_PLAY_PAUSE = "hrln.interactive.sidekit.sideplay.PLAY_PAUSE"
+        private const val ACTION_NEXT = "hrln.interactive.sidekit.sideplay.NEXT"
+        private const val ACTION_PREVIOUS = "hrln.interactive.sidekit.sideplay.PREVIOUS"
+        private const val ACTION_STOP = "hrln.interactive.sidekit.sideplay.STOP"
 
         private var running: SpotifyPlaybackService? = null
 

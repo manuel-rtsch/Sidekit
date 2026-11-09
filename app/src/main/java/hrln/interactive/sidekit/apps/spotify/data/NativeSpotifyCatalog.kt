@@ -151,7 +151,7 @@ class NativeSpotifyCatalog(
         if (text.startsWith("{")) {
             val error = runCatching { JSONObject(text).optString("error") }.getOrDefault("")
             if (error.isNotEmpty()) {
-                android.util.Log.w("SidetracksCatalog", error)
+                android.util.Log.w("SideplayCatalog", error)
                 val failure = if (error.contains("SESSION", ignoreCase = true)) {
                     SpotifyFailure.AuthenticationExpired
                 } else {

@@ -73,7 +73,7 @@ class SpotifyPersistenceTest {
         assertEquals(SpotifyQueueRepository.Snapshot(), snapshot)
     }
 
-    private fun tempFile(name: String) = File(context.cacheDir, "sidetracks-$name-${System.nanoTime()}.bin").also { it.delete() }
+    private fun tempFile(name: String) = File(context.cacheDir, "sideplay-$name-${System.nanoTime()}.bin").also { it.delete() }
 
     private fun track(id: String) = SpotifyTrack(
         id = id,

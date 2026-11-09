@@ -18,7 +18,7 @@ import hrln.interactive.sidekit.apps.settings.rememberCaseColour
 import hrln.interactive.sidekit.apps.settings.rememberCompactLayout
 import hrln.interactive.sidekit.apps.sidemessage.IncomingLinks
 import hrln.interactive.sidekit.apps.sideport.SideportLinks
-import hrln.interactive.sidekit.apps.spotify.SidetracksLinks
+import hrln.interactive.sidekit.apps.spotify.SideplayLinks
 import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.HoldToAct
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Opened from an sms: link or a message notification: go to that conversation.
         if (savedInstanceState == null && !SideportLinks.handle(intent) && !IncomingLinks.handle(intent)) {
-            SidetracksLinks.handle(intent)
+            SideplayLinks.handle(intent)
         }
         enableEdgeToEdge()
         // The mocks use the whole 480 x 640 display; the launcher header carries the clock.
@@ -174,7 +174,7 @@ class MainActivity : ComponentActivity() {
         if (intent.hasCategory(Intent.CATEGORY_HOME)) {
             homeRequests.intValue++
         } else if (!SideportLinks.handle(intent) && !IncomingLinks.handle(intent)) {
-            SidetracksLinks.handle(intent)
+            SideplayLinks.handle(intent)
         }
     }
 }

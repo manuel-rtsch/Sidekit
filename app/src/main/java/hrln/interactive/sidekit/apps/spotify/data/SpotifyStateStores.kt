@@ -217,12 +217,12 @@ private fun DataInputStream.readItem(): SpotifyMediaItem = when (val type = read
         artUrl = readNullableString()
     )
 
-    else -> throw IOException("Unknown Sidetracks media item type $type")
+    else -> throw IOException("Unknown Sideplay media item type $type")
 }
 
 private fun DataInputStream.readCount(max: Int): Int {
     val count = readInt()
-    if (count !in 0..max) throw IOException("Invalid Sidetracks item count $count")
+    if (count !in 0..max) throw IOException("Invalid Sideplay item count $count")
     return count
 }
 

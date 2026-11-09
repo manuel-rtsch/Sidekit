@@ -1,10 +1,10 @@
-# Sidetracks
+# Sideplay
 
 **Updated:** 2026-11-09
-**Branch:** `feat/sidetracks`
-**Phase:** feature-complete for daily use; pre-merge hardening and parity work remain
+**Branch:** `integration`
+**Phase:** PR review; P0 device verification and P1 parity decisions remain
 
-Sidetracks is Sidekit's Spotify sub-app: one account's library, search, playback, and queue,
+Sideplay is Sidekit's Spotify sub-app: one account's library, search, playback, and queue,
 drawn with Sidekit's chrome and operated keypad-first on a 480 × 640 phone. It is not a Spotify
 client reproduction and not a web wrapper.
 
@@ -68,15 +68,16 @@ lyrics/Canvas/video, social features, account management, crossfade/EQ, and trac
   ViewModel adopts the live item, position, and playing state. Starting a new item releases the
   previous `AudioTrack`.
 - Queue, queue history, shuffle order, repeat mode, and recently played persist across process
-  death in atomic binary files (`sidetracks-queue.bin`, `sidetracks-history.bin`). Playback
+  death in atomic binary files (`sidetracks-queue.bin`, `sidetracks-history.bin`; legacy names
+  kept so existing dev installs keep their data). Playback
   itself does not resume on launch.
 - Foreground `mediaPlayback` service and platform `MediaSession` keep librespot alive with the
   screen off. Notification shows artwork, title, artist, and previous/play-pause/next. When the
   ViewModel is gone, next/previous fall back to advancing the process-wide queue directly.
-  Tapping the notification opens Sidetracks directly at Now Playing rather than the launcher.
+  Tapping the notification opens Sideplay directly at Now Playing rather than the launcher.
   A native `stopped` event clears Now Playing and the queue so notification/lock-screen stop
   cannot leave stale UI or restore the stopped track.
-- Sidetracks and local Music pause each other through `MediaSessions`; Sidetracks takes and
+- Sideplay and local Music pause each other through `MediaSessions`; Sideplay takes and
   abandons `AUDIOFOCUS_GAIN`, including transient loss and headphone changes.
 - OAuth tokens rotate into an existing native session. Sign-out stops the decoder synchronously,
   releases the media session, removes the notification, then clears credentials.
@@ -157,7 +158,7 @@ cross-cutting refactor.
 
 ---
 
-## 6. Native build, provenance, and licensing
+## 5. Native build, provenance, and licensing
 
 **Native bridge.** `native/sidekit-spotify` links librespot 0.8.0 and exposes the JNI surface
 declared in `apps/spotify/bridge/NativeBridge.kt`.
@@ -180,7 +181,7 @@ declared in `apps/spotify/bridge/NativeBridge.kt`.
   otherwise reports `INVALID_CREDENTIALS`/`BAD_REQUEST`.
 - Scope: one constant. No protocol, playback, audio, or auth logic changes.
 - Removal: delete the patch once librespot supports overriding platform/client identity, or once
-  Sidetracks performs its own Android-client OAuth.
+  Sideplay performs its own Android-client OAuth.
 - Verify with `diff -rq ~/.cargo/registry/src/index.crates.io-*/librespot-core-0.8.0
   native/vendor/librespot-core`; only `src/config.rs` (plus registry bookkeeping) should differ.
 

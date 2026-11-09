@@ -13,8 +13,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
-import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.action.ChromeState
+import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
@@ -30,6 +30,7 @@ class LauncherSearchTest {
     @get:Rule val compose = createComposeRule()
     private lateinit var keypad: Keypad
     private val chrome = ChromeState()
+
     /**
      * Keyboard input mode makes Compose take grid focus, as it does once a hardware keypad is used.
      * Robolectric doesn't switch input mode on key presses the way a device does.
@@ -48,9 +49,11 @@ class LauncherSearchTest {
                     SidekitCanvas(keypad = keypad, chrome = chrome) {
                         val portedApps = listOf(PortedApp("test.matrix", "Matrix"), PortedApp("test.hidden", "Masked"))
                         LauncherScreen(
-                            LauncherUiState(layout = layout), {}, {},
+                            LauncherUiState(layout = layout),
+                            {},
+                            {},
                             home = SubApp.entries.map { BuiltinEntry(it) } + portedApps.map { PortedEntry(it) },
-                            hiddenApps = setOf(SubApp.Maps.visibilityId(), SubApp.Sidemessage.visibilityId(), "ported:test.hidden"),
+                            hiddenApps = setOf(SubApp.Maps.visibilityId(), SubApp.Sidemessage.visibilityId(), "ported:test.hidden")
                         )
                     }
                 }
@@ -60,8 +63,7 @@ class LauncherSearchTest {
     }
 
     /** The grid tile carrying [label] (the same label also appears on a dock button). */
-    private fun tile(label: String) =
-        compose.onNode(hasContentDescription(label) and hasAnyAncestor(hasTestTag(LauncherTags.GRID)))
+    private fun tile(label: String) = compose.onNode(hasContentDescription(label) and hasAnyAncestor(hasTestTag(LauncherTags.GRID)))
 
     /**
      * Mirrors `MainActivity.dispatchKeyEvent`: the module's UI translation and typing first, then
@@ -99,18 +101,21 @@ class LauncherSearchTest {
         compose.onNodeWithContentDescription("Clear app search").assertDoesNotExist()
         compose.onNodeWithTag(LauncherTags.SEARCH).assertTextEquals("")
     }
+
     @Test fun `T9 typing starts from home filters apps and clear restores dock`() {
         launch(KeypadModule.T9)
         key(KeyEvent.KEYCODE_6)
         key(KeyEvent.KEYCODE_2)
         checkMatchesAndClear("10-search-t9")
     }
+
     @Test fun `QWERTY typing filters apps with a permanent square clear control`() {
         launch(KeypadModule.Qwerty)
         key(KeyEvent.KEYCODE_M)
         key(KeyEvent.KEYCODE_A)
         checkMatchesAndClear("11-search-qwerty")
     }
+
     @Test fun `grid empty results retain clear and hidden apps stay absent after clearing`() {
         launch(KeypadModule.Qwerty, LauncherLayout.Grid)
         compose.onAllNodesWithContentDescription("Sidemessage").assertCountEquals(0)
@@ -120,6 +125,7 @@ class LauncherSearchTest {
         compose.onNodeWithTag(LauncherTags.GRID).assertExists()
         compose.onAllNodesWithContentDescription("Sidemessage").assertCountEquals(0)
     }
+
     @Test fun `grid search includes visible built-in and ported apps`() {
         launch(KeypadModule.Qwerty, LauncherLayout.Grid)
         key(KeyEvent.KEYCODE_M)
@@ -130,6 +136,7 @@ class LauncherSearchTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.onRoot().captureRoboImage("screenshots/onboarding/12-search-grid.png")
     }
+
     @Test fun `QWERTY cross letters still start search from home`() {
         launch(KeypadModule.Qwerty, LauncherLayout.Grid)
         focusFirstTile()
@@ -168,6 +175,7 @@ class LauncherSearchTest {
         compose.onNodeWithContentDescription("Close options").assertDoesNotExist()
         compose.onNodeWithContentDescription("Sidenotes").assertIsDisplayed()
     }
+
     @Test fun `visibility choices persist and can be restored`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val prefs = SidekitPreferences(context)
