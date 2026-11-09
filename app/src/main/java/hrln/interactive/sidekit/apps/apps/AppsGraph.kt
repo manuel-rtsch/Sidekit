@@ -85,14 +85,17 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
                     )
                 }
             }
-            (message ?: state.error)?.let { item { SidekitCard(onClick = { message = null }) { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
+            val banner = message ?: state.error
+            banner?.let { item { SidekitCard(onClick = { message = null }) { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             if (!state.loaded && state.error == null) item { SidekitItem("Loading apps…") }
             if (state.loaded && state.apps.isEmpty()) item { SidekitItem("No matching apps") }
+            // listFade needs the row's real list index: search field and hint, plus the banner if shown.
+            val rowsStart = 2 + if (banner != null) 1 else 0
             itemsIndexed(state.apps, key = { _, it -> it.key }) { index, target ->
                 AppRow(
                     target,
                     vm.repository,
-                    Modifier.listFade(list, index + 2),
+                    Modifier.listFade(list, index + rowsStart),
                     secondary = if (target.user != Process.myUserHandle()) "Work profile" else null,
                     onClick = { perform { vm.repository.launch(target) } },
                     onLongClick = { opened = target },

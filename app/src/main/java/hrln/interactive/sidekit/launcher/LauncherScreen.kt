@@ -35,6 +35,7 @@ import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.apps.AppsRepository
 import hrln.interactive.sidekit.apps.apps.AppsSource
 import hrln.interactive.sidekit.apps.apps.LaunchableApp
+import hrln.interactive.sidekit.apps.apps.matchesApp
 import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
@@ -216,7 +217,8 @@ fun LauncherScreen(
     LaunchedEffect(searching) { if (searching) runCatching { searchFocus.requestFocus() } }
     val clear = SideAction.square("search.clear", SidekitIcon.Close, "Clear app search", ::clearSearch)
     val entries = home.ifEmpty { defaultHome() }
-    val visible = entries.filter { it.id !in hiddenApps && it.label.contains(text, ignoreCase = true) }
+    // Same matcher as the Apps list, so a T9 query finds the same apps in both places.
+    val visible = entries.filter { it.id !in hiddenApps && matchesApp(it.label, text) }
     BackHandler { clearSearch() }
 
     SidekitScaffold(
@@ -392,7 +394,8 @@ private fun InstalledAppIcon(app: LaunchableApp, source: AppsSource?, size: andr
     if (bitmap != null) {
         Image(bitmap.asImageBitmap(), app.label, Modifier.size(size), colorFilter = InstalledMonochrome)
     } else {
-        SidekitIconImage(SidekitIcon.DeployedCode, size = size, contentDescription = app.label)
+        // A failed icon falls back to the generic app glyph, not Sideport's deploy glyph.
+        SidekitIconImage(SidekitIcon.Apps, size = size, contentDescription = app.label)
     }
 }
 
