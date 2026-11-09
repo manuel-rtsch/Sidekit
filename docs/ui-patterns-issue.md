@@ -71,7 +71,7 @@ The same behaviours, counted across the suite. Each line is a behaviour with its
 
 - **Destructive tone.** Red in 17 actions, untinted in the five listed above. The swipe row paints its own red outside the tone system.
 
-- **Transient messages.** Bar takeover in Files, Mail, Translate and Web (4). Body cards in Apps, Sideport, Banking and Trip. Body rows or status strings in Calendar, Health, Compass, Sideticks and Mail (4 private helper implementations).
+- **Transient messages.** ~~Bar takeover in Files, Mail, Translate and Web (4). Body cards in Apps, Sideport, Banking and Trip. Body rows or status strings in Calendar, Health, Compass, Sideticks and Mail (4 private helper implementations).~~ Settled: one bar notice, auto-dismissed after 2 seconds for success and 5 seconds for other messages.
 
 - **Options role.** Navigation and modes in Calendar, Trip, Music, Clock, Sideticks and Keypad mapping (6). Object actions and destruction in Banking, Photos, Vault, Apps, Web and Sideport (6). Nothing at all in Health, Settings, Placeholder and the loading state of Web (4).
 
@@ -93,7 +93,7 @@ These splits should be decided first so that subsequent refactoring follows a si
 2. **Is the bar or the list the primary control surface?**
    - _Recommendation:_ The action bar owns commit and mode actions; body rows own list navigation.
 
-3. ✅ **Where does a transient message go?** — settled: single-line transient messages use a bar notice; detailed or persistent explanations use a body card. Implemented as `withNotice` / `SideAction.notice`.
+3. ✅ **Where does a transient message go?** — settled: single-line transient messages use a bar notice; detailed or persistent explanations use a body card. Implemented as `withNotice` / `SideAction.notice`, with a 2-second success window and a 5-second window for other notices; tapping dismisses early.
 
 4. **Is "Cancel" always muted?**
    - _Recommendation:_ "Cancel" is always Muted (`grey` backs out, `green` commits, `red` destroys).
@@ -274,7 +274,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 
 - [ ] **Decisions:** Record and confirm Architectural Decisions 1–6.
 - [ ] **Design System:** Add native `enabled`/`busy` state to action models; centralize `withConfirm`; support `back(tone = …)`.
-- [x] **Notice helper:** `withNotice` / `SideAction.notice` in `design/action/Notice.kt`, guarded by `NoticeConventionTest`.
+- [x] **Notice helper:** `withNotice` / `SideAction.notice` in `design/action/Notice.kt`, guarded by `NoticeConventionTest`; auto-dismisses after 2 seconds for success and 5 seconds for other notices.
 - [ ] **Tone Pass:** Execute a pure styling pass to enforce commit (`green`) and destructive (`red`) tones without changing logic.
 - [ ] **Outlier Pass:** Resolve specific component outliers (Camera button shapes, Translate delete flow, Vault busy state, dead Options keys).
 - [ ] **Lint Guards:** Introduce linter checks for untinted destructive labels and non-square icon-only actions.

@@ -258,7 +258,7 @@ The audit found the same concept implemented four times:
 
 Consequences: a Files user learns "the bar tells me what happened"; a Health user learns nothing. The four `withNotice`/`withUndo` copies are duplicated code with subtly different behaviour (`withUndo` in Banking takes `List<SideAction>` and keeps only `main.last()`; in Web it takes a single `SideAction`).
 
-**Now:** Files, Web, Mail, Translate and Sideplay use the shared helper; Apps and Sideport moved their transient messages from body cards to the bar. Banking's `NoticeCard`, Calendar's error row, Health's message, Compass's status, Sideticks' error row and Trip's `TripInfo` remain body content because they are persistent explanations or validation, not transient feedback.
+**Now:** Files, Web, Mail, Translate and Sideplay use the shared helper; Apps and Sideport moved their transient messages from body cards to the bar. Banking's `NoticeCard`, Calendar's error row, Health's message, Compass's status, Sideticks' error row and Trip's `TripInfo` remain body content because they are persistent explanations or validation, not transient feedback. The bar returns on its own after 2 seconds for success and 5 seconds for everything else; tapping the notice dismisses it early.
 
 ### B. Destructive tone is not applied consistently — **H → settled**
 All 22 destructive actions now carry `ActionTone.Destructive`, enforced by `ActionToneConventionTest`. What the audit found:
@@ -358,7 +358,7 @@ These are preview/screenshot surfaces, but they are the ones a reader compares a
 
 ## 6. Recommended rules (smallest set that removes most of the divergence)
 
-1. ✅ **One feedback primitive.** Undo is done (`undoBar`); the notice half is now `withNotice` / `SideAction.notice` in `design/action/Notice.kt`. Bar-replacement notice for transient success/error, `continueWith | Undo` for reversible deletion, body row only for persistent explanation. The private copies are gone, and `NoticeConventionTest` keeps them out.
+1. ✅ **One feedback primitive.** Undo is done (`undoBar`); the notice half is now `withNotice` / `SideAction.notice` in `design/action/Notice.kt`. Bar-replacement notice for transient success/error, `continueWith | Undo` for reversible deletion, body row only for persistent explanation. The private copies are gone, and `NoticeConventionTest` keeps them out. The bar auto-dismisses after 2 seconds for success and 5 seconds for other notices, so it never blocks the workflow for long.
 2. ✅ **Tone is a contract, not a suggestion.** Implemented as `ActionToneConventionTest` rather than a linter: it scans app sources for destructive, commit, cancel and undo labels and fails on the wrong tone. Roles (`save`, `send`, `delete`, `cancel`, `undo`) make the tone implicit, so new code cannot forget it. A Muted back is expressed as `SideAction.cancel`, not by hand-building `back`.
 3. **Give `SideAction` an `enabled`/`busy` state** so "Saving…" is not a no-op button and does not have to change the button count.
 4. ✅ **Two slots, decided: left = what you are doing, right = what comes next.** Undo is always right and is only ever added, never substituted (`undoBar`, §9). Primary rightmost. Sideticks, Arrange Home and Trip's undo-position split are fixed by that rule; Arrange Home's `Done` slot is still open.
@@ -441,7 +441,7 @@ Consequence: the same two-slot bar sometimes carries the whole interaction and s
 | Bar takeover (`notice` action, dismiss by tap) | Files, Mail, Translate, Web, Sideplay, Apps, Sideport |
 | Body card / row / status string | Banking (`NoticeCard`), Calendar (`error` row), Health (`message`), Compass (`status`), Sideticks (`error` row), Trip (`TripInfo`) — persistent explanation or validation only |
 
-The bar camp won because the message is where the user is already looking. The cost — it hides the exit for its duration — is accepted for transient feedback; persistent explanation stays in the body. The shared helper is `withNotice` / `SideAction.notice`, and `NoticeConventionTest` enforces it.
+The bar camp won because the message is where the user is already looking. The cost — it hides the exit for its duration — is bounded by the auto-dismiss timer: 2 seconds for success, 5 seconds for other notices, with tap-to-dismiss early. Persistent explanation stays in the body. The shared helper is `withNotice` / `SideAction.notice`, and `NoticeConventionTest` enforces it.
 
 **F4 — Is `Cancel` Muted or Primary?** ✅ **settled: Muted, always.**
 23 sites, one factory. The grammar is now four colours with one meaning each: **sage advances** (Primary, the theme colour), **green commits**, **red destroys**, **grey takes it back** (Cancel, Undo, back-out, alternatives). `Cancel` is grey because it makes the same promise as Undo — nothing happened — and naming it in the bar must never read as a way forward. A themed confirm ("Keep note", "Keep file") stays grey while dismissing in place. `Back` is deliberately *not* Cancel: it stays Primary, because it advances through the hierarchy and never discards typed work by itself. `SideAction.cancel` is the only constructor, and the guard test rejects any other tone on a `Cancel`/`Undo` label.
@@ -514,6 +514,6 @@ The shared chrome is unusually disciplined for a suite this size: one action typ
 
 **Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo), `NoticeConventionTest` (one notice shape, no private helpers) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first three caught live drift while the passes were being written.
 
-**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel.
+**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel. The bar auto-dismisses after 2 seconds for success and 5 seconds for other notices.
 
 **Still open, in the order §7.5 recommends:** F2 bar vs rows → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.

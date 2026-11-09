@@ -17,7 +17,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - Cancel is always Muted.
 - Guards: `ActionToneConventionTest`, `UndoConventionTest`, `NoticeConventionTest`, `UndoWindowTest`.
 - Arrange Home: `←Settings | Done→` with `Reset` in Options.
-- Transient messages: `withNotice` / `SideAction.notice`; bar notice for transient feedback, body row for persistent explanation.
+- Transient messages: `withNotice` / `SideAction.notice`; bar notice for transient feedback, body row for persistent explanation. Success notices auto-dismiss after 2 seconds, other notices after 5; tapping dismisses early.
 
 ## Remaining work, in recommended order
 
