@@ -273,16 +273,21 @@ fn artist_json(artist: &Artist, album_ids: Vec<String>) -> ArtistJson {
     }
 }
 
-fn episode_json(episode: &Episode, show: &Show) -> EpisodeJson {
+fn episode_json_with(
+    episode: &Episode,
+    show_name: &str,
+    show_id: &str,
+    show_art_url: Option<String>,
+) -> EpisodeJson {
     EpisodeJson {
         id: id_of(&episode.id),
         title: episode.name.clone(),
         show: if episode.show_name.is_empty() {
-            show.name.clone()
+            show_name.to_string()
         } else {
             episode.show_name.clone()
         },
-        show_id: id_of(&show.id),
+        show_id: show_id.to_string(),
         published: {
             let date = episode.publish_time.as_utc();
             format!(
@@ -294,9 +299,9 @@ fn episode_json(episode: &Episode, show: &Show) -> EpisodeJson {
         },
         art_res: 0,
         duration_ms: episode.duration as i64,
-        video: false,
+        video: !episode.videos.is_empty(),
         uri: uri_of(&id_of(&episode.id), "episode"),
-        art_url: image_url(&episode.covers).or_else(|| image_url(&show.covers)),
+        art_url: image_url(&episode.covers).or(show_art_url),
     }
 }
 
@@ -360,6 +365,23 @@ async fn sp_request(
         format!("https://{host}:{port}{endpoint}")
     };
     http_request(session, token, method, &url, content_type, body).await
+}
+
+async fn metadata_bytes_retry(
+    session: &Session,
+    token: &str,
+    kind: ExtensionKind,
+    uri: &SpotifyUri,
+) -> Result<Bytes, String> {
+    match metadata_bytes(session, token, kind, uri).await {
+        Ok(bytes) => Ok(bytes),
+        Err(first) => {
+            // Spotify's extended-metadata endpoint occasionally answers the first request for a
+            // podcast show with a 502. A second request for the same entity succeeds.
+            log::warn!("metadata request failed, retrying: {first}");
+            metadata_bytes(session, token, kind, uri).await
+        }
+    }
 }
 
 async fn metadata_bytes(
@@ -427,14 +449,14 @@ async fn artist_get(session: &Session, token: &str, uri: &SpotifyUri) -> Result<
 }
 
 async fn show_get(session: &Session, token: &str, uri: &SpotifyUri) -> Result<Show, String> {
-    let bytes = metadata_bytes(session, token, ExtensionKind::SHOW_V4, uri).await?;
+    let bytes = metadata_bytes_retry(session, token, ExtensionKind::SHOW_V4, uri).await?;
     let message =
         librespot_protocol::metadata::Show::parse_from_bytes(&bytes).map_err(|e| e.to_string())?;
     Show::parse(&message, uri).map_err(|e| e.to_string())
 }
 
 async fn episode_get(session: &Session, token: &str, uri: &SpotifyUri) -> Result<Episode, String> {
-    let bytes = metadata_bytes(session, token, ExtensionKind::EPISODE_V4, uri).await?;
+    let bytes = metadata_bytes_retry(session, token, ExtensionKind::EPISODE_V4, uri).await?;
     let message = librespot_protocol::metadata::Episode::parse_from_bytes(&bytes)
         .map_err(|e| e.to_string())?;
     Episode::parse(&message, uri).map_err(|e| e.to_string())
@@ -471,6 +493,25 @@ async fn context_get(session: &Session, token: &str, uri: &str) -> Result<Contex
     .await?;
     let text = String::from_utf8(bytes.to_vec()).map_err(|e| e.to_string())?;
     protobuf_json_mapping::parse_from_str::<Context>(&text).map_err(|e| e.to_string())
+}
+
+fn context_episode_uris(context: &Context) -> Vec<SpotifyUri> {
+    let mut seen = HashSet::new();
+    let mut uris = Vec::new();
+    for page in context.pages.iter() {
+        for track in page.tracks.iter() {
+            let Some(uri) = track.uri.as_deref() else {
+                continue;
+            };
+            if !uri.starts_with("spotify:episode:") || !seen.insert(uri.to_string()) {
+                continue;
+            }
+            if let Ok(uri) = SpotifyUri::from_uri(uri) {
+                uris.push(uri);
+            }
+        }
+    }
+    uris
 }
 
 async fn fetch_tracks(
@@ -1469,46 +1510,87 @@ pub async fn collection(
             Ok(serde_json::to_string(&collection).map_err(|e| e.to_string())?)
         }
         "Show" => {
-            let show = show_get(session, token, &spotify_uri(id, "show")?)
-                .await
-                .map_err(|e| e.to_string())?;
-            let all_uris: Vec<SpotifyUri> = show.episodes.iter().cloned().collect();
+            let show_uri = spotify_uri(id, "show")?;
+            let show = show_get(session, token, &show_uri).await;
+            let (title, publisher, art_url, all_uris) = match show {
+                Ok(show) => {
+                    let mut uris: Vec<SpotifyUri> = show.episodes.iter().cloned().collect();
+                    if uris.is_empty() {
+                        // Some shows return no episode list in their metadata. The context
+                        // resolver still knows the full episode order.
+                        uris = context_get(session, token, &uri_of(id, "show"))
+                            .await
+                            .map(|context| context_episode_uris(&context))
+                            .unwrap_or_default();
+                    }
+                    (
+                        show.name.clone(),
+                        if show.publisher.is_empty() {
+                            "Podcast".to_string()
+                        } else {
+                            show.publisher.clone()
+                        },
+                        image_url(&show.covers),
+                        uris,
+                    )
+                }
+                Err(error) => {
+                    log::warn!("show metadata failed, using context: {error}");
+                    let context = context_get(session, token, &uri_of(id, "show")).await?;
+                    let uris = context_episode_uris(&context);
+                    let title = context
+                        .metadata
+                        .get("title")
+                        .cloned()
+                        .filter(|value| !value.is_empty())
+                        .unwrap_or_else(|| "Show".to_string());
+                    let publisher = context
+                        .metadata
+                        .get("publisher")
+                        .cloned()
+                        .filter(|value| !value.is_empty())
+                        .unwrap_or_else(|| "Podcast".to_string());
+                    let art_url = context
+                        .metadata
+                        .get("image_url")
+                        .cloned()
+                        .filter(|value| !value.is_empty());
+                    (title, publisher, art_url, uris)
+                }
+            };
             let total = all_uris.len();
             let uris: Vec<SpotifyUri> = all_uris.into_iter().skip(offset).take(limit).collect();
             let futures = uris.iter().map(|uri| {
                 let session = session.clone();
                 let token = token.to_string();
                 let uri = uri.clone();
-                let show = show.clone();
+                let title = title.clone();
+                let show_id = id.to_string();
+                let art_url = art_url.clone();
                 async move {
                     episode_get(&session, &token, &uri)
                         .await
                         .ok()
-                        .map(|episode| episode_json(&episode, &show))
+                        .map(|episode| episode_json_with(&episode, &title, &show_id, art_url))
                 }
             });
             let episodes: Vec<EpisodeJson> =
                 join_all(futures).await.into_iter().flatten().collect();
-            let show_json = show_json(&show, episodes);
-            let subtitle = format!(
-                "{} · {} episodes",
-                show_json.publisher, show_json.episode_count
-            );
+            let subtitle = format!("{publisher} · {total} episodes");
             let collection = CollectionJson {
                 kind: "Show".to_string(),
-                id: show_json.id.clone(),
-                title: show_json.name.clone(),
+                id: id.to_string(),
+                title,
                 subtitle,
                 art_res: 0,
-                items: show_json
-                    .episodes
+                items: episodes
                     .iter()
                     .map(|episode| serde_json::to_value(episode).unwrap_or(Value::Null))
                     .collect(),
                 artist_id: None,
-                art_url: show_json.art_url.clone(),
+                art_url,
                 total_items: total as i32,
-                has_more: offset + show_json.episodes.len() < total,
+                has_more: offset + episodes.len() < total,
             };
             Ok(serde_json::to_string(&collection).map_err(|e| e.to_string())?)
         }
