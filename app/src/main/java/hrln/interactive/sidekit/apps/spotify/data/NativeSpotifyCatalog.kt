@@ -29,9 +29,6 @@ class NativeSpotifyCatalog(
     private val ensureSession: suspend () -> Unit
 ) : SpotifyCatalog,
     SpotifyLibraryWriter {
-    /** The protocol has no safe recently-played endpoint; the ViewModel falls back to local history. */
-    override suspend fun recentlyPlayed(): List<SpotifyTrack> = emptyList()
-
     override suspend fun library(filter: LibraryFilter, offset: Int, limit: Int): SpotifyPage<Any> {
         val array = parseArray(callText { native.catalogLibrary(filter.name, offset.toLong(), limit.toLong()) })
         val items = when (filter) {

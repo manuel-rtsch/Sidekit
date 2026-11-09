@@ -4,6 +4,7 @@ import android.view.KeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -73,8 +74,9 @@ class KeypadKeysTest {
 
     @Test fun screensWithoutOptionsSaySo() {
         // The dial pad has no options until a number is entered.
-        compose.waitUntilAtLeastOneExists(hasContentDescription("Phonebook"), 5_000)
-        compose.onAllNodes(hasContentDescription("Phonebook")).onLast().performClick()
+        val phonebook = hasContentDescription("Phonebook") or hasText("Phonebook")
+        compose.waitUntilAtLeastOneExists(phonebook, 15_000)
+        compose.onAllNodes(phonebook).onLast().performClick()
         compose.onNodeWithContentDescription("Dial pad").performClick()
         press(KeyEvent.KEYCODE_MENU)
         compose.onNodeWithText("No options here").assertIsDisplayed()

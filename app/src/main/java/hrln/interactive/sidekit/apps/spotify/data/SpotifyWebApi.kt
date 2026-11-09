@@ -27,16 +27,6 @@ import org.json.JSONObject
  * screens never learn an endpoint or a field name.
  */
 class SpotifyWebApi(private val accessToken: suspend () -> String?) {
-    suspend fun recentlyPlayed(limit: Int = 10): List<SpotifyTrack> {
-        val json = get("$ME_RECENT?limit=${limit.coerceIn(1, 50)}", token())
-        val items = json.optJSONArray("items") ?: return emptyList()
-        return buildList(items.length()) {
-            for (i in 0 until items.length()) {
-                items.optJSONObject(i)?.optJSONObject("track")?.let(::track)?.let(::add)
-            }
-        }
-    }
-
     suspend fun library(
         filter: LibraryFilter,
         offset: Int = 0,
@@ -431,7 +421,6 @@ class SpotifyWebApi(private val accessToken: suspend () -> String?) {
     private companion object {
         const val API = "https://api.spotify.com/v1"
         const val SEARCH = "$API/search"
-        const val ME_RECENT = "$API/me/player/recently-played"
         const val ME_TRACKS = "$API/me/tracks"
         const val ME_PLAYLISTS = "$API/me/playlists"
         const val ME_ALBUMS = "$API/me/albums"

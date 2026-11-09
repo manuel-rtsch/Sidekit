@@ -179,8 +179,6 @@ object MockSpotifyDataSource : SpotifyCatalog {
         nightSignals[5], glassHours[1], coastline[6], roomsWeLeft[5]
     )
 
-    override suspend fun recentlyPlayed(): List<SpotifyTrack> = recentlyPlayed
-
     fun album(id: String): SpotifyAlbum? = albums.firstOrNull { it.id == id }
     fun playlist(id: String): SpotifyPlaylist? = playlists.firstOrNull { it.id == id }
     fun show(id: String): SpotifyShow? = shows.firstOrNull { it.id == id }

@@ -100,6 +100,28 @@ class SpotifyQueueRepositoryTest {
         assertEquals(original, queue.snapshot.upcoming.map { it.id })
     }
 
+    @Test fun `adopting the same shuffle state does not reorder the tail`() {
+        val queue = SpotifyQueueRepository(Random(7))
+        queue.play(tracks, 0)
+
+        queue.setShuffle(true)
+        val shuffled = queue.snapshot.upcoming.map { it.id }
+        queue.setShuffle(true)
+
+        assertEquals(shuffled, queue.snapshot.upcoming.map { it.id })
+    }
+
+    @Test fun `adopting shuffle off restores the original tail`() {
+        val queue = SpotifyQueueRepository(Random(7))
+        queue.play(tracks, 0)
+        val original = queue.snapshot.upcoming.map { it.id }
+
+        queue.setShuffle(true)
+        queue.setShuffle(false)
+
+        assertEquals(original, queue.snapshot.upcoming.map { it.id })
+    }
+
     @Test fun `repeat off stops at the end of the queue`() {
         val queue = SpotifyQueueRepository(Random(1))
         queue.play(tracks.take(2), 0)

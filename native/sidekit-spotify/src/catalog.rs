@@ -239,6 +239,16 @@ fn playlist_owner(playlist: &Playlist) -> (String, Option<String>) {
     }
 }
 
+fn owner_display(owner: &str, current_user: &str) -> String {
+    if owner.is_empty() {
+        "Spotify".to_string()
+    } else if owner == current_user {
+        "You".to_string()
+    } else {
+        owner.to_string()
+    }
+}
+
 fn playlist_art(playlist: &Playlist) -> Option<String> {
     playlist
         .attributes
@@ -248,12 +258,12 @@ fn playlist_art(playlist: &Playlist) -> Option<String> {
         .map(|size| size.url.clone())
 }
 
-fn playlist_json(playlist: &Playlist, tracks: Vec<TrackJson>) -> PlaylistJson {
+fn playlist_json(playlist: &Playlist, tracks: Vec<TrackJson>, current_user: &str) -> PlaylistJson {
     let (owner, owner_id) = playlist_owner(playlist);
     PlaylistJson {
         id: id_of(&playlist.id),
         name: playlist.name().to_string(),
-        owner,
+        owner: owner_display(&owner, current_user),
         owner_id,
         art_res: 0,
         tracks,
@@ -688,15 +698,14 @@ fn pf_artist(data: &Value) -> Option<ArtistJson> {
     })
 }
 
-fn pf_playlist(data: &Value) -> Option<PlaylistJson> {
+fn pf_playlist(data: &Value, current_user: &str) -> Option<PlaylistJson> {
     let uri = data.get("uri")?.as_str()?;
     let owner = data.pointer("/ownerV2/data");
+    let owner_name = owner.map(|o| pf_str(o, "/name")).unwrap_or_default();
     Some(PlaylistJson {
         id: uri.rsplit(':').next().unwrap_or_default().to_string(),
         name: pf_str(data, "/name"),
-        owner: owner
-            .map(|o| pf_str(o, "/name"))
-            .unwrap_or_else(|| "Spotify".to_string()),
+        owner: owner_display(&owner_name, current_user),
         owner_id: owner
             .and_then(|o| o.get("uri"))
             .and_then(Value::as_str)
@@ -827,7 +836,7 @@ pub async fn search(
                 section_items(&value, "playlists")
                     .iter()
                     .filter_map(|item| item.get("data"))
-                    .filter_map(pf_playlist)
+                    .filter_map(|data| pf_playlist(data, &session.username()))
                     .collect()
             } else {
                 Vec::new()
@@ -1142,17 +1151,10 @@ async fn rootlist_playlists(
             } else {
                 Some(owner.clone())
             };
-            let owner = if owner.is_empty() {
-                "Spotify".to_string()
-            } else if owner == user {
-                "You".to_string()
-            } else {
-                owner
-            };
             playlists.push(PlaylistJson {
                 id: uri.rsplit(':').next().unwrap_or_default().to_string(),
                 name,
-                owner,
+                owner: owner_display(&owner, &user),
                 owner_id,
                 art_res: 0,
                 tracks: Vec::new(),
@@ -1483,10 +1485,7 @@ pub async fn collection(
             let total = (playlist.length.max(0) as usize).max(all_uris.len());
             let uris: Vec<SpotifyUri> = all_uris.into_iter().skip(offset).take(limit).collect();
             let tracks = fetch_tracks(session, token, &uris, uris.len()).await;
-            let mut playlist_json = playlist_json(&playlist, tracks);
-            if playlist_json.owner == session.username() {
-                playlist_json.owner = "You".to_string();
-            }
+            let playlist_json = playlist_json(&playlist, tracks, &session.username());
             let subtitle = format!(
                 "{} · {} tracks",
                 playlist_json.owner, playlist_json.track_count
@@ -1653,4 +1652,16 @@ pub async fn top_tracks(
         .collect();
     let tracks = fetch_tracks(session, token, &uris, uris.len()).await;
     Ok(serde_json::to_string(&tracks).map_err(|e| e.to_string())?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::owner_display;
+
+    #[test]
+    fn owner_display_marks_the_signed_in_user() {
+        assert_eq!(owner_display("alice", "alice"), "You");
+        assert_eq!(owner_display("bob", "alice"), "bob");
+        assert_eq!(owner_display("", "alice"), "Spotify");
+    }
 }

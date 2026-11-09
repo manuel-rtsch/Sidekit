@@ -16,7 +16,6 @@ import hrln.interactive.sidekit.apps.spotify.SpotifyTrack
  * API; tests supply their own catalog. No screen or ViewModel may call an endpoint directly.
  */
 interface SpotifyCatalog {
-    suspend fun recentlyPlayed(): List<SpotifyTrack>
     suspend fun library(
         filter: LibraryFilter,
         offset: Int = 0,

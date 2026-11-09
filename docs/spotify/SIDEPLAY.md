@@ -107,12 +107,15 @@ lyrics/Canvas/video, social features, account management, crossfade/EQ, and trac
 
 ## 3. Known limitations
 
-1. **No recently-played protocol endpoint.** `NativeSpotifyCatalog.recentlyPlayed()` returns
-   empty; Home falls back to local history.
-2. **Local queue ownership.** librespot plays one item at a time; Sidekit drives queue, shuffle,
-   and repeat. Queue, queue history, and recently played persist; playback does not resume
-   automatically after process death.
-3. **Playlist owner names.** Followed playlists show the owner's Spotify username.
+1. **Recently played is local-only.** There is no safe first-party history endpoint, and the
+   Web API quota is not worth spending on a non-critical list. Home shows Sideplay's local
+   history; it is not cross-device.
+2. **Sideplay owns queue, shuffle, and repeat.** librespot 0.8 plays one item at a time and has
+   no shuffle/repeat setters. `SpotifyQueueRepository` is authoritative; native shuffle/repeat
+   events are adopted when another client changes them. Queue, queue history, and recently
+   played persist; playback does not resume automatically after process death.
+3. **Playlist owner names.** Your own playlists show **You**; other users' playlists show their
+   Spotify username. Display-name lookup is not worth a per-owner Web API call.
 
 ---
 
@@ -130,20 +133,17 @@ cross-cutting refactor.
 - Run the existing device checklist for lock screen, notification transport, audio-focus hand-off
   with local Music, and headphone unplug.
 
-### P1 — parity and completeness
+### P1 — parity decisions (settled)
 
-1. **Recently played.**
-   - Choose a supported first-party history endpoint or keep local history only.
-   - If the Web API is the only source, make it opt-in and degrade to local history when the
-     quota is exhausted.
-2. **Queue/shuffle/repeat ownership.**
-   - Decide whether librespot player state or `SpotifyQueueRepository` is authoritative.
-   - If Sidekit stays authoritative, mirror shuffle/repeat/autoplay into the native player and
-     add an explicit native "Play next" path; otherwise delete the duplicate local state.
-   - Acceptance: Now Playing matches what the native player is doing.
-3. **Playlist owner names.** Resolve through the authenticated user profile and cache, not on
-   every collection open.
-4. **Test coverage.**
+1. **Recently played: local-only.** No first-party endpoint, no Web API quota. The local history
+   is the product feature; cross-device history is a later opt-in, not a merge blocker.
+2. **Queue/shuffle/repeat: Sideplay owns them.** librespot 0.8 has no setters, so mirroring is
+   not possible. `SpotifyQueueRepository` is the single authority; native shuffle/repeat events
+   are adopted when another client changes them. Now Playing follows the queue, and the native
+   player follows the item Sideplay starts.
+3. **Playlist owner names: authenticated identity, no per-owner lookup.** Your playlists show
+   **You**; other users show their Spotify username. This avoids a Web API call per collection.
+4. **Remaining test coverage.**
    - `NativeSpotifyCatalog` JSON parsing and error mapping (auth, network, malformed response).
    - `NativeSpotifyCatalog`/`SpotifyViewModel` event state machine, including `stopped`.
    - Device smoke checklist for sign-in, library filters, search, playback, queue, lock screen,

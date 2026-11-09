@@ -57,6 +57,11 @@ object SideplayLinks {
         return true
     }
 
+    /** Test seam: a unit test must not leave a pending navigation for the next activity. */
+    internal fun reset() {
+        pending.value = false
+    }
+
     @Composable
     fun Follow(nav: NavHostController) {
         val open by pending.collectAsState()

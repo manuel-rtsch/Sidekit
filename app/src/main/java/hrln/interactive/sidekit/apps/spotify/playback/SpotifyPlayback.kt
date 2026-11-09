@@ -62,6 +62,9 @@ class SpotifyPlayback(
      * Queue ops normally live in the ViewModel so its screen state stays in sync. When the
      * ViewModel is gone, [fallbackNext]/[fallbackPrevious] keep the notification and lock-screen
      * transport working by advancing the process-wide queue instead.
+     *
+     * librespot 0.8 has no shuffle/repeat setters. Sideplay's queue repository owns those, and
+     * native shuffle/repeat events are adopted by the ViewModel when another client changes them.
      */
     var onNext: (() -> Unit)? = null
     var onPrevious: (() -> Unit)? = null

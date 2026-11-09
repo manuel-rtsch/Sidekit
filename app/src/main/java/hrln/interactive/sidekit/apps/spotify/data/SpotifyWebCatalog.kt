@@ -12,8 +12,6 @@ import hrln.interactive.sidekit.apps.spotify.SpotifyTrack
 
 /** [SpotifyCatalog] over the Web API. */
 class SpotifyWebCatalog(private val api: SpotifyWebApi) : SpotifyCatalog {
-    override suspend fun recentlyPlayed(): List<SpotifyTrack> = api.recentlyPlayed()
-
     override suspend fun library(
         filter: LibraryFilter,
         offset: Int,

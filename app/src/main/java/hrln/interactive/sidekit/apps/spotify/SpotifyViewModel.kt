@@ -498,9 +498,9 @@ class SpotifyViewModel(
         }
     }
 
-    fun toggleShuffle() = applyQueue(queue.toggleShuffle())
+    fun toggleShuffle() = applyQueue(queue.toggleShuffle(), syncNowPlaying = false)
 
-    fun cycleRepeat() = applyQueue(queue.cycleRepeat())
+    fun cycleRepeat() = applyQueue(queue.cycleRepeat(), syncNowPlaying = false)
 
     fun toggleSaveCurrent() {
         val item = _state.value.current ?: return
@@ -690,7 +690,7 @@ class SpotifyViewModel(
     fun clearHistory() {
         history.clear()
         val snapshot = queue.clearHistory()
-        applyQueue(snapshot)
+        applyQueue(snapshot, syncNowPlaying = false)
         _state.update { it.copy(recent = emptyList(), notice = "Listening history cleared") }
     }
 
@@ -700,17 +700,17 @@ class SpotifyViewModel(
     }
 
     fun moveToNext(item: SpotifyMediaItem) {
-        applyQueue(queue.playNext(item))
+        applyQueue(queue.playNext(item), syncNowPlaying = false)
     }
 
     fun removeUpcoming(item: SpotifyMediaItem) {
-        applyQueue(queue.removeUpcoming(item))
+        applyQueue(queue.removeUpcoming(item), syncNowPlaying = false)
     }
 
     fun removeHistory(item: SpotifyMediaItem) {
         history.remove(item)
         val snapshot = queue.removeHistory(item)
-        applyQueue(snapshot)
+        applyQueue(snapshot, syncNowPlaying = false)
         _state.update {
             it.copy(
                 recent = history.items().filterIsInstance<SpotifyTrack>(),
@@ -720,16 +720,16 @@ class SpotifyViewModel(
     }
 
     fun addToQueue(item: SpotifyMediaItem) {
-        applyQueue(queue.addToQueue(item))
+        applyQueue(queue.addToQueue(item), syncNowPlaying = false)
     }
 
     fun clearUpcoming(): List<SpotifyMediaItem> {
         val removed = queue.clearUpcoming()
-        applyQueue(queue.snapshot)
+        applyQueue(queue.snapshot, syncNowPlaying = false)
         return removed
     }
 
-    fun restoreUpcoming(items: List<SpotifyMediaItem>) = applyQueue(queue.restoreUpcoming(items))
+    fun restoreUpcoming(items: List<SpotifyMediaItem>) = applyQueue(queue.restoreUpcoming(items), syncNowPlaying = false)
 
     fun jumpTo(id: String) {
         val s = _state.value
@@ -781,11 +781,11 @@ class SpotifyViewModel(
         viewModelScope.launch {
             try {
                 val filter = _state.value.filter
-                val recent = catalog.recentlyPlayed()
                 val library = catalog.library(filter, 0, SPOTIFY_PAGE_SIZE)
                 _state.update {
                     it.withLibrarySaved(filter, library.items).copy(
-                        recent = recent.ifEmpty { history.items().filterIsInstance<SpotifyTrack>() },
+                        // Recently played is local-only: no first-party history endpoint, no Web API quota.
+                        recent = history.items().filterIsInstance<SpotifyTrack>(),
                         libraryItems = library.items,
                         libraryHasMore = library.hasMore,
                         libraryMorePending = false,
@@ -913,7 +913,8 @@ class SpotifyViewModel(
     private fun applyQueue(
         snapshot: SpotifyQueueRepository.Snapshot,
         positionMs: Long? = null,
-        playing: Boolean? = null
+        playing: Boolean? = null,
+        syncNowPlaying: Boolean = true
     ) {
         _state.update {
             it.copy(
@@ -926,7 +927,9 @@ class SpotifyViewModel(
                 isPlaying = playing ?: it.isPlaying
             )
         }
-        session?.playback?.setNowPlaying(snapshot.current, positionMs ?: _state.value.positionMs)
+        if (syncNowPlaying) {
+            session?.playback?.setNowPlaying(snapshot.current, positionMs ?: _state.value.positionMs)
+        }
     }
 
     private fun recorded(item: SpotifyMediaItem) {
@@ -1049,6 +1052,19 @@ class SpotifyViewModel(
             }
 
             "position" -> _state.update { it.copy(positionMs = position) }
+
+            // librespot 0.8 has no shuffle/repeat setters, but it emits these when another
+            // client changes the player. Adopt them so the UI does not drift from the service.
+            "shuffle" -> applyQueue(queue.setShuffle(event.optBoolean("shuffle")), syncNowPlaying = false)
+
+            "repeat" -> {
+                val mode = when {
+                    event.optBoolean("track") -> RepeatMode.Track
+                    event.optBoolean("context") -> RepeatMode.Context
+                    else -> RepeatMode.Off
+                }
+                applyQueue(queue.setRepeat(mode), syncNowPlaying = false)
+            }
 
             "ended" -> if (matchesCurrent(event)) onPlaybackEnded()
 

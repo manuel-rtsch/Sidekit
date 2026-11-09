@@ -5,8 +5,10 @@ import hrln.interactive.sidekit.apps.spotify.SpotifyMediaItem
 import kotlin.random.Random
 
 /**
- * The queue is owned by Sidekit, not librespot: librespot plays one item at a time and this
- * repository decides what comes next.
+ * The queue is owned by Sideplay, not librespot: librespot plays one item at a time and this
+ * repository decides what comes next. librespot 0.8 exposes shuffle/repeat events but has no
+ * setters, so this repository is authoritative for both; native events are adopted when another
+ * client changes them.
  *
  * History and upcoming are plain ordered lists. Shuffle is a view over upcoming only, so the
  * current item and history never move. The repository is deliberately free of Android and
@@ -73,16 +75,27 @@ class SpotifyQueueRepository(
         )
     )
 
-    fun toggleShuffle(): Snapshot = if (snapshot.shuffle) {
-        commit(
+    fun toggleShuffle(): Snapshot = setShuffle(!snapshot.shuffle)
+
+    /** Adopts a shuffle change from the native player without re-shuffling an already shuffled tail. */
+    fun setShuffle(enabled: Boolean): Snapshot = when {
+        enabled == snapshot.shuffle -> snapshot
+
+        enabled -> commit(
+            snapshot.copy(
+                shuffle = true,
+                upcoming = snapshot.upcoming.shuffled(random),
+                shuffleBackup = snapshot.upcoming
+            )
+        )
+
+        else -> commit(
             snapshot.copy(
                 shuffle = false,
                 upcoming = snapshot.shuffleBackup ?: snapshot.upcoming,
                 shuffleBackup = null
             )
         )
-    } else {
-        commit(snapshot.copy(shuffle = true, upcoming = snapshot.upcoming.shuffled(random), shuffleBackup = snapshot.upcoming))
     }
 
     fun clearHistory(): Snapshot = commit(snapshot.copy(history = emptyList()))

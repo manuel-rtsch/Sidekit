@@ -1,6 +1,7 @@
 package hrln.interactive.sidekit.apps.spotify
 
 import android.content.Intent
+import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -9,6 +10,8 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SideplayLinksTest {
+    @After fun clearPendingNavigation() = SideplayLinks.reset()
+
     @Test fun `the playback notification action asks for now playing`() {
         assertTrue(SideplayLinks.handle(Intent(SideplayLinks.ACTION_OPEN_NOW_PLAYING)))
     }
