@@ -430,11 +430,11 @@ Implemented as `SideAction.undo` + `undoBar(continueWith, undo)` (`design/action
 |---|---|
 | List rows | Navigation, selection, in-place settings |
 | Action bar | The current object's commit/exit actions and transient notices |
-| Options | Secondary object actions, not navigation |
+| Options | Secondary object actions only; never navigation |
 
-The bar's left slot is the exit/continuation; it is not a general navigation surface. A screen with no action of its own shows a single `Back` rather than inventing a forward action to fill the second slot. In-body line buttons are not a third Sidekit surface. The deliberate exceptions are onboarding wizard choices, ported-app content (`ButtonBlock`), and the media transport bar.
+The bar's left slot is the exit/continuation; it is not a general navigation surface. A screen with no action of its own shows a single `Back` rather than inventing a forward action to fill the second slot. A row that opens another page carries the right arrow. A reset/clear action appears in the bar only while it would change something, and is not duplicated in Options. In-body line buttons are not a third Sidekit surface. The deliberate exceptions are onboarding wizard choices, ported-app content (`ButtonBlock`), and the media transport bar.
 
-Applied to Settings and Sideport: About moved from the Settings bar to a row; Settings and System settings messages became notices; the case-colour default became a swatch; Hide apps' "Show all" moved to the bar; Keypad mapping's duplicate reset button was removed; Sideport's Install APK moved to the bar; the hub's Remove/Uninstall moved to Options with the same confirm bar; Sideport messages became notices. `SurfaceConventionTest` keeps line buttons out of `apps/settings` and `apps/sideport` (except ported-app content).
+Applied to Settings and Sideport: About moved from the Settings bar to a row; Settings and System settings messages became notices; the case-colour default became a swatch; Hide apps' "Show all" moved to the bar; Keypad mapping's reset now appears in the bar only while custom bindings exist; Sideport's Install APK moved to the bar; the hub's App info became a row and Remove/Uninstall stayed in Options with the same confirm bar; Sideport messages became notices. The same pass moved Account (Mail), Settings (Sideplay), Locations (Sideweather), Bookmarks (Compass), and Now playing (Sideplay collections/artists) from Options to rows, and made Arrange apps' Reset a bar action only while the buffer differs from the default. `SurfaceConventionTest` keeps line buttons out of `apps/settings` and `apps/sideport` (except ported-app content).
 
 **F3 — Which channel carries a transient message?** ✅ **settled: bar takeover for transient messages.**
 
@@ -448,14 +448,9 @@ The bar camp won because the message is where the user is already looking. The c
 **F4 — Is `Cancel` Muted or Primary?** ✅ **settled: Muted, always.**
 23 sites, one factory. The grammar is now four colours with one meaning each: **sage advances** (Primary, the theme colour), **green commits**, **red destroys**, **grey takes it back** (Cancel, Undo, back-out, alternatives). `Cancel` is grey because it makes the same promise as Undo — nothing happened — and naming it in the bar must never read as a way forward. A themed confirm ("Keep note", "Keep file") stays grey while dismissing in place. `Back` is deliberately *not* Cancel: it stays Primary, because it advances through the hierarchy and never discards typed work by itself. `SideAction.cancel` is the only constructor, and the guard test rejects any other tone on a `Cancel`/`Undo` label.
 
-**F5 — What is Options *for*?** (navigation vs object actions)
+**F5 — What is Options *for*?** (partly settled: never navigation)
 
-| Camp | Apps |
-|---|---|
-| Navigation / modes | Calendar (Agenda, Today), Trip (Find From/To, journeys, departures), Music (New playlist), Clock (Alarm access), Sideticks (sort), Keypad mapping (automatic) |
-| Object actions | Banking (Edit account), Photos (share, favourite), Vault (Delete note), Apps (App info, Uninstall), Web (bookmark, reload, zoom) |
-
-Both are internally consistent; they conflict with each other. The rule has to be either "Options never navigates" or "Options is everything that doesn't earn a button", and the suite currently answers both.
+Navigation is settled: it belongs in rows with a right arrow. Options is now only for actions on the current object. The remaining question is which non-navigation actions belong there: modes (Calendar Agenda/Today, Sideticks sort, Keypad automatic), creation (Music New playlist), toggles (Web zoom, Sideweather units, Music shuffle, Maps Centre), destructive actions (Banking erase, Translate clear), state (Clock alarm access, Files sort), and the Camera error log. The rule still has to be either "Options is everything that doesn't earn a button" or a narrower list of allowed action kinds.
 
 **F6 — Is `ActionMotion` a contract or an option?** (26 % adoption)
 
@@ -516,6 +511,6 @@ The shared chrome is unusually disciplined for a suite this size: one action typ
 
 **Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo), `NoticeConventionTest` (one notice shape, no private helpers) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first three caught live drift while the passes were being written.
 
-**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel. The bar auto-dismisses after 2 seconds for success and 5 seconds for other notices. F2 is settled: rows navigate, the bar acts and reports, and Settings/Sideport no longer use in-body line buttons; `SurfaceConventionTest` guards that surface.
+**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) and shows `Reset` in the bar only while the buffer differs from the default. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel. The bar auto-dismisses after 2 seconds for success and 5 seconds for other notices. F2 is settled: rows navigate, the bar acts and reports, Options never navigates, and Settings/Sideport no longer use in-body line buttons; `SurfaceConventionTest` guards that surface. The same pass moved App info, Account, Sideplay Settings, Sideweather Locations, Compass Bookmarks, and Sideplay Now playing from Options to rows.
 
-**Still open, in the order §7.5 recommends:** F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.
+**Still open, in the order §7.5 recommends:** F5's remaining non-navigation scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.

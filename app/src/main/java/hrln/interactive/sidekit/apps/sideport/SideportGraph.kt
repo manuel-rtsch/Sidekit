@@ -388,9 +388,8 @@ internal fun SideportHubContent(
         SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back", onBack, tone = ActionTone.Muted, motion = ActionMotion.Back),
         SideAction.forward("open", "Open", onOpen)
     )
-    // Secondary actions live in Options; destructive ones still confirm in the bar.
+    // Navigation belongs in the list; Options holds only the destructive actions.
     val options = buildList {
-        if (state.version != null) add(SideAction("info", "App info", SidekitIcon.Settings) { onInfo() })
         add(SideAction("remove", "Remove from Sideport", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { onAsk(HubRemoval.Remove) })
         if (state.version != null) add(SideAction("uninstall", "Uninstall app", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { onAsk(HubRemoval.Uninstall) })
     }
@@ -401,6 +400,10 @@ internal fun SideportHubContent(
             val header = index++
             item(key = "header") { SideportHeader(app, state.version, Modifier.listFade(list, header)) }
             if (state.version != null) {
+                val info = index++
+                item(key = "info") {
+                    SidekitItem("App info", Modifier.height(CompactRowHeight).listFade(list, info), showLinkArrow = true, onClick = onInfo)
+                }
                 val mode = index++
                 item(key = "mode") {
                     SidekitItem(

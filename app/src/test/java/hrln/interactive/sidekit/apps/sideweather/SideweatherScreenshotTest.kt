@@ -24,7 +24,7 @@ class SideweatherScreenshotTest {
 
     private val data = SideweatherSampleData
 
-    @Test fun home() = shoot("sideweather_94-322") { SideweatherHomeScreen(data.current, data.summary, {}, {}) }
+    @Test fun home() = shoot("sideweather_94-322") { SideweatherHomeScreen(data.current, data.summary, {}, {}, {}) }
 
     @Test fun hourly() = shoot("sideweather_hourly_94-385") { ForecastScreen("Hourly forecast", data.hourly, {}, {}) }
 

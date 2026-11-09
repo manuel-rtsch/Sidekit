@@ -94,7 +94,7 @@ class KeypadMappingUiTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.onNodeWithText("Volume up").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keypad_mapping_editor_keys.png")
-        compose.runOnIdle { chrome.toggleOptions() }
+        // Reset is in the bar, not Options, while there are custom bindings.
         compose.onNodeWithText("Reset keys").performClick()
         compose.runOnIdle { assertTrue(keypad.mapper.bindings(KeypadModule.T9).isEmpty()) }
         compose.onNodeWithText("Menu").assertDoesNotExist()

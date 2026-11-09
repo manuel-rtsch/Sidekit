@@ -16,19 +16,22 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - Tones: Primary = theme colour, Secondary = commit, Destructive = delete/clear/remove, Muted = cancel/undo/back-out/alternatives.
 - Cancel is always Muted.
 - Guards: `ActionToneConventionTest`, `UndoConventionTest`, `NoticeConventionTest`, `UndoWindowTest`, `SurfaceConventionTest`.
-- Arrange Home: `←Settings | Done→` with `Reset` in Options.
+- Arrange Home: `←Settings | Done→`, with `Reset` in the bar only while the buffer differs from the default.
 - Transient messages: `withNotice` / `SideAction.notice`; bar notice for transient feedback, body row for persistent explanation. Success notices auto-dismiss after 2 seconds, other notices after 5; tapping dismisses early.
-- F2: rows navigate and change in-place settings; the bar acts and reports; Options holds secondary actions. No in-body line buttons in Settings or Sideport; `SurfaceConventionTest` guards it.
+- F2: rows navigate and change in-place settings; a row that opens another page carries the right arrow. The bar acts and reports; a reset/clear action appears there only while it would change something. Options holds secondary actions and never navigation. No in-body line buttons in Settings or Sideport; `SurfaceConventionTest` guards it.
+- Navigation moved out of Options: Sideport App info, Mail Account, Sideplay Settings, Sideweather Locations, Compass Bookmarks, and Sideplay Now playing (collections/artists).
 
 ## Remaining work, in recommended order
 
 ### 1. F5 — Options scope
 
-**Problem:** Options mixes navigation, creation, toggles, destructive actions, state, and error logs. Some screens have no Options at all (dead key); some hide their only destructive action there without confirmation.
+**Problem:** Options still mixes creation, toggles, destructive actions, state, and error logs. Some screens have no Options at all (dead key); some hide their only destructive action there without confirmation.
+
+**Settled:** Options never navigates. Navigation is a row with a right arrow. The remaining question is which non-navigation actions belong there.
 
 **Scope:** all screens with Options; Health, Settings, Placeholder, the Sidenotes list, and the Mail folders list.
 
-**Decision:** define what Options is for; require confirmation for destructive Options actions; decide whether every screen needs an entry.
+**Decision:** define the allowed non-navigation action kinds; require confirmation for destructive Options actions; decide whether every screen needs an entry.
 
 **Acceptance:** a written Options contract; destructive Options actions route through the same confirm bar; dead Options keys are either given an entry or accepted and documented.
 

@@ -119,13 +119,14 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                 false
             }
         },
-        actions = listOf(
-            SideAction.back("back", "Settings", ::cancel),
-            SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check)
-        ),
-        options = listOf(
-            SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() })
-        )
+        actions = buildList {
+            add(SideAction.back("back", "Settings", ::cancel))
+            // Reset is only useful while the buffer differs from the built-in default.
+            if (!arranger.isDefault) {
+                add(SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() }))
+            }
+            add(SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check))
+        }
     ) { padding ->
         SidekitList(padding, state = list) {
             item {

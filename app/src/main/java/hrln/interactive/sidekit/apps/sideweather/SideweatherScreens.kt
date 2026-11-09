@@ -44,6 +44,7 @@ fun SideweatherHomeScreen(
     summary: List<WeatherRow>,
     onHourly: () -> Unit,
     onFiveDay: () -> Unit,
+    onLocations: () -> Unit,
     options: List<SideAction> = emptyList()
 ) {
     SidekitScaffold(
@@ -55,6 +56,9 @@ fun SideweatherHomeScreen(
         SidekitList(padding, state = list) {
             item { Box(Modifier.listFade(list, 0)) { ConditionsCard(current) } }
             itemsIndexed(summary) { i, row -> SidekitItem(title = row.label, secondary = row.detail, modifier = Modifier.listFade(list, i + 1)) }
+            item(key = "locations") {
+                SidekitItem("Locations", Modifier.listFade(list, summary.size + 1), showLinkArrow = true, onClick = onLocations)
+            }
         }
     }
 }
@@ -122,7 +126,7 @@ fun LocationsScreen(locations: List<WeatherRow>, hint: String, onBack: () -> Uni
 @SidephonePreview
 @Composable
 private fun SideweatherHomePreview() = SidekitPreviewFrame {
-    SideweatherHomeScreen(SideweatherSampleData.current, SideweatherSampleData.summary, {}, {})
+    SideweatherHomeScreen(SideweatherSampleData.current, SideweatherSampleData.summary, {}, {}, {})
 }
 
 @SidephonePreview

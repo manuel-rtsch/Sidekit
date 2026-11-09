@@ -90,15 +90,14 @@ These splits should be decided first so that subsequent refactoring follows a si
 1. **Does `Undo` take over the bar or add a button?**
    - _Recommendation:_ Additive approach (`Undo` on the left, `Back` is never removed). Losing the exit path on a two-button bar must be avoided.
 
-2. ✅ **Is the bar or the list the primary control surface?** — settled: the list navigates; the bar acts and reports. Rows open pages, select objects and change in-place settings; the bar carries the current object's commit/exit actions and transient notices; Options holds secondary object actions. In-body line buttons are not a third surface. `SurfaceConventionTest` guards Settings and Sideport.
+2. ✅ **Is the bar or the list the primary control surface?** — settled: the list navigates; the bar acts and reports. Rows open pages, select objects and change in-place settings; a row that opens another page carries the right arrow. The bar carries the current object's commit/exit actions and transient notices; a reset/clear action appears there only while it would change something. Options holds secondary object actions and never navigation. In-body line buttons are not a third surface. `SurfaceConventionTest` guards Settings and Sideport.
 
 3. ✅ **Where does a transient message go?** — settled: single-line transient messages use a bar notice; detailed or persistent explanations use a body card. Implemented as `withNotice` / `SideAction.notice`, with a 2-second success window and a 5-second window for other notices; tapping dismisses early.
 
 4. **Is "Cancel" always muted?**
    - _Recommendation:_ "Cancel" is always Muted (`grey` backs out, `green` commits, `red` destroys).
 
-5. **What is Options for?**
-   - _Recommendation:_ Options never handles primary navigation; it acts strictly on the current object.
+5. **What is Options for?** — partly settled: Options never handles navigation; navigation is a row with a right arrow. It acts strictly on the current object. The remaining question is which non-navigation actions belong there (modes, creation, toggles, destructive actions, state, error logs).
 
 6. **Is `ActionMotion` a real contract?**
    - _Recommendation:_ Enforce `ActionMotion` across all factory and hand-built action bars.
@@ -167,7 +166,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Establish hierarchy on the ringing screen — it currently has none.
 - [ ] Tint editor `Cancel` Muted and `Save` green; confirm the Options delete.
 
-**Compass** — `Calibrate | Save`, both Primary and untinted. Saved headings: `Back | Undo`. Feedback is a status string in the body. Options carry the permission action and bookmarks.
+**Compass** — `Calibrate | Save`, both Primary and untinted. Saved headings: `Back | Undo`. Feedback is a status string in the body. Bookmarks is a row with a right arrow; Options carry only the permission action.
 
 - [ ] Tint the commit and give it an icon.
 - [x] Decide whether the status string becomes a bar notice (Decision 3) — it stays a body status because it is persistent.
@@ -179,7 +178,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 
 ### Mail, Translate & Web
 
-**Mail** — One builder produces notice, then `Undo | Compose→`, then `←Folders | Compose→`; the Undo variant drops the back action. Message screen is `←Back | Reply`. Compose is the only three-wide text form, with a Muted `Save`. Only the `To` field takes the keypad.
+**Mail** — One builder produces notice, then `Undo | Compose→`, then `←Folders | Compose→`; the Undo variant drops the back action. Account is a row with a right arrow; Options carry only Refresh. Message screen is `←Back | Reply`. Compose is the only three-wide text form, with a Muted `Save`. Only the `To` field takes the keypad.
 
 - [ ] Resolve the three-wide compose bar (`Cancel | Save | Send`) and make `Send` the green commit or move `Save` to Options.
 - [ ] Make subject and body take the keypad.
@@ -232,16 +231,16 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Tint the commit; settle the Undo position with Decision 1.
 - [ ] Decide whether navigation stays in Options (Decision 5).
 
-**Sideweather** — `←Hourly | 5 days→`, then `Back | Locations→`, then `Back | Undo | Add` with Undo in the middle. Options carry locations and the unit toggle. Swipe deletes with `Undo`.
+**Sideweather** — `←Hourly | 5 days→`, then `Back | Locations→`, then `Back | Undo | Add` with Undo in the middle. Locations is a row with a right arrow on the home screen; Options carry only the unit toggle. Swipe deletes with `Undo`.
 
 - [ ] Move `Undo` to the left so the bar stops shuffling on delete.
 - [ ] Show selection state on the unit toggle.
 
 ### Settings, Apps & Utilities
 
-**Settings** — `←Home`, with About as a row; sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` with `Reset` in Options. Messages use the notice channel, the case-colour default is a swatch, Hide apps' "Show all" is a bar action, and Keypad mapping's reset lives only in Options. No in-body line buttons remain in Settings or Sideport; `SurfaceConventionTest` guards that surface.
+**Settings** — `←Home`, with About as a row; sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` and shows `Reset` in the bar only while the buffer differs from the default. Messages use the notice channel, the case-colour default is a swatch, Hide apps' "Show all" is a bar action, and Keypad mapping's reset appears in the bar only while custom bindings exist. No in-body line buttons remain in Settings or Sideport; `SurfaceConventionTest` guards that surface.
 
-- [x] Move `Done` to the right in Arrange Home. (Done: `Reset` moved to Options.)
+- [x] Move `Done` to the right in Arrange Home. (Done: `Reset` is a conditional bar action.)
 - [x] Move About from the bar to a row; keep the bar to Home.
 - [x] Move Settings and System settings messages to the notice channel.
 - [x] Remove the in-body line buttons (case colour, hide apps, keypad reset).
@@ -257,7 +256,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Tint the clear-history confirm red.
 - [ ] Decide whether `CalcKey` colours merge with `ActionTone`.
 
-**Sideport** — Own screens follow the house style: `←Home | Add app→`, `←Back | Install APK→`, `Cancel | Remove` in red, square Muted `Back` + `Open→`, and a chat bar with green `Send`. Remove/Uninstall live in Options and still confirm in the bar; messages use the notice channel. Projected apps rebuild the bar from a foreign action spec with tones mapped one to one, and their in-body `ButtonBlock`s remain the one deliberate line-button exception.
+**Sideport** — Own screens follow the house style: `←Home | Add app→`, `←Back | Install APK→`, `Cancel | Remove` in red, square Muted `Back` + `Open→`, and a chat bar with green `Send`. App info is a row with a right arrow; Options hold only Remove/Uninstall, which still confirm in the bar. Messages use the notice channel. Projected apps rebuild the bar from a foreign action spec with tones mapped one to one, and their in-body `ButtonBlock`s remain the one deliberate line-button exception.
 
 - [ ] Decide how far ported app bars should be normalized.
 - [ ] Set keypad capture on ported forms.

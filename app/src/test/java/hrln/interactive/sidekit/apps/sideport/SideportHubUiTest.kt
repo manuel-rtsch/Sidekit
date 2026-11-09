@@ -22,7 +22,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** A ported app's hub: the app header, its chats and media, and Remove/Uninstall in the body. */
+/** A ported app's hub: the app header, its chats and media, and Remove/Uninstall in Options. */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [31])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -67,14 +67,17 @@ class SideportHubUiTest {
 
     private fun installed() = SideportHubUiState(app, version = "2.24.6.78", chats = listOf(chat))
 
-    @Test fun `hub shows the app and its version, with actions in Options`() {
+    @Test fun `hub shows the app, its version and App info as a row`() {
         show(installed())
         compose.onRoot().captureRoboImage("screenshots/sideport_hub.png")
         compose.onNodeWithText("Version 2.24.6.78").assertExists()
         compose.onNodeWithText("com.example.chat").assertExists()
+        compose.onNodeWithText("App info").assertExists()
         compose.onNodeWithText("Open as").assertExists()
         compose.onNodeWithText("Remove from Sideport").assertDoesNotExist()
         compose.onNodeWithText("Uninstall app").assertDoesNotExist()
+        compose.onNodeWithText("App info").performClick()
+        assertEquals(listOf("info"), calls)
     }
 
     @Test fun `a message replaces the bar and dismisses on tap`() {
@@ -127,20 +130,19 @@ class SideportHubUiTest {
         compose.onNodeWithText("Cancel").assertDoesNotExist()
     }
 
-    @Test fun `Options holds the app's secondary actions`() {
+    @Test fun `Options holds only the destructive actions`() {
         show(installed())
         compose.runOnIdle { chrome.toggleOptions() }
-        compose.onNodeWithText("App info").assertExists()
+        // App info stays a single row; Options adds only the destructive actions.
+        compose.onAllNodesWithText("App info").assertCountEquals(1)
         compose.onNodeWithText("Remove from Sideport").assertExists()
         compose.onNodeWithText("Uninstall app").assertExists()
-        compose.onNodeWithText("App info").performClick()
-        assertEquals(listOf("info"), calls)
     }
 
-    @Test fun `an app that is gone has no App info or Uninstall`() {
+    @Test fun `an app that is gone has no App info row or Uninstall`() {
         show(SideportHubUiState(app, version = null))
-        compose.runOnIdle { chrome.toggleOptions() }
         compose.onNodeWithText("App info").assertDoesNotExist()
+        compose.runOnIdle { chrome.toggleOptions() }
         compose.onNodeWithText("Uninstall app").assertDoesNotExist()
         compose.onNodeWithText("Remove from Sideport").assertExists()
     }

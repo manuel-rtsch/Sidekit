@@ -74,7 +74,7 @@ fun LiveCompass(onBookmarks: () -> Unit) {
                 }
             }
         ),
-        options = listOf(location, SideAction("bookmarks", "Bookmarks", onClick = onBookmarks))
+        options = listOf(location)
     ) { padding ->
         SidekitList(padding, state = list) {
             item { Box(Modifier.fillMaxWidth().height(278.dp).listFade(list, 0), contentAlignment = androidx.compose.ui.Alignment.TopCenter) { CompassDial({ sensor.angle.floatValue }, Modifier.padding(top = 5.dp)) } }
@@ -89,6 +89,9 @@ fun LiveCompass(onBookmarks: () -> Unit) {
             }
             item { OutdoorInfo(error ?: if (lowAccuracy) "Low accuracy: move phone in a figure eight, away from metal" else status, modifier = Modifier.listFade(list, 2)) }
             item { OutdoorInfo("Location is optional", secondary = "Options → Allow attaches an approximate location to saved headings", modifier = Modifier.listFade(list, 3)) }
+            item(key = "bookmarks") {
+                SidekitItem("Bookmarks", Modifier.listFade(list, 4), showLinkArrow = true, onClick = onBookmarks)
+            }
         }
     }
 }
