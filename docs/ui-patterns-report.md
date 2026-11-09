@@ -244,10 +244,10 @@ Projected apps (`ProjectionScreens.kt:289`) build the bar from the ported app's 
 
 Grouped by symptom, ordered by how visible they are. Severity: **H** = users will notice and misread, **M** = noticeable on comparison, **L** = polish.
 
-### A. Three different feedback channels for "something happened" — **H**
-**Settled in part.** Undo is no longer one of the three shapes: every app routes it through `undoBar` (§9), so the divergence left in this section is the *notice* channel (`notice` action vs body card vs body row), which is fork F3 and still open. The pre-work picture:
+### A. Three different feedback channels for "something happened" — **H → settled**
+**Settled.** Undo routes through `undoBar` (§9), and transient messages now route through the shared `withNotice` / `SideAction.notice` in `design/action/Notice.kt`. The bar-replacement notice is the single channel for transient success/error; body cards and rows are reserved for persistent explanation. `NoticeConventionTest` rejects hand-built notice actions and private helpers. The pre-work picture:
 
-The same concept is implemented four times:
+The audit found the same concept implemented four times:
 
 | Channel | Where | Shape |
 |---|---|---|
@@ -257,6 +257,8 @@ The same concept is implemented four times:
 | Bare body row / status string | Health `message`, Calendar `error` row, Compass `status`, Sideticks `error` row | not dismissible or dismiss-by-navigation |
 
 Consequences: a Files user learns "the bar tells me what happened"; a Health user learns nothing. The four `withNotice`/`withUndo` copies are duplicated code with subtly different behaviour (`withUndo` in Banking takes `List<SideAction>` and keeps only `main.last()`; in Web it takes a single `SideAction`).
+
+**Now:** Files, Web, Mail, Translate and Sideplay use the shared helper; Apps and Sideport moved their transient messages from body cards to the bar. Banking's `NoticeCard`, Calendar's error row, Health's message, Compass's status, Sideticks' error row and Trip's `TripInfo` remain body content because they are persistent explanations or validation, not transient feedback.
 
 ### B. Destructive tone is not applied consistently — **H → settled**
 All 22 destructive actions now carry `ActionTone.Destructive`, enforced by `ActionToneConventionTest`. What the audit found:
@@ -356,7 +358,7 @@ These are preview/screenshot surfaces, but they are the ones a reader compares a
 
 ## 6. Recommended rules (smallest set that removes most of the divergence)
 
-1. **One feedback primitive.** Undo is done (`undoBar`); the notice half is not. Promote `withNotice` into `design/` and require it: bar-replacement notice for transient success/error, `continueWith | Undo` for reversible deletion, body row only for persistent explanation. Delete the three private copies.
+1. ✅ **One feedback primitive.** Undo is done (`undoBar`); the notice half is now `withNotice` / `SideAction.notice` in `design/action/Notice.kt`. Bar-replacement notice for transient success/error, `continueWith | Undo` for reversible deletion, body row only for persistent explanation. The private copies are gone, and `NoticeConventionTest` keeps them out.
 2. ✅ **Tone is a contract, not a suggestion.** Implemented as `ActionToneConventionTest` rather than a linter: it scans app sources for destructive, commit, cancel and undo labels and fails on the wrong tone. Roles (`save`, `send`, `delete`, `cancel`, `undo`) make the tone implicit, so new code cannot forget it. A Muted back is expressed as `SideAction.cancel`, not by hand-building `back`.
 3. **Give `SideAction` an `enabled`/`busy` state** so "Saving…" is not a no-op button and does not have to change the button count.
 4. ✅ **Two slots, decided: left = what you are doing, right = what comes next.** Undo is always right and is only ever added, never substituted (`undoBar`, §9). Primary rightmost. Sideticks, Arrange Home and Trip's undo-position split are fixed by that rule; Arrange Home's `Done` slot is still open.
@@ -407,7 +409,7 @@ The point of this section is to separate *fixable drift* from *undecided product
 | Destructive tone on destruction | ~~17 vs ~8~~ → 22/22 | Sideticks `Clear All Ticked` (row has no tone) |
 | Secondary (green) on the commit action | ~~20/31~~ → 26/31 | permission `Allow` prompts |
 | Undo is `Muted` | 11/11 | — |
-| Notice-style transient message | 4 apps use the bar (Files, Mail, Translate, Web); ~7 use body cards/rows | split — see 7.3 |
+| Notice-style transient message | ✅ 7 apps use the bar; body cards/rows are persistent explanation only | settled — see 7.3 |
 
 ### 7.3 Tier C — split down the middle (▶ **decide before touching code**)
 
@@ -432,14 +434,14 @@ Implemented as `SideAction.undo` + `undoBar(continueWith, undo)` (`design/action
 
 Consequence: the same two-slot bar sometimes carries the whole interaction and sometimes just an exit. If Sidekit's identity is "two buttons at the bottom", row-driven screens are off-brand; if rows are the interface, the bar should shrink to a navigation affordance deliberately.
 
-**F3 — Which channel carries a transient message?** (4 vs ~7)
+**F3 — Which channel carries a transient message?** ✅ **settled: bar takeover for transient messages.**
 
 | Camp | Apps |
 |---|---|
-| Bar takeover (`notice` action, dismiss by tap) | Files (`:64`), Mail (`:148`), Translate (`:80`), Web (`:145`) |
-| Body card / row / status string | Apps (`:59`), Sideport (`:143`), Banking (`NoticeCard`), Calendar (`error` row), Health (`message`), Compass (`status`), Sideticks (`error` row), Trip (`TripInfo`) |
+| Bar takeover (`notice` action, dismiss by tap) | Files, Mail, Translate, Web, Sideplay, Apps, Sideport |
+| Body card / row / status string | Banking (`NoticeCard`), Calendar (`error` row), Health (`message`), Compass (`status`), Sideticks (`error` row), Trip (`TripInfo`) — persistent explanation or validation only |
 
-The bar camp has the nicer property that the message is where the user is already looking, and the nasty property that it hides the exit for its duration.
+The bar camp won because the message is where the user is already looking. The cost — it hides the exit for its duration — is accepted for transient feedback; persistent explanation stays in the body. The shared helper is `withNotice` / `SideAction.notice`, and `NoticeConventionTest` enforces it.
 
 **F4 — Is `Cancel` Muted or Primary?** ✅ **settled: Muted, always.**
 23 sites, one factory. The grammar is now four colours with one meaning each: **sage advances** (Primary, the theme colour), **green commits**, **red destroys**, **grey takes it back** (Cancel, Undo, back-out, alternatives). `Cancel` is grey because it makes the same promise as Undo — nothing happened — and naming it in the bar must never read as a way forward. A themed confirm ("Keep note", "Keep file") stays grey while dismissing in place. `Back` is deliberately *not* Cancel: it stays Primary, because it advances through the hierarchy and never discards typed work by itself. `SideAction.cancel` is the only constructor, and the guard test rejects any other tone on a `Cancel`/`Undo` label.
@@ -477,20 +479,20 @@ Both are internally consistent; they conflict with each other. The rule has to b
 ### 7.5 The decision order
 
 ```
-F2 (bar vs rows)  ──► F3 (message channel) ──► F5 (what Options is for) ──► F6 (motion)
+F2 (bar vs rows)  ──► F5 (what Options is for) ──► F6 (motion)
         │
         └────► Tier D fixes (Camera, Translate, busy states, dead Options keys)
 
-F1 (undo shape) and F4 (cancel tone) are decided and shipped, so they no longer gate anything.
+F1 (undo shape), F3 (message channel) and F4 (cancel tone) are decided and shipped, so they no longer gate anything.
 ```
 
-F2 sets how much the bar has to carry; F3 decides what may temporarily replace a `notice`; F5 decides what is allowed to live in the escape hatch. Only then do the icon, confirmation and busy-state fixes become mechanical, and most of §6's recommendations collapse into three or four edits in `design/`.
+F2 sets how much the bar has to carry; F5 decides what is allowed to live in the escape hatch. Only then do the icon, confirmation and busy-state fixes become mechanical, and most of §6's recommendations collapse into three or four edits in `design/`.
 
 ## 8. Quick verdict
 
-The shared chrome is unusually disciplined for a suite this size: one action type, one layout engine, one Options contract, one focus/press language, no dialogs. Where apps diverged they diverged in **vocabulary, not architecture**. Two of those vocabulary questions are now answered in code — destructive/commit tone, and where Undo sits relative to Cancel — so the remaining forks are structural: **whether the action bar or the list is the primary control surface** (F2), **which channel carries a transient notice** (F3), and **what Options is for** (F5), plus whether `ActionMotion` is a contract (F6).
+The shared chrome is unusually disciplined for a suite this size: one action type, one layout engine, one Options contract, one focus/press language, no dialogs. Where apps diverged they diverged in **vocabulary, not architecture**. Three of those vocabulary questions are now answered in code — destructive/commit tone, where Undo sits relative to Cancel, and which channel carries a transient notice — so the remaining forks are structural: **whether the action bar or the list is the primary control surface** (F2) and **what Options is for** (F5), plus whether `ActionMotion` is a contract (F6).
 
-**Highest-value remaining fix:** one notice channel (F3), because three implementations of the same idea sit on the most-used screens (Files, Web, Mail, Banking) and the bar-vs-body split is the last thing that makes two apps feel different after a save.
+**Highest-value remaining fix:** F2 (bar vs rows), because it decides how much the bar has to carry and is the last structural difference between apps.
 
 **Highest-value second fix:** end the fake busy states (Calendar `Saving…`, Vault `Working…`, Trip/Bank/Mail labels that re-fire), because those are the only remaining places where the bar lies about what a tap will do.
 
@@ -510,8 +512,8 @@ The shared chrome is unusually disciplined for a suite this size: one action typ
 
 **Cancel.** Always Muted, 23 sites, `SideAction.cancel`; a themed confirm passes `icon = null, motion = Up` to stay grey while dismissing in place. Navigation stays Primary.
 
-**Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first two caught live drift while the passes were being written.
+**Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo), `NoticeConventionTest` (one notice shape, no private helpers) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first three caught live drift while the passes were being written.
 
-**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier.
+**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel.
 
-**Still open, in the order §7.5 recommends:** F2 bar vs rows → F3 notice channel → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.
+**Still open, in the order §7.5 recommends:** F2 bar vs rows → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.

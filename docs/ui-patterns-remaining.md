@@ -15,20 +15,21 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - Undo is owned by `SideAction.undo` / `undoBar`, with a visible-time window.
 - Tones: Primary = theme colour, Secondary = commit, Destructive = delete/clear/remove, Muted = cancel/undo/back-out/alternatives.
 - Cancel is always Muted.
-- Guards: `ActionToneConventionTest`, `UndoConventionTest`, `UndoWindowTest`.
+- Guards: `ActionToneConventionTest`, `UndoConventionTest`, `NoticeConventionTest`, `UndoWindowTest`.
 - Arrange Home: `←Settings | Done→` with `Reset` in Options.
+- Transient messages: `withNotice` / `SideAction.notice`; bar notice for transient feedback, body row for persistent explanation.
 
 ## Remaining work, in recommended order
 
-### 1. F3 — one notice channel (highest value)
+### 1. F2 — bar vs rows as the primary control surface
 
-**Problem:** transient feedback has three implementations: bar takeover notices, body cards/rows, and bare status strings. Four private notice helpers exist.
+**Problem:** some screens put the main control in the action bar, others in the body. This is the last structural difference between apps.
 
-**Scope:** Files, Web, Mail, Banking, and any screen with a private notice helper.
+**Scope:** screens with in-body line buttons and bar actions, especially Settings and Sideport.
 
-**Decision:** choose one channel (bar notice or body card) and one shared helper.
+**Decision:** write the rule for when an action belongs in the bar versus a row.
 
-**Acceptance:** one shared notice API; no private notice helpers; the same save/delete/error feedback appears in the same place across the suite; the helper is covered by a test.
+**Acceptance:** a written rule in the report; screens that violate it are either fixed or listed as deliberate exceptions.
 
 ### 2. Fake busy states
 
@@ -40,17 +41,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 
 **Acceptance:** busy actions cannot be re-triggered; no empty handlers; labels reflect real work.
 
-### 3. F2 — bar vs rows as the primary control surface
-
-**Problem:** some screens put the main control in the action bar, others in the body. This is the last structural difference between apps.
-
-**Scope:** screens with in-body line buttons and bar actions, especially Settings and Sideport.
-
-**Decision:** write the rule for when an action belongs in the bar versus a row.
-
-**Acceptance:** a written rule in the report; screens that violate it are either fixed or listed as deliberate exceptions.
-
-### 4. F5 — Options scope
+### 3. F5 — Options scope
 
 **Problem:** Options mixes navigation, creation, toggles, destructive actions, state, and error logs. Some screens have no Options at all (dead key); some hide their only destructive action there without confirmation.
 
@@ -60,7 +51,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 
 **Acceptance:** a written Options contract; destructive Options actions route through the same confirm bar; dead Options keys are either given an entry or accepted and documented.
 
-### 5. F6 — motion contract
+### 4. F6 — motion contract
 
 **Problem:** `ActionMotion` is used semantically but not enforced; some screens use it decoratively.
 
@@ -70,7 +61,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 
 **Acceptance:** either a test/guard or a documented rule; no contradictory motion.
 
-### 6. Tier D outliers
+### 5. Tier D outliers
 
 - **Camera** — three unlabelled icon-only wide buttons; the error is in Options with a no-op handler. Use `SideAction.square`; move the error to a notice.
 - **Translate** — silent history delete with no undo or confirm. Route it through the delete contract.
@@ -84,7 +75,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - **Bank Up sync** — the only connector action without an icon.
 - **Launcher** — the only `trailingAction` user; document it as the pattern, not the exception.
 
-### 7. Verification
+### 6. Verification
 
 - Run `./gradlew spotlessCheck :app:testDebugUnitTest`.
 - Add or extend a guard for any new contract.
@@ -93,9 +84,9 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 ## Checklist
 
 - [ ] Rebase onto `main` once `integration` lands
-- [ ] F3 notice channel
-- [ ] Fake busy states
+- [x] F3 notice channel
 - [ ] F2 bar vs rows rule
+- [ ] Fake busy states
 - [ ] F5 Options contract
 - [ ] F6 motion contract
 - [ ] Tier D outliers

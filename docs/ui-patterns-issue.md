@@ -18,12 +18,12 @@ The facts worth knowing before reading further:
 - **Deleting is defended three ways:** `Undo` (10 apps), bar confirmation (Files, Vault), or nothing at all (Translate).
 - **Tone is applied inconsistently:** 17 destructive actions are red, 5 are not — including Calendar's `Delete` and Apps' `Uninstall`, neither of which asks for confirmation. 20 of 31 commit actions are green, the rest are plain Primary.
 - **`Undo` either removes the exit or grows the bar to three:** 4 apps vs 6, and `Cancel` is Muted in 8 apps and Primary in 8.
-- **Four private copies of the same notice/undo helper**, already behaving differently, on the most-used screens (Files, Web, Mail, Banking).
+- ~~**Four private copies of the same notice/undo helper**~~ — settled: one shared `withNotice` / `SideAction.notice`, guarded by `NoticeConventionTest`.
 - **Busy state is faked:** `Saving…`/`Working…` are clickable no-ops in Calendar and Vault; in Trip, Bank Up and Mail Account the busy label keeps its live handler and re-fires.
 
 Risk, in order: Calendar/Apps delete without confirmation, Translate's silent history delete, and the four screens where a pending `Undo` hides the way out. Everything else is consistency, not safety.
 
-**What is needed:** settle six decisions (§3 — mainly the first two), then run four mechanical passes: tones, outliers, shared helpers, lint guards (§5). If you only read one more section, read §3.
+**What is needed:** settle the remaining decisions (§3 — F2, F5, F6), then run the mechanical passes: tones, outliers, shared helpers, lint guards (§5). F1 (undo shape), F3 (message channel) and F4 (cancel tone) are settled. If you only read one more section, read §3.
 
 ---
 
@@ -41,7 +41,7 @@ Risk, in order: Calendar/Apps delete without confirmation, Translate's silent hi
 
 - **Undo Behavior:** Four apps (Banking, Mail, Web, Sidenotes) replace `Back` with `Undo | Main` when an action is pending, preventing users from exiting the screen. Six other apps append `Undo`, growing the bar to three buttons.
 
-- **Message Delivery Channels:** Apps currently use three separate methods to display transient messages (bar takeover notices, body cards/rows, or bare status strings). Four private implementations of notice helpers exist.
+- **Message Delivery Channels:** ~~Apps currently use three separate methods to display transient messages (bar takeover notices, body cards/rows, or bare status strings). Four private implementations of notice helpers exist.~~ Settled: transient messages use the bar notice; body cards/rows are persistent explanation only.
 
 - **Options Menu Scope:** Options is inconsistently split between navigation/modes and object destruction/actions. Three screens hide their _only_ destructive action in Options without confirmation; four others confirm the same action in the bar.
 
@@ -93,8 +93,7 @@ These splits should be decided first so that subsequent refactoring follows a si
 2. **Is the bar or the list the primary control surface?**
    - _Recommendation:_ The action bar owns commit and mode actions; body rows own list navigation.
 
-3. **Where does a transient message go?**
-   - _Recommendation:_ Single-line transient messages use a bar notice; detailed or persistent explanations use a body card.
+3. ✅ **Where does a transient message go?** — settled: single-line transient messages use a bar notice; detailed or persistent explanations use a body card. Implemented as `withNotice` / `SideAction.notice`.
 
 4. **Is "Cancel" always muted?**
    - _Recommendation:_ "Cancel" is always Muted (`grey` backs out, `green` commits, `red` destroys).
@@ -147,7 +146,8 @@ Each app starts with a short note on the patterns it currently uses, then the co
 **Files** — The reference implementation: `Browse | Search→`, plus `Allow` when access is missing, plus a bar notice or `Cancel | Remove` depending on state. Options hold the sort modes. Swipe asks to confirm.
 
 - [ ] Align the swipe confirmation with Decision 1 (currently the minority pattern).
-- [ ] Promote its private notice/confirm helpers into the design system.
+- [x] Promote its private notice helper into the design system (`withNotice`).
+- [ ] Promote its private confirm helper into the design system.
 
 **Vault** — `Working…` is a no-op with `Back` removed. Locked bar `Home | Unlock`. In-bar confirms for delete and discard. Options `Delete` is untinted. Swipe asks to confirm. Keypad is captured while typing.
 
@@ -171,7 +171,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 **Compass** — `Calibrate | Save`, both Primary and untinted. Saved headings: `Back | Undo`. Feedback is a status string in the body. Options carry the permission action and bookmarks.
 
 - [ ] Tint the commit and give it an icon.
-- [ ] Decide whether the status string becomes a bar notice (Decision 3).
+- [x] Decide whether the status string becomes a bar notice (Decision 3) — it stays a body status because it is persistent.
 
 **Health** — `History→ | Goals→` plus `Allow`. Goals screen is `Cancel | Save`, both untinted. History is a single `Back`. There is no Options anywhere.
 
@@ -273,7 +273,8 @@ Each app starts with a short note on the patterns it currently uses, then the co
 ## 5. Suggested Implementation Checklist
 
 - [ ] **Decisions:** Record and confirm Architectural Decisions 1–6.
-- [ ] **Design System:** Add native `enabled`/`busy` state to action models; centralize `withNotice` and `withConfirm` helpers; support `back(tone = …)`.
+- [ ] **Design System:** Add native `enabled`/`busy` state to action models; centralize `withConfirm`; support `back(tone = …)`.
+- [x] **Notice helper:** `withNotice` / `SideAction.notice` in `design/action/Notice.kt`, guarded by `NoticeConventionTest`.
 - [ ] **Tone Pass:** Execute a pure styling pass to enforce commit (`green`) and destructive (`red`) tones without changing logic.
 - [ ] **Outlier Pass:** Resolve specific component outliers (Camera button shapes, Translate delete flow, Vault busy state, dead Options keys).
 - [ ] **Lint Guards:** Introduce linter checks for untinted destructive labels and non-square icon-only actions.
