@@ -121,7 +121,9 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
         },
         actions = listOf(
             SideAction.back("back", "Settings", ::cancel),
-            SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check),
+            SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check)
+        ),
+        options = listOf(
             SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() })
         )
     ) { padding ->
@@ -156,6 +158,7 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                             arranger.isInDock(id) -> "In dock"
                             else -> null
                         },
+                        secondaryToEnd = true,
                         colour = if (isSelected) ItemColour.Secondary else ItemColour.Primary,
                         onClick = { arranger.select(id) }
                     )
