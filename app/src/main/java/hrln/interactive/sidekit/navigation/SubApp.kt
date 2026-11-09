@@ -21,6 +21,7 @@ enum class SubApp(val label: String, val icon: SidekitIcon, val designed: Boolea
     Files("Files", SidekitIcon.FolderCopy),
     Maps("Maps", SidekitIcon.Map),
     Music("Music", SidekitIcon.MusicNote2),
+    Sidetracks("Sidetracks", SidekitIcon.QueueMusic),
     Clock("Clock", SidekitIcon.Alarm),
     Video("Video", SidekitIcon.SmartDisplay),
     Vault("Vault", SidekitIcon.Encrypted),

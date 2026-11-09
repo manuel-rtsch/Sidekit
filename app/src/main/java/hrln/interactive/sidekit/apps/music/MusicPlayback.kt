@@ -16,6 +16,8 @@ import android.os.SystemClock
 import androidx.compose.runtime.Immutable
 import hrln.interactive.sidekit.apps.media.AudioFocus
 import hrln.interactive.sidekit.apps.media.MediaPlayerCore
+import hrln.interactive.sidekit.apps.media.MediaSessionOwner
+import hrln.interactive.sidekit.apps.media.MediaSessions
 import hrln.interactive.sidekit.apps.media.Thumbnails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +38,7 @@ data class PlaybackState(
     val isPlaying: Boolean = false,
     val positionMs: Long = 0,
     val anchorAt: Long = 0,
-    val durationMs: Long = 0,
+    val durationMs: Long = 0
 ) {
     val track: Track? get() = queue.current
 
@@ -76,7 +78,15 @@ interface MusicPlayer {
  *
  * Main thread only.
  */
-class MusicPlayback private constructor(private val context: Context) : MusicPlayer {
+class MusicPlayback private constructor(private val context: Context) :
+    MusicPlayer,
+    MediaSessionOwner {
+    override val sessionId = "music"
+    override val notificationChannelId = "music"
+    override val notificationChannelName = "Music playback"
+    override val notificationId = 0x6D75 // "mu"
+    override val isActive: Boolean get() = _state.value.isPlaying
+
     private val _state = MutableStateFlow(PlaybackState())
     override val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
@@ -133,7 +143,7 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
         publish(s.copy(isPlaying = true, positionMs = c.positionMs, anchorAt = now()))
     }
 
-    fun pause() {
+    override fun pause() {
         val s = _state.value
         if (!s.isPlaying) return
         val position = s.positionAt(now())
@@ -145,6 +155,7 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
 
     /** Ends playback and drops the queue: notification and session go away. */
     fun stop() {
+        MediaSessions.deactivate(this)
         main.removeCallbacks(releaseIdle)
         releasePlayer()
         focus.abandon()
@@ -258,6 +269,9 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
 
     private fun publish(next: PlaybackState) {
         _state.value = next
+        // Claim (or release) the process media session before anyone reacts to the state, so a
+        // second provider pauses this one — and this one pauses others — exactly once.
+        if (next.isPlaying) MediaSessions.activate(this) else MediaSessions.deactivate(this)
         updateNoisy(next.isPlaying)
         if (!next.queue.isEmpty) updateSession(next)
         MusicService.sync(context, next)
@@ -274,14 +288,17 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
     }
 
     private fun session(): MediaSession = session ?: MediaSession(context, "SideKit Music").also { s ->
-        s.setCallback(object : MediaSession.Callback() {
-            override fun onPlay() = play()
-            override fun onPause() = pause()
-            override fun onSkipToNext() = next()
-            override fun onSkipToPrevious() = previous()
-            override fun onSeekTo(pos: Long) = seekTo(pos)
-            override fun onStop() = stop()
-        }, main)
+        s.setCallback(
+            object : MediaSession.Callback() {
+                override fun onPlay() = play()
+                override fun onPause() = pause()
+                override fun onSkipToNext() = next()
+                override fun onSkipToPrevious() = previous()
+                override fun onSeekTo(pos: Long) = seekTo(pos)
+                override fun onStop() = stop()
+            },
+            main
+        )
         s.isActive = true
         session = s
     }
@@ -300,7 +317,7 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
                     .putString(MediaMetadata.METADATA_KEY_ALBUM, track.album)
                     .putLong(MediaMetadata.METADATA_KEY_DURATION, s.durationMs.takeIf { it > 0 } ?: track.durationMs)
                     .apply { art?.let { putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, it) } }
-                    .build(),
+                    .build()
             )
         }
         session.setPlaybackState(
@@ -308,10 +325,10 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
                 .setActions(
                     SessionState.ACTION_PLAY or SessionState.ACTION_PAUSE or SessionState.ACTION_PLAY_PAUSE or
                         SessionState.ACTION_SKIP_TO_NEXT or SessionState.ACTION_SKIP_TO_PREVIOUS or
-                        SessionState.ACTION_SEEK_TO or SessionState.ACTION_STOP,
+                        SessionState.ACTION_SEEK_TO or SessionState.ACTION_STOP
                 )
                 .setState(if (s.isPlaying) SessionState.STATE_PLAYING else SessionState.STATE_PAUSED, s.positionMs, if (s.isPlaying) 1f else 0f, s.anchorAt)
-                .build(),
+                .build()
         )
     }
 
@@ -340,7 +357,10 @@ class MusicPlayback private constructor(private val context: Context) : MusicPla
         @Volatile private var instance: MusicPlayback? = null
 
         fun get(context: Context): MusicPlayback = instance ?: synchronized(this) {
-            instance ?: MusicPlayback(context.applicationContext).also { instance = it }
+            instance ?: MusicPlayback(context.applicationContext).also {
+                instance = it
+                MediaSessions.register(it)
+            }
         }
 
         /** The player if music has been used in this process; never creates one. */

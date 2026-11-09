@@ -1,0 +1,158 @@
+package hrln.interactive.sidekit.apps.spotify
+
+import androidx.annotation.DrawableRes
+
+/** A saved album, playlist or show. Collections share one screen, so they share one shape. */
+enum class SpotifyCollectionType(val route: String) {
+    Album("album"),
+    Playlist("playlist"),
+    Show("show")
+}
+
+/**
+ * Everything that can be played. Albums and playlists hold [TrackItem]s, shows hold
+ * [EpisodeItem]s; the queue and Now Playing never need to know which screen it came from.
+ */
+sealed interface SpotifyMediaItem {
+    val id: String
+    val title: String
+    val creator: String
+    val artistId: String?
+    val artRes: Int
+    val durationMs: Long
+    val playable: Boolean
+    val explicit: Boolean
+
+    /** Canonical Spotify URI for the real catalog; null for the local mockup fixtures. */
+    val uri: String? get() = null
+}
+
+data class SpotifyTrack(
+    override val id: String,
+    override val title: String,
+    val artist: String,
+    override val artistId: String,
+    val albumId: String,
+    override val artRes: Int,
+    override val durationMs: Long,
+    override val explicit: Boolean = false,
+    override val playable: Boolean = true,
+    override val uri: String? = null
+) : SpotifyMediaItem {
+    override val creator: String get() = artist
+}
+
+data class SpotifyEpisode(
+    override val id: String,
+    override val title: String,
+    val show: String,
+    val showId: String,
+    val published: String,
+    override val artRes: Int,
+    override val durationMs: Long,
+    val video: Boolean = false,
+    override val uri: String? = null
+) : SpotifyMediaItem {
+    override val creator: String get() = show
+    override val artistId: String? get() = null
+    override val playable: Boolean get() = !video
+    override val explicit: Boolean get() = false
+}
+
+data class SpotifyAlbum(
+    val id: String,
+    val title: String,
+    val artist: String,
+    val artistId: String,
+    val year: Int,
+    @param:DrawableRes val artRes: Int,
+    val tracks: List<SpotifyTrack>
+)
+
+data class SpotifyPlaylist(
+    val id: String,
+    val name: String,
+    val owner: String,
+    val ownerId: String?,
+    @param:DrawableRes val artRes: Int,
+    val tracks: List<SpotifyTrack>
+)
+
+data class SpotifyShow(
+    val id: String,
+    val name: String,
+    val publisher: String,
+    @param:DrawableRes val artRes: Int,
+    val episodes: List<SpotifyEpisode>
+)
+
+data class SpotifyArtist(
+    val id: String,
+    val name: String,
+    @param:DrawableRes val artRes: Int,
+    val albumIds: List<String>
+)
+
+/** One screen's worth of a collection, already resolved by the gateway. */
+data class SpotifyCollection(
+    val type: SpotifyCollectionType,
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val artRes: Int,
+    val items: List<SpotifyMediaItem>,
+    val artistId: String? = null
+)
+
+data class SpotifySearchResults(
+    val tracks: List<SpotifyTrack> = emptyList(),
+    val artists: List<SpotifyArtist> = emptyList(),
+    val albums: List<SpotifyAlbum> = emptyList(),
+    val playlists: List<SpotifyPlaylist> = emptyList(),
+    val shows: List<SpotifyShow> = emptyList()
+) {
+    val isEmpty: Boolean get() = tracks.isEmpty() && artists.isEmpty() && albums.isEmpty() && playlists.isEmpty() && shows.isEmpty()
+}
+
+enum class LibraryFilter(val label: String, val empty: String) {
+    LikedSongs("Liked songs", "No liked songs"),
+    Playlists("Playlists", "No saved playlists"),
+    Albums("Albums", "No saved albums"),
+    Artists("Artists", "No followed artists"),
+    Shows("Shows", "No saved shows")
+}
+
+enum class SearchScope(val label: String) {
+    Tracks("Tracks"),
+    Artists("Artists"),
+    Albums("Albums"),
+    Playlists("Playlists"),
+    Shows("Shows")
+}
+
+enum class RepeatMode(val label: String) {
+    Off("Repeat: off"),
+    Context("Repeat: context"),
+    Track("Repeat: track")
+    ;
+
+    fun next(): RepeatMode = when (this) {
+        Off -> Context
+        Context -> Track
+        Track -> Off
+    }
+}
+
+enum class AudioQuality(val label: String) {
+    Normal("Normal"),
+    High("High"),
+    VeryHigh("Very high")
+    ;
+
+    fun next(): AudioQuality = entries[(ordinal + 1) % entries.size]
+}
+
+data class SpotifyQueueItem(
+    val item: SpotifyMediaItem,
+    val isCurrent: Boolean = false
+)
