@@ -57,6 +57,7 @@ import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.withNotice
@@ -157,6 +158,7 @@ fun BrowserRoute(vm: BrowserViewModel, onExit: () -> Unit) {
     val data = vm.data.collectAsStateWithLifecycle().value
     val mode by vm.mode.collectAsStateWithLifecycle()
     val notice by vm.notice.collectAsStateWithLifecycle()
+    val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
     val undo by vm.undo.collectAsStateWithLifecycle()
     val generation by vm.generation.collectAsStateWithLifecycle()
     if (data == null) {
@@ -190,6 +192,7 @@ fun BrowserRoute(vm: BrowserViewModel, onExit: () -> Unit) {
             tab = tab,
             engine = engine,
             notice = notice,
+            noticeKind = noticeKind,
             onGo = vm::go,
             onTabs = showTabs,
             onExit = onExit,
@@ -203,6 +206,7 @@ fun BrowserRoute(vm: BrowserViewModel, onExit: () -> Unit) {
             data = data,
             undo = undo,
             notice = notice,
+            noticeKind = noticeKind,
             onBack = { vm.show(BrowserMode.Page) },
             onSelect = vm::selectTab,
             onClose = vm::closeTab,
@@ -232,6 +236,7 @@ fun BrowserRoute(vm: BrowserViewModel, onExit: () -> Unit) {
         BrowserMode.History -> HistoryScreen(
             history = data.history,
             notice = notice,
+            noticeKind = noticeKind,
             onBack = { vm.show(BrowserMode.Tabs) },
             onOpen = { vm.open(it.url) },
             onRemove = vm::removeVisit,
@@ -253,6 +258,7 @@ private fun PageScreen(
     tab: BrowserTab,
     engine: BrowserEngine?,
     notice: String?,
+    noticeKind: NoticeKind = NoticeKind.Other,
     onGo: (String) -> Unit,
     onTabs: () -> Unit,
     onExit: () -> Unit,
@@ -317,7 +323,7 @@ private fun PageScreen(
         add(SideAction("zoom", "Aa ${data.textZoom}%", contentDescription = "Text size ${data.textZoom} percent", onClick = onTextZoom))
     }
 
-    SidekitScaffold(title = "Web browser", actions = withNotice(notice, onDismissNotice, actions), options = options) { padding ->
+    SidekitScaffold(title = "Web browser", actions = withNotice(notice, onDismissNotice, actions, noticeKind), options = options) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             AddressRow(
                 typed = typed,
@@ -420,6 +426,7 @@ private fun TabsScreen(
     data: BrowserData,
     undo: BrowserUndo?,
     notice: String?,
+    noticeKind: NoticeKind = NoticeKind.Other,
     onBack: () -> Unit,
     onSelect: (Long) -> Unit,
     onClose: (Long) -> Unit,
@@ -437,7 +444,7 @@ private fun TabsScreen(
     } else {
         listOf(SideAction.back("back", "Page", onBack), newTab)
     }
-    SidekitScaffold(title = if (data.tabs.size == 1) "1 tab" else "${data.tabs.size} tabs", actions = withNotice(notice, onDismissNotice, main)) { padding ->
+    SidekitScaffold(title = if (data.tabs.size == 1) "1 tab" else "${data.tabs.size} tabs", actions = withNotice(notice, onDismissNotice, main, noticeKind)) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
         SidekitList(padding, state = listState) {
@@ -504,6 +511,7 @@ private fun BookmarksScreen(
 private fun HistoryScreen(
     history: List<Visit>,
     notice: String?,
+    noticeKind: NoticeKind = NoticeKind.Other,
     onBack: () -> Unit,
     onOpen: (Visit) -> Unit,
     onRemove: (Visit) -> Unit,
@@ -525,7 +533,7 @@ private fun HistoryScreen(
     }
     SidekitScaffold(
         title = "History",
-        actions = withNotice(notice, onDismissNotice, actions),
+        actions = withNotice(notice, onDismissNotice, actions, noticeKind),
         options = if (history.isNotEmpty()) listOf(SideAction("clear", "Clear history", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { confirming = true }) else emptyList()
     ) { padding ->
         val listState = rememberLazyListState()

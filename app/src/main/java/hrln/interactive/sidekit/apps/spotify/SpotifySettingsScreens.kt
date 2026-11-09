@@ -52,7 +52,8 @@ fun SpotifySettingsScreen(
             if (state.signedIn) {
                 add(SideAction.delete("signOut", "Sign out", onClick = { confirmation = SettingsConfirmation.SignOut }))
             }
-        }
+        },
+        state.noticeKind
     )
     val actions = when (confirmation) {
         SettingsConfirmation.SignOut -> listOf(
@@ -154,7 +155,8 @@ fun SpotifySignInScreen(
     val actions = withNotice(
         state.notice,
         onDismissNotice,
-        listOf(backToLauncher(onBack), SideAction.forward("login", "Log in", onLogIn))
+        listOf(backToLauncher(onBack), SideAction.forward("login", "Log in", onLogIn)),
+        state.noticeKind
     )
     SidekitScaffold(
         title = "Sign in",

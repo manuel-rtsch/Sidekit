@@ -2,9 +2,8 @@ package hrln.interactive.sidekit.apps.webbrowser
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.ui.UndoWindow
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -37,6 +36,8 @@ class BrowserViewModel(
 
     private val _notice = MutableStateFlow<String?>(null)
     val notice: StateFlow<String?> = _notice.asStateFlow()
+    private val _noticeKind = MutableStateFlow(NoticeKind.Other)
+    val noticeKind: StateFlow<NoticeKind> = _noticeKind.asStateFlow()
 
     /** Addresses for the live page to load (a page that's already open is told directly). */
     private val _loads = MutableSharedFlow<String>(extraBufferCapacity = 1)
@@ -45,8 +46,6 @@ class BrowserViewModel(
     /** Bumped when the renderer dies, so the screen builds a new WebView. */
     private val _generation = MutableStateFlow(0)
     val generation: StateFlow<Int> = _generation.asStateFlow()
-
-    private var noticeJob: Job? = null
 
     /** The five-second offer; pauses off-screen, commits when the browser is left. */
     val undoWindow = UndoWindow(viewModelScope, undoWindowMs) { _undo.value = null }
@@ -101,14 +100,14 @@ class BrowserViewModel(
     }
 
     fun toggleBookmark(url: String, title: String) {
-        say(if (repository.toggleBookmark(url, title)) "Bookmarked" else "Bookmark removed")
+        say(if (repository.toggleBookmark(url, title)) "Bookmarked" else "Bookmark removed", NoticeKind.Success)
     }
 
     fun removeVisit(v: Visit) = repository.removeVisit(v)
 
     fun clearHistory() {
         repository.clearHistory()
-        say("History cleared")
+        say("History cleared", NoticeKind.Success)
     }
 
     /** Steps through [BrowserRepository.TEXT_ZOOMS]. */
@@ -120,17 +119,12 @@ class BrowserViewModel(
     }
 
     fun dismissNotice() {
-        noticeJob?.cancel()
         _notice.value = null
     }
 
-    fun say(message: String) {
+    fun say(message: String, kind: NoticeKind = NoticeKind.Other) {
         _notice.value = message
-        noticeJob?.cancel()
-        noticeJob = viewModelScope.launch {
-            delay(NOTICE_MS)
-            _notice.value = null
-        }
+        _noticeKind.value = kind
     }
 
     // BrowserHost: called by the live page on the main thread.
@@ -160,6 +154,5 @@ class BrowserViewModel(
 
     companion object {
         const val UNDO_WINDOW_MS = 5_000L
-        const val NOTICE_MS = 2_500L
     }
 }

@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.action.withNotice
@@ -62,12 +63,15 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
             val storedNotice by vm.notice.collectAsStateWithLifecycle()
+            val storedNoticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val storageError by vm.storageError.collectAsStateWithLifecycle()
             val notice = storageError ?: storedNotice
+            val noticeKind = if (storageError != null) NoticeKind.Other else storedNoticeKind
             val undo by vm.undo.collectAsStateWithLifecycle()
             UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             val actions = mailActions(
                 notice,
+                noticeKind,
                 vm::dismissNotice,
                 undo != null,
                 vm::undo,
@@ -141,13 +145,16 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
             val storedNotice by vm.notice.collectAsStateWithLifecycle()
+            val storedNoticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val storageError by vm.storageError.collectAsStateWithLifecycle()
             val notice = storageError ?: storedNotice
+            val noticeKind = if (storageError != null) NoticeKind.Other else storedNoticeKind
             val undo by vm.undo.collectAsStateWithLifecycle()
             UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             val folder = MailFolder.valueOf(entry.arguments?.getString("folder") ?: MailFolder.Draft.name)
             val actions = mailActions(
                 notice,
+                noticeKind,
                 vm::dismissNotice,
                 undo != null,
                 vm::undo,
@@ -193,13 +200,14 @@ private fun mailViewModel(): MailViewModel {
 
 private fun mailActions(
     notice: String?,
+    noticeKind: NoticeKind,
     dismiss: () -> Unit,
     hasUndo: Boolean,
     undo: () -> Unit,
     first: SideAction,
     second: SideAction
 ): List<SideAction> = when {
-    notice != null -> withNotice(notice, dismiss, emptyList())
+    notice != null -> withNotice(notice, dismiss, emptyList(), noticeKind)
     hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
     else -> listOf(first, second)
 }

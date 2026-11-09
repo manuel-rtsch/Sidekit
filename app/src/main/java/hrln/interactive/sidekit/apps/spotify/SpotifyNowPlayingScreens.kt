@@ -194,7 +194,8 @@ fun QueueScreen(
     val normal = withNotice(
         state.notice,
         onDismissNotice,
-        listOf(back, SideAction("nowPlaying", "Now playing", SidekitIcon.MusicNote2, onClick = onNowPlaying))
+        listOf(back, SideAction("nowPlaying", "Now playing", SidekitIcon.MusicNote2, onClick = onNowPlaying)),
+        state.noticeKind
     )
     val actions = if (pendingUndo != null) {
         undoBar(

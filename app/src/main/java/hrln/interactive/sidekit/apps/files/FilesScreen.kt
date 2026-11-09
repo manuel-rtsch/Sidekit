@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.ItemColour
@@ -84,6 +85,7 @@ fun FilesScreen(
     onAllow: () -> Unit = {},
     onRemove: ((FileLocation) -> Unit)? = null,
     notice: String? = null,
+    noticeKind: NoticeKind = NoticeKind.Other,
     onDismissNotice: () -> Unit = {}
 ) {
     var removing by rememberSaveable { mutableStateOf<String?>(null) }
@@ -104,7 +106,7 @@ fun FilesScreen(
     }
     SidekitScaffold(
         title = "Files",
-        actions = withNotice(notice, onDismissNotice, actions),
+        actions = withNotice(notice, onDismissNotice, actions, noticeKind),
         options = if (needsPermission) listOf(SideAction("search", "Search", SidekitIcon.Search, onClick = onSearch)) else emptyList()
     ) { padding ->
         val listState = rememberLazyListState()
@@ -177,6 +179,7 @@ fun FilesBrowseScreen(
     sort: FileSort,
     pendingDelete: FileEntry?,
     notice: String?,
+    noticeKind: NoticeKind = NoticeKind.Other,
     onOpen: (FileEntry) -> Unit,
     onAskDelete: (FileEntry) -> Unit,
     onCancelDelete: () -> Unit,
@@ -192,7 +195,7 @@ fun FilesBrowseScreen(
     } else {
         listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Search", onSearch))
     }
-    SidekitScaffold(title = title, actions = withNotice(notice, onDismissNotice, actions), options = sortOptions(sort, onSort)) { padding ->
+    SidekitScaffold(title = title, actions = withNotice(notice, onDismissNotice, actions, noticeKind), options = sortOptions(sort, onSort)) { padding ->
         EntryList(entries, pendingDelete, padding, onOpen, onAskDelete, empty = "Nothing here")
     }
 }
@@ -255,6 +258,7 @@ fun FilesSearchScreen(
     sort: FileSort,
     pendingDelete: FileEntry?,
     notice: String?,
+    noticeKind: NoticeKind = NoticeKind.Other,
     onOpen: (FileEntry) -> Unit,
     onAskDelete: (FileEntry) -> Unit,
     onCancelDelete: () -> Unit,
@@ -269,7 +273,7 @@ fun FilesSearchScreen(
     } else {
         listOf(SideAction.back("back", "Files", onBack))
     }
-    SidekitScaffold(title = "Search", actions = withNotice(notice, onDismissNotice, actions), options = sortOptions(sort, onSort)) { padding ->
+    SidekitScaffold(title = "Search", actions = withNotice(notice, onDismissNotice, actions, noticeKind), options = sortOptions(sort, onSort)) { padding ->
         EntryList(
             entries = if (query.isBlank()) emptyList() else results,
             pendingDelete = pendingDelete,

@@ -62,7 +62,8 @@ fun SpotifySearchScreen(
         buildList {
             add(spotifyBack("Back", onBack).first())
             if (state.query.isNotEmpty()) add(SideAction("clear", "Clear", SidekitIcon.Close, tone = ActionTone.Muted, onClick = onClear))
-        }
+        },
+        state.noticeKind
     )
     val scopes = SearchScope.entries.map { scope ->
         SideAction(

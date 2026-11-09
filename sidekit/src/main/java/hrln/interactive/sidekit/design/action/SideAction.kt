@@ -93,6 +93,8 @@ class SideAction(
     val motion: ActionMotion = ActionMotion.None,
     val contentDescription: String? = null,
     val dense: Boolean = false,
+    /** When set, the bar calls [onClick] after this many milliseconds. Used by notices. */
+    val autoDismissMs: Long? = null,
     val artKey: Any? = null,
     val art: (@Composable () -> Unit)? = null,
     val onClick: () -> Unit
@@ -158,7 +160,20 @@ class SideAction(
          * Transient message: dense, grey, rises in place, and dismisses on tap. Prefer [withNotice]
          * so the bar replacement stays one decision rather than a hand-built action.
          */
-        fun notice(key: String = "notice", message: String, onClick: () -> Unit) = SideAction(key, message, tone = ActionTone.Muted, dense = true, motion = ActionMotion.Up, onClick = onClick)
+        fun notice(
+            key: String = "notice",
+            message: String,
+            kind: NoticeKind = NoticeKind.Other,
+            onClick: () -> Unit
+        ) = SideAction(
+            key,
+            message,
+            tone = ActionTone.Muted,
+            dense = true,
+            motion = ActionMotion.Up,
+            autoDismissMs = kind.autoDismissMs,
+            onClick = onClick
+        )
 
         /** Destroy: red, wherever it appears (bar, confirm, Options). [icon] stays optional. */
         fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) = SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)

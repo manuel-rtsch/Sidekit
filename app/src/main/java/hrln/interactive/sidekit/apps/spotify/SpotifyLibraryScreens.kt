@@ -50,7 +50,8 @@ fun SideplayHomeScreen(
         listOf(
             SideAction("queue", "Queue", SidekitIcon.QueueMusic, onClick = onQueue),
             SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
-        )
+        ),
+        state.noticeKind
     )
     SidekitScaffold(
         title = "Sideplay",
@@ -120,7 +121,8 @@ fun LibraryScreen(
     val actions = withNotice(
         state.notice,
         onDismissNotice,
-        listOf(spotifyBack("Sideplay", onBack).first(), SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch))
+        listOf(spotifyBack("Sideplay", onBack).first(), SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)),
+        state.noticeKind
     )
     val filters = LibraryFilter.entries.map { filter ->
         SideAction(

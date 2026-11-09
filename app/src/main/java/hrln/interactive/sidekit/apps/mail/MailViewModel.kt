@@ -2,9 +2,8 @@ package hrln.interactive.sidekit.apps.mail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.ui.UndoWindow
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,9 +18,10 @@ class MailViewModel(
     val messages: StateFlow<List<MailMessage>?> = repository.messages
     private val _notice = MutableStateFlow<String?>(null)
     val notice: StateFlow<String?> = _notice.asStateFlow()
+    private val _noticeKind = MutableStateFlow(NoticeKind.Other)
+    val noticeKind: StateFlow<NoticeKind> = _noticeKind.asStateFlow()
     private val _undo = MutableStateFlow<Triple<MailMessage, Int, Long>?>(null)
     val undo: StateFlow<Triple<MailMessage, Int, Long>?> = _undo.asStateFlow()
-    private var noticeJob: Job? = null
 
     /** The five-second offer; pauses with the screen instead of burning while Mail is backgrounded. */
     val undoWindow = UndoWindow(viewModelScope) { _undo.value = null }
@@ -32,7 +32,7 @@ class MailViewModel(
             return
         }
         repository.save(id, to, subject, body, MailFolder.Draft)
-        say("Draft saved on this phone")
+        say("Draft saved on this phone", NoticeKind.Success)
     }
 
     fun send(id: Long?, to: String, subject: String, body: String) {
@@ -51,7 +51,7 @@ class MailViewModel(
                 when (account.send(message)) {
                     MailSendResult.Sent -> {
                         repository.folder(message.id, MailFolder.Sent)
-                        say("Accepted by your SMTP server")
+                        say("Accepted by your SMTP server", NoticeKind.Success)
                     }
 
                     MailSendResult.HandedOff -> {
@@ -78,7 +78,7 @@ class MailViewModel(
         viewModelScope.launch {
             try {
                 repository.replaceInbox(account.inbox())
-                say("Inbox updated · latest 100 messages")
+                say("Inbox updated · latest 100 messages", NoticeKind.Success)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -112,17 +112,12 @@ class MailViewModel(
 
     fun resumeUndo() = undoWindow.resume()
 
-    fun say(text: String) {
-        noticeJob?.cancel()
+    fun say(text: String, kind: NoticeKind = NoticeKind.Other) {
         _notice.value = text
-        noticeJob = viewModelScope.launch {
-            delay(3_000)
-            _notice.value = null
-        }
+        _noticeKind.value = kind
     }
 
     fun dismissNotice() {
-        noticeJob?.cancel()
         _notice.value = null
     }
 }

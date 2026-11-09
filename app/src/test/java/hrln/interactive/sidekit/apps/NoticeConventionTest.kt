@@ -2,6 +2,7 @@ package hrln.interactive.sidekit.apps
 
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.withNotice
 import java.io.File
@@ -29,6 +30,15 @@ class NoticeConventionTest {
         assertEquals(ActionTone.Muted, notice.tone)
         assertTrue(notice.dense)
         assertEquals(ActionMotion.Up, notice.motion)
+        assertEquals(NoticeKind.Other.autoDismissMs, notice.autoDismissMs)
+    }
+
+    @Test
+    fun `a success notice leaves sooner than an error`() {
+        val success = withNotice("Saved", {}, emptyList(), NoticeKind.Success).single()
+        val other = withNotice("Could not save", {}, emptyList(), NoticeKind.Other).single()
+        assertEquals(2_000L, success.autoDismissMs)
+        assertEquals(5_000L, other.autoDismissMs)
     }
 
     @Test

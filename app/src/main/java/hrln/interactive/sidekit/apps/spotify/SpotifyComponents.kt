@@ -300,7 +300,7 @@ fun spotifyBar(
     return if (undo != null) {
         undoBar(continueWith, SideAction.undo(contentDescription = undo.contentDescription, onClick = onUndo))
     } else {
-        withNotice(state.notice, onDismissNotice, listOf(continueWith) + extra)
+        withNotice(state.notice, onDismissNotice, listOf(continueWith) + extra, state.noticeKind)
     }
 }
 

@@ -48,8 +48,7 @@ internal fun mediaPermissions(): Array<String> = if (Build.VERSION.SDK_INT >= 33
     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 }
 
-internal fun hasMediaAccess(context: Context) =
-    mediaPermissions().any { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+internal fun hasMediaAccess(context: Context) = mediaPermissions().any { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
 
 fun NavGraphBuilder.filesGraph(nav: NavHostController) {
     navigation(startDestination = HOME, route = ROOT) {
@@ -57,6 +56,7 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
             val vm = entry.filesViewModel(nav)
             val home by vm.home.collectAsStateWithLifecycle()
             val notice by vm.notice.collectAsStateWithLifecycle()
+            val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val context = LocalContext.current
             val activity = LocalActivity.current
             // Counts and folders are re-read whenever the screen comes back (files change elsewhere).
@@ -99,7 +99,8 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
                     home.folders.firstOrNull { it.tree == place?.tree }?.let(vm::removeFolder)
                 },
                 notice = notice,
-                onDismissNotice = vm::dismissNotice,
+                noticeKind = noticeKind,
+                onDismissNotice = vm::dismissNotice
             )
         }
         composable(BROWSE) { entry ->
@@ -114,6 +115,7 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
             val sort by vm.sort.collectAsStateWithLifecycle()
             val pending by vm.pendingDelete.collectAsStateWithLifecycle()
             val notice by vm.notice.collectAsStateWithLifecycle()
+            val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val consent = rememberDeleteConsent(vm)
             val open = rememberFileOpener(vm)
             FilesBrowseScreen(
@@ -122,6 +124,7 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
                 sort = sort,
                 pendingDelete = pending,
                 notice = notice,
+                noticeKind = noticeKind,
                 onOpen = { e -> e.folder?.let { nav.navigateFrom(entry, browseRoute(it)) } ?: open(e) },
                 onAskDelete = vm::askDelete,
                 onCancelDelete = vm::cancelDelete,
@@ -129,7 +132,7 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
                 onSort = vm::setSort,
                 onBack = { nav.popFrom(entry) },
                 onSearch = { nav.navigateFrom(entry, SEARCH) },
-                onDismissNotice = vm::dismissNotice,
+                onDismissNotice = vm::dismissNotice
             )
         }
         composable(SEARCH) { entry ->
@@ -139,22 +142,27 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
             val sort by vm.sort.collectAsStateWithLifecycle()
             val pending by vm.pendingDelete.collectAsStateWithLifecycle()
             val notice by vm.notice.collectAsStateWithLifecycle()
+            val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val consent = rememberDeleteConsent(vm)
             val open = rememberFileOpener(vm)
             FilesSearchScreen(
                 query = query,
-                onQuery = { query = it; vm.search(it) },
+                onQuery = {
+                    query = it
+                    vm.search(it)
+                },
                 results = results,
                 sort = sort,
                 pendingDelete = pending,
                 notice = notice,
+                noticeKind = noticeKind,
                 onOpen = { e -> e.folder?.let { nav.navigateFrom(entry, browseRoute(it)) } ?: open(e) },
                 onAskDelete = vm::askDelete,
                 onCancelDelete = vm::cancelDelete,
                 onConfirmDelete = { vm.confirmDelete(consent) },
                 onSort = vm::setSort,
                 onBack = { nav.popFrom(entry) },
-                onDismissNotice = vm::dismissNotice,
+                onDismissNotice = vm::dismissNotice
             )
         }
     }
@@ -213,6 +221,6 @@ private fun NavBackStackEntry.filesViewModel(nav: NavHostController): FilesViewM
         parent,
         factory = remember(context) {
             viewModelFactory { initializer { FilesViewModel(AndroidFilesSource(context), SharedFilesPrefs(context), { hasMediaAccess(context) }) } }
-        },
+        }
     )
 }

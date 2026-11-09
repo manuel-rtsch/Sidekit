@@ -53,6 +53,7 @@ import hrln.interactive.sidekit.apps.sideport.service.SideportService
 import hrln.interactive.sidekit.apps.sideport.ui.PortedAppIcon
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.ItemColour
@@ -145,7 +146,8 @@ internal fun SideportHomeScreen(onHome: () -> Unit, onAdd: () -> Unit, onHub: (S
             message = null
             ApkInstaller.clear()
         },
-        listOf(SideAction.back("home", "Home", onHome), SideAction.forward("add", "Add app", onAdd))
+        listOf(SideAction.back("home", "Home", onHome), SideAction.forward("add", "Add app", onAdd)),
+        if (message == null && install is InstallStatus.Installed) NoticeKind.Success else NoticeKind.Other
     )
     SidekitScaffold("Sideport", actions = actions) { padding ->
         SidekitList(padding, state = list) {
