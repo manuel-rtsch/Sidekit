@@ -15,21 +15,22 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - Undo is owned by `SideAction.undo` / `undoBar`, with a visible-time window.
 - Tones: Primary = theme colour, Secondary = commit, Destructive = delete/clear/remove, Muted = cancel/undo/back-out/alternatives.
 - Cancel is always Muted.
-- Guards: `ActionToneConventionTest`, `UndoConventionTest`, `NoticeConventionTest`, `UndoWindowTest`.
+- Guards: `ActionToneConventionTest`, `UndoConventionTest`, `NoticeConventionTest`, `UndoWindowTest`, `SurfaceConventionTest`.
 - Arrange Home: `←Settings | Done→` with `Reset` in Options.
 - Transient messages: `withNotice` / `SideAction.notice`; bar notice for transient feedback, body row for persistent explanation. Success notices auto-dismiss after 2 seconds, other notices after 5; tapping dismisses early.
+- F2: rows navigate and change in-place settings; the bar acts and reports; Options holds secondary actions. No in-body line buttons in Settings or Sideport; `SurfaceConventionTest` guards it.
 
 ## Remaining work, in recommended order
 
-### 1. F2 — bar vs rows as the primary control surface
+### 1. F5 — Options scope
 
-**Problem:** some screens put the main control in the action bar, others in the body. This is the last structural difference between apps.
+**Problem:** Options mixes navigation, creation, toggles, destructive actions, state, and error logs. Some screens have no Options at all (dead key); some hide their only destructive action there without confirmation.
 
-**Scope:** screens with in-body line buttons and bar actions, especially Settings and Sideport.
+**Scope:** all screens with Options; Health, Settings, Placeholder, the Sidenotes list, and the Mail folders list.
 
-**Decision:** write the rule for when an action belongs in the bar versus a row.
+**Decision:** define what Options is for; require confirmation for destructive Options actions; decide whether every screen needs an entry.
 
-**Acceptance:** a written rule in the report; screens that violate it are either fixed or listed as deliberate exceptions.
+**Acceptance:** a written Options contract; destructive Options actions route through the same confirm bar; dead Options keys are either given an entry or accepted and documented.
 
 ### 2. Fake busy states
 
@@ -41,17 +42,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 
 **Acceptance:** busy actions cannot be re-triggered; no empty handlers; labels reflect real work.
 
-### 3. F5 — Options scope
-
-**Problem:** Options mixes navigation, creation, toggles, destructive actions, state, and error logs. Some screens have no Options at all (dead key); some hide their only destructive action there without confirmation.
-
-**Scope:** all screens with Options; Health, Settings, Placeholder, the Sidenotes list, and the Mail folders list.
-
-**Decision:** define what Options is for; require confirmation for destructive Options actions; decide whether every screen needs an entry.
-
-**Acceptance:** a written Options contract; destructive Options actions route through the same confirm bar; dead Options keys are either given an entry or accepted and documented.
-
-### 4. F6 — motion contract
+### 3. F6 — motion contract
 
 **Problem:** `ActionMotion` is used semantically but not enforced; some screens use it decoratively.
 
@@ -61,12 +52,12 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 
 **Acceptance:** either a test/guard or a documented rule; no contradictory motion.
 
-### 5. Tier D outliers
+### 4. Tier D outliers
 
 - **Camera** — three unlabelled icon-only wide buttons; the error is in Options with a no-op handler. Use `SideAction.square`; move the error to a notice.
 - **Translate** — silent history delete with no undo or confirm. Route it through the delete contract.
 - **Vault** — busy state (see item 2).
-- **Dead Options keys** — Health, Settings, Placeholder, Sidenotes list, Mail folders (see item 4).
+- **Dead Options keys** — Health, Settings, Placeholder, Sidenotes list, Mail folders (see item 1).
 - **Sideweather** — `Locate` in a three-action bar; decide the two-slot rule.
 - **Files / Vault swipe-to-confirm** — align with the 10-app swipe-to-undo majority, or document the exception.
 - **Mail Compose** — only 3-wide text form; only Muted Save; no green Send. Use two slots + Options, or make the third shape official.
@@ -75,7 +66,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - **Bank Up sync** — the only connector action without an icon.
 - **Launcher** — the only `trailingAction` user; document it as the pattern, not the exception.
 
-### 6. Verification
+### 5. Verification
 
 - Run `./gradlew spotlessCheck :app:testDebugUnitTest`.
 - Add or extend a guard for any new contract.
@@ -85,9 +76,9 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 
 - [ ] Rebase onto `main` once `integration` lands
 - [x] F3 notice channel
-- [ ] F2 bar vs rows rule
-- [ ] Fake busy states
+- [x] F2 bar vs rows rule
 - [ ] F5 Options contract
+- [ ] Fake busy states
 - [ ] F6 motion contract
 - [ ] Tier D outliers
 - [ ] Files / Vault swipe confirm

@@ -109,11 +109,6 @@ internal fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadC
                         onClick = { learn(custom, control) }
                     )
                 }
-                if (bindings.isNotEmpty()) {
-                    item {
-                        SidekitLineButton("Reset ${custom.label} keys", { mapper.resetAll(custom) }, icon = SidekitIcon.Undo, variant = LineButtonVariant.Destructive)
-                    }
-                }
             }
         }
     }

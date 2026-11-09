@@ -424,15 +424,17 @@ So `New Sidetick | Undo`, `Compose | Undo`, `Back | Undo`. Undo is an offer, not
 
 Implemented as `SideAction.undo` + `undoBar(continueWith, undo)` (`design/action/UndoBar.kt`), replacing four private helpers; `UndoConventionTest` fails on a hand-built Undo action. The offer is also scoped in time and place: it runs for five visible seconds, pauses while its screen is off-screen, and is committed when that screen or app is left.
 
-**F2 — Is the action bar or the list the primary control surface?** (~8 vs ~9 vs ~8)
+**F2 — Is the action bar or the list the primary control surface?** ✅ **settled: the list navigates; the bar acts and reports.**
 
-| Camp | Apps | Feel |
-|---|---|---|
-| Bar-driven | Camera, Video, Calculator, Clock timer, Banking lock/pay, Photos viewer, Music Now Playing, Web address | body nearly inert; the bar is the product |
-| Row-driven | Settings, Apps, Sideport menus, Music library, Trip, Files, Mail, Phonebook, Vault list | bar holds one `Back`; rows do everything |
-| Mixed | Banking, Files, Mail, Phonebook, Photos grid, Translate | rows navigate, bar commits |
+| Surface | Carries |
+|---|---|
+| List rows | Navigation, selection, in-place settings |
+| Action bar | The current object's commit/exit actions and transient notices |
+| Options | Secondary object actions, not navigation |
 
-Consequence: the same two-slot bar sometimes carries the whole interaction and sometimes just an exit. If Sidekit's identity is "two buttons at the bottom", row-driven screens are off-brand; if rows are the interface, the bar should shrink to a navigation affordance deliberately.
+The bar's left slot is the exit/continuation; it is not a general navigation surface. A screen with no action of its own shows a single `Back` rather than inventing a forward action to fill the second slot. In-body line buttons are not a third Sidekit surface. The deliberate exceptions are onboarding wizard choices, ported-app content (`ButtonBlock`), and the media transport bar.
+
+Applied to Settings and Sideport: About moved from the Settings bar to a row; Settings and System settings messages became notices; the case-colour default became a swatch; Hide apps' "Show all" moved to the bar; Keypad mapping's duplicate reset button was removed; Sideport's Install APK moved to the bar; the hub's Remove/Uninstall moved to Options with the same confirm bar; Sideport messages became notices. `SurfaceConventionTest` keeps line buttons out of `apps/settings` and `apps/sideport` (except ported-app content).
 
 **F3 — Which channel carries a transient message?** ✅ **settled: bar takeover for transient messages.**
 
@@ -479,20 +481,20 @@ Both are internally consistent; they conflict with each other. The rule has to b
 ### 7.5 The decision order
 
 ```
-F2 (bar vs rows)  ──► F5 (what Options is for) ──► F6 (motion)
+F5 (what Options is for) ──► F6 (motion)
         │
         └────► Tier D fixes (Camera, Translate, busy states, dead Options keys)
 
-F1 (undo shape), F3 (message channel) and F4 (cancel tone) are decided and shipped, so they no longer gate anything.
+F1 (undo shape), F2 (bar vs rows), F3 (message channel) and F4 (cancel tone) are decided and shipped, so they no longer gate anything.
 ```
 
-F2 sets how much the bar has to carry; F5 decides what is allowed to live in the escape hatch. Only then do the icon, confirmation and busy-state fixes become mechanical, and most of §6's recommendations collapse into three or four edits in `design/`.
+F2 has settled how much the bar has to carry; F5 decides what is allowed to live in the escape hatch. Only then do the icon, confirmation and busy-state fixes become mechanical, and most of §6's recommendations collapse into three or four edits in `design/`.
 
 ## 8. Quick verdict
 
 The shared chrome is unusually disciplined for a suite this size: one action type, one layout engine, one Options contract, one focus/press language, no dialogs. Where apps diverged they diverged in **vocabulary, not architecture**. Three of those vocabulary questions are now answered in code — destructive/commit tone, where Undo sits relative to Cancel, and which channel carries a transient notice — so the remaining forks are structural: **whether the action bar or the list is the primary control surface** (F2) and **what Options is for** (F5), plus whether `ActionMotion` is a contract (F6).
 
-**Highest-value remaining fix:** F2 (bar vs rows), because it decides how much the bar has to carry and is the last structural difference between apps.
+**Highest-value remaining fix:** F5 (what Options is for), because F2 has settled how much the bar carries and Options is the remaining structural fork.
 
 **Highest-value second fix:** end the fake busy states (Calendar `Saving…`, Vault `Working…`, Trip/Bank/Mail labels that re-fire), because those are the only remaining places where the bar lies about what a tap will do.
 
@@ -514,6 +516,6 @@ The shared chrome is unusually disciplined for a suite this size: one action typ
 
 **Guards.** `ActionToneConventionTest` (destructive/commit/cancel/undo labels), `UndoConventionTest` (bar shapes, undo appearance, no hand-built Undo), `NoticeConventionTest` (one notice shape, no private helpers) and `UndoWindowTest` (visible-time pause/resume/expiry) run in `:app:testDebugUnitTest`; the first three caught live drift while the passes were being written.
 
-**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel. The bar auto-dismisses after 2 seconds for success and 5 seconds for other notices.
+**Resolved since the audit:** Arrange Home now uses a two-slot bar (`←Settings | Done→`) with `Reset` in Options, so its commit slot is no longer an outlier. Transient messages now use the shared `withNotice` / `SideAction.notice`; Apps and Sideport moved their transient body cards to the bar, and `NoticeConventionTest` guards the channel. The bar auto-dismisses after 2 seconds for success and 5 seconds for other notices. F2 is settled: rows navigate, the bar acts and reports, and Settings/Sideport no longer use in-body line buttons; `SurfaceConventionTest` guards that surface.
 
-**Still open, in the order §7.5 recommends:** F2 bar vs rows → F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.
+**Still open, in the order §7.5 recommends:** F5 Options scope → F6 motion → Tier D outliers (Camera shapes, Translate's silent history delete, Vault's busy state, dead Options keys, Sideweather's `Locate`). Files/Vault's swipe-to-confirm still disagrees with the 10-app swipe-to-undo majority.

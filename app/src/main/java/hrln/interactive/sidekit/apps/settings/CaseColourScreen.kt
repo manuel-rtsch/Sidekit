@@ -16,9 +16,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
+import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitColors
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.readableContentOn
@@ -40,7 +40,7 @@ enum class CaseColour(val label: String, val color: Color, private val success: 
             primaryA3 = lerp(color, Color.White, 0.24f),
             successA1 = success ?: base.successA1,
             successA2 = success?.let { lerp(it, Color.White, 0.30f) } ?: base.successA2,
-            successA3 = success?.let { lerp(it, Color.White, 0.55f) } ?: base.successA3,
+            successA3 = success?.let { lerp(it, Color.White, 0.55f) } ?: base.successA3
         )
     }
 }
@@ -72,27 +72,29 @@ internal fun androidx.compose.foundation.lazy.LazyListScope.caseColourChoices(se
     item { SidekitText("Match your Sidephone case", style = SidekitTheme.typography.label) }
     item {
         Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemOuterGap)) {
-            CaseColour.entries.chunked(3).forEach { row ->
+            (CaseColour.entries + listOf(null)).chunked(3).forEach { row ->
                 SidekitItemRow {
                     row.forEach { colour ->
                         val active = colour == selected
+                        val swatch = colour?.color ?: SidekitColors().primaryA1
+                        val label = colour?.label ?: "Original blue"
                         Box(
                             Modifier.weight(1f).height(88.dp)
                                 .border(if (active) 3.dp else 0.dp, if (active) Color.White else Color.Transparent, SidekitTheme.shapes.item)
                                 .padding(6.dp)
                                 .clip(SidekitTheme.shapes.item)
-                                .background(colour.color)
+                                .background(swatch)
                                 .selectable(active, role = Role.RadioButton, onClick = { choose(colour) })
-                                .semantics { contentDescription = colour.label },
-                            contentAlignment = Alignment.Center,
+                                .semantics { contentDescription = label },
+                            contentAlignment = Alignment.Center
                         ) {
-                            if (active) SidekitIconImage(SidekitIcon.Check, tint = readableContentOn(colour.color))
+                            if (active) SidekitIconImage(SidekitIcon.Check, tint = readableContentOn(swatch))
                         }
                     }
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
     }
     item { SidekitText("Active: ${selected?.label ?: "Original blue"}", style = SidekitTheme.typography.label) }
-    item { SidekitLineButton("Original blue", { choose(null) }, variant = LineButtonVariant.Secondary) }
 }

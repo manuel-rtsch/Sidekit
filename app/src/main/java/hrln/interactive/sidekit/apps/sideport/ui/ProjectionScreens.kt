@@ -48,6 +48,7 @@ import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.LineButtonVariant
@@ -129,17 +130,10 @@ private fun ScreenBody(state: ProjectionState, model: ScreenModel, actions: Proj
         )
     }
     val list = rememberLazyListState()
-    SidekitScaffold(model.title ?: state.app.label, actions = bar, options = options) { padding ->
+    val actionsWithNotice = withNotice(state.notice, { state.notice = null }, bar)
+    SidekitScaffold(model.title ?: state.app.label, actions = actionsWithNotice, options = options) { padding ->
         SidekitList(padding, state = list) {
             var index = 0
-            state.notice?.let { notice ->
-                val i = index++
-                item(key = "notice") {
-                    SidekitCard(Modifier.fillMaxWidth().listFade(list, i), onClick = { state.notice = null }) {
-                        SidekitText(notice, style = SidekitTheme.typography.label, maxLines = 4)
-                    }
-                }
-            }
             state.foreignPackage?.let { other ->
                 val i = index++
                 item(key = "foreign") {

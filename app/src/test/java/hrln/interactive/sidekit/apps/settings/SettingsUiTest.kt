@@ -54,7 +54,7 @@ class SettingsUiTest {
             }
         }
         compose.onRoot().captureRoboImage("/tmp/sidekit-case-colour.png")
-        compose.onNodeWithText("Original blue").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Original blue").performScrollTo().performClick()
         compose.runOnIdle {
             assertNull(SidekitPreferences(context).caseColour)
             assertEquals(androidx.compose.ui.graphics.Color(0xFF2C65E0), renderedColour)

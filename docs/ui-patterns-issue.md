@@ -10,7 +10,7 @@ Twenty-five sub-apps, one action bar, and no shared answer to a handful of small
 
 The drift is two different kinds of work, and they must not be mixed up:
 
-- **Unresolved product questions** — does `Undo` take over the bar or add a button, and is the bar or the list the primary control surface. These split the suite roughly in half, so any fix applied first just moves the inconsistency.
+- **Unresolved product questions** — what Options is for. F1 (undo shape), F2 (bar vs rows), F3 (message channel) and F4 (cancel tone) are settled.
 - **Real outliers** — one or two instances each, safe to fix mechanically once the questions are answered.
 
 The facts worth knowing before reading further:
@@ -23,7 +23,7 @@ The facts worth knowing before reading further:
 
 Risk, in order: Calendar/Apps delete without confirmation, Translate's silent history delete, and the four screens where a pending `Undo` hides the way out. Everything else is consistency, not safety.
 
-**What is needed:** settle the remaining decisions (§3 — F2, F5, F6), then run the mechanical passes: tones, outliers, shared helpers, lint guards (§5). F1 (undo shape), F3 (message channel) and F4 (cancel tone) are settled. If you only read one more section, read §3.
+**What is needed:** settle the remaining decisions (§3 — F5, F6), then run the mechanical passes: tones, outliers, shared helpers, lint guards (§5). F1 (undo shape), F2 (bar vs rows), F3 (message channel) and F4 (cancel tone) are settled. If you only read one more section, read §3.
 
 ---
 
@@ -90,8 +90,7 @@ These splits should be decided first so that subsequent refactoring follows a si
 1. **Does `Undo` take over the bar or add a button?**
    - _Recommendation:_ Additive approach (`Undo` on the left, `Back` is never removed). Losing the exit path on a two-button bar must be avoided.
 
-2. **Is the bar or the list the primary control surface?**
-   - _Recommendation:_ The action bar owns commit and mode actions; body rows own list navigation.
+2. ✅ **Is the bar or the list the primary control surface?** — settled: the list navigates; the bar acts and reports. Rows open pages, select objects and change in-place settings; the bar carries the current object's commit/exit actions and transient notices; Options holds secondary object actions. In-body line buttons are not a third surface. `SurfaceConventionTest` guards Settings and Sideport.
 
 3. ✅ **Where does a transient message go?** — settled: single-line transient messages use a bar notice; detailed or persistent explanations use a body card. Implemented as `withNotice` / `SideAction.notice`, with a 2-second success window and a 5-second window for other notices; tapping dismisses early.
 
@@ -240,9 +239,12 @@ Each app starts with a short note on the patterns it currently uses, then the co
 
 ### Settings, Apps & Utilities
 
-**Settings** — `←Home | About→`, sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` with `Reset` in Options. The only other user of in-body line buttons is Sideport.
+**Settings** — `←Home`, with About as a row; sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` with `Reset` in Options. Messages use the notice channel, the case-colour default is a swatch, Hide apps' "Show all" is a bar action, and Keypad mapping's reset lives only in Options. No in-body line buttons remain in Settings or Sideport; `SurfaceConventionTest` guards that surface.
 
 - [x] Move `Done` to the right in Arrange Home. (Done: `Reset` moved to Options.)
+- [x] Move About from the bar to a row; keep the bar to Home.
+- [x] Move Settings and System settings messages to the notice channel.
+- [x] Remove the in-body line buttons (case colour, hide apps, keypad reset).
 - [ ] Decide whether sub-screens get an Options entry or an explicit "nothing here".
 
 **Apps** — Single `←Home`. Long-press selects a row, then Options offers `App info` and `Uninstall`. Nothing shows the selection. `Uninstall` is untinted and unconfirmed.
@@ -255,11 +257,11 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Tint the clear-history confirm red.
 - [ ] Decide whether `CalcKey` colours merge with `ActionTone`.
 
-**Sideport** — Own screens follow the house style: `←Home | Add app→`, `Cancel | Remove` in red, square Muted `Back` + `Open→`, and a chat bar with green `Send`. Projected apps rebuild the bar from a foreign action spec with tones mapped one to one.
+**Sideport** — Own screens follow the house style: `←Home | Add app→`, `←Back | Install APK→`, `Cancel | Remove` in red, square Muted `Back` + `Open→`, and a chat bar with green `Send`. Remove/Uninstall live in Options and still confirm in the bar; messages use the notice channel. Projected apps rebuild the bar from a foreign action spec with tones mapped one to one, and their in-body `ButtonBlock`s remain the one deliberate line-button exception.
 
 - [ ] Decide how far ported app bars should be normalized.
 - [ ] Set keypad capture on ported forms.
-- [ ] Align the in-body line-button styling with Settings.
+- [x] Remove Sidekit's in-body line buttons; ported-app content remains the exception.
 
 **Launcher** — The dock is the action bar, so opening an app morphs the tapped tile into that app's first action. Search mode replaces the bar with a dense query chip plus a `trailingAction` clear button. Options toggle grid/list and open Settings. The clock responds to tap and long-press.
 

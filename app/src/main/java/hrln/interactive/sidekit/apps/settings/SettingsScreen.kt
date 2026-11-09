@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
@@ -76,7 +77,8 @@ internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour:
     val listLayout = remember(revision) { prefs.listLayout }
     val compactLayout = remember(revision) { prefs.compactLayout }
     val list = rememberLazyListState()
-    SidekitScaffold("Settings", actions = listOf(SideAction.back("home", "Home", onHome), SideAction.forward("about", "About", onAbout))) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("home", "Home", onHome)))
+    SidekitScaffold("Settings", actions = actions) { padding ->
         SidekitList(padding, state = list) {
             // Toggles act in place: compact rows, no arrow.
             item {
@@ -103,7 +105,7 @@ internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour:
             // Device settings live on their own page, so this screen stays Sidekit's own settings.
             item { SidekitItem("System settings", showLinkArrow = true, onClick = onSystem) }
             item { SidekitItem("Setup & keypad tour", showLinkArrow = true, onClick = onSetup) }
-            message?.let { item { SidekitCard { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
+            item { SidekitItem("About", showLinkArrow = true, onClick = onAbout) }
         }
     }
 }
@@ -121,10 +123,10 @@ internal fun SystemSettingsScreen(back: () -> Unit) {
         }
     }
     val list = rememberLazyListState()
-    SidekitScaffold("System settings", actions = listOf(SideAction.back("back", "Settings", back))) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Settings", back)))
+    SidekitScaffold("System settings", actions = actions) { padding ->
         SidekitList(padding, state = list) {
             itemsIndexed(SettingsUiState().rows) { index, row -> SidekitItem(row.label, Modifier.height(CompactRowHeight).listFade(list, index), secondary = row.value, onClick = { open(row.key.settingsAction()) }) }
-            message?.let { item { SidekitCard { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
         }
     }
 }
@@ -133,8 +135,11 @@ internal fun SystemSettingsScreen(back: () -> Unit) {
 @Composable
 fun SettingsScreen(rows: List<SettingRow>, onRowClick: (SettingKey) -> Unit, onHome: () -> Unit = {}, onAbout: () -> Unit = {}) {
     val list = rememberLazyListState()
-    SidekitScaffold("Settings", actions = listOf(SideAction.back("home", "Home", onHome), SideAction.forward("about", "About", onAbout))) { padding ->
-        SidekitList(padding, state = list) { itemsIndexed(rows) { index, row -> SidekitItem(row.label, Modifier.height(CompactRowHeight).listFade(list, index), secondary = row.value, onClick = { onRowClick(row.key) }) } }
+    SidekitScaffold("Settings", actions = listOf(SideAction.back("home", "Home", onHome))) { padding ->
+        SidekitList(padding, state = list) {
+            itemsIndexed(rows) { index, row -> SidekitItem(row.label, Modifier.height(CompactRowHeight).listFade(list, index), secondary = row.value, onClick = { onRowClick(row.key) }) }
+            item { SidekitItem("About", showLinkArrow = true, onClick = onAbout) }
+        }
     }
 }
 

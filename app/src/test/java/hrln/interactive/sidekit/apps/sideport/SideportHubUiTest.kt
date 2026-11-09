@@ -36,7 +36,7 @@ class SideportHubUiTest {
         key = "com.example.chat|1",
         packageName = "com.example.chat",
         title = "Alice",
-        messages = listOf(BridgeMessage("Alice", "Lunch tomorrow?", 1L)),
+        messages = listOf(BridgeMessage("Alice", "Lunch tomorrow?", 1L))
     )
 
     /** Shows the hub with [state], holding the confirmation state the screen would own. */
@@ -58,7 +58,7 @@ class SideportHubUiTest {
                     onAsk = { ui = ui.copy(confirming = it) },
                     onCancel = { ui = ui.copy(confirming = null) },
                     onRemove = { calls += "remove" },
-                    onUninstall = { calls += "uninstall" },
+                    onUninstall = { calls += "uninstall" }
                 )
             }
         }
@@ -67,14 +67,22 @@ class SideportHubUiTest {
 
     private fun installed() = SideportHubUiState(app, version = "2.24.6.78", chats = listOf(chat))
 
-    @Test fun `hub shows the app, its version and its actions in the body`() {
+    @Test fun `hub shows the app and its version, with actions in Options`() {
         show(installed())
         compose.onRoot().captureRoboImage("screenshots/sideport_hub.png")
         compose.onNodeWithText("Version 2.24.6.78").assertExists()
         compose.onNodeWithText("com.example.chat").assertExists()
         compose.onNodeWithText("Open as").assertExists()
-        compose.onNodeWithText("Remove from Sideport").assertExists()
-        compose.onNodeWithText("Uninstall app").assertExists()
+        compose.onNodeWithText("Remove from Sideport").assertDoesNotExist()
+        compose.onNodeWithText("Uninstall app").assertDoesNotExist()
+    }
+
+    @Test fun `a message replaces the bar and dismisses on tap`() {
+        show(installed().copy(message = "Turn on projection"))
+        compose.onNodeWithText("Turn on projection").assertExists()
+        compose.onNodeWithText("Open").assertDoesNotExist()
+        compose.onNodeWithText("Turn on projection").performClick()
+        compose.onNodeWithText("Open").assertExists()
     }
 
     @Test fun `view mode, chats and media open from their rows`() {
@@ -90,6 +98,7 @@ class SideportHubUiTest {
 
     @Test fun `remove asks for confirmation in the action bar and can be cancelled`() {
         show(installed())
+        compose.runOnIdle { chrome.toggleOptions() }
         compose.onNodeWithText("Remove from Sideport").performClick()
         compose.onRoot().captureRoboImage("screenshots/sideport_hub_confirm.png")
         compose.onNodeWithText("Cancel").assertExists()
@@ -101,6 +110,7 @@ class SideportHubUiTest {
 
     @Test fun `confirming remove takes the app out of Sideport`() {
         show(installed())
+        compose.runOnIdle { chrome.toggleOptions() }
         compose.onNodeWithText("Remove from Sideport").performClick()
         compose.onNodeWithText("Remove").performClick()
         assertEquals(listOf("remove"), calls)
@@ -108,6 +118,7 @@ class SideportHubUiTest {
 
     @Test fun `confirming uninstall hands the app to Android`() {
         show(installed())
+        compose.runOnIdle { chrome.toggleOptions() }
         compose.onNodeWithText("Uninstall app").performClick()
         compose.onNodeWithText("Uninstall").performClick()
         assertEquals(listOf("uninstall"), calls)
@@ -116,17 +127,22 @@ class SideportHubUiTest {
         compose.onNodeWithText("Cancel").assertDoesNotExist()
     }
 
-    @Test fun `Options keeps only the system app page`() {
+    @Test fun `Options holds the app's secondary actions`() {
         show(installed())
         compose.runOnIdle { chrome.toggleOptions() }
+        compose.onNodeWithText("App info").assertExists()
+        compose.onNodeWithText("Remove from Sideport").assertExists()
+        compose.onNodeWithText("Uninstall app").assertExists()
         compose.onNodeWithText("App info").performClick()
         assertEquals(listOf("info"), calls)
     }
 
-    @Test fun `an app that is gone has no Options`() {
+    @Test fun `an app that is gone has no App info or Uninstall`() {
         show(SideportHubUiState(app, version = null))
         compose.runOnIdle { chrome.toggleOptions() }
         compose.onNodeWithText("App info").assertDoesNotExist()
+        compose.onNodeWithText("Uninstall app").assertDoesNotExist()
+        compose.onNodeWithText("Remove from Sideport").assertExists()
     }
 
     @Test fun `an app that is no longer installed says so and offers only Remove`() {
@@ -134,7 +150,8 @@ class SideportHubUiTest {
         compose.onNodeWithText("Not installed").assertExists()
         compose.onNodeWithText("Open as").assertDoesNotExist()
         compose.onNodeWithText("Uninstall app").assertDoesNotExist()
-        compose.onNodeWithText("Remove from Sideport").assertExists()
         compose.onRoot().captureRoboImage("screenshots/sideport_hub_missing.png")
+        compose.runOnIdle { chrome.toggleOptions() }
+        compose.onNodeWithText("Remove from Sideport").assertExists()
     }
 }
