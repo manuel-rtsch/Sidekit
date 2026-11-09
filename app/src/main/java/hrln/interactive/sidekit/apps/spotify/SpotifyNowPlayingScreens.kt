@@ -34,8 +34,11 @@ import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.components.SidekitItemRow
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
+import hrln.interactive.sidekit.design.components.SidekitSwipeRow
 import hrln.interactive.sidekit.design.components.SidekitText
+import hrln.interactive.sidekit.design.components.SwipeAction
 import hrln.interactive.sidekit.design.components.listFade
+import hrln.interactive.sidekit.design.components.rememberSwipeRevealGroup
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import kotlinx.coroutines.delay
@@ -54,28 +57,26 @@ fun SpotifyNowPlayingScreen(
     onQueue: () -> Unit,
     onAlbum: () -> Unit,
     onArtist: () -> Unit,
-    onAddToPlaylist: () -> Unit,
+    onUndo: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val current = state.current
-    val actions = withNotice(
-        state.notice,
+    val save = current?.let {
+        SideAction.square(
+            "save",
+            if (state.savedCurrent) SidekitIcon.Bookmark else SidekitIcon.BookmarkBorder,
+            if (state.savedCurrent) "Saved" else "Save",
+            onSave,
+            tone = if (state.savedCurrent) ActionTone.Secondary else ActionTone.Muted,
+            motion = ActionMotion.Up
+        )
+    }
+    val actions = spotifyBar(
+        state,
         onDismissNotice,
-        buildList {
-            add(spotifyBack("Back", onBack).first())
-            if (current != null) {
-                add(
-                    SideAction.square(
-                        "save",
-                        if (state.savedCurrent) SidekitIcon.Check else SidekitIcon.Bookmark,
-                        if (state.savedCurrent) "Saved" else "Save",
-                        onSave,
-                        tone = if (state.savedCurrent) ActionTone.Secondary else ActionTone.Muted,
-                        motion = ActionMotion.Up
-                    )
-                )
-            }
-        }
+        onUndo,
+        spotifyBack("Back", onBack).first(),
+        listOfNotNull(save)
     )
     val options = if (current == null) {
         emptyList()
@@ -83,8 +84,6 @@ fun SpotifyNowPlayingScreen(
         buildList {
             add(SideAction("queue", "Queue", SidekitIcon.QueueMusic, onClick = onQueue))
             if (current is SpotifyTrack) add(SideAction("album", "Album", SidekitIcon.Album, onClick = onAlbum))
-            if (current.artistId != null) add(SideAction("artist", "Artist", SidekitIcon.Artist, onClick = onArtist))
-            add(SideAction("playlist", "Add to playlist", SidekitIcon.Add, onClick = onAddToPlaylist))
         }
     }
     SidekitScaffold(title = null, actions = actions, options = options) { padding ->
@@ -105,7 +104,8 @@ fun SpotifyNowPlayingScreen(
                         Modifier.size(art),
                         shape = SidekitTheme.shapes.item,
                         bordered = true,
-                        contentDescription = "${current.title} artwork"
+                        contentDescription = "${current.title} artwork",
+                        artUrl = current.artUrl
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -114,7 +114,6 @@ fun SpotifyNowPlayingScreen(
                         Modifier.fillMaxWidth(),
                         style = SidekitTheme.typography.headline,
                         textAlign = TextAlign.Center,
-                        minLines = 1,
                         maxLines = 2
                     )
                     if (current.creator.isNotBlank()) {
@@ -153,11 +152,20 @@ fun SpotifyNowPlayingScreen(
                         0.85f
                     )
                 }
-                state.upcoming.firstOrNull()?.let { UpNextRow(it.title, onClick = onQueue) }
             }
         }
     }
 }
+
+@Composable
+private fun removeAction(label: String, onClick: () -> Unit) = SwipeAction(
+    label = label,
+    icon = SidekitIcon.DeleteForever,
+    color = SidekitTheme.colors.dangerA1,
+    armedColor = SidekitTheme.colors.dangerA2,
+    destructive = true,
+    onClick = onClick
+)
 
 @Composable
 fun QueueScreen(
@@ -167,6 +175,7 @@ fun QueueScreen(
     onJump: (String) -> Unit,
     onPlayNext: (SpotifyMediaItem) -> Unit,
     onRemove: (SpotifyMediaItem) -> Unit,
+    onRemoveHistory: (SpotifyMediaItem) -> Unit,
     onClearUpcoming: () -> List<SpotifyMediaItem>,
     onRestoreUpcoming: (List<SpotifyMediaItem>) -> Unit,
     onShuffle: () -> Unit,
@@ -208,6 +217,7 @@ fun QueueScreen(
     }
     SidekitScaffold(title = "Queue", actions = actions, options = options) { padding ->
         val listState = rememberLazyListState()
+        val swipes = rememberSwipeRevealGroup()
         val currentFocus = remember { FocusRequester() }
         LaunchedEffect(state.current?.id) { if (focusedId == null) runCatching { currentFocus.requestFocus() } }
         SidekitList(padding, state = listState) {
@@ -224,22 +234,36 @@ fun QueueScreen(
                     )
                 }
                 itemsIndexed(state.upcoming, key = { _, item -> "u${item.id}" }) { index, item ->
-                    SpotifyMediaRow(
-                        item,
-                        Modifier.listFade(listState, index + 1).onFocusChanged { if (it.isFocused) focusedId = item.id },
-                        secondary = item.creator,
-                        onClick = { onJump(item.id) }
-                    )
+                    SidekitSwipeRow(
+                        key = "u${item.id}",
+                        group = swipes,
+                        modifier = Modifier.listFade(listState, index + 1),
+                        action = removeAction("Remove ${item.title} from queue") { onRemove(item) }
+                    ) {
+                        SpotifyMediaRow(
+                            item,
+                            Modifier.onFocusChanged { if (it.isFocused) focusedId = item.id },
+                            secondary = item.creator,
+                            onClick = { onJump(item.id) }
+                        )
+                    }
                 }
                 if (state.history.isNotEmpty()) {
                     item(key = "historyLabel") { SectionLabel("History") }
                     itemsIndexed(state.history.take(20), key = { _, item -> "h${item.id}" }) { index, item ->
-                        SpotifyMediaRow(
-                            item,
-                            Modifier.listFade(listState, index + 2 + state.upcoming.size),
-                            secondary = item.creator,
-                            onClick = { onJump(item.id) }
-                        )
+                        SidekitSwipeRow(
+                            key = "h${item.id}",
+                            group = swipes,
+                            modifier = Modifier.listFade(listState, index + 2 + state.upcoming.size),
+                            action = removeAction("Remove ${item.title} from history") { onRemoveHistory(item) }
+                        ) {
+                            SpotifyMediaRow(
+                                item,
+                                Modifier,
+                                secondary = item.creator,
+                                onClick = { onJump(item.id) }
+                            )
+                        }
                     }
                 }
             }

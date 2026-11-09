@@ -23,12 +23,10 @@ import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
-import hrln.interactive.sidekit.design.components.SidekitSliderItem
 import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.listFade
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
-import kotlin.math.roundToInt
 
 private enum class SettingsConfirmation { SignOut, ClearHistory }
 
@@ -37,7 +35,6 @@ fun SpotifySettingsScreen(
     state: SpotifyUiState,
     onBack: () -> Unit,
     onAudioQuality: () -> Unit,
-    onVolume: (Float) -> Unit,
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
     onSignOut: () -> Unit,
@@ -79,7 +76,7 @@ fun SpotifySettingsScreen(
         title = "Settings",
         actions = actions,
         options = listOf(
-            SideAction("about", "About", SidekitIcon.Docs, onClick = { onNotice("Sidetracks 0.1 · a Sidekit UI mockup") }),
+            SideAction("about", "About", SidekitIcon.Docs, onClick = { onNotice("Sidetracks · a Sidekit sub-app") }),
             SideAction("cache", "Clear cache", SidekitIcon.DeleteForever, onClick = onClearCache)
         )
     ) { padding ->
@@ -97,18 +94,9 @@ fun SpotifySettingsScreen(
                     onClick = onAudioQuality
                 )
             }
-            item(key = "volume") {
-                SidekitSliderItem(
-                    SidekitIcon.MusicNote2,
-                    "Volume  ${(state.volume * 100).roundToInt()}%",
-                    state.volume,
-                    onVolume,
-                    Modifier.listFade(listState, 1)
-                )
-            }
             item(key = "streaming") {
                 SidekitCard(
-                    Modifier.listFade(listState, 2).fillMaxWidth(),
+                    Modifier.listFade(listState, 1).fillMaxWidth(),
                     color = SidekitTheme.colors.surfaceA2
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -125,7 +113,7 @@ fun SpotifySettingsScreen(
             item(key = "cache") {
                 SidekitItem(
                     "Artwork cache",
-                    Modifier.listFade(listState, 3),
+                    Modifier.listFade(listState, 2),
                     secondary = "12 MB",
                     secondaryToEnd = true,
                     showLinkArrow = true,
@@ -135,7 +123,7 @@ fun SpotifySettingsScreen(
             item(key = "history") {
                 SidekitItem(
                     "Clear history",
-                    Modifier.listFade(listState, 4),
+                    Modifier.listFade(listState, 3),
                     secondary = "${state.history.size} tracks",
                     secondaryToEnd = true,
                     showLinkArrow = true,
@@ -145,17 +133,9 @@ fun SpotifySettingsScreen(
             item(key = "account") {
                 SidekitItem(
                     "Account",
-                    Modifier.listFade(listState, 5),
-                    secondary = if (state.signedIn) "Signed in as You" else "Not signed in",
+                    Modifier.listFade(listState, 4),
+                    secondary = if (state.signedIn) "Signed in" else "Not signed in",
                     secondaryToEnd = true
-                )
-            }
-            item(key = "signout") {
-                SidekitItem(
-                    "Sign out",
-                    Modifier.listFade(listState, 6),
-                    colour = ItemColour.Destructive,
-                    onClick = { confirmation = SettingsConfirmation.SignOut }
                 )
             }
         }
@@ -167,7 +147,6 @@ fun SpotifySignInScreen(
     state: SpotifyUiState,
     onBack: () -> Unit,
     onLogIn: () -> Unit,
-    onCopyLink: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val colors = SidekitTheme.colors
@@ -178,8 +157,7 @@ fun SpotifySignInScreen(
     )
     SidekitScaffold(
         title = "Sign in",
-        actions = actions,
-        options = listOf(SideAction("copy", "Copy link", SidekitIcon.Docs, onClick = onCopyLink))
+        actions = actions
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {

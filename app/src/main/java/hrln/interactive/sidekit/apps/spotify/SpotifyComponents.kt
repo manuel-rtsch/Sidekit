@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,10 +51,12 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.apps.media.RemoteArtworkImage
 import hrln.interactive.sidekit.apps.media.formatDuration
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitIconItem
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -63,14 +66,15 @@ import hrln.interactive.sidekit.design.components.SidekitTile
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
-/** Square remote-style artwork, backed here by the mockup's bundled covers. */
+/** Square artwork: remote when the catalog has a URL, otherwise a local fixture or icon. */
 @Composable
 fun SpotifyCover(
     @DrawableRes artRes: Int,
     modifier: Modifier = Modifier,
     shape: androidx.compose.ui.graphics.Shape = SidekitTheme.shapes.control,
     bordered: Boolean = false,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    artUrl: String? = null
 ) {
     val colors = SidekitTheme.colors
     Box(
@@ -79,12 +83,27 @@ fun SpotifyCover(
             .background(colors.surfaceA2)
             .then(if (bordered) Modifier.border(1.dp, colors.light, shape) else Modifier)
     ) {
-        Image(
-            painter = painterResource(artRes),
-            contentDescription = contentDescription,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
+        when {
+            artUrl != null -> RemoteArtworkImage(
+                artUrl,
+                Modifier.fillMaxSize(),
+                placeholder = SidekitIcon.Album,
+                contentDescription = contentDescription
+            )
+
+            artRes != 0 -> Image(
+                painter = painterResource(artRes),
+                contentDescription = contentDescription,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            else -> SidekitIconImage(
+                SidekitIcon.Album,
+                Modifier.align(Alignment.Center),
+                contentDescription = contentDescription
+            )
+        }
     }
 }
 
@@ -120,7 +139,7 @@ fun SpotifyMediaRow(
             horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
             if (showArt) {
-                SpotifyCover(item.artRes, Modifier.size(68.dp))
+                SpotifyCover(item.artRes, Modifier.size(68.dp), artUrl = item.artUrl)
             } else if (index != null) {
                 Box(Modifier.size(30.dp), contentAlignment = Alignment.Center) {
                     SidekitText("${index + 1}", style = SidekitTheme.typography.label, color = colors.surfaceA6)
@@ -199,7 +218,7 @@ fun NowPlayingTile(
                     SidekitIconImage(SidekitIcon.MusicNote2, size = 36.dp)
                 }
             } else {
-                SpotifyCover(current.artRes, Modifier.size(72.dp))
+                SpotifyCover(current.artRes, Modifier.size(72.dp), artUrl = current.artUrl)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 SidekitText(
@@ -224,9 +243,9 @@ fun LibraryTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ArtworkTile(@DrawableRes artRes: Int, label: String, modifier: Modifier = Modifier) {
+fun ArtworkTile(@DrawableRes artRes: Int, label: String, modifier: Modifier = Modifier, artUrl: String? = null) {
     SidekitTile(modifier) {
-        SpotifyCover(artRes, Modifier.fillMaxSize(), shape = SidekitTheme.shapes.item, contentDescription = label)
+        SpotifyCover(artRes, Modifier.fillMaxSize(), shape = SidekitTheme.shapes.item, contentDescription = label, artUrl = artUrl)
     }
 }
 
@@ -252,6 +271,19 @@ fun TerminalRow(label: String, secondary: String? = null, onClick: (() -> Unit)?
     )
 }
 
+/**
+ * Loads the next page when the footer enters composition. Lazy lists only compose visible rows
+ * (plus a small prefetch window), so this keeps both network and rendering work proportional to
+ * what the user is actually looking at.
+ */
+@Composable
+fun PagingFooter(loading: Boolean, onLoadMore: () -> Unit) {
+    LaunchedEffect(loading) {
+        if (!loading) onLoadMore()
+    }
+    EmptyMessage(if (loading) "Loading more…" else "More", null)
+}
+
 fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> = if (notice == null) {
     actions
 } else {
@@ -268,6 +300,25 @@ fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>
 }
 
 fun spotifyBack(label: String, onBack: () -> Unit) = listOf(SideAction.back("back", label, onBack))
+
+/**
+ * The action bar for screens that can change saved state. While an Undo offer is live it takes the
+ * right slot; otherwise the bar shows the screen's normal actions and any notice.
+ */
+fun spotifyBar(
+    state: SpotifyUiState,
+    onDismissNotice: () -> Unit,
+    onUndo: () -> Unit,
+    continueWith: SideAction,
+    extra: List<SideAction> = emptyList()
+): List<SideAction> {
+    val undo = state.undo
+    return if (undo != null) {
+        undoBar(continueWith, SideAction.undo(contentDescription = undo.contentDescription, onClick = onUndo))
+    } else {
+        withNotice(state.notice, onDismissNotice, listOf(continueWith) + extra)
+    }
+}
 
 fun repeatLabel(repeat: RepeatMode) = repeat.label
 
@@ -361,6 +412,7 @@ fun SpotifyLibraryRow(
     title: String,
     secondary: String,
     modifier: Modifier = Modifier,
+    artUrl: String? = null,
     onClick: () -> Unit
 ) {
     val colors = SidekitTheme.colors
@@ -370,33 +422,12 @@ fun SpotifyLibraryRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            SpotifyCover(artRes, Modifier.size(68.dp))
+            SpotifyCover(artRes, Modifier.size(68.dp), artUrl = artUrl)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SidekitText(title, style = SidekitTheme.typography.bodySmall, maxLines = 1)
                 SidekitText(secondary, style = SidekitTheme.typography.caption, color = colors.surfaceA6, maxLines = 1)
             }
             SidekitIconImage(SidekitIcon.ArrowRightAlt, size = 30.dp, contentDescription = null)
         }
-    }
-}
-
-/** Compact "Up next" affordance; a full Item would steal height from the artwork. */
-@Composable
-fun UpNextRow(title: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val colors = SidekitTheme.colors
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(46.dp)
-            .clip(SidekitTheme.shapes.control)
-            .background(colors.surfaceA3)
-            .clickable(onClickLabel = "Open queue", onClick = onClick)
-            .padding(horizontal = 18.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        SidekitText("Up next", style = SidekitTheme.typography.caption, color = colors.surfaceA6)
-        SidekitText(title, Modifier.weight(1f), style = SidekitTheme.typography.caption, maxLines = 1)
-        SidekitIconImage(SidekitIcon.ArrowRightAlt, size = 26.dp)
     }
 }

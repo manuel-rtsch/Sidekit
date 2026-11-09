@@ -22,6 +22,7 @@ enum class SidekitIcon(@DrawableRes val drawable: Int) {
     Bedtime(R.drawable.sk_ic_bedtime),
     Bluetooth(R.drawable.sk_ic_bluetooth),
     Bookmark(R.drawable.sk_ic_bookmark),
+    BookmarkBorder(R.drawable.sk_ic_bookmark_border),
     BrandAwareness(R.drawable.sk_ic_brand_awareness),
     BusMapPin(R.drawable.sk_ic_bus_map_pin),
     Calculate(R.drawable.sk_ic_calculate),
@@ -68,5 +69,5 @@ enum class SidekitIcon(@DrawableRes val drawable: Int) {
     Undo(R.drawable.sk_ic_undo),
     Travel(R.drawable.sk_ic_travel),
     TravelExplore(R.drawable.sk_ic_travel_explore),
-    Videocam(R.drawable.sk_ic_videocam),
+    Videocam(R.drawable.sk_ic_videocam)
 }

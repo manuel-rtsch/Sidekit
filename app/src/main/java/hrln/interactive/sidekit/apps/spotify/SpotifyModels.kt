@@ -23,8 +23,11 @@ sealed interface SpotifyMediaItem {
     val playable: Boolean
     val explicit: Boolean
 
-    /** Canonical Spotify URI for the real catalog; null for the local mockup fixtures. */
+    /** Canonical Spotify URI for the real catalog; null for the local test fixtures. */
     val uri: String? get() = null
+
+    /** Remote cover art for the real catalog; null for local fixtures and placeholder art. */
+    val artUrl: String? get() = null
 }
 
 data class SpotifyTrack(
@@ -37,7 +40,8 @@ data class SpotifyTrack(
     override val durationMs: Long,
     override val explicit: Boolean = false,
     override val playable: Boolean = true,
-    override val uri: String? = null
+    override val uri: String? = null,
+    override val artUrl: String? = null
 ) : SpotifyMediaItem {
     override val creator: String get() = artist
 }
@@ -51,7 +55,8 @@ data class SpotifyEpisode(
     override val artRes: Int,
     override val durationMs: Long,
     val video: Boolean = false,
-    override val uri: String? = null
+    override val uri: String? = null,
+    override val artUrl: String? = null
 ) : SpotifyMediaItem {
     override val creator: String get() = show
     override val artistId: String? get() = null
@@ -66,7 +71,9 @@ data class SpotifyAlbum(
     val artistId: String,
     val year: Int,
     @param:DrawableRes val artRes: Int,
-    val tracks: List<SpotifyTrack>
+    val tracks: List<SpotifyTrack>,
+    val artUrl: String? = null,
+    val trackCount: Int = tracks.size
 )
 
 data class SpotifyPlaylist(
@@ -75,7 +82,9 @@ data class SpotifyPlaylist(
     val owner: String,
     val ownerId: String?,
     @param:DrawableRes val artRes: Int,
-    val tracks: List<SpotifyTrack>
+    val tracks: List<SpotifyTrack>,
+    val artUrl: String? = null,
+    val trackCount: Int = tracks.size
 )
 
 data class SpotifyShow(
@@ -83,14 +92,18 @@ data class SpotifyShow(
     val name: String,
     val publisher: String,
     @param:DrawableRes val artRes: Int,
-    val episodes: List<SpotifyEpisode>
+    val episodes: List<SpotifyEpisode>,
+    val artUrl: String? = null,
+    val episodeCount: Int = episodes.size
 )
 
 data class SpotifyArtist(
     val id: String,
     val name: String,
     @param:DrawableRes val artRes: Int,
-    val albumIds: List<String>
+    val albumIds: List<String>,
+    val artUrl: String? = null,
+    val albumCount: Int = albumIds.size
 )
 
 /** One screen's worth of a collection, already resolved by the gateway. */
@@ -101,8 +114,29 @@ data class SpotifyCollection(
     val subtitle: String,
     val artRes: Int,
     val items: List<SpotifyMediaItem>,
-    val artistId: String? = null
+    val artistId: String? = null,
+    val artUrl: String? = null,
+    val totalItems: Int = items.size,
+    val hasMore: Boolean = false
 )
+
+/** How many rows a catalog request asks for. Kept small for the Sidephone's weak CPU. */
+const val SPOTIFY_PAGE_SIZE = 50
+
+/** One page of a catalog list. [total] is null when the endpoint doesn't report it. */
+data class SpotifyPage<T>(
+    val items: List<T> = emptyList(),
+    val total: Int? = null,
+    val hasMore: Boolean = false
+) {
+    companion object {
+        fun <T> of(items: List<T>, offset: Int, limit: Int, total: Int? = null): SpotifyPage<T> = SpotifyPage(
+            items = items,
+            total = total,
+            hasMore = if (total != null) offset + items.size < total else items.size >= limit
+        )
+    }
+}
 
 data class SpotifySearchResults(
     val tracks: List<SpotifyTrack> = emptyList(),
@@ -143,10 +177,10 @@ enum class RepeatMode(val label: String) {
     }
 }
 
-enum class AudioQuality(val label: String) {
-    Normal("Normal"),
-    High("High"),
-    VeryHigh("Very high")
+enum class AudioQuality(val label: String, val bitrateKbps: Int) {
+    Normal("Normal", 96),
+    High("High", 160),
+    VeryHigh("Very high", 320)
     ;
 
     fun next(): AudioQuality = entries[(ordinal + 1) % entries.size]
@@ -156,3 +190,12 @@ data class SpotifyQueueItem(
     val item: SpotifyMediaItem,
     val isCurrent: Boolean = false
 )
+
+/** Spotify metadata dates are ISO calendar dates; show them the way Sidekit shows release dates. */
+fun formatPublishedDate(value: String): String {
+    val date = value.substringBefore('T').substringBefore(' ')
+    if (date.length != 10 || date[4] != '-' || date[7] != '-') return value
+    return runCatching {
+        java.time.LocalDate.parse(date).format(java.time.format.DateTimeFormatter.ofPattern("d MMM uuuu"))
+    }.getOrDefault(value)
+}

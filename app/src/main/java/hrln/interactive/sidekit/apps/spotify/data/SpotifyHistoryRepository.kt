@@ -39,6 +39,11 @@ class SpotifyHistoryRepository(
         return snapshot()
     }
 
+    fun remove(item: SpotifyMediaItem): List<SpotifyHistoryEntry> {
+        if (entries.removeAll { it.item.id == item.id }) save(entries.toList())
+        return snapshot()
+    }
+
     fun clear(): List<SpotifyHistoryEntry> {
         entries.clear()
         save(emptyList())

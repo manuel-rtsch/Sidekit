@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +25,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.core.util.AtomicFile
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.icons.SidekitIcon
@@ -211,6 +214,25 @@ object RemoteArtwork {
  * Requests cancel when the composable leaves composition, and a hit in the memory cache paints
  * without a recomposition of the row.
  */
+@Composable
+fun RemoteArtworkImage(
+    url: String?,
+    modifier: Modifier = Modifier,
+    placeholder: SidekitIcon = SidekitIcon.Album,
+    contentDescription: String? = null
+) {
+    BoxWithConstraints(modifier) {
+        RemoteArtworkImage(
+            url = url,
+            width = maxWidth.value.coerceIn(1f, 1024f).dp,
+            height = maxHeight.value.coerceIn(1f, 1024f).dp,
+            modifier = Modifier.fillMaxSize(),
+            placeholder = placeholder,
+            contentDescription = contentDescription
+        )
+    }
+}
+
 @Composable
 fun RemoteArtworkImage(
     url: String?,

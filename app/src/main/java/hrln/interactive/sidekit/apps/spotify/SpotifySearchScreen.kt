@@ -21,8 +21,11 @@ import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
+import hrln.interactive.sidekit.design.components.SidekitSwipeRow
 import hrln.interactive.sidekit.design.components.SidekitTextField
+import hrln.interactive.sidekit.design.components.SwipeAction
 import hrln.interactive.sidekit.design.components.listFade
+import hrln.interactive.sidekit.design.components.rememberSwipeRevealGroup
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
@@ -34,10 +37,12 @@ fun SpotifySearchScreen(
     onClear: () -> Unit,
     onToggleScope: (SearchScope) -> Unit,
     onTrack: (SpotifyTrack) -> Unit,
+    onQueue: (SpotifyTrack) -> Unit,
     onArtist: (SpotifyArtist) -> Unit,
     onAlbum: (SpotifyAlbum) -> Unit,
     onPlaylist: (SpotifyPlaylist) -> Unit,
     onShow: (SpotifyShow) -> Unit,
+    onLoadMore: (SearchScope) -> Unit,
     onDismissNotice: () -> Unit
 ) {
     var expandedTracks by remember(state.query) { mutableStateOf(false) }
@@ -83,6 +88,7 @@ fun SpotifySearchScreen(
         options = scopes
     ) { padding ->
         val listState = rememberLazyListState()
+        val swipes = rememberSwipeRevealGroup()
         SidekitList(padding, state = listState) {
             when {
                 state.query.isBlank() -> item(key = "idle") {
@@ -107,42 +113,85 @@ fun SpotifySearchScreen(
                         item(key = "tracksLabel") { SectionLabel("Tracks") }
                         val shown = if (expandedTracks) results.tracks else results.tracks.take(5)
                         itemsIndexed(shown, key = { _, track -> "t${track.id}" }) { index, track ->
-                            SpotifyMediaRow(track, Modifier.listFade(listState, slot + index), secondary = track.artist) { onTrack(track) }
+                            SidekitSwipeRow(
+                                key = track.id,
+                                group = swipes,
+                                modifier = Modifier.listFade(listState, slot + index),
+                                action = SwipeAction(
+                                    label = "Add ${track.title} to queue",
+                                    icon = SidekitIcon.QueueMusic,
+                                    color = SidekitTheme.colors.primaryA1,
+                                    armedColor = SidekitTheme.colors.primaryA2,
+                                    onClick = { onQueue(track) }
+                                )
+                            ) {
+                                SpotifyMediaRow(track, Modifier, secondary = track.artist) { onTrack(track) }
+                            }
                         }
                         slot += shown.size
                         if (!expandedTracks && results.tracks.size > 5) {
                             item(key = "moreTracks") { TerminalRow("More tracks", secondary = "${results.tracks.size - 5} more", onClick = { expandedTracks = true }) }
                         }
+                        if (expandedTracks && SearchScope.Tracks in state.searchHasMore) {
+                            item(key = "moreTrackPages") { SearchMoreRow(SearchScope.Tracks, "More tracks", state, onLoadMore) }
+                        }
                     }
                     if (results.artists.isNotEmpty()) {
                         item(key = "artistsLabel") { SectionLabel("Artists") }
                         itemsIndexed(results.artists, key = { _, artist -> "r${artist.id}" }) { index, artist ->
-                            SpotifyLibraryRow(artist.artRes, artist.name, "${artist.albumIds.size} albums", Modifier.listFade(listState, slot + index)) { onArtist(artist) }
+                            SpotifyLibraryRow(artist.artRes, artist.name, "Artist", Modifier.listFade(listState, slot + index), artUrl = artist.artUrl) { onArtist(artist) }
                         }
                         slot += results.artists.size
+                        if (SearchScope.Artists in state.searchHasMore) {
+                            item(key = "moreArtists") { SearchMoreRow(SearchScope.Artists, "More artists", state, onLoadMore) }
+                        }
                     }
                     if (results.albums.isNotEmpty()) {
                         item(key = "albumsLabel") { SectionLabel("Albums") }
                         itemsIndexed(results.albums, key = { _, album -> "a${album.id}" }) { index, album ->
-                            SpotifyLibraryRow(album.artRes, album.title, "${album.artist} · ${album.year}", Modifier.listFade(listState, slot + index)) { onAlbum(album) }
+                            SpotifyLibraryRow(album.artRes, album.title, "${album.artist} · ${album.year}", Modifier.listFade(listState, slot + index), artUrl = album.artUrl) { onAlbum(album) }
                         }
                         slot += results.albums.size
+                        if (SearchScope.Albums in state.searchHasMore) {
+                            item(key = "moreAlbums") { SearchMoreRow(SearchScope.Albums, "More albums", state, onLoadMore) }
+                        }
                     }
                     if (results.playlists.isNotEmpty()) {
                         item(key = "playlistsLabel") { SectionLabel("Playlists") }
                         itemsIndexed(results.playlists, key = { _, playlist -> "p${playlist.id}" }) { index, playlist ->
-                            SpotifyLibraryRow(playlist.artRes, playlist.name, "${playlist.owner} · ${playlist.tracks.size} tracks", Modifier.listFade(listState, slot + index)) { onPlaylist(playlist) }
+                            SpotifyLibraryRow(playlist.artRes, playlist.name, "${playlist.owner} · ${playlist.trackCount} tracks", Modifier.listFade(listState, slot + index), artUrl = playlist.artUrl) { onPlaylist(playlist) }
                         }
                         slot += results.playlists.size
+                        if (SearchScope.Playlists in state.searchHasMore) {
+                            item(key = "morePlaylists") { SearchMoreRow(SearchScope.Playlists, "More playlists", state, onLoadMore) }
+                        }
                     }
                     if (results.shows.isNotEmpty()) {
                         item(key = "showsLabel") { SectionLabel("Shows") }
                         itemsIndexed(results.shows, key = { _, show -> "s${show.id}" }) { index, show ->
-                            SpotifyLibraryRow(show.artRes, show.name, show.publisher, Modifier.listFade(listState, slot + index)) { onShow(show) }
+                            SpotifyLibraryRow(show.artRes, show.name, show.publisher, Modifier.listFade(listState, slot + index), artUrl = show.artUrl) { onShow(show) }
+                        }
+                        if (SearchScope.Shows in state.searchHasMore) {
+                            item(key = "moreShows") { SearchMoreRow(SearchScope.Shows, "More shows", state, onLoadMore) }
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SearchMoreRow(
+    scope: SearchScope,
+    label: String,
+    state: SpotifyUiState,
+    onLoadMore: (SearchScope) -> Unit
+) {
+    val loading = scope in state.searchMorePending
+    TerminalRow(
+        label,
+        secondary = if (loading) "Loading…" else null,
+        onClick = if (loading) null else ({ onLoadMore(scope) })
+    )
 }

@@ -2,11 +2,13 @@
 
 use crate::audio::{PcmSink, CHANNELS, SAMPLE_RATE};
 use librespot_core::authentication::Credentials;
+use librespot_core::config::SessionConfig;
 use librespot_core::session::Session;
 use librespot_core::SpotifyUri;
 use librespot_playback::config::{Bitrate, PlayerConfig};
 use librespot_playback::mixer::VolumeGetter;
 use librespot_playback::player::{Player, PlayerEventChannel};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -25,6 +27,7 @@ impl VolumeGetter for SharedVolume {
 
 struct State {
     session: Option<Session>,
+    access_token: Option<String>,
     player: Option<Arc<Player>>,
     events: Option<PlayerEventChannel>,
     volume: Arc<Volume>,
@@ -34,6 +37,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             session: None,
+            access_token: None,
             player: None,
             events: None,
             volume: Arc::new(Volume(AtomicU16::new(65_535))),
@@ -45,7 +49,7 @@ static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 static STATE: OnceLock<Mutex<State>> = OnceLock::new();
 static AUDIO_RX: OnceLock<Mutex<Receiver<Vec<u8>>>> = OnceLock::new();
 
-fn runtime() -> &'static tokio::runtime::Runtime {
+pub(crate) fn runtime() -> &'static tokio::runtime::Runtime {
     RUNTIME.get_or_init(|| {
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -68,6 +72,21 @@ fn audio_rx() -> &'static Mutex<Receiver<Vec<u8>>> {
 }
 
 static AUDIO_TX: OnceLock<SyncSender<Vec<u8>>> = OnceLock::new();
+static TMP_DIR: OnceLock<Mutex<Option<PathBuf>>> = OnceLock::new();
+
+pub fn set_tmp_dir(path: &str) {
+    let slot = TMP_DIR.get_or_init(|| Mutex::new(None));
+    if let Ok(mut guard) = slot.lock() {
+        *guard = Some(PathBuf::from(path));
+    }
+}
+
+fn tmp_dir() -> PathBuf {
+    TMP_DIR
+        .get()
+        .and_then(|slot| slot.lock().ok().and_then(|guard| guard.clone()))
+        .unwrap_or_else(std::env::temp_dir)
+}
 
 pub fn init() -> Result<(), String> {
     // Force the audio channel (and its sender) to exist before the player starts.
@@ -75,16 +94,57 @@ pub fn init() -> Result<(), String> {
     Ok(())
 }
 
+pub(crate) fn run<F: std::future::Future>(future: F) -> F::Output {
+    runtime().block_on(future)
+}
+
+pub(crate) fn with_session_and_token<T>(
+    f: impl FnOnce(&Session, &str) -> Result<T, String>,
+) -> Result<T, String> {
+    // Clone out of the lock: catalog calls may make several network round trips, and the audio
+    // event poller must never wait behind them.
+    let (session, token) = {
+        let guard = state().lock().map_err(|_| "STATE_LOCK".to_string())?;
+        let session = guard
+            .session
+            .clone()
+            .ok_or_else(|| "SESSION_NOT_CONNECTED".to_string())?;
+        let token = guard
+            .access_token
+            .clone()
+            .ok_or_else(|| "SESSION_NOT_CONNECTED".to_string())?;
+        (session, token)
+    };
+    f(&session, &token)
+}
+
 pub fn connect(access_token: &str) -> Result<(), String> {
     disconnect();
     let rt = runtime();
     let _guard = rt.enter();
-    let session = Session::new(Default::default(), None);
-    rt.block_on(session.connect(Credentials::with_access_token(access_token), false))
+    // The OAuth token comes from the desktop/keymaster client. librespot defaults to the Android
+    // client id on this target, which would make Login5 reject the stored credential.
+    let config = SessionConfig {
+        client_id: "65b708073fc0480ea92a077233ca87bd".to_string(),
+        tmp_dir: tmp_dir(),
+        ..Default::default()
+    };
+    let session = Session::new(config, None);
+    rt.block_on(session.connect(Credentials::with_access_token(access_token), true))
         .map_err(|e| format!("SESSION_CONNECT_FAILED: {e}"))?;
 
     let mut guard = state().lock().map_err(|_| "STATE_LOCK".to_string())?;
     guard.session = Some(session);
+    guard.access_token = Some(access_token.to_string());
+    Ok(())
+}
+
+pub fn set_access_token(access_token: &str) -> Result<(), String> {
+    let mut guard = state().lock().map_err(|_| "STATE_LOCK".to_string())?;
+    if guard.session.is_none() {
+        return Err("SESSION_NOT_CONNECTED".to_string());
+    }
+    guard.access_token = Some(access_token.to_string());
     Ok(())
 }
 
@@ -94,13 +154,14 @@ pub fn disconnect() {
             player.stop();
         }
         guard.events = None;
+        guard.access_token = None;
         if let Some(session) = guard.session.take() {
             session.shutdown();
         }
     }
 }
 
-pub fn create_player() -> Result<(), String> {
+pub fn create_player(bitrate_kbps: u16) -> Result<(), String> {
     let mut guard = state().lock().map_err(|_| "STATE_LOCK".to_string())?;
     if guard.player.is_some() {
         return Ok(());
@@ -116,8 +177,13 @@ pub fn create_player() -> Result<(), String> {
         .ok_or_else(|| "AUDIO_UNINITIALISED".to_string())?
         .clone();
     let volume = guard.volume.clone();
+    let bitrate = match bitrate_kbps {
+        0..=96 => Bitrate::Bitrate96,
+        97..=160 => Bitrate::Bitrate160,
+        _ => Bitrate::Bitrate320,
+    };
     let config = PlayerConfig {
-        bitrate: Bitrate::Bitrate320,
+        bitrate,
         position_update_interval: Some(Duration::from_millis(500)),
         ..PlayerConfig::default()
     };
@@ -163,13 +229,6 @@ pub fn stop() -> Result<(), String> {
 pub fn seek(position_ms: u32) -> Result<(), String> {
     player()?.seek(position_ms);
     Ok(())
-}
-
-pub fn set_volume(volume: f32) {
-    let level = (volume.clamp(0.0, 1.0) * 65_535.0) as u16;
-    if let Ok(guard) = state().lock() {
-        guard.volume.0.store(level, Ordering::Relaxed);
-    }
 }
 
 pub fn read_audio(timeout: Duration) -> Option<Vec<u8>> {

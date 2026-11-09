@@ -65,6 +65,8 @@ class SpotifyPlaybackTest {
         val gateway = FakeGateway()
         val registry = MediaSessionRegistry()
         val playback = SpotifyPlayback(gateway, CoroutineScope(StandardTestDispatcher(testScheduler)), registry)
+        var stopped = false
+        playback.onStopped = { stopped = true }
         playback.start("spotify:track:a", 0L)
 
         playback.stop()
@@ -72,6 +74,38 @@ class SpotifyPlaybackTest {
         assertFalse(playback.isActive)
         assertNull(registry.active)
         assertTrue(gateway.stopped)
+        assertTrue(stopped)
+    }
+
+    @Test fun `requestNext prefers the attached UI owner`() {
+        val playback = SpotifyPlayback(
+            FakeGateway(),
+            CoroutineScope(StandardTestDispatcher()),
+            MediaSessionRegistry()
+        )
+        var uiCalls = 0
+        var fallbackCalls = 0
+        playback.onNext = { uiCalls++ }
+        playback.fallbackNext = { fallbackCalls++ }
+
+        playback.requestNext()
+
+        assertEquals(1, uiCalls)
+        assertEquals(0, fallbackCalls)
+    }
+
+    @Test fun `requestNext falls back when the UI owner is gone`() {
+        val playback = SpotifyPlayback(
+            FakeGateway(),
+            CoroutineScope(StandardTestDispatcher()),
+            MediaSessionRegistry()
+        )
+        var fallbackCalls = 0
+        playback.fallbackNext = { fallbackCalls++ }
+
+        playback.requestNext()
+
+        assertEquals(1, fallbackCalls)
     }
 
     private class FakeGateway(private val failLoad: Boolean = false) : SpotifyGateway {
@@ -99,7 +133,6 @@ class SpotifyPlaybackTest {
         }
 
         override suspend fun seek(positionMs: Long) = Unit
-        override suspend fun setVolume(volume: Float) = Unit
     }
 
     private class FakeOwner : MediaSessionOwner {

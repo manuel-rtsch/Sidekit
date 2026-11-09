@@ -4,8 +4,8 @@ import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyCatalog
 
 /**
- * The mockup's account. Everything here is local, fixed data shaped like the gateway response:
- * the UI can be reviewed on a device without a Spotify login, a native library, or a network.
+ * The screenshot suite's account. Everything here is local, fixed data shaped like the gateway
+ * response: the UI can be reviewed without a Spotify login, a native library, or a network.
  */
 object MockSpotifyDataSource : SpotifyCatalog {
     private fun t(
@@ -179,53 +179,91 @@ object MockSpotifyDataSource : SpotifyCatalog {
         nightSignals[5], glassHours[1], coastline[6], roomsWeLeft[5]
     )
 
-    override fun recentlyPlayed(): List<SpotifyTrack> = recentlyPlayed
+    override suspend fun recentlyPlayed(): List<SpotifyTrack> = recentlyPlayed
 
     fun album(id: String): SpotifyAlbum? = albums.firstOrNull { it.id == id }
     fun playlist(id: String): SpotifyPlaylist? = playlists.firstOrNull { it.id == id }
     fun show(id: String): SpotifyShow? = shows.firstOrNull { it.id == id }
-    override fun artist(id: String): SpotifyArtist? = artists.firstOrNull { it.id == id }
+    override suspend fun artist(id: String): SpotifyArtist? = artists.firstOrNull { it.id == id }
     fun track(id: String): SpotifyTrack? = albums.flatMap { it.tracks }.firstOrNull { it.id == id }
 
-    override fun collection(type: SpotifyCollectionType, id: String): SpotifyCollection? = when (type) {
+    override suspend fun collection(
+        type: SpotifyCollectionType,
+        id: String,
+        offset: Int,
+        limit: Int
+    ): SpotifyCollection? = when (type) {
         SpotifyCollectionType.Album -> album(id)?.let {
-            SpotifyCollection(type, id, it.title, "${it.artist} · ${it.year} · ${it.tracks.size} tracks", it.artRes, it.tracks, it.artistId)
+            val items = it.tracks.drop(offset).take(limit)
+            SpotifyCollection(
+                type, id, it.title, "${it.artist} · ${it.year} · ${it.tracks.size} tracks", it.artRes, items, it.artistId,
+                totalItems = it.tracks.size, hasMore = offset + items.size < it.tracks.size
+            )
         }
 
         SpotifyCollectionType.Playlist -> playlist(id)?.let {
-            SpotifyCollection(type, id, it.name, "${it.owner} · ${it.tracks.size} tracks", it.artRes, it.tracks, it.ownerId)
+            val items = it.tracks.drop(offset).take(limit)
+            SpotifyCollection(
+                type, id, it.name, "${it.owner} · ${it.tracks.size} tracks", it.artRes, items, it.ownerId,
+                totalItems = it.tracks.size, hasMore = offset + items.size < it.tracks.size
+            )
         }
 
         SpotifyCollectionType.Show -> show(id)?.let {
-            SpotifyCollection(type, id, it.name, "${it.publisher} · ${it.episodes.size} episodes", it.artRes, it.episodes)
+            val items = it.episodes.drop(offset).take(limit)
+            SpotifyCollection(
+                type,
+                id,
+                it.name,
+                "${it.publisher} · ${it.episodes.size} episodes",
+                it.artRes,
+                items,
+                totalItems = it.episodes.size,
+                hasMore = offset + items.size < it.episodes.size
+            )
         }
     }
 
-    override fun topTracks(artist: SpotifyArtist): List<SpotifyTrack> = topTracks(artist, 10)
+    override suspend fun topTracks(artist: SpotifyArtist, offset: Int, limit: Int): SpotifyPage<SpotifyTrack> {
+        val all = albums.filter { it.id in artist.albumIds }.flatMap { it.tracks }
+        return SpotifyPage.of(all.drop(offset).take(limit), offset, limit, all.size)
+    }
 
     fun topTracks(artist: SpotifyArtist, limit: Int): List<SpotifyTrack> = albums.filter { it.id in artist.albumIds }.flatMap { it.tracks }.take(limit)
 
-    override fun albumsBy(artist: SpotifyArtist): List<SpotifyAlbum> = artist.albumIds.mapNotNull(::album)
-
-    override fun library(filter: LibraryFilter): List<Any> = when (filter) {
-        LibraryFilter.LikedSongs -> liked
-        LibraryFilter.Playlists -> playlists
-        LibraryFilter.Albums -> albums
-        LibraryFilter.Artists -> artists
-        LibraryFilter.Shows -> shows
+    override suspend fun albumsBy(artist: SpotifyArtist, offset: Int, limit: Int): SpotifyPage<SpotifyAlbum> {
+        val all = artist.albumIds.mapNotNull(::album)
+        return SpotifyPage.of(all.drop(offset).take(limit), offset, limit, all.size)
     }
 
-    override fun search(query: String, scopes: Set<SearchScope>): SpotifySearchResults {
+    override suspend fun library(filter: LibraryFilter, offset: Int, limit: Int): SpotifyPage<Any> {
+        val all: List<Any> = when (filter) {
+            LibraryFilter.LikedSongs -> liked
+            LibraryFilter.Playlists -> playlists
+            LibraryFilter.Albums -> albums
+            LibraryFilter.Artists -> artists
+            LibraryFilter.Shows -> shows
+        }
+        return SpotifyPage.of(all.drop(offset).take(limit), offset, limit, all.size)
+    }
+
+    override suspend fun search(
+        query: String,
+        scopes: Set<SearchScope>,
+        offset: Int,
+        limit: Int
+    ): SpotifySearchResults {
         val q = query.trim()
         if (q.length < 2) return SpotifySearchResults()
         fun match(vararg text: String) = text.any { it.contains(q, ignoreCase = true) }
         val allTracks = albums.flatMap { it.tracks }
+        fun <T> page(items: List<T>): List<T> = items.drop(offset).take(limit)
         return SpotifySearchResults(
-            tracks = if (SearchScope.Tracks in scopes) allTracks.filter { match(it.title, it.artist) } else emptyList(),
-            artists = if (SearchScope.Artists in scopes) artists.filter { match(it.name) } else emptyList(),
-            albums = if (SearchScope.Albums in scopes) albums.filter { match(it.title, it.artist) } else emptyList(),
-            playlists = if (SearchScope.Playlists in scopes) playlists.filter { match(it.name, it.owner) } else emptyList(),
-            shows = if (SearchScope.Shows in scopes) shows.filter { match(it.name, it.publisher) } else emptyList()
+            tracks = if (SearchScope.Tracks in scopes) page(allTracks.filter { match(it.title, it.artist) }) else emptyList(),
+            artists = if (SearchScope.Artists in scopes) page(artists.filter { match(it.name) }) else emptyList(),
+            albums = if (SearchScope.Albums in scopes) page(albums.filter { match(it.title, it.artist) }) else emptyList(),
+            playlists = if (SearchScope.Playlists in scopes) page(playlists.filter { match(it.name, it.owner) }) else emptyList(),
+            shows = if (SearchScope.Shows in scopes) page(shows.filter { match(it.name, it.publisher) }) else emptyList()
         )
     }
 }

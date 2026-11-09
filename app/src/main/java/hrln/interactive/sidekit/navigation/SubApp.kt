@@ -36,7 +36,7 @@ enum class SubApp(val label: String, val icon: SidekitIcon, val designed: Boolea
     Compass("Compass", SidekitIcon.Explore),
     Health("Health", SidekitIcon.EcgHeart),
     Emulator("Emulator", SidekitIcon.SmartDisplay),
-    Sideport("Sideport", SidekitIcon.DeployedCode),
+    Sideport("Sideport", SidekitIcon.DeployedCode)
     ;
 
     /** Root navigation route of the app. Nested screens use "$route/...". */

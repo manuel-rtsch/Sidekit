@@ -9,12 +9,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import hrln.interactive.sidekit.apps.apps.appsGraph
-import hrln.interactive.sidekit.apps.vault.vaultGraph
 import hrln.interactive.sidekit.apps.banking.bankingGraph
 import hrln.interactive.sidekit.apps.calculator.calculatorGraph
 import hrln.interactive.sidekit.apps.calendar.calendarGraph
-import hrln.interactive.sidekit.apps.clock.clockGraph
 import hrln.interactive.sidekit.apps.camera.cameraGraph
+import hrln.interactive.sidekit.apps.clock.clockGraph
 import hrln.interactive.sidekit.apps.compass.compassGraph
 import hrln.interactive.sidekit.apps.files.filesGraph
 import hrln.interactive.sidekit.apps.health.healthGraph
@@ -32,10 +31,12 @@ import hrln.interactive.sidekit.apps.sideport.SideportLinks
 import hrln.interactive.sidekit.apps.sideport.openPorted
 import hrln.interactive.sidekit.apps.sideport.sideportGraph
 import hrln.interactive.sidekit.apps.sideticks.sideticksGraph
-import hrln.interactive.sidekit.apps.spotify.sidetracksGraph
 import hrln.interactive.sidekit.apps.sideweather.sideweatherGraph
+import hrln.interactive.sidekit.apps.spotify.SidetracksLinks
+import hrln.interactive.sidekit.apps.spotify.sidetracksGraph
 import hrln.interactive.sidekit.apps.translate.translateGraph
 import hrln.interactive.sidekit.apps.tripplanning.tripPlanningGraph
+import hrln.interactive.sidekit.apps.vault.vaultGraph
 import hrln.interactive.sidekit.apps.video.videoGraph
 import hrln.interactive.sidekit.apps.webbrowser.webBrowserGraph
 import hrln.interactive.sidekit.launcher.LauncherRoute
@@ -56,6 +57,8 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
     IncomingLinks.Follow(navController)
     // A projected app's "Messages and media" opens its Sideport hub.
     SideportLinks.Follow(navController)
+    // Tapping the Sidetracks playback notification opens Now Playing.
+    SidetracksLinks.Follow(navController)
     // No screen transition. Every screen is the same frame (title, body, action bar) and the
     // title and bar are shared chrome that morph on their own, so navigating swaps only the body,
     // which plays its own entrance (rows rising in). Nothing moves as a whole screen, and only one
@@ -66,14 +69,14 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
         enterTransition = { EnterTransition.None },
         exitTransition = { ExitTransition.None },
         popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None },
+        popExitTransition = { ExitTransition.None }
     ) {
         composable(LAUNCHER_ROUTE) {
             val context = androidx.compose.ui.platform.LocalContext.current
             LauncherRoute(
                 onOpenApp = { app -> navController.navigate(app.route) { launchSingleTop = true } },
                 // Ported apps open straight into their projection; if that can't start, Sideport explains why.
-                onOpenPorted = { app -> if (openPorted(context, app) != null) navController.navigate(SubApp.Sideport.route) { launchSingleTop = true } },
+                onOpenPorted = { app -> if (openPorted(context, app) != null) navController.navigate(SubApp.Sideport.route) { launchSingleTop = true } }
             )
         }
         composable(SubApp.Emulator.route) { hrln.interactive.sidekit.apps.emulator.EmulatorLibrary { navController.popBackStack() } }

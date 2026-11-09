@@ -35,4 +35,6 @@ the task and the APK has no library; `NativeLibraries.load("sidekit_spotify")` t
 `vergen-gitcl` 1.0.8 depends on `vergen-lib` 0.1.6 while `vergen` 9.1.0 pulled a second
 incompatible `vergen-lib`. Do not update that crate without rebuilding Android targets.
 
-No librespot patches are applied. Upstream MIT licence: `LICENSE-librespot`.
+One minimal librespot-core patch is applied through `native/vendor/librespot-core` (platform
+constant set to `"linux"` so Login5/client-token requests match the desktop client id). It is
+documented in `docs/spotify/SIDETRACKS.md` §6. Upstream MIT licence: `LICENSE-librespot`.

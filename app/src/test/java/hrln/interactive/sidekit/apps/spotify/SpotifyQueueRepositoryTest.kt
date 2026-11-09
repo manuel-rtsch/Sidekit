@@ -42,6 +42,16 @@ class SpotifyQueueRepositoryTest {
         assertEquals(listOf("c", "b", "d"), queue.snapshot.upcoming.map { it.id })
     }
 
+    @Test fun `restore adopts a process-wide snapshot`() {
+        val queue = SpotifyQueueRepository(Random(1))
+        val snapshot = queue.play(tracks, 1)
+
+        val restored = SpotifyQueueRepository(Random(2)).restore(snapshot)
+
+        assertEquals("b", restored.current?.id)
+        assertEquals(listOf("c", "d"), restored.upcoming.map { it.id })
+    }
+
     @Test fun `add to queue appends`() {
         val queue = SpotifyQueueRepository(Random(1))
         queue.play(tracks, 0)
@@ -132,6 +142,17 @@ class SpotifyQueueRepositoryTest {
         assertEquals("c", queue.snapshot.current?.id)
         assertEquals(listOf("a", "b"), queue.snapshot.history.map { it.id })
         assertEquals(listOf("d"), queue.snapshot.upcoming.map { it.id })
+    }
+
+    @Test fun `removing history only drops the chosen item`() {
+        val queue = SpotifyQueueRepository(Random(1))
+        queue.play(tracks, 0)
+        queue.next(auto = false)
+        queue.next(auto = false)
+
+        queue.removeHistory(track("a"))
+
+        assertEquals(listOf("b"), queue.snapshot.history.map { it.id })
     }
 
     @Test fun `clearing upcoming can be undone`() {

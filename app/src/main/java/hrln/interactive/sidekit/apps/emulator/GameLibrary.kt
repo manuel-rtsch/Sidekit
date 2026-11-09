@@ -40,8 +40,12 @@ internal class GameLibrary(private val context: Context) {
             if (!target.exists()) check(temp.renameTo(target)) { "Could not store ROM." }
             File(root, "$id.title").writeText(name.substringBeforeLast('.'))
             return target
-        } finally { temp.delete() }
+        } finally {
+            temp.delete()
+        }
     }
     fun saveFile(game: File) = AtomicFile(File(root, "${game.nameWithoutExtension}.sav"))
-    companion object { val extensions = setOf("gb", "gbc", "gba") }
+    companion object {
+        val extensions = setOf("gb", "gbc", "gba")
+    }
 }

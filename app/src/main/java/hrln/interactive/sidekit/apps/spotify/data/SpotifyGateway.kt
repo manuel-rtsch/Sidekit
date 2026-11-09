@@ -13,7 +13,6 @@ interface SpotifyGateway {
     suspend fun pause()
     suspend fun stop()
     suspend fun seek(positionMs: Long)
-    suspend fun setVolume(volume: Float)
 }
 
 /** Stable gateway failures. Raw librespot strings must not reach the UI. */

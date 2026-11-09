@@ -12,20 +12,27 @@ import kotlin.random.Random
  * current item and history never move. The repository is deliberately free of Android and
  * Compose types; playback, persistence and the UI observe it through [snapshot].
  */
-class SpotifyQueueRepository(private val random: Random = Random.Default) {
+class SpotifyQueueRepository(
+    private val random: Random = Random.Default,
+    private val load: () -> Snapshot = { Snapshot() },
+    private val save: (Snapshot) -> Unit = {}
+) {
     data class Snapshot(
         val current: SpotifyMediaItem? = null,
         val upcoming: List<SpotifyMediaItem> = emptyList(),
         val history: List<SpotifyMediaItem> = emptyList(),
         val shuffle: Boolean = false,
         val repeat: RepeatMode = RepeatMode.Off,
-        val context: List<SpotifyMediaItem> = emptyList()
+        val context: List<SpotifyMediaItem> = emptyList(),
+        /** Upcoming order before shuffle, kept so shuffle can be turned off after process death. */
+        val shuffleBackup: List<SpotifyMediaItem>? = null
     )
 
-    var snapshot: Snapshot = Snapshot()
+    var snapshot: Snapshot = runCatching(load).getOrDefault(Snapshot())
         private set
 
-    private var shuffleBackup: List<SpotifyMediaItem>? = null
+    /** Replaces the queue, used when a new ViewModel adopts the process-wide playback state. */
+    fun restore(snapshot: Snapshot): Snapshot = commit(snapshot)
 
     /**
      * Starts playback from [index] within [items], replacing the queue. The rows after the
@@ -38,54 +45,53 @@ class SpotifyQueueRepository(private val random: Random = Random.Default) {
 
         val previous = snapshot.current
         val nextUpcoming = items.drop(index + 1).let { if (snapshot.shuffle) it.shuffled(random) else it }
-        snapshot = snapshot.copy(
-            current = item,
-            upcoming = nextUpcoming,
-            history = if (previous == null || previous.id == item.id) {
-                snapshot.history
-            } else {
-                (listOf(previous) + snapshot.history).take(HISTORY_LIMIT)
-            },
-            context = items
+        return commit(
+            snapshot.copy(
+                current = item,
+                upcoming = nextUpcoming,
+                history = if (previous == null || previous.id == item.id) {
+                    snapshot.history
+                } else {
+                    (listOf(previous) + snapshot.history).take(HISTORY_LIMIT)
+                },
+                context = items,
+                shuffleBackup = if (snapshot.shuffle) items.drop(index + 1) else null
+            )
         )
-        shuffleBackup = if (snapshot.shuffle) items.drop(index + 1) else null
-        return snapshot
     }
 
     fun playItem(item: SpotifyMediaItem): Snapshot = play(listOf(item), 0)
 
-    /** Stops without clearing the queue; the current item stays so the user can resume. */
-    fun stop(): Snapshot {
-        snapshot = snapshot.copy(current = null, upcoming = emptyList(), history = emptyList(), context = emptyList())
-        shuffleBackup = null
-        return snapshot
-    }
-
-    fun toggleShuffle(): Snapshot {
-        if (snapshot.shuffle) {
-            snapshot = snapshot.copy(shuffle = false, upcoming = shuffleBackup ?: snapshot.upcoming)
+    /** Stops and clears the queue. */
+    fun stop(): Snapshot = commit(
+        snapshot.copy(
+            current = null,
+            upcoming = emptyList(),
+            history = emptyList(),
+            context = emptyList(),
             shuffleBackup = null
-        } else {
-            shuffleBackup = snapshot.upcoming
-            snapshot = snapshot.copy(shuffle = true, upcoming = snapshot.upcoming.shuffled(random))
-        }
-        return snapshot
+        )
+    )
+
+    fun toggleShuffle(): Snapshot = if (snapshot.shuffle) {
+        commit(
+            snapshot.copy(
+                shuffle = false,
+                upcoming = snapshot.shuffleBackup ?: snapshot.upcoming,
+                shuffleBackup = null
+            )
+        )
+    } else {
+        commit(snapshot.copy(shuffle = true, upcoming = snapshot.upcoming.shuffled(random), shuffleBackup = snapshot.upcoming))
     }
 
-    fun clearHistory(): Snapshot {
-        snapshot = snapshot.copy(history = emptyList())
-        return snapshot
-    }
+    fun clearHistory(): Snapshot = commit(snapshot.copy(history = emptyList()))
 
-    fun cycleRepeat(): Snapshot {
-        snapshot = snapshot.copy(repeat = snapshot.repeat.next())
-        return snapshot
-    }
+    fun removeHistory(item: SpotifyMediaItem): Snapshot = commit(snapshot.copy(history = snapshot.history.filterNot { it.id == item.id }))
 
-    fun setRepeat(mode: RepeatMode): Snapshot {
-        snapshot = snapshot.copy(repeat = mode)
-        return snapshot
-    }
+    fun cycleRepeat(): Snapshot = commit(snapshot.copy(repeat = snapshot.repeat.next()))
+
+    fun setRepeat(mode: RepeatMode): Snapshot = commit(snapshot.copy(repeat = mode))
 
     /**
      * Moves to the next upcoming item. [auto] distinguishes the end of a track from the user
@@ -96,23 +102,19 @@ class SpotifyQueueRepository(private val random: Random = Random.Default) {
         if (auto && snapshot.repeat == RepeatMode.Track) return snapshot
         val next = snapshot.upcoming.firstOrNull()
         if (next != null) {
-            snapshot = snapshot.copy(
-                current = next,
-                upcoming = snapshot.upcoming.drop(1),
-                history = (listOf(current) + snapshot.history).take(HISTORY_LIMIT)
+            return commit(
+                snapshot.copy(
+                    current = next,
+                    upcoming = snapshot.upcoming.drop(1),
+                    history = (listOf(current) + snapshot.history).take(HISTORY_LIMIT)
+                )
             )
-            return snapshot
         }
         if (!auto) return snapshot
         return when (snapshot.repeat) {
             RepeatMode.Context -> replayContext()
-
             RepeatMode.Track -> snapshot
-
-            RepeatMode.Off -> {
-                snapshot = snapshot.copy(current = null, history = snapshot.history)
-                snapshot
-            }
+            RepeatMode.Off -> commit(snapshot.copy(current = null, history = snapshot.history))
         }
     }
 
@@ -121,12 +123,13 @@ class SpotifyQueueRepository(private val random: Random = Random.Default) {
         if (snapshot.current == null) return snapshot
         if (positionMs > RESTART_THRESHOLD_MS) return snapshot
         val previous = snapshot.history.firstOrNull() ?: return snapshot
-        snapshot = snapshot.copy(
-            current = previous,
-            upcoming = listOfNotNull(snapshot.current) + snapshot.upcoming,
-            history = snapshot.history.drop(1)
+        return commit(
+            snapshot.copy(
+                current = previous,
+                upcoming = listOfNotNull(snapshot.current) + snapshot.upcoming,
+                history = snapshot.history.drop(1)
+            )
         )
-        return snapshot
     }
 
     fun jumpTo(id: String): Snapshot {
@@ -136,12 +139,13 @@ class SpotifyQueueRepository(private val random: Random = Random.Default) {
         if (at >= 0) {
             val skipped = snapshot.upcoming.take(at)
             val target = snapshot.upcoming[at]
-            snapshot = snapshot.copy(
-                current = target,
-                upcoming = snapshot.upcoming.drop(at + 1),
-                history = (listOf(current) + skipped + snapshot.history).take(HISTORY_LIMIT)
+            return commit(
+                snapshot.copy(
+                    current = target,
+                    upcoming = snapshot.upcoming.drop(at + 1),
+                    history = (listOf(current) + skipped + snapshot.history).take(HISTORY_LIMIT)
+                )
             )
-            return snapshot
         }
         snapshot.history.firstOrNull { it.id == id }?.let { playItem(it) }
         return snapshot
@@ -151,44 +155,42 @@ class SpotifyQueueRepository(private val random: Random = Random.Default) {
     fun playNext(item: SpotifyMediaItem): Snapshot {
         if (item.id == snapshot.current?.id) return snapshot
         val remaining = snapshot.upcoming.filterNot { it.id == item.id }
-        snapshot = snapshot.copy(upcoming = listOf(item) + remaining)
-        return snapshot
+        return commit(snapshot.copy(upcoming = listOf(item) + remaining))
     }
 
-    fun addToQueue(item: SpotifyMediaItem): Snapshot {
-        snapshot = snapshot.copy(upcoming = snapshot.upcoming + item)
-        return snapshot
-    }
+    fun addToQueue(item: SpotifyMediaItem): Snapshot = commit(snapshot.copy(upcoming = snapshot.upcoming + item))
 
-    fun removeUpcoming(item: SpotifyMediaItem): Snapshot {
-        snapshot = snapshot.copy(upcoming = snapshot.upcoming.filterNot { it.id == item.id })
-        return snapshot
-    }
+    fun removeUpcoming(item: SpotifyMediaItem): Snapshot = commit(snapshot.copy(upcoming = snapshot.upcoming.filterNot { it.id == item.id }))
 
     /** Removes every upcoming item and returns them so the caller can offer Undo. */
     fun clearUpcoming(): List<SpotifyMediaItem> {
         val removed = snapshot.upcoming
-        snapshot = snapshot.copy(upcoming = emptyList())
-        shuffleBackup = null
+        commit(snapshot.copy(upcoming = emptyList(), shuffleBackup = null))
         return removed
     }
 
     /** Restores a cleared tail in front of whatever was appended in the meantime. */
-    fun restoreUpcoming(items: List<SpotifyMediaItem>): Snapshot {
-        snapshot = snapshot.copy(upcoming = items + snapshot.upcoming)
-        return snapshot
-    }
+    fun restoreUpcoming(items: List<SpotifyMediaItem>): Snapshot = commit(snapshot.copy(upcoming = items + snapshot.upcoming))
 
     private fun replayContext(): Snapshot {
         val items = snapshot.context
-        if (items.isEmpty()) return snapshot.copy(current = null)
+        if (items.isEmpty()) return commit(snapshot.copy(current = null))
         val first = items.first()
-        snapshot = snapshot.copy(
-            current = first,
-            upcoming = items.drop(1).let { if (snapshot.shuffle) it.shuffled(random) else it },
-            history = snapshot.history
+        return commit(
+            snapshot.copy(
+                current = first,
+                upcoming = items.drop(1).let { if (snapshot.shuffle) it.shuffled(random) else it },
+                history = snapshot.history,
+                shuffleBackup = if (snapshot.shuffle) items.drop(1) else null
+            )
         )
-        shuffleBackup = if (snapshot.shuffle) items.drop(1) else null
+    }
+
+    private fun commit(next: Snapshot): Snapshot {
+        if (next != snapshot) {
+            snapshot = next
+            runCatching { save(next) }
+        }
         return snapshot
     }
 

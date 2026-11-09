@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -19,10 +20,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.apps.media.RemoteArtwork
 import hrln.interactive.sidekit.apps.spotify.data.SpotifySessions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.navigation.LAUNCHER_ROUTE
 import hrln.interactive.sidekit.navigation.SubApp
+import hrln.interactive.sidekit.ui.UndoWindowLifecycle
+import kotlinx.coroutines.flow.MutableStateFlow
 
 private val ROOT = SubApp.Sidetracks.route
 private val HOME = "$ROOT/home"
@@ -37,6 +41,33 @@ private val SIGN_IN = "$ROOT/sign-in"
 
 private fun collectionRoute(type: SpotifyCollectionType, id: String) = "$ROOT/collection/${type.route}/$id"
 private fun artistRoute(id: String) = "$ROOT/artist/$id"
+
+/**
+ * A tap on the playback notification opens Sidetracks at Now Playing instead of the launcher.
+ * The activity records the request here; the nav host consumes it once it is composed.
+ */
+object SidetracksLinks {
+    const val ACTION_OPEN_NOW_PLAYING = "hrln.interactive.sidekit.action.SIDETRACKS_NOW_PLAYING"
+
+    private val pending = MutableStateFlow(false)
+
+    fun handle(intent: Intent?): Boolean {
+        if (intent?.action != ACTION_OPEN_NOW_PLAYING) return false
+        pending.value = true
+        return true
+    }
+
+    @Composable
+    fun Follow(nav: NavHostController) {
+        val open by pending.collectAsState()
+        LaunchedEffect(open) {
+            if (!open) return@LaunchedEffect
+            pending.value = false
+            nav.navigate(ROOT) { popUpTo(LAUNCHER_ROUTE) }
+            nav.navigate(NOW_PLAYING) { launchSingleTop = true }
+        }
+    }
+}
 
 private val collectionArgs = listOf(
     navArgument("type") { type = NavType.StringType },
@@ -59,7 +90,10 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onLibrary = { nav.navigate(LIBRARY) },
                 onSearch = { nav.navigate(SEARCH) },
                 onSettings = { nav.navigate(SETTINGS) },
+                onRefresh = vm::refresh,
                 onPlay = vm::playLibraryTrack,
+                onQueue = { nav.navigate(QUEUE) },
+                onQueueTrack = vm::addToQueue,
                 onDismissNotice = vm::dismissNotice
             )
         }
@@ -71,23 +105,29 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onBack = { nav.popBackStack() },
                 onSearch = { nav.navigate(SEARCH) },
                 onFilter = vm::setFilter,
-                onTrack = vm::playItem,
+                onTrack = {
+                    vm.playItem(it)
+                    nav.navigate(NOW_PLAYING)
+                },
+                onQueue = vm::addToQueue,
                 onPlaylist = { nav.navigate(collectionRoute(SpotifyCollectionType.Playlist, it.id)) },
                 onAlbum = { nav.navigate(collectionRoute(SpotifyCollectionType.Album, it.id)) },
                 onArtist = { nav.navigate(artistRoute(it.id)) },
                 onShow = { nav.navigate(collectionRoute(SpotifyCollectionType.Show, it.id)) },
-                onLoadMore = { vm.notice("Everything in this filter is already loaded") },
+                onLoadMore = vm::loadMoreLibrary,
                 onDismissNotice = vm::dismissNotice
             )
         }
         composable(COLLECTION, arguments = collectionArgs) { entry ->
             val vm = entry.spotifyViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
+            UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             val type = SpotifyCollectionType.entries.firstOrNull { it.route == entry.arguments?.getString("type") }
             val id = entry.arguments?.getString("id").orEmpty()
+            LaunchedEffect(type, id) { type?.let { vm.ensureCollection(it, id) } }
             val collection = type?.let { vm.collection(it, id) }
             if (collection == null) {
-                MissingCollectionScreen(onBack = { nav.popBackStack() })
+                MissingCollectionScreen(onBack = { nav.popBackStack() }, loading = type?.let { "${it.route}:$id" in state.pendingCollections } == true)
             } else {
                 CollectionScreen(
                     collection,
@@ -100,8 +140,11 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                         collection.artistId?.let { nav.navigate(artistRoute(it)) } ?: vm.notice("This collection has no artist page")
                     },
                     onQueue = { collection.items.firstOrNull()?.let(vm::addToQueue) },
+                    onQueueItem = vm::addToQueue,
                     onNowPlaying = { nav.navigate(NOW_PLAYING) },
-                    onLoadMore = { vm.notice("Everything in this collection is already loaded") },
+                    onUndo = vm::undo,
+                    onLoadMore = { type?.let { vm.loadMoreCollection(it, id) } },
+                    loadingMore = "${type?.route}:$id" in state.collectionMorePending,
                     onDismissNotice = vm::dismissNotice
                 )
             }
@@ -109,9 +152,12 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
         composable(ARTIST, arguments = artistArgs) { entry ->
             val vm = entry.spotifyViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            val artist = vm.artist(entry.arguments?.getString("id").orEmpty())
+            UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
+            val artistId = entry.arguments?.getString("id").orEmpty()
+            LaunchedEffect(artistId) { vm.ensureArtist(artistId) }
+            val artist = vm.artist(artistId)
             if (artist == null) {
-                MissingCollectionScreen(onBack = { nav.popBackStack() })
+                MissingCollectionScreen(onBack = { nav.popBackStack() }, loading = artistId in state.pendingArtists)
             } else {
                 val albums = vm.albumsBy(artist)
                 val tracks = vm.topTracks(artist)
@@ -123,9 +169,16 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                     onBack = { nav.popBackStack() },
                     onPlay = { vm.playArtist(artist) },
                     onTrack = { vm.play(tracks, tracks.indexOf(it)) },
+                    onQueue = vm::addToQueue,
                     onAlbum = { nav.navigate(collectionRoute(SpotifyCollectionType.Album, it.id)) },
                     onFollow = { vm.toggleFollow(artist) },
                     onNowPlaying = { nav.navigate(NOW_PLAYING) },
+                    onUndo = vm::undo,
+                    onLoadMoreAlbums = { vm.loadMoreArtistAlbums(artist) },
+                    onLoadMoreTracks = { vm.loadMoreArtistTracks(artist) },
+                    albumHasMore = state.artistAlbumHasMore[artist.id] == true,
+                    trackHasMore = state.artistTrackHasMore[artist.id] == true,
+                    loadingMore = artist.id in state.artistMorePending,
                     onDismissNotice = vm::dismissNotice
                 )
             }
@@ -140,16 +193,19 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onClear = vm::clearQuery,
                 onToggleScope = vm::toggleScope,
                 onTrack = vm::playItem,
+                onQueue = vm::addToQueue,
                 onArtist = { nav.navigate(artistRoute(it.id)) },
                 onAlbum = { nav.navigate(collectionRoute(SpotifyCollectionType.Album, it.id)) },
                 onPlaylist = { nav.navigate(collectionRoute(SpotifyCollectionType.Playlist, it.id)) },
                 onShow = { nav.navigate(collectionRoute(SpotifyCollectionType.Show, it.id)) },
+                onLoadMore = vm::loadMoreSearch,
                 onDismissNotice = vm::dismissNotice
             )
         }
         composable(NOW_PLAYING) { entry ->
             val vm = entry.spotifyViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
+            UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             SpotifyNowPlayingScreen(
                 state,
                 onBack = { nav.popBackStack() },
@@ -169,7 +225,7 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 onArtist = {
                     state.current?.artistId?.let { nav.navigate(artistRoute(it)) }
                 },
-                onAddToPlaylist = vm::addCurrentToPlaylist,
+                onUndo = vm::undo,
                 onDismissNotice = vm::dismissNotice
             )
         }
@@ -179,10 +235,15 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
             QueueScreen(
                 state,
                 onBack = { nav.popBackStack() },
-                onNowPlaying = { nav.popBackStack(NOW_PLAYING, inclusive = false) },
+                onNowPlaying = {
+                    if (!nav.popBackStack(NOW_PLAYING, inclusive = false)) {
+                        nav.navigate(NOW_PLAYING) { launchSingleTop = true }
+                    }
+                },
                 onJump = vm::jumpTo,
                 onPlayNext = vm::moveToNext,
                 onRemove = vm::removeUpcoming,
+                onRemoveHistory = vm::removeHistory,
                 onClearUpcoming = vm::clearUpcoming,
                 onRestoreUpcoming = vm::restoreUpcoming,
                 onShuffle = vm::toggleShuffle,
@@ -196,7 +257,6 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 state,
                 onBack = { nav.popBackStack() },
                 onAudioQuality = vm::cycleAudioQuality,
-                onVolume = vm::setVolume,
                 onClearCache = vm::clearCache,
                 onClearHistory = vm::clearHistory,
                 onSignOut = {
@@ -222,7 +282,6 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
                 state,
                 onBack = { nav.popBackStack(LAUNCHER_ROUTE, inclusive = false) },
                 onLogIn = vm::signIn,
-                onCopyLink = { vm.notice("Login link copied") },
                 onDismissNotice = vm::dismissNotice
             )
         }
@@ -230,12 +289,16 @@ fun NavGraphBuilder.sidetracksGraph(nav: NavHostController) {
 }
 
 @Composable
-private fun MissingCollectionScreen(onBack: () -> Unit) {
+private fun MissingCollectionScreen(onBack: () -> Unit, loading: Boolean = false) {
     SidekitScaffold(title = "Sidetracks", actions = spotifyBack("Back", onBack)) { padding ->
         androidx.compose.foundation.layout.Box(
             androidx.compose.ui.Modifier.padding(padding)
         ) {
-            EmptyMessage("This collection isn't available", "Go back and choose another")
+            if (loading) {
+                EmptyMessage("Loading…", "Fetching from Spotify")
+            } else {
+                EmptyMessage("This collection isn't available", "Go back and choose another")
+            }
         }
     }
 }
@@ -254,9 +317,19 @@ private fun NavBackStackEntry.spotifyViewModel(nav: NavHostController): SpotifyV
     }
     return viewModel(
         parent,
-        factory = remember(session, openBrowser) {
+        factory = remember(session, openBrowser, context) {
             viewModelFactory {
-                initializer { SpotifyViewModel(session = session, openBrowser = openBrowser) }
+                initializer {
+                    SpotifyViewModel(
+                        catalog = session.catalog,
+                        writer = session.writer,
+                        queue = session.queue,
+                        history = session.history,
+                        session = session,
+                        openBrowser = openBrowser,
+                        clearArtworkCache = { RemoteArtwork.clear(context) }
+                    )
+                }
             }
         }
     )
