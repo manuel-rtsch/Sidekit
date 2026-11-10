@@ -50,15 +50,17 @@ fun SideplayHomeScreen(
         onDismissNotice,
         listOf(
             SideAction("queue", "Queue", SidekitIcon.QueueMusic, onClick = onQueue),
-            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch),
-            SideAction.square("settings", SidekitIcon.Settings, "Settings", onSettings)
+            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
         ),
         state.noticeKind
     )
     SidekitScaffold(
         title = "Sideplay",
         actions = bar,
-        options = listOf(SideAction("refresh", "Refresh", SidekitIcon.Undo, onClick = onRefresh))
+        options = listOf(
+            SideAction("refresh", "Refresh", SidekitIcon.Undo, onClick = onRefresh),
+            SideAction("settings", "Settings", SidekitIcon.Settings, onClick = onSettings)
+        )
     ) { padding ->
         val listState = rememberLazyListState()
         val swipes = rememberSwipeRevealGroup()
