@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.apps.spotify
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -300,9 +300,9 @@ private fun MissingCollectionScreen(onBack: () -> Unit, loading: Boolean = false
             androidx.compose.ui.Modifier.padding(padding)
         ) {
             if (loading) {
-                EmptyMessage("Loading…", "Fetching from Spotify")
+                EmptyMessage("Loading…", hint = "Fetching from Spotify")
             } else {
-                EmptyMessage("This collection isn't available", "Go back and choose another")
+                EmptyMessage("This collection isn't available", hint = "Go back and choose another")
             }
         }
     }
@@ -316,7 +316,7 @@ private fun NavBackStackEntry.spotifyViewModel(nav: NavHostController): SpotifyV
     val openBrowser: suspend (String) -> Unit = remember(context) {
         { url ->
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
         }
     }

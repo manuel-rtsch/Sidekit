@@ -23,7 +23,13 @@ class SpotifyHistoryRepository(
     private val entries = ArrayDeque<SpotifyHistoryEntry>()
 
     init {
-        load().take(limit).forEach(entries::addLast)
+        // Older builds could persist the same item more than once. Home renders this list with
+        // the item id as its LazyColumn key, so a duplicate would crash the draw pass.
+        val seen = HashSet<String>()
+        load().asSequence()
+            .filter { seen.add(it.item.id) }
+            .take(limit)
+            .forEach(entries::addLast)
     }
 
     fun snapshot(): List<SpotifyHistoryEntry> = entries.toList()

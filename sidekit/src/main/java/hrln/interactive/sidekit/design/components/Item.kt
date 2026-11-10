@@ -81,6 +81,11 @@ fun SidekitItem(
     secondaryToEnd: Boolean = false,
     icon: SidekitIcon? = null,
     showLinkArrow: Boolean = false,
+    /**
+     * Keep [showLinkArrow] when [secondary] is present too. Off by default so rows that show a
+     * value keep their existing look; settings rows that open another page opt in.
+     */
+    showLinkArrowWithSecondary: Boolean = false,
     colour: ItemColour = ItemColour.Primary,
     titleDecoration: TextDecoration? = null,
     onClick: (() -> Unit)? = null,
@@ -108,8 +113,9 @@ fun SidekitItem(
                     textAlign = if (secondaryToEnd) TextAlign.End else null
                 )
             }
-            // The arrow marks a row that opens another page, whether or not it also shows a value.
-            if (showLinkArrow) {
+            // The arrow marks a row that opens another page. With a secondary value it must be
+            // requested explicitly, so existing rows keep the arrow off.
+            if (showLinkArrow && (secondary == null || showLinkArrowWithSecondary)) {
                 Box(
                     if (secondary == null) Modifier.weight(1f) else Modifier,
                     contentAlignment = Alignment.CenterEnd

@@ -48,6 +48,17 @@ class SpotifyHistoryRepositoryTest {
         assertEquals(listOf("a", "b"), history.items().map { it.id })
     }
 
+    @Test fun `load drops duplicate ids from older files`() {
+        val stored = listOf(
+            SpotifyHistoryEntry(track("a"), 3),
+            SpotifyHistoryEntry(track("b"), 2),
+            SpotifyHistoryEntry(track("a"), 1)
+        )
+        val history = SpotifyHistoryRepository(load = { stored })
+
+        assertEquals(listOf("a", "b"), history.items().map { it.id })
+    }
+
     private fun track(id: String) = SpotifyTrack(
         id = id,
         title = "Track $id",

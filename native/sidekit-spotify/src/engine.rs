@@ -45,6 +45,9 @@ impl Default for State {
     }
 }
 
+/// Upper bound for one librespot access-point connection attempt.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
+
 static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 static STATE: OnceLock<Mutex<State>> = OnceLock::new();
 static AUDIO_RX: OnceLock<Mutex<Receiver<Vec<u8>>>> = OnceLock::new();
@@ -130,8 +133,15 @@ pub fn connect(access_token: &str) -> Result<(), String> {
         ..Default::default()
     };
     let session = Session::new(config, None);
-    rt.block_on(session.connect(Credentials::with_access_token(access_token), true))
-        .map_err(|e| format!("SESSION_CONNECT_FAILED: {e}"))?;
+    // A fresh TCP handshake has no deadline of its own, and `Session::connect` may walk up to six
+    // access points. Bound it so a bad network cannot wedge the caller (and the UI waiting on it)
+    // indefinitely; the caller retries with a new session on the next play.
+    let connect = session.connect(Credentials::with_access_token(access_token), true);
+    match rt.block_on(tokio::time::timeout(CONNECT_TIMEOUT, connect)) {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => return Err(format!("SESSION_CONNECT_FAILED: {e}")),
+        Err(_) => return Err("SESSION_CONNECT_TIMEOUT".to_string()),
+    }
 
     let mut guard = state().lock().map_err(|_| "STATE_LOCK".to_string())?;
     guard.session = Some(session);
@@ -141,23 +151,45 @@ pub fn connect(access_token: &str) -> Result<(), String> {
 
 pub fn set_access_token(access_token: &str) -> Result<(), String> {
     let mut guard = state().lock().map_err(|_| "STATE_LOCK".to_string())?;
-    if guard.session.is_none() {
+    let Some(session) = guard.session.as_ref() else {
         return Err("SESSION_NOT_CONNECTED".to_string());
+    };
+    // librespot marks the session invalid when the access point connection closes or the
+    // keep-alive times out. The stored `Session` handle stays usable, so without this check a
+    // dead session would accept token updates forever and every later track would load with no
+    // audio key. Reporting the invalid state lets the Kotlin side reconnect from scratch.
+    if session.is_invalid() {
+        return Err("SESSION_INVALID".to_string());
     }
     guard.access_token = Some(access_token.to_string());
     Ok(())
 }
 
 pub fn disconnect() {
-    if let Ok(mut guard) = state().lock() {
-        if let Some(player) = guard.player.take() {
-            player.stop();
+    // Take the old handles out and release `STATE` before touching them. `Session::shutdown`
+    // waits on librespot's component mutexes; when the access-point connection has stalled, a
+    // network task can be holding one of them, so the call may not return. Holding `STATE`
+    // across it would wedge every native call (including the reconnect that follows).
+    let (player, session) = match state().lock() {
+        Ok(mut guard) => {
+            let player = guard.player.take();
+            let session = guard.session.take();
+            guard.events = None;
+            guard.access_token = None;
+            (player, session)
         }
-        guard.events = None;
-        guard.access_token = None;
-        if let Some(session) = guard.session.take() {
-            session.shutdown();
-        }
+        Err(_) => return,
+    };
+
+    if let Some(player) = player {
+        player.stop();
+    }
+
+    if let Some(session) = session {
+        // Reconnect must not wait for the dead session's teardown. If the shutdown cannot
+        // complete it leaks one thread for the lifetime of the process; that is preferable to
+        // blocking playback until the app is restarted.
+        std::thread::spawn(move || session.shutdown());
     }
 }
 

@@ -68,25 +68,29 @@ class NativeSpotifyGateway(
         sessionToken = null
     }
 
-    /** Connects with the current stored token, refreshing it first when needed. */
-    suspend fun ensureConnected() {
+    /**
+     * Connects with the current stored token, refreshing it first when needed.
+     *
+     * `setAccessToken` is called on every attempt, not only when the token changed: librespot can
+     * lose its access-point connection while the OAuth token is still valid, and a session that
+     * has gone invalid must be rebuilt or playback fails for every track. The native call is a
+     * cheap state update, so the extra round trip on each play is worth the liveness check.
+     */
+    suspend fun ensureConnected(): Boolean {
         val token = accessToken() ?: fail(SpotifyFailure.AuthenticationExpired, "Sign in again")
         if (!connected) {
             connect(token)
-            return
+            return true
         }
-        if (token == sessionToken) return
-        // The OAuth token rotates every hour. Mutate the existing session instead of reconnecting
-        // unless native code reports that the session itself has gone away.
-        val updated = withContext(Dispatchers.IO) { native.setAccessToken(token) }
-        if (updated) {
+        if (withContext(Dispatchers.IO) { native.setAccessToken(token) }) {
             sessionToken = token
-            return
+            return false
         }
         connected = false
         sessionConnected = false
         sessionToken = null
         connect(token)
+        return true
     }
 
     /** Connects the librespot session without creating an audio player. Used by catalog reads. */
@@ -95,15 +99,13 @@ class NativeSpotifyGateway(
         val token = accessToken() ?: fail(SpotifyFailure.AuthenticationExpired, "Sign in again")
         if (!sessionConnected) {
             connectSession(token)
-        } else if (token != sessionToken) {
-            if (!native.setAccessToken(token)) {
-                // The native session is gone; reconnect from scratch rather than keep a stale token.
-                sessionConnected = false
-                sessionToken = null
-                connectSession(token)
-            } else {
-                sessionToken = token
-            }
+        } else if (!native.setAccessToken(token)) {
+            // The native session is gone; reconnect from scratch rather than keep a stale token.
+            sessionConnected = false
+            sessionToken = null
+            connectSession(token)
+        } else {
+            sessionToken = token
         }
     }
 

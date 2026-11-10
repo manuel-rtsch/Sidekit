@@ -273,7 +273,7 @@ class SpotifyViewModel(
                 val page = catalog.albumsBy(artist, snapshot.artistAlbums[id].orEmpty().size, SPOTIFY_PAGE_SIZE)
                 _state.update {
                     it.copy(
-                        artistAlbums = it.artistAlbums + (id to it.artistAlbums[id].orEmpty() + page.items),
+                        artistAlbums = it.artistAlbums + (id to (it.artistAlbums[id].orEmpty() + page.items).distinctBy { album -> album.id }),
                         artistAlbumHasMore = it.artistAlbumHasMore + (id to page.hasMore),
                         artistMorePending = it.artistMorePending - id
                     )
@@ -302,7 +302,7 @@ class SpotifyViewModel(
                 val page = catalog.topTracks(artist, snapshot.artistTracks[id].orEmpty().size, SPOTIFY_PAGE_SIZE)
                 _state.update {
                     it.copy(
-                        artistTracks = it.artistTracks + (id to it.artistTracks[id].orEmpty() + page.items),
+                        artistTracks = it.artistTracks + (id to (it.artistTracks[id].orEmpty() + page.items).distinctBy { track -> track.id }),
                         artistTrackHasMore = it.artistTrackHasMore + (id to page.hasMore),
                         artistMorePending = it.artistMorePending - id
                     )
@@ -360,8 +360,8 @@ class SpotifyViewModel(
                     }
                     it.copy(
                         artists = it.artists + (id to artist),
-                        artistAlbums = it.artistAlbums + (id to albums.items),
-                        artistTracks = it.artistTracks + (id to tracks.items),
+                        artistAlbums = it.artistAlbums + (id to albums.items.distinctBy { album -> album.id }),
+                        artistTracks = it.artistTracks + (id to tracks.items.distinctBy { track -> track.id }),
                         artistAlbumHasMore = it.artistAlbumHasMore + (id to albums.hasMore),
                         artistTrackHasMore = it.artistTrackHasMore + (id to tracks.hasMore),
                         followedArtistIds = ids,

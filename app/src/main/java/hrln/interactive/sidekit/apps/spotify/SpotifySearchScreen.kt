@@ -102,19 +102,19 @@ fun SpotifySearchScreen(
         SidekitList(padding, state = listState) {
             when {
                 state.query.isBlank() -> item(key = "idle") {
-                    EmptyMessage("Search your library and Spotify", "Tracks, artists, albums, playlists and shows")
+                    EmptyMessage("Search your library and Spotify", hint = "Tracks, artists, albums, playlists and shows")
                 }
 
                 state.query.trim().length < 2 -> item(key = "short") {
-                    EmptyMessage("Keep typing", "Type at least two letters to search")
+                    EmptyMessage("Keep typing", hint = "Type at least two letters to search")
                 }
 
                 state.searchPending && results.isEmpty -> item(key = "loading") {
-                    EmptyMessage("Searching…", "Spotify is looking for matches")
+                    EmptyMessage("Searching…", hint = "Spotify is looking for matches")
                 }
 
                 results.isEmpty -> item(key = "noResults") {
-                    EmptyMessage("No results for \"${state.query.trim()}\"", "Try another spelling or turn on more scopes in Options")
+                    EmptyMessage("No results for \"${state.query.trim()}\"", hint = "Try another spelling or turn on more scopes in Options")
                 }
 
                 else -> {

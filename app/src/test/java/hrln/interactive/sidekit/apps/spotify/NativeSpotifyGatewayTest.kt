@@ -73,6 +73,17 @@ class NativeSpotifyGatewayTest {
         assertEquals(1, native.connects)
     }
 
+    @Test fun `dead native session reconnects even when the token has not changed`() = runTest {
+        val native = FakeNative().apply { setTokenOk = false }
+        val gateway = NativeSpotifyGateway(native) { "same" }
+        gateway.connect("same")
+
+        gateway.ensureConnected()
+
+        assertEquals("same", native.token)
+        assertEquals(2, native.connects)
+    }
+
     @Test fun `dead native session reconnects from scratch`() = runTest {
         val native = FakeNative().apply { setTokenOk = false }
         var token = "first"

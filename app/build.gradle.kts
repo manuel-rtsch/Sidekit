@@ -124,12 +124,21 @@ val cargo = listOf(
     File("/usr/local/bin/cargo")
 ).firstOrNull { it.canExecute() }
 
+// Resolve the NDK only when Cargo is present. CI has no Rust toolchain, and asking Gradle for
+// the NDK directory eagerly would fail configuration even though the task is disabled.
+val ndk = if (cargo == null) {
+    null
+} else {
+    runCatching { androidComponents.sdkComponents.ndkDirectory.get().asFile }.getOrNull()
+}
+
 val buildSpotifyNative = tasks.register<Exec>("buildSpotifyNative") {
     description = "Build libsidekit_spotify.so for arm64-v8a and x86_64."
     group = "native"
-    enabled = cargo != null
-    if (cargo == null) {
-        logger.warn("Sideplay: cargo is unavailable; libsidekit_spotify.so will not be packaged.")
+    enabled = cargo != null && ndk != null
+    when {
+        cargo == null -> logger.warn("Sideplay: cargo is unavailable; libsidekit_spotify.so will not be packaged.")
+        ndk == null -> logger.warn("Sideplay: the Android NDK is unavailable; libsidekit_spotify.so will not be packaged.")
     }
     workingDir = rootProject.file("native/sidekit-spotify")
     commandLine(
@@ -140,7 +149,7 @@ val buildSpotifyNative = tasks.register<Exec>("buildSpotifyNative") {
         "-o", spotifyJniLibs.get().asFile.absolutePath,
         "build", "--release"
     )
-    environment("ANDROID_NDK_HOME", androidComponents.sdkComponents.ndkDirectory.get().asFile.absolutePath)
+    if (ndk != null) environment("ANDROID_NDK_HOME", ndk.absolutePath)
     inputs.dir(rootProject.file("native/sidekit-spotify/src"))
     inputs.files(rootProject.file("native/sidekit-spotify/Cargo.toml"), rootProject.file("native/sidekit-spotify/Cargo.lock"))
     outputs.dir(spotifyJniLibs)

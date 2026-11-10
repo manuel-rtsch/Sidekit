@@ -90,7 +90,7 @@ fun SpotifyNowPlayingScreen(
     SidekitScaffold(title = null, actions = actions, options = options) { padding ->
         if (current == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                EmptyMessage("Nothing playing", "Pick something from your library")
+                EmptyMessage("Nothing playing", hint = "Pick something from your library")
             }
         } else {
             Column(
@@ -133,24 +133,24 @@ fun SpotifyNowPlayingScreen(
                         SidekitIcon.Shuffle,
                         if (state.shuffle) "Shuffle on" else "Shuffle off",
                         onShuffle,
-                        if (state.shuffle) SpotifyTileTone.On else SpotifyTileTone.Neutral,
-                        0.85f
+                        tone = if (state.shuffle) SpotifyTileTone.On else SpotifyTileTone.Neutral,
+                        weight = 0.85f
                     )
                     SpotifyIconTile(SidekitIcon.SkipPrevious, "Previous", onPrevious, weight = 0.85f)
                     SpotifyIconTile(
                         if (state.isPlaying) SidekitIcon.Pause else SidekitIcon.PlayArrow,
                         if (state.isPlaying) "Pause" else "Play",
                         onPlayPause,
-                        SpotifyTileTone.Play,
-                        1.2f
+                        tone = SpotifyTileTone.Play,
+                        weight = 1.2f
                     )
                     SpotifyIconTile(SidekitIcon.SkipNext, "Next", onNext, weight = 0.85f)
                     SpotifyIconTile(
                         SidekitIcon.Undo,
                         state.repeat.label,
                         onRepeat,
-                        if (state.repeat == RepeatMode.Off) SpotifyTileTone.Neutral else SpotifyTileTone.On,
-                        0.85f
+                        tone = if (state.repeat == RepeatMode.Off) SpotifyTileTone.Neutral else SpotifyTileTone.On,
+                        weight = 0.85f
                     )
                 }
             }
@@ -225,7 +225,7 @@ fun QueueScreen(
         SidekitList(padding, state = listState) {
             val current = state.current
             if (current == null) {
-                item(key = "empty") { EmptyMessage("Nothing queued", "Search to find something to play") }
+                item(key = "empty") { EmptyMessage("Nothing queued", hint = "Search to find something to play") }
             } else {
                 item(key = "current") {
                     SpotifyMediaRow(
