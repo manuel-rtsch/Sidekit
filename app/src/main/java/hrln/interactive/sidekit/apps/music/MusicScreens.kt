@@ -211,19 +211,20 @@ fun NowPlayingScreen(
     actions: NowPlayingActions
 ) {
     val track = playback.track
-    // Only back and Save are permanent in the bar; Album and Artist live in Options, because the art
-    // and the artist line already go there and most tracks are played without leaving this screen.
+    // The four destinations live in the bar; Shuffle and Repeat stay in Options.
     val bar = buildList {
-        add(SideAction.back("back", "Music", actions.onBack))
+        add(SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to Music", actions.onBack, motion = ActionMotion.Back))
         if (track != null) {
+            add(SideAction("album", icon = SidekitIcon.Album, contentDescription = "Album", onClick = actions.onAlbum))
+            add(SideAction("artist", icon = SidekitIcon.Artist, contentDescription = "Artist", onClick = actions.onArtist))
             add(
-                SideAction.square(
+                SideAction(
                     "save",
-                    if (saved) SidekitIcon.Check else SidekitIcon.Bookmark,
-                    if (saved) "Saved" else "Save",
-                    actions.onSave,
+                    icon = if (saved) SidekitIcon.Check else SidekitIcon.Bookmark,
+                    contentDescription = if (saved) "Saved" else "Save",
                     tone = if (saved) ActionTone.Secondary else ActionTone.Muted,
-                    motion = ActionMotion.Up
+                    motion = ActionMotion.Up,
+                    onClick = actions.onSave
                 )
             )
         }
@@ -232,13 +233,11 @@ fun NowPlayingScreen(
         emptyList()
     } else {
         listOf(
-            SideAction("album", "Album", SidekitIcon.Album, onClick = actions.onAlbum),
-            SideAction("artist", "Artist", SidekitIcon.Artist, onClick = actions.onArtist)
+            SideAction("shuffle", if (playback.queue.shuffle) "Shuffle: on" else "Shuffle: off", SidekitIcon.Shuffle, onClick = actions.onShuffle),
+            SideAction("repeat", "Repeat: ${playback.queue.repeat.name.lowercase()}", SidekitIcon.Undo, onClick = actions.onRepeat)
         )
     }
-    // No header: the track's own title is this screen's heading, and the height the shared title
-    // takes is the difference between a thumbnail and an album cover.
-    SidekitScaffold(title = null, actions = bar, options = options) { padding ->
+    SidekitScaffold(title = "Now Playing", actions = bar, options = options) { padding ->
         if (track == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { NothingPlaying() }
         } else {
@@ -249,7 +248,6 @@ fun NowPlayingScreen(
 
 @Composable
 private fun NowPlayingBody(playback: PlaybackState, track: Track, actions: NowPlayingActions, modifier: Modifier) {
-    val queue = playback.queue
     val duration = playback.durationMs.takeIf { it > 0 } ?: track.durationMs
     val artUri = remember(track.albumId) { albumArtUri(track.albumId) }
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.pageGap)) {
@@ -269,7 +267,7 @@ private fun NowPlayingBody(playback: PlaybackState, track: Track, actions: NowPl
                 maxLines = 2
             )
             if (track.artist.isNotBlank()) {
-                // Tapping the artist is how you get to the artist, so the bar needs no button for it.
+                // Tapping the artist is a shortcut; the bar also has an Artist button.
                 SidekitText(
                     track.artist,
                     Modifier.fillMaxWidth().clickable(onClickLabel = "Open artist") { actions.onArtist() },
@@ -281,23 +279,14 @@ private fun NowPlayingBody(playback: PlaybackState, track: Track, actions: NowPl
         }
         TickingPosition(playback) { position -> MusicSeek(position, duration, actions.onSeek) }
         SidekitItemRow {
-            IconTile(SidekitIcon.Shuffle, if (queue.shuffle) "Shuffle on" else "Shuffle off", actions.onShuffle, if (queue.shuffle) TileTone.On else TileTone.Neutral, MODE_WEIGHT)
-            IconTile(SidekitIcon.SkipPrevious, "Previous", actions.onPrevious, weight = SKIP_WEIGHT)
+            IconTile(SidekitIcon.SkipPrevious, "Previous", actions.onPrevious)
             IconTile(
                 if (playback.isPlaying) SidekitIcon.Pause else SidekitIcon.PlayArrow,
                 if (playback.isPlaying) "Pause" else "Play",
                 actions.onPlayPause,
-                TileTone.Play,
-                PLAY_WEIGHT
+                TileTone.Play
             )
-            IconTile(SidekitIcon.SkipNext, "Next", actions.onNext, weight = SKIP_WEIGHT)
-            IconTile(
-                SidekitIcon.Undo,
-                queue.repeat.label,
-                actions.onRepeat,
-                if (queue.repeat == RepeatMode.Off) TileTone.Neutral else TileTone.On,
-                MODE_WEIGHT
-            )
+            IconTile(SidekitIcon.SkipNext, "Next", actions.onNext)
         }
     }
 }
@@ -431,12 +420,6 @@ private const val SEEK_STEP_MS = 5_000L
 private val SEEK_TOUCH_HEIGHT = 36.dp
 private val SEEK_KNOB = 9.dp
 private const val POSITION_TICK_MS = 500L
-
-// The transport row shares its width by weight, so play is a wide pill and the mode toggles are
-// narrow: the row reads as play with things around it, not as five equal buttons.
-private const val MODE_WEIGHT = 0.85f
-private const val SKIP_WEIGHT = 0.85f
-private const val PLAY_WEIGHT = 1.2f
 
 /**
  * Fill of a tile, and the ladder is deliberate:

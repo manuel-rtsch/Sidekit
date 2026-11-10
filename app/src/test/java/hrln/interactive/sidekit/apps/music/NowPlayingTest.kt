@@ -41,29 +41,29 @@ class NowPlayingTest {
         compose.onNodeWithContentDescription("Save").assertIsDisplayed()
     }
 
-    @Test fun theBarHoldsOnlyBackAndSave() {
+    @Test fun theBarHoldsBackAlbumArtistAndSave() {
         compose.setContent { SidekitPreviewFrame { NowPlayingScreen(playing, false, NowPlayingActions()) } }
-        // Album and Artist left the bar for the art, the artist line and Options.
-        compose.onNodeWithContentDescription("Album").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Artist").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Music").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back to Music").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Album").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Artist").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Save").assertIsDisplayed()
     }
 
-    @Test fun optionsHoldTheWayToTheAlbumAndTheArtist() {
+    @Test fun optionsHoldShuffleAndRepeat() {
         lateinit var chrome: ChromeState
         val calls = mutableListOf<String>()
         compose.setContent {
             SidekitPreviewFrame {
                 chrome = LocalChrome.current!!
-                NowPlayingScreen(playing, false, NowPlayingActions(onAlbum = { calls += "album" }, onArtist = { calls += "artist" }))
+                NowPlayingScreen(playing, false, NowPlayingActions(onShuffle = { calls += "shuffle" }, onRepeat = { calls += "repeat" }))
             }
         }
         compose.runOnUiThread { chrome.toggleOptions() }
-        compose.onNodeWithContentDescription("Album").assertIsDisplayed().performClick()
-        assertEquals(listOf("album"), calls)
+        compose.onNodeWithContentDescription("Shuffle: off").assertIsDisplayed().performClick()
+        assertEquals(listOf("shuffle"), calls)
         compose.runOnUiThread { chrome.toggleOptions() }
-        compose.onNodeWithContentDescription("Artist").assertIsDisplayed().performClick()
-        assertEquals(listOf("album", "artist"), calls)
+        compose.onNodeWithContentDescription("Repeat: off").assertIsDisplayed().performClick()
+        assertEquals(listOf("shuffle", "repeat"), calls)
     }
 
     @Test fun seekIsASliderThatCanBeScrubbed() {
