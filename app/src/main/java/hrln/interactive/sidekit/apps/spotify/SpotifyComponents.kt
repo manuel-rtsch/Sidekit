@@ -24,7 +24,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -324,6 +327,12 @@ fun repeatLabel(repeat: RepeatMode) = repeat.label
 fun SpotifySeek(positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, modifier: Modifier = Modifier) {
     val seekable = durationMs > 0
     val fraction = if (seekable) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
+    // While the finger is down the bar follows the finger locally. The player is only asked to
+    // seek once, on release: issuing a seek for every drag delta floods the native player and
+    // makes the bar take seconds to settle on the final position.
+    var dragFraction by remember { mutableStateOf<Float?>(null) }
+    val shownFraction = dragFraction ?: fraction
+    val shownPositionMs = if (dragFraction != null) (shownFraction * durationMs).toLong() else positionMs
     val trackColor = SidekitTheme.colors.surfaceA4
     val progressColor = SidekitTheme.colors.light
     val labelStyle = SidekitTheme.typography.label
@@ -337,7 +346,7 @@ fun SpotifySeek(positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, modi
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(contentAlignment = Alignment.CenterEnd) {
             SidekitText(widest, Modifier.alpha(0f).clearAndSetSemantics {}, style = timeStyle)
-            SidekitText(formatDuration(positionMs), style = timeStyle)
+            SidekitText(formatDuration(shownPositionMs), style = timeStyle)
         }
         Box(
             Modifier
@@ -362,11 +371,26 @@ fun SpotifySeek(positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, modi
                 .indication(interaction, LocalIndication.current)
                 .focusable(interactionSource = interaction)
                 .pointerInput(durationMs) { detectTapGestures { offset -> seekTo(offset.x / size.width) } }
-                .pointerInput(durationMs) { detectHorizontalDragGestures { change, _ -> seekTo(change.position.x / size.width) } }
+                .pointerInput(durationMs) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { offset ->
+                            if (seekable) dragFraction = (offset.x / size.width).coerceIn(0f, 1f)
+                        },
+                        onHorizontalDrag = { change, _ ->
+                            if (seekable) dragFraction = (change.position.x / size.width).coerceIn(0f, 1f)
+                        },
+                        onDragEnd = {
+                            val target = dragFraction
+                            dragFraction = null
+                            if (target != null) seekTo(target)
+                        },
+                        onDragCancel = { dragFraction = null }
+                    )
+                }
                 .semantics {
                     if (seekable) {
                         contentDescription = "Seek"
-                        progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+                        progressBarRangeInfo = ProgressBarRangeInfo(shownFraction, 0f..1f)
                         setProgress { target ->
                             seekTo(target)
                             true
@@ -377,8 +401,8 @@ fun SpotifySeek(positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, modi
                     val h = 6.dp.toPx()
                     val y = (size.height - h) / 2
                     drawRoundRect(trackColor, Offset(0f, y), Size(size.width, h), CornerRadius(h / 2))
-                    if (fraction > 0f) {
-                        val filled = size.width * fraction
+                    if (shownFraction > 0f) {
+                        val filled = size.width * shownFraction
                         drawRoundRect(progressColor, Offset(0f, y), Size(filled, h), CornerRadius(h / 2))
                         drawCircle(progressColor, 9.dp.toPx(), Offset(filled, size.height / 2))
                     }

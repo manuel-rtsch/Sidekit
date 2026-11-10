@@ -1,7 +1,10 @@
 //! PCM sink. Decoded S16LE stereo is queued for the Kotlin AudioTrack drainer.
 //!
-//! The bounded channel is deliberate: when Kotlin stops draining, the librespot decode thread
-//! blocks on `send` instead of racing ahead and allocating without limit.
+//! The bounded channel is deliberate: the consumer (AudioTrack) is the real-time clock. When
+//! Kotlin stops draining, `send` blocks the librespot player thread, which is what keeps the
+//! decode position tied to playback instead of racing through the track. Kotlin must keep
+//! draining until the player has processed a pause/stop command; otherwise the player thread
+//! cannot process that command.
 
 use librespot_playback::audio_backend::{Open, Sink, SinkResult};
 use librespot_playback::config::AudioFormat;
@@ -14,11 +17,12 @@ pub const SAMPLE_RATE: u32 = 44_100;
 
 pub struct PcmSink {
     tx: SyncSender<Vec<u8>>,
+    writes: u64,
 }
 
 impl PcmSink {
     pub fn new(tx: SyncSender<Vec<u8>>) -> Self {
-        Self { tx }
+        Self { tx, writes: 0 }
     }
 }
 
@@ -41,8 +45,23 @@ impl Sink for PcmSink {
             }
             AudioPacket::Raw(bytes) => bytes,
         };
-        // A disconnected receiver means playback is shutting down; dropping is correct.
-        let _ = self.tx.send(pcm);
+        let bytes = pcm.len();
+        if self.writes == 0 {
+            log::info!("pcm first write bytes={bytes}");
+        }
+        // Blocking send is the pacing mechanism: the Kotlin drainer writes to AudioTrack with
+        // WRITE_BLOCKING, so the hardware clock controls how fast this channel is consumed.
+        // The player thread is blocked here only while the consumer is behind; it wakes as soon
+        // as one buffer is drained, which is also when it can process a queued pause/play/load.
+        match self.tx.send(pcm) {
+            Ok(()) => {
+                self.writes += 1;
+                if self.writes % 100 == 0 {
+                    log::info!("pcm writes={} last_bytes={bytes}", self.writes);
+                }
+            }
+            Err(_) => log::warn!("pcm send failed: receiver disconnected"),
+        }
         Ok(())
     }
 }

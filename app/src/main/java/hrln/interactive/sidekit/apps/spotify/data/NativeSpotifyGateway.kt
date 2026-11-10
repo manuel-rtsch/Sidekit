@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.spotify.data
 
+import hrln.interactive.sidekit.apps.spotify.SideplayDebug
 import hrln.interactive.sidekit.apps.spotify.bridge.SpotifyNative
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -38,7 +39,12 @@ class NativeSpotifyGateway(
 
     override suspend fun load(uri: String, positionMs: Long, autoplay: Boolean) = onIo {
         requireNative()
-        if (!native.load(uri, positionMs, autoplay)) fail(SpotifyFailure.TrackUnavailable, "Track unavailable")
+        SideplayDebug.log("gateway.load begin uri=$uri positionMs=$positionMs autoplay=$autoplay")
+        val started = System.nanoTime()
+        val ok = native.load(uri, positionMs, autoplay)
+        val elapsedMs = (System.nanoTime() - started) / 1_000_000
+        SideplayDebug.log("gateway.load native returned ok=$ok elapsedMs=$elapsedMs")
+        if (!ok) fail(SpotifyFailure.TrackUnavailable, "Track unavailable")
     }
 
     override suspend fun play() = onIo {
@@ -78,14 +84,19 @@ class NativeSpotifyGateway(
      */
     suspend fun ensureConnected(): Boolean {
         val token = accessToken() ?: fail(SpotifyFailure.AuthenticationExpired, "Sign in again")
+        SideplayDebug.log("ensureConnected connected=$connected sessionConnected=$sessionConnected tokenLength=${token.length}")
         if (!connected) {
+            SideplayDebug.log("ensureConnected: no player, connecting")
             connect(token)
             return true
         }
-        if (withContext(Dispatchers.IO) { native.setAccessToken(token) }) {
+        val tokenAccepted = withContext(Dispatchers.IO) { native.setAccessToken(token) }
+        SideplayDebug.log("ensureConnected: setAccessToken accepted=$tokenAccepted")
+        if (tokenAccepted) {
             sessionToken = token
             return false
         }
+        SideplayDebug.log("ensureConnected: session rejected token, rebuilding")
         connected = false
         sessionConnected = false
         sessionToken = null
@@ -111,19 +122,24 @@ class NativeSpotifyGateway(
 
     private fun connectSession(token: String) {
         if (sessionConnected) return
+        SideplayDebug.log("connectSession begin")
         if (!native.connect(token)) fail(SpotifyFailure.AuthenticationExpired, "Could not connect")
+        SideplayDebug.log("connectSession connected")
         sessionConnected = true
         sessionToken = token
     }
 
     private fun createPlayer() {
         val current = settings()
+        SideplayDebug.log("createPlayer bitrateKbps=${current.bitrateKbps}")
         if (!native.createPlayer(current.bitrateKbps)) {
+            SideplayDebug.log("createPlayer failed")
             native.disconnect()
             sessionConnected = false
             sessionToken = null
             fail(SpotifyFailure.Unknown, "Could not create the player")
         }
+        SideplayDebug.log("createPlayer created")
         connected = true
     }
 

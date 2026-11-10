@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.spotify.bridge
 
+import hrln.interactive.sidekit.apps.spotify.SideplayDebug
 import hrln.interactive.sidekit.system.NativeLibraries
 
 /**
@@ -27,7 +28,20 @@ object NativeBridge : SpotifyNative {
 
     override fun createPlayer(bitrateKbps: Int): Boolean = isAvailable && runCatching { nativeCreatePlayer(bitrateKbps) }.getOrDefault(false)
 
-    override fun load(uri: String, positionMs: Long, autoplay: Boolean): Boolean = isAvailable && runCatching { nativeLoad(uri, positionMs, autoplay) }.getOrDefault(false)
+    override fun load(uri: String, positionMs: Long, autoplay: Boolean): Boolean {
+        if (!isAvailable) {
+            SideplayDebug.log("native.load unavailable")
+            return false
+        }
+        val started = System.nanoTime()
+        return runCatching { nativeLoad(uri, positionMs, autoplay) }
+            .onFailure { SideplayDebug.log("native.load threw", it) }
+            .getOrDefault(false)
+            .also {
+                val elapsedMs = (System.nanoTime() - started) / 1_000_000
+                SideplayDebug.log("native.load returned ok=$it elapsedMs=$elapsedMs")
+            }
+    }
 
     override fun play(): Boolean = isAvailable && runCatching { nativePlay() }.getOrDefault(false)
 
@@ -38,6 +52,10 @@ object NativeBridge : SpotifyNative {
     override fun seek(positionMs: Long): Boolean = isAvailable && runCatching { nativeSeek(positionMs) }.getOrDefault(false)
 
     override fun readAudio(timeoutMs: Long): ByteArray? = if (isAvailable) runCatching { nativeReadAudio(timeoutMs) }.getOrNull() else null
+
+    override fun drainAudio() {
+        if (isAvailable) runCatching { nativeDrainAudio() }
+    }
 
     override fun audioFormat(): String? = if (isAvailable) runCatching { nativeAudioFormat() }.getOrNull() else null
 
@@ -75,6 +93,7 @@ object NativeBridge : SpotifyNative {
     private external fun nativeStop(): Boolean
     private external fun nativeSeek(positionMs: Long): Boolean
     private external fun nativeReadAudio(timeoutMs: Long): ByteArray?
+    private external fun nativeDrainAudio()
     private external fun nativeAudioFormat(): String?
     private external fun nativePollEvent(): String?
     private external fun nativeCatalogLibrary(filter: String, offset: Long, limit: Long): String?

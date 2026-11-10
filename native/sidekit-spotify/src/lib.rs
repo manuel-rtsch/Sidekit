@@ -161,6 +161,14 @@ pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeB
 }
 
 #[no_mangle]
+pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeDrainAudio(
+    _env: JNIEnv,
+    _this: JObject,
+) {
+    engine::drain_audio();
+}
+
+#[no_mangle]
 pub extern "system" fn Java_hrln_interactive_sidekit_apps_spotify_bridge_NativeBridge_nativeAudioFormat(
     env: JNIEnv,
     _this: JObject,

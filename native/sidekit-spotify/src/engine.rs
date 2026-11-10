@@ -224,12 +224,15 @@ pub fn create_player(bitrate_kbps: u16) -> Result<(), String> {
     });
     guard.events = Some(player.get_player_event_channel());
     guard.player = Some(player);
+    log::info!("engine.create_player created bitrate={bitrate_kbps}");
     Ok(())
 }
 
 pub fn load(uri: &str, position_ms: u32, autoplay: bool) -> Result<(), String> {
+    log::info!("engine.load begin uri={uri} position_ms={position_ms} autoplay={autoplay}");
     let uri = SpotifyUri::from_uri(uri).map_err(|e| format!("INVALID_URI: {e}"))?;
     if !uri.is_playable() {
+        log::warn!("engine.load rejected: not playable");
         return Err("NOT_PLAYABLE".to_string());
     }
     let player = {
@@ -240,15 +243,18 @@ pub fn load(uri: &str, position_ms: u32, autoplay: bool) -> Result<(), String> {
             .ok_or_else(|| "PLAYER_NOT_CREATED".to_string())?
     };
     player.load(uri, autoplay, position_ms);
+    log::info!("engine.load command queued");
     Ok(())
 }
 
 pub fn play() -> Result<(), String> {
+    log::info!("engine.play");
     player()?.play();
     Ok(())
 }
 
 pub fn pause() -> Result<(), String> {
+    log::info!("engine.pause");
     player()?.pause();
     Ok(())
 }
@@ -265,6 +271,22 @@ pub fn seek(position_ms: u32) -> Result<(), String> {
 
 pub fn read_audio(timeout: Duration) -> Option<Vec<u8>> {
     audio_rx().lock().ok()?.recv_timeout(timeout).ok()
+}
+
+/// Discards queued PCM. Called when Kotlin stops draining (pause) and before starting a new
+/// track, so stale audio from the previous position is not played. `PcmSink::write` no longer
+/// blocks indefinitely, so this is a cleanup/safety net rather than the only way to unblock the
+/// player thread.
+pub fn drain_audio() {
+    if let Ok(rx) = audio_rx().lock() {
+        let mut drained = 0usize;
+        while rx.try_recv().is_ok() {
+            drained += 1;
+        }
+        if drained > 0 {
+            log::info!("audio drained {drained} queued buffers");
+        }
+    }
 }
 
 pub fn audio_format() -> String {

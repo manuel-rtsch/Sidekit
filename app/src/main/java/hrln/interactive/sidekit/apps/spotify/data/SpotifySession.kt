@@ -2,6 +2,7 @@ package hrln.interactive.sidekit.apps.spotify.data
 
 import android.content.Context
 import hrln.interactive.sidekit.apps.spotify.AudioQuality
+import hrln.interactive.sidekit.apps.spotify.SideplayDebug
 import hrln.interactive.sidekit.apps.spotify.SpotifyMediaItem
 import hrln.interactive.sidekit.apps.spotify.SpotifyTrack
 import hrln.interactive.sidekit.apps.spotify.auth.EncryptedSpotifyCredentialStore
@@ -118,21 +119,32 @@ class SpotifySession(
     suspend fun ensurePlaybackConnected(): Boolean = nativeGateway.ensureConnected()
 
     /** Bounded so a stalled access-point handshake cannot leave the play button stuck forever. */
-    private suspend fun connectForPlayback(): Boolean = withTimeoutOrNull(CONNECT_TIMEOUT_MS) { nativeGateway.ensureConnected() }
-        ?: throw SpotifyGatewayException(SpotifyFailure.NotConnected, "Playback connection timed out")
-
-    suspend fun play(uri: String, positionMs: Long = 0L) {
-        connectForPlayback()
-        withContext(Dispatchers.Main.immediate) { playback.start(uri, positionMs) }
+    private suspend fun connectForPlayback(): Boolean {
+        val rebuilt = withTimeoutOrNull(CONNECT_TIMEOUT_MS) { nativeGateway.ensureConnected() }
+        if (rebuilt == null) {
+            SideplayDebug.log("connectForPlayback timed out after ${CONNECT_TIMEOUT_MS}ms")
+            throw SpotifyGatewayException(SpotifyFailure.NotConnected, "Playback connection timed out")
+        }
+        SideplayDebug.log("connectForPlayback rebuilt=$rebuilt")
+        return rebuilt
     }
 
-    suspend fun resume() {
+    suspend fun play(uri: String, positionMs: Long = 0L) {
+        SideplayDebug.log("session.play begin uri=$uri positionMs=$positionMs")
+        connectForPlayback()
+        SideplayDebug.log("session.play connected; starting playback")
+        withContext(Dispatchers.Main.immediate) { playback.start(uri, positionMs) }
+        SideplayDebug.log("session.play returned")
+    }
+
+    suspend fun resume(): Boolean {
         val rebuilt = connectForPlayback()
         // A rebuilt session starts from an empty native player. Reload the current item instead of
         // asking the player to resume a track it no longer has.
         val uri = playback.current?.uri
-        if (rebuilt && uri != null) {
+        return if (rebuilt && uri != null) {
             withContext(Dispatchers.Main.immediate) { playback.start(uri, playback.position) }
+            true
         } else {
             withContext(Dispatchers.Main.immediate) { playback.resume() }
         }

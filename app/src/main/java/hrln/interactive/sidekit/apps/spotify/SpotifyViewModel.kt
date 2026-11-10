@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.spotify
 
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyCatalog
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import kotlin.math.abs
 
 /** The last save/follow change, offered back by the action bar for a few seconds. */
 sealed interface SpotifyUndo {
@@ -113,6 +115,15 @@ class SpotifyViewModel(
     private val previousHandler = { previous() }
     private val seekHandler = { position: Long -> seekTo(position) }
 
+    /**
+     * Smooth-position anchor. librespot emits position events on its own cadence (and they can
+     * arrive late), so the UI interpolates from the last known position with the monotonic clock.
+     * When an AudioTrack exists, its playback head is used instead: that is the real audio clock.
+     */
+    private var positionAnchorMs = 0L
+    private var positionAnchorAt = 0L
+    private var lastSeekAt = 0L
+
     init {
         session?.let {
             viewModelScope.launch {
@@ -149,6 +160,12 @@ class SpotifyViewModel(
                     handlePlaybackEvent(raw)
                 }
             }
+            viewModelScope.launch {
+                while (true) {
+                    delay(100L)
+                    updatePositionTick()
+                }
+            }
         }
     }
 
@@ -162,6 +179,7 @@ class SpotifyViewModel(
             queue.restore(snapshot.copy(current = current))
         }
         val restored = queue.snapshot
+        anchorPosition(playback.position)
         _state.update {
             it.copy(
                 current = current,
@@ -436,6 +454,7 @@ class SpotifyViewModel(
         val s = _state.value
         val item = s.current ?: return
         val play = !s.isPlaying
+        anchorPosition(s.positionMs)
         _state.update { it.copy(isPlaying = play) }
         if (item.uri == null || session == null) return
         viewModelScope.launch {
@@ -445,7 +464,10 @@ class SpotifyViewModel(
                     // of resuming a source that no longer exists.
                     startRemote(item, 0L)
                 } else if (play) {
-                    session.resume()
+                    if (!session.resume()) {
+                        _state.update { it.copy(isPlaying = false) }
+                        return@launch
+                    }
                 } else {
                     session.pause()
                 }
@@ -498,6 +520,8 @@ class SpotifyViewModel(
     fun seekTo(positionMs: Long) {
         val current = _state.value.current ?: return
         val target = positionMs.coerceIn(0L, current.durationMs)
+        lastSeekAt = SystemClock.elapsedRealtime()
+        anchorPosition(target)
         _state.update { it.copy(positionMs = target) }
         if (current.uri != null && session != null) {
             viewModelScope.launch { runCatching { session.seek(target) } }
@@ -932,6 +956,7 @@ class SpotifyViewModel(
         playing: Boolean? = null,
         syncNowPlaying: Boolean = true
     ) {
+        if (positionMs != null) anchorPosition(positionMs)
         _state.update {
             it.copy(
                 current = snapshot.current,
@@ -1052,22 +1077,54 @@ class SpotifyViewModel(
     private fun handlePlaybackEvent(raw: String) {
         val event = runCatching { JSONObject(raw) }.getOrNull() ?: return
         val position = event.optLong("positionMs", _state.value.positionMs)
+        SideplayDebug.log("event type=${event.optString("type")} uri=${event.optString("uri")} positionMs=$position")
         when (event.optString("type")) {
             "loading" -> if (matchesCurrent(event)) {
+                anchorPosition(position)
+                session?.playback?.updatePosition(position)
                 _state.update { it.copy(positionMs = position) }
             }
 
             "playing" -> if (matchesCurrent(event)) {
-                _state.update { it.copy(isPlaying = true, positionMs = position) }
-                session?.playback?.updateState(true, position)
+                val playback = session?.playback
+                // Ignore a playing event that belongs to a command the user already superseded
+                // with a pause. Otherwise rapid taps leave the UI showing play with no sound.
+                if (playback?.shouldApplyEvent(true) != false) {
+                    // Keep the UI clock where it is. librespot's event position is the decoder
+                    // position, which is ahead of the speaker by the PCM buffer; adopting it
+                    // would make the bar jump forward on resume.
+                    val current = _state.value.positionMs
+                    anchorPosition(current)
+                    playback?.updateState(true, current)
+                    _state.update { it.copy(isPlaying = true, positionMs = current) }
+                }
             }
 
             "paused" -> if (matchesCurrent(event)) {
-                _state.update { it.copy(isPlaying = false, positionMs = position) }
-                session?.playback?.updateState(false, position)
+                val playback = session?.playback
+                // Ignore a paused event that belongs to a command the user already superseded
+                // with a resume. Otherwise the UI flickers back to paused after a resume.
+                if (playback?.shouldApplyEvent(false) != false) {
+                    val current = _state.value.positionMs
+                    anchorPosition(current)
+                    playback?.updateState(false, current)
+                    _state.update { it.copy(isPlaying = false, positionMs = current) }
+                }
             }
 
-            "position" -> _state.update { it.copy(positionMs = position) }
+            "position" -> {
+                // The 100 ms ticker owns the seek bar. Only adopt an event position when it is
+                // far enough away to be a real seek from another client, not the decoder's
+                // normal lead over the speaker.
+                val current = _state.value.positionMs
+                // Ignore the decoder's stale position events while a local seek is settling.
+                val settling = SystemClock.elapsedRealtime() - lastSeekAt < 1_500L
+                if (!settling && abs(position - current) > 2_000L) {
+                    anchorPosition(position)
+                    session?.playback?.updatePosition(position)
+                    _state.update { it.copy(positionMs = position) }
+                }
+            }
 
             // librespot 0.8 has no shuffle/repeat setters, but it emits these when another
             // client changes the player. Adopt them so the UI does not drift from the service.
@@ -1110,6 +1167,28 @@ class SpotifyViewModel(
             startRemote(current, 0L)
         } else {
             advance(auto = true, forceContextLoop = snapshot.repeat == RepeatMode.Context)
+        }
+    }
+
+    private fun anchorPosition(positionMs: Long) {
+        positionAnchorMs = positionMs
+        positionAnchorAt = SystemClock.elapsedRealtime()
+    }
+
+    /**
+     * Advances the seek bar from a monotonic clock anchored to the last known position. The
+     * AudioTrack playback head is not stable across pause/resume on this device, so it is not
+     * used for the UI; the system clock advances at the same 1.0x rate and never jumps.
+     */
+    private fun updatePositionTick() {
+        val s = _state.value
+        if (!s.isPlaying) return
+        val current = s.current ?: return
+        val next = positionAnchorMs + (SystemClock.elapsedRealtime() - positionAnchorAt)
+        val clamped = next.coerceIn(0L, current.durationMs)
+        if (clamped != s.positionMs) {
+            session?.playback?.updatePosition(clamped)
+            _state.update { it.copy(positionMs = clamped) }
         }
     }
 
@@ -1202,13 +1281,17 @@ class SpotifyViewModel(
     private fun startRemote(item: SpotifyMediaItem, positionMs: Long) {
         val uri = item.uri ?: return
         val session = session ?: return
+        SideplayDebug.log("viewModel.startRemote uri=$uri positionMs=$positionMs")
+        anchorPosition(positionMs)
         session.playback.setNowPlaying(item, positionMs)
         viewModelScope.launch {
             try {
                 session.play(uri, positionMs)
+                SideplayDebug.log("viewModel.startRemote returned")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                SideplayDebug.log("viewModel.startRemote failed", e)
                 _state.update { it.copy(isPlaying = false, notice = playbackNotice(e)) }
             }
         }
