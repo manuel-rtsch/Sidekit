@@ -262,6 +262,7 @@ fun NavGraphBuilder.sideplayGraph(nav: NavHostController) {
                 state,
                 onBack = { nav.popBackStack() },
                 onAudioQuality = vm::cycleAudioQuality,
+                onAutoplay = vm::toggleAutoplay,
                 onClearCache = vm::clearCache,
                 onClearHistory = vm::clearHistory,
                 onSignOut = {

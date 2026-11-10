@@ -60,6 +60,14 @@ class SpotifyQueueRepositoryTest {
         assertEquals(listOf("b", "c", "d", "z"), queue.snapshot.upcoming.map { it.id })
     }
 
+    @Test fun `adding several items appends them in order`() {
+        val queue = SpotifyQueueRepository(Random(1))
+        queue.play(tracks, 0)
+        queue.addToQueue(listOf(track("x"), track("y")))
+
+        assertEquals(listOf("b", "c", "d", "x", "y"), queue.snapshot.upcoming.map { it.id })
+    }
+
     @Test fun `next moves the current item into history`() {
         val queue = SpotifyQueueRepository(Random(1))
         queue.play(tracks, 0)

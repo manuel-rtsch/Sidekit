@@ -6,7 +6,9 @@ import hrln.interactive.sidekit.apps.spotify.AudioQuality
 
 /** User preferences that survive process death and apply before the native player is created. */
 data class SpotifySettings(
-    val audioQuality: AudioQuality = AudioQuality.High
+    val audioQuality: AudioQuality = AudioQuality.High,
+    /** Keep playing similar tracks when the queue runs out. */
+    val autoplay: Boolean = true
 ) {
     val bitrateKbps: Int get() = audioQuality.bitrateKbps
 }
@@ -28,7 +30,10 @@ class SpotifySettingsStore(
         val quality = AudioQuality.entries
             .firstOrNull { it.name == value.optString(KEY_QUALITY) }
             ?: AudioQuality.High
-        return SpotifySettings(audioQuality = quality)
+        return SpotifySettings(
+            audioQuality = quality,
+            autoplay = value.optBoolean(KEY_AUTOPLAY, true)
+        )
     }
 
     @Synchronized
@@ -36,10 +41,12 @@ class SpotifySettingsStore(
         settings.write(
             org.json.JSONObject()
                 .put(KEY_QUALITY, value.audioQuality.name)
+                .put(KEY_AUTOPLAY, value.autoplay)
         )
     }
 
     private companion object {
         const val KEY_QUALITY = "audio_quality"
+        const val KEY_AUTOPLAY = "autoplay"
     }
 }

@@ -76,6 +76,7 @@ data class SpotifyUiState(
     val searchScopes: Set<SearchScope> = SearchScope.entries.toSet(),
     val query: String = "",
     val audioQuality: AudioQuality = AudioQuality.High,
+    val autoplay: Boolean = true,
     val notice: String? = null,
     val noticeKind: NoticeKind = NoticeKind.Other,
     val undo: SpotifyUndo? = null
@@ -104,6 +105,7 @@ class SpotifyViewModel(
     val undoWindow = UndoWindow(viewModelScope) { _state.update { it.copy(undo = null) } }
 
     private var searchJob: Job? = null
+    private var autoplayJob: Job? = null
     private val savedTrackTouched = mutableSetOf<String>()
     private val savedCollectionTouched = mutableSetOf<String>()
     private val followedArtistTouched = mutableSetOf<String>()
@@ -121,7 +123,9 @@ class SpotifyViewModel(
             }
             viewModelScope.launch {
                 it.settings.collect { settings ->
-                    _state.update { state -> state.copy(audioQuality = settings.audioQuality) }
+                    _state.update { state ->
+                        state.copy(audioQuality = settings.audioQuality, autoplay = settings.autoplay)
+                    }
                 }
             }
             it.playback.onNext = nextHandler
@@ -692,6 +696,12 @@ class SpotifyViewModel(
         session?.setAudioQuality(next)
     }
 
+    fun toggleAutoplay() {
+        val enabled = !_state.value.autoplay
+        _state.update { it.copy(autoplay = enabled) }
+        session?.setAutoplay(enabled)
+    }
+
     fun clearHistory() {
         history.clear()
         val snapshot = queue.clearHistory()
@@ -1132,7 +1142,7 @@ class SpotifyViewModel(
         }
         if (!hasNext && !auto) return
         if (!hasNext) {
-            _state.update { it.copy(isPlaying = false, positionMs = 0L) }
+            if (_state.value.autoplay) autoplaySimilar(current) else stopAtQueueEnd()
             return
         }
         val snapshot = queue.next(auto = true)
@@ -1143,6 +1153,49 @@ class SpotifyViewModel(
         } else {
             _state.update { it.copy(isPlaying = false, positionMs = 0L) }
         }
+    }
+
+    /**
+     * The queue ran out with Autoplay on. Ask the catalog for the current artist's top tracks,
+     * drop anything already in the queue or history, and let the normal advance path start the
+     * first one. The guard keeps a slow request from hijacking a track the user started meanwhile.
+     */
+    private fun autoplaySimilar(current: SpotifyMediaItem) {
+        if (autoplayJob?.isActive == true) return
+        val track = current as? SpotifyTrack
+        val artistId = track?.artistId?.takeIf { it.isNotBlank() }
+        if (track == null || artistId == null) {
+            stopAtQueueEnd()
+            return
+        }
+        autoplayJob = viewModelScope.launch {
+            try {
+                val artist = SpotifyArtist(artistId, track.artist, 0, emptyList())
+                val page = catalog.topTracks(artist, 0, SPOTIFY_PAGE_SIZE)
+                if (_state.value.current?.id != track.id || !_state.value.autoplay) return@launch
+                val known = buildSet {
+                    add(track.id)
+                    addAll(_state.value.history.map { it.id })
+                    addAll(_state.value.upcoming.map { it.id })
+                }
+                val similar = page.items.filter { it.id !in known && it.playable }
+                if (similar.isEmpty()) {
+                    stopAtQueueEnd()
+                    return@launch
+                }
+                val tail = if (_state.value.shuffle) similar.shuffled() else similar
+                applyQueue(queue.addToQueue(tail), syncNowPlaying = false)
+                advance(auto = true, forceContextLoop = false)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (_state.value.current?.id == track.id) stopAtQueueEnd()
+            }
+        }
+    }
+
+    private fun stopAtQueueEnd() {
+        _state.update { it.copy(isPlaying = false, positionMs = 0L) }
     }
 
     /** Starts a real Spotify item; local test fixtures have no URI and keep the local simulation. */

@@ -171,7 +171,9 @@ class SpotifyQueueRepository(
         return commit(snapshot.copy(upcoming = listOf(item) + remaining))
     }
 
-    fun addToQueue(item: SpotifyMediaItem): Snapshot = commit(snapshot.copy(upcoming = snapshot.upcoming + item))
+    fun addToQueue(item: SpotifyMediaItem): Snapshot = addToQueue(listOf(item))
+
+    fun addToQueue(items: List<SpotifyMediaItem>): Snapshot = commit(snapshot.copy(upcoming = snapshot.upcoming + items))
 
     fun removeUpcoming(item: SpotifyMediaItem): Snapshot = commit(snapshot.copy(upcoming = snapshot.upcoming.filterNot { it.id == item.id }))
 

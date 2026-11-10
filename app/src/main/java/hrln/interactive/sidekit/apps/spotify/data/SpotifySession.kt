@@ -149,6 +149,11 @@ class SpotifySession(
         settingsStore?.write(_settings.value)
     }
 
+    fun setAutoplay(enabled: Boolean) {
+        _settings.update { it.copy(autoplay = enabled) }
+        settingsStore?.write(_settings.value)
+    }
+
     fun togglePlayback() {
         if (playback.isActive) {
             playback.pause()

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -49,7 +50,8 @@ fun SideplayHomeScreen(
         onDismissNotice,
         listOf(
             SideAction("queue", "Queue", SidekitIcon.QueueMusic, onClick = onQueue),
-            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
+            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch),
+            SideAction.square("settings", SidekitIcon.Settings, "Settings", onSettings)
         ),
         state.noticeKind
     )
@@ -63,8 +65,8 @@ fun SideplayHomeScreen(
         SidekitList(padding, state = listState) {
             item(key = "tiles") {
                 SidekitItemRow(Modifier.listFade(listState, 0)) {
-                    NowPlayingTile(state.current, onNowPlaying, Modifier.weight(1.38f))
-                    LibraryTile(onLibrary, Modifier.weight(1f))
+                    NowPlayingTile(state.current, onNowPlaying, Modifier.weight(1f))
+                    LibraryTile(onLibrary, Modifier.width(SidekitTheme.spacing.itemHeight))
                 }
             }
             item(key = "recentLabel") { SectionLabel("Recently played") }
@@ -86,9 +88,6 @@ fun SideplayHomeScreen(
                         )
                     }
                 }
-            }
-            item(key = "settings") {
-                SidekitItem("Settings", Modifier.listFade(listState, recent.size + 2), showLinkArrow = true, onClick = onSettings)
             }
         }
     }
