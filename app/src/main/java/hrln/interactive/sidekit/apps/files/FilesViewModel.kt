@@ -5,6 +5,7 @@ import android.content.IntentSender
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.design.action.NoticeKind
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,7 @@ data class FilesHome(
     val counts: Map<MediaKind, Int> = emptyMap(),
     val folders: List<SavedFolder> = emptyList(),
     val freeBytes: Long = 0,
-    val totalBytes: Long = 0,
+    val totalBytes: Long = 0
 )
 
 /** The open folder's contents; [entries] is null while loading. */
@@ -39,7 +40,7 @@ data class FilesListing(val place: FilePlace, val entries: List<FileEntry>?)
 class FilesViewModel(
     private val source: FilesSource,
     private val prefs: FilesPrefs,
-    private val mediaAllowed: () -> Boolean,
+    private val mediaAllowed: () -> Boolean
 ) : ViewModel() {
     private val _home = MutableStateFlow(FilesHome())
     val home: StateFlow<FilesHome> = _home.asStateFlow()
@@ -62,10 +63,11 @@ class FilesViewModel(
     /** A short message shown in the action bar for a moment (e.g. "No app opens this file"). */
     private val _notice = MutableStateFlow<String?>(null)
     val notice: StateFlow<String?> = _notice.asStateFlow()
+    private val _noticeKind = MutableStateFlow(NoticeKind.Other)
+    val noticeKind: StateFlow<NoticeKind> = _noticeKind.asStateFlow()
 
     private var listJob: Job? = null
     private var searchJob: Job? = null
-    private var noticeJob: Job? = null
     private var lastQuery = ""
 
     fun refreshHome() {
@@ -138,10 +140,12 @@ class FilesViewModel(
         viewModelScope.launch {
             when (val r = source.delete(entry)) {
                 DeleteResult.Deleted -> removed(entry)
+
                 is DeleteResult.NeedsConsent -> {
                     awaitingConsent = entry
                     onConsent(r.request)
                 }
+
                 DeleteResult.Failed -> say("Couldn't delete ${entry.name}")
             }
         }
@@ -158,25 +162,19 @@ class FilesViewModel(
     private fun removed(entry: FileEntry) {
         _listing.update { it?.copy(entries = it.entries?.filter { e -> e.key != entry.key }) }
         _results.update { r -> r?.filter { it.key != entry.key } }
-        say("Deleted ${entry.name}")
+        say("Deleted ${entry.name}", NoticeKind.Success)
     }
 
-    fun say(message: String) {
+    fun say(message: String, kind: NoticeKind = NoticeKind.Other) {
         _notice.value = message
-        noticeJob?.cancel()
-        noticeJob = viewModelScope.launch {
-            delay(NOTICE_MS)
-            _notice.value = null
-        }
+        _noticeKind.value = kind
     }
 
     fun dismissNotice() {
-        noticeJob?.cancel()
         _notice.value = null
     }
 
     companion object {
         const val SEARCH_DEBOUNCE_MS = 300L
-        const val NOTICE_MS = 3_000L
     }
 }

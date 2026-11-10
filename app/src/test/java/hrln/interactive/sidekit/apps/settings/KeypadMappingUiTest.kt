@@ -94,7 +94,8 @@ class KeypadMappingUiTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.onNodeWithText("Volume up").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keypad_mapping_editor_keys.png")
-        scrollTo("Reset T9 keys").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
+        // Reset is in the bar, not Options, while there are custom bindings.
+        compose.onNodeWithText("Reset keys").performClick()
         compose.runOnIdle { assertTrue(keypad.mapper.bindings(KeypadModule.T9).isEmpty()) }
         compose.onNodeWithText("Menu").assertDoesNotExist()
     }
@@ -191,12 +192,14 @@ class KeypadMappingUiTest {
     @Test fun settingsHasOneKeyboardEntry() {
         var opened = 0
         show { SettingsHome({}, {}, onKeyboard = { opened++ }) }
-        scrollTo("Keyboard")
+        compose.onRoot().captureRoboImage("screenshots/keyboard_settings_home.png")
+        compose.onNode(hasScrollAction()).performScrollToIndex(5)
+        compose.mainClock.advanceTimeBy(1000)
+        compose.onNodeWithText("Keyboard").assertIsDisplayed()
         // The old separate keypad rows are gone: one entry leads to the Keyboard page.
         compose.onNodeWithText("Input mode").assertDoesNotExist()
         compose.onNodeWithText("Keypad Back key").assertDoesNotExist()
         compose.onNodeWithText("Keypad mapping").assertDoesNotExist()
-        compose.onRoot().captureRoboImage("screenshots/keyboard_settings_home.png")
         compose.onNodeWithText("Keyboard").performClick()
         assertEquals(1, opened)
     }

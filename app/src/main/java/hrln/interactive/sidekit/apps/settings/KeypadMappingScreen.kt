@@ -74,11 +74,20 @@ internal fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadC
     fun nextLayout() {
         custom?.let { keypad.useCustomMapping(KeypadModule.entries[(it.ordinal + 1) % KeypadModule.entries.size]) }
     }
-    val options = buildList {
-        if (custom != null && bindings.isNotEmpty()) add(SideAction("reset", "Reset keys", SidekitIcon.Undo, tone = ActionTone.Destructive) { mapper.resetAll(custom) })
-        if (custom != null) add(SideAction("automatic", "Use automatic", tone = ActionTone.Muted) { keypad.useCustomMapping(null) })
+    // Reset is a bar action only when there is something to reset, so it never sits around as a
+    // dead option. Switching back to automatic stays in Options: it is a mode change, not a reset.
+    val actions = buildList {
+        add(SideAction.back("back", "Settings", back))
+        if (custom != null && bindings.isNotEmpty()) {
+            add(SideAction("reset", "Reset keys", SidekitIcon.Undo, tone = ActionTone.Destructive) { mapper.resetAll(custom) })
+        }
     }
-    SidekitScaffold("Keypad mapping", actions = listOf(SideAction.back("back", "Settings", back)), options = options) { padding ->
+    val options = if (custom != null) {
+        listOf(SideAction("automatic", "Use automatic", tone = ActionTone.Muted) { keypad.useCustomMapping(null) })
+    } else {
+        emptyList()
+    }
+    SidekitScaffold("Keypad mapping", actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             item {
                 SidekitItem("Mapping", Modifier.height(CompactRowHeight).listFade(list, 0), secondary = if (custom == null) "Automatic" else "Custom", onClick = ::toggle)
@@ -108,11 +117,6 @@ internal fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadC
                         icon = if (bound != null) SidekitIcon.Edit else null,
                         onClick = { learn(custom, control) }
                     )
-                }
-                if (bindings.isNotEmpty()) {
-                    item {
-                        SidekitLineButton("Reset ${custom.label} keys", { mapper.resetAll(custom) }, icon = SidekitIcon.Undo, variant = LineButtonVariant.Destructive)
-                    }
                 }
             }
         }

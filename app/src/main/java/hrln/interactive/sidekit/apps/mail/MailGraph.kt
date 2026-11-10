@@ -27,10 +27,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
@@ -62,12 +63,15 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
             val storedNotice by vm.notice.collectAsStateWithLifecycle()
+            val storedNoticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val storageError by vm.storageError.collectAsStateWithLifecycle()
             val notice = storageError ?: storedNotice
+            val noticeKind = if (storageError != null) NoticeKind.Other else storedNoticeKind
             val undo by vm.undo.collectAsStateWithLifecycle()
             UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             val actions = mailActions(
                 notice,
+                noticeKind,
                 vm::dismissNotice,
                 undo != null,
                 vm::undo,
@@ -77,12 +81,9 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             SidekitScaffold(
                 title = "Mail",
                 actions = actions,
-                options = listOf(
-                    SideAction("refresh", "Refresh inbox") { vm.refresh() },
-                    SideAction("account", "Account") { nav.navigate("$ROOT/account") }
-                )
+                options = listOf(SideAction("refresh", "Refresh inbox") { vm.refresh() })
             ) { padding ->
-                MessageList(padding, messages, null, vm::delete) { nav.navigate(if (it.folder == MailFolder.Inbox || it.folder == MailFolder.Sent) "$ROOT/read/${it.id}" else "$ROOT/compose?id=${it.id}") }
+                MessageList(padding, messages, null, vm::delete, onAccount = { nav.navigate("$ROOT/account") }) { nav.navigate(if (it.folder == MailFolder.Inbox || it.folder == MailFolder.Sent) "$ROOT/read/${it.id}" else "$ROOT/compose?id=${it.id}") }
             }
         }
         composable("$ROOT/account") {
@@ -141,13 +142,16 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
             val storedNotice by vm.notice.collectAsStateWithLifecycle()
+            val storedNoticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val storageError by vm.storageError.collectAsStateWithLifecycle()
             val notice = storageError ?: storedNotice
+            val noticeKind = if (storageError != null) NoticeKind.Other else storedNoticeKind
             val undo by vm.undo.collectAsStateWithLifecycle()
             UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
             val folder = MailFolder.valueOf(entry.arguments?.getString("folder") ?: MailFolder.Draft.name)
             val actions = mailActions(
                 notice,
+                noticeKind,
                 vm::dismissNotice,
                 undo != null,
                 vm::undo,
@@ -193,13 +197,14 @@ private fun mailViewModel(): MailViewModel {
 
 private fun mailActions(
     notice: String?,
+    noticeKind: NoticeKind,
     dismiss: () -> Unit,
     hasUndo: Boolean,
     undo: () -> Unit,
     first: SideAction,
     second: SideAction
 ): List<SideAction> = when {
-    notice != null -> listOf(SideAction("notice", notice, tone = ActionTone.Muted, dense = true, onClick = dismiss))
+    notice != null -> withNotice(notice, dismiss, emptyList(), noticeKind)
     hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
     else -> listOf(first, second)
 }
@@ -210,6 +215,7 @@ private fun MessageList(
     messages: List<MailMessage>?,
     folder: MailFolder?,
     onDelete: (Long) -> Unit,
+    onAccount: (() -> Unit)? = null,
     onOpen: (MailMessage) -> Unit
 ) {
     val shown = messages.orEmpty().filter { folder == null || it.folder == folder }
@@ -221,13 +227,18 @@ private fun MessageList(
                 SidekitText("Inbox cache · refresh to check your server. Swipe deletes the cached copy only.", style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
             }
         }
+        if (onAccount != null) {
+            item(key = "account") {
+                SidekitItem("Account", Modifier.listFade(state, 1), showLinkArrow = true, onClick = onAccount)
+            }
+        }
         if (messages != null && shown.isEmpty()) {
             item(key = "empty") {
-                SidekitItem(if (folder == null) "No local messages" else "No ${folder.label.lowercase()}", Modifier.listFade(state, 1), secondary = "Compose creates a draft on this phone")
+                SidekitItem(if (folder == null) "No local messages" else "No ${folder.label.lowercase()}", Modifier.listFade(state, 2), secondary = "Compose creates a draft on this phone")
             }
         }
         itemsIndexed(shown, key = { _, it -> it.id }) { index, message ->
-            SidekitSwipeRow(key = message.id, group = swipe, onDelete = { onDelete(message.id) }, modifier = Modifier.animateItem().listFade(state, index + 1), deleteLabel = "Delete message") {
+            SidekitSwipeRow(key = message.id, group = swipe, onDelete = { onDelete(message.id) }, modifier = Modifier.animateItem().listFade(state, index + 2), deleteLabel = "Delete message") {
                 SidekitItem((if (message.folder == MailFolder.Inbox) message.sender else message.to).ifEmpty { "No recipient" }, secondary = "${message.folder.label} · ${message.subject.ifEmpty { "No subject" }}", onClick = { onOpen(message) })
             }
         }

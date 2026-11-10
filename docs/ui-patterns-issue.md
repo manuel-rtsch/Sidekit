@@ -10,7 +10,7 @@ Twenty-five sub-apps, one action bar, and no shared answer to a handful of small
 
 The drift is two different kinds of work, and they must not be mixed up:
 
-- **Unresolved product questions** — does `Undo` take over the bar or add a button, and is the bar or the list the primary control surface. These split the suite roughly in half, so any fix applied first just moves the inconsistency.
+- **Unresolved product questions** — what Options is for. F1 (undo shape), F2 (bar vs rows), F3 (message channel) and F4 (cancel tone) are settled.
 - **Real outliers** — one or two instances each, safe to fix mechanically once the questions are answered.
 
 The facts worth knowing before reading further:
@@ -18,12 +18,12 @@ The facts worth knowing before reading further:
 - **Deleting is defended three ways:** `Undo` (10 apps), bar confirmation (Files, Vault), or nothing at all (Translate).
 - **Tone is applied inconsistently:** 17 destructive actions are red, 5 are not — including Calendar's `Delete` and Apps' `Uninstall`, neither of which asks for confirmation. 20 of 31 commit actions are green, the rest are plain Primary.
 - **`Undo` either removes the exit or grows the bar to three:** 4 apps vs 6, and `Cancel` is Muted in 8 apps and Primary in 8.
-- **Four private copies of the same notice/undo helper**, already behaving differently, on the most-used screens (Files, Web, Mail, Banking).
+- ~~**Four private copies of the same notice/undo helper**~~ — settled: one shared `withNotice` / `SideAction.notice`, guarded by `NoticeConventionTest`.
 - **Busy state is faked:** `Saving…`/`Working…` are clickable no-ops in Calendar and Vault; in Trip, Bank Up and Mail Account the busy label keeps its live handler and re-fires.
 
 Risk, in order: Calendar/Apps delete without confirmation, Translate's silent history delete, and the four screens where a pending `Undo` hides the way out. Everything else is consistency, not safety.
 
-**What is needed:** settle six decisions (§3 — mainly the first two), then run four mechanical passes: tones, outliers, shared helpers, lint guards (§5). If you only read one more section, read §3.
+**What is needed:** settle the remaining decisions (§3 — F5, F6), then run the mechanical passes: tones, outliers, shared helpers, lint guards (§5). F1 (undo shape), F2 (bar vs rows), F3 (message channel) and F4 (cancel tone) are settled. If you only read one more section, read §3.
 
 ---
 
@@ -41,7 +41,7 @@ Risk, in order: Calendar/Apps delete without confirmation, Translate's silent hi
 
 - **Undo Behavior:** Four apps (Banking, Mail, Web, Sidenotes) replace `Back` with `Undo | Main` when an action is pending, preventing users from exiting the screen. Six other apps append `Undo`, growing the bar to three buttons.
 
-- **Message Delivery Channels:** Apps currently use three separate methods to display transient messages (bar takeover notices, body cards/rows, or bare status strings). Four private implementations of notice helpers exist.
+- **Message Delivery Channels:** ~~Apps currently use three separate methods to display transient messages (bar takeover notices, body cards/rows, or bare status strings). Four private implementations of notice helpers exist.~~ Settled: transient messages use the bar notice; body cards/rows are persistent explanation only.
 
 - **Options Menu Scope:** Options is inconsistently split between navigation/modes and object destruction/actions. Three screens hide their _only_ destructive action in Options without confirmation; four others confirm the same action in the bar.
 
@@ -71,7 +71,7 @@ The same behaviours, counted across the suite. Each line is a behaviour with its
 
 - **Destructive tone.** Red in 17 actions, untinted in the five listed above. The swipe row paints its own red outside the tone system.
 
-- **Transient messages.** Bar takeover in Files, Mail, Translate and Web (4). Body cards in Apps, Sideport, Banking and Trip. Body rows or status strings in Calendar, Health, Compass, Sideticks and Mail (4 private helper implementations).
+- **Transient messages.** ~~Bar takeover in Files, Mail, Translate and Web (4). Body cards in Apps, Sideport, Banking and Trip. Body rows or status strings in Calendar, Health, Compass, Sideticks and Mail (4 private helper implementations).~~ Settled: one bar notice, auto-dismissed after 2 seconds for success and 5 seconds for other messages.
 
 - **Options role.** Navigation and modes in Calendar, Trip, Music, Clock, Sideticks and Keypad mapping (6). Object actions and destruction in Banking, Photos, Vault, Apps, Web and Sideport (6). Nothing at all in Health, Settings, Placeholder and the loading state of Web (4).
 
@@ -90,17 +90,14 @@ These splits should be decided first so that subsequent refactoring follows a si
 1. **Does `Undo` take over the bar or add a button?**
    - _Recommendation:_ Additive approach (`Undo` on the left, `Back` is never removed). Losing the exit path on a two-button bar must be avoided.
 
-2. **Is the bar or the list the primary control surface?**
-   - _Recommendation:_ The action bar owns commit and mode actions; body rows own list navigation.
+2. ✅ **Is the bar or the list the primary control surface?** — settled: the list navigates; the bar acts and reports. Rows open pages, select objects and change in-place settings; a row that opens another page carries the right arrow. The bar carries the current object's commit/exit actions and transient notices; a reset/clear action appears there only while it would change something. Options holds secondary object actions and never navigation. In-body line buttons are not a third surface. `SurfaceConventionTest` guards Settings and Sideport.
 
-3. **Where does a transient message go?**
-   - _Recommendation:_ Single-line transient messages use a bar notice; detailed or persistent explanations use a body card.
+3. ✅ **Where does a transient message go?** — settled: single-line transient messages use a bar notice; detailed or persistent explanations use a body card. Implemented as `withNotice` / `SideAction.notice`, with a 2-second success window and a 5-second window for other notices; tapping dismisses early.
 
 4. **Is "Cancel" always muted?**
    - _Recommendation:_ "Cancel" is always Muted (`grey` backs out, `green` commits, `red` destroys).
 
-5. **What is Options for?**
-   - _Recommendation:_ Options never handles primary navigation; it acts strictly on the current object.
+5. **What is Options for?** — partly settled: Options never handles navigation; navigation is a row with a right arrow. It acts strictly on the current object. The remaining question is which non-navigation actions belong there (modes, creation, toggles, destructive actions, state, error logs).
 
 6. **Is `ActionMotion` a real contract?**
    - _Recommendation:_ Enforce `ActionMotion` across all factory and hand-built action bars.
@@ -147,7 +144,8 @@ Each app starts with a short note on the patterns it currently uses, then the co
 **Files** — The reference implementation: `Browse | Search→`, plus `Allow` when access is missing, plus a bar notice or `Cancel | Remove` depending on state. Options hold the sort modes. Swipe asks to confirm.
 
 - [ ] Align the swipe confirmation with Decision 1 (currently the minority pattern).
-- [ ] Promote its private notice/confirm helpers into the design system.
+- [x] Promote its private notice helper into the design system (`withNotice`).
+- [ ] Promote its private confirm helper into the design system.
 
 **Vault** — `Working…` is a no-op with `Back` removed. Locked bar `Home | Unlock`. In-bar confirms for delete and discard. Options `Delete` is untinted. Swipe asks to confirm. Keypad is captured while typing.
 
@@ -168,10 +166,10 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Establish hierarchy on the ringing screen — it currently has none.
 - [ ] Tint editor `Cancel` Muted and `Save` green; confirm the Options delete.
 
-**Compass** — `Calibrate | Save`, both Primary and untinted. Saved headings: `Back | Undo`. Feedback is a status string in the body. Options carry the permission action and bookmarks.
+**Compass** — `Calibrate | Save`, both Primary and untinted. Saved headings: `Back | Undo`. Feedback is a status string in the body. Bookmarks is a row with a right arrow; Options carry only the permission action.
 
 - [ ] Tint the commit and give it an icon.
-- [ ] Decide whether the status string becomes a bar notice (Decision 3).
+- [x] Decide whether the status string becomes a bar notice (Decision 3) — it stays a body status because it is persistent.
 
 **Health** — `History→ | Goals→` plus `Allow`. Goals screen is `Cancel | Save`, both untinted. History is a single `Back`. There is no Options anywhere.
 
@@ -180,7 +178,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 
 ### Mail, Translate & Web
 
-**Mail** — One builder produces notice, then `Undo | Compose→`, then `←Folders | Compose→`; the Undo variant drops the back action. Message screen is `←Back | Reply`. Compose is the only three-wide text form, with a Muted `Save`. Only the `To` field takes the keypad.
+**Mail** — One builder produces notice, then `Undo | Compose→`, then `←Folders | Compose→`; the Undo variant drops the back action. Account is a row with a right arrow; Options carry only Refresh. Message screen is `←Back | Reply`. Compose is the only three-wide text form, with a Muted `Save`. Only the `To` field takes the keypad.
 
 - [ ] Resolve the three-wide compose bar (`Cancel | Save | Send`) and make `Send` the green commit or move `Save` to Options.
 - [ ] Make subject and body take the keypad.
@@ -233,16 +231,19 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Tint the commit; settle the Undo position with Decision 1.
 - [ ] Decide whether navigation stays in Options (Decision 5).
 
-**Sideweather** — `←Hourly | 5 days→`, then `Back | Locations→`, then `Back | Undo | Add` with Undo in the middle. Options carry locations and the unit toggle. Swipe deletes with `Undo`.
+**Sideweather** — `←Hourly | 5 days→`, then `Back | Locations→`, then `Back | Undo | Add` with Undo in the middle. Locations is a row with a right arrow on the home screen; Options carry only the unit toggle. Swipe deletes with `Undo`.
 
 - [ ] Move `Undo` to the left so the bar stops shuffling on delete.
 - [ ] Show selection state on the unit toggle.
 
 ### Settings, Apps & Utilities
 
-**Settings** — `←Home | About→`, sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` with `Reset` in Options. The only other user of in-body line buttons is Sideport.
+**Settings** — `←Home`, with About as a row; sub-screens are a single `Back`, and rows mutate their value in place. Arrange Home runs `←Settings | Done→` and shows `Reset` in the bar only while the buffer differs from the default. Messages use the notice channel, the case-colour default is a swatch, Hide apps' "Show all" is a bar action, and Keypad mapping's reset appears in the bar only while custom bindings exist. No in-body line buttons remain in Settings or Sideport; `SurfaceConventionTest` guards that surface.
 
-- [x] Move `Done` to the right in Arrange Home. (Done: `Reset` moved to Options.)
+- [x] Move `Done` to the right in Arrange Home. (Done: `Reset` is a conditional bar action.)
+- [x] Move About from the bar to a row; keep the bar to Home.
+- [x] Move Settings and System settings messages to the notice channel.
+- [x] Remove the in-body line buttons (case colour, hide apps, keypad reset).
 - [ ] Decide whether sub-screens get an Options entry or an explicit "nothing here".
 
 **Apps** — Single `←Home`. Long-press selects a row, then Options offers `App info` and `Uninstall`. Nothing shows the selection. `Uninstall` is untinted and unconfirmed.
@@ -255,11 +256,11 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Tint the clear-history confirm red.
 - [ ] Decide whether `CalcKey` colours merge with `ActionTone`.
 
-**Sideport** — Own screens follow the house style: `←Home | Add app→`, `Cancel | Remove` in red, square Muted `Back` + `Open→`, and a chat bar with green `Send`. Projected apps rebuild the bar from a foreign action spec with tones mapped one to one.
+**Sideport** — Own screens follow the house style: `←Home | Add app→`, `←Back | Install APK→`, `Cancel | Remove` in red, square Muted `Back` + `Open→`, and a chat bar with green `Send`. App info is a row with a right arrow; Options hold only Remove/Uninstall, which still confirm in the bar. Messages use the notice channel. Projected apps rebuild the bar from a foreign action spec with tones mapped one to one, and their in-body `ButtonBlock`s remain the one deliberate line-button exception.
 
 - [ ] Decide how far ported app bars should be normalized.
 - [ ] Set keypad capture on ported forms.
-- [ ] Align the in-body line-button styling with Settings.
+- [x] Remove Sidekit's in-body line buttons; ported-app content remains the exception.
 
 **Launcher** — The dock is the action bar, so opening an app morphs the tapped tile into that app's first action. Search mode replaces the bar with a dense query chip plus a `trailingAction` clear button. Options toggle grid/list and open Settings. The clock responds to tap and long-press.
 
@@ -273,7 +274,8 @@ Each app starts with a short note on the patterns it currently uses, then the co
 ## 5. Suggested Implementation Checklist
 
 - [ ] **Decisions:** Record and confirm Architectural Decisions 1–6.
-- [ ] **Design System:** Add native `enabled`/`busy` state to action models; centralize `withNotice` and `withConfirm` helpers; support `back(tone = …)`.
+- [ ] **Design System:** Add native `enabled`/`busy` state to action models; centralize `withConfirm`; support `back(tone = …)`.
+- [x] **Notice helper:** `withNotice` / `SideAction.notice` in `design/action/Notice.kt`, guarded by `NoticeConventionTest`; auto-dismisses after 2 seconds for success and 5 seconds for other notices.
 - [ ] **Tone Pass:** Execute a pure styling pass to enforce commit (`green`) and destructive (`red`) tones without changing logic.
 - [ ] **Outlier Pass:** Resolve specific component outliers (Camera button shapes, Translate delete flow, Vault busy state, dead Options keys).
 - [ ] **Lint Guards:** Introduce linter checks for untinted destructive labels and non-square icon-only actions.

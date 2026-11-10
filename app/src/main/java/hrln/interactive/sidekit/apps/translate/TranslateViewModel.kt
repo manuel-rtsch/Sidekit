@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,7 +26,7 @@ data class TranslateUiState(
     val translating: Boolean = false,
     val mode: TranslateMode = TranslateMode.Translate,
     val error: String? = null,
-    val microphonePermissionNeeded: Boolean = false,
+    val microphonePermissionNeeded: Boolean = false
 ) {
     fun pane(side: TranslateSide) = if (side == TranslateSide.Source) source else target
     fun toggleMic(side: TranslateSide): TranslateUiState = copy(talking = if (talking == side) null else side, error = null)
@@ -35,7 +34,7 @@ data class TranslateUiState(
 
 class TranslateViewModel(
     private val repository: TranslateRepository,
-    private val translator: Translator,
+    private val translator: Translator
 ) : ViewModel() {
     private val _state = MutableStateFlow(TranslateUiState())
     val state: StateFlow<TranslateUiState> = _state.asStateFlow()
@@ -45,7 +44,6 @@ class TranslateViewModel(
     private var translateJob: Job? = null
     private var sourceLanguage = TranslateLanguage.English
     private var targetLanguage = TranslateLanguage.Chinese
-    private var errorJob: Job? = null
 
     fun onMic(side: TranslateSide) {
         val wasTalking = _state.value.talking == side
@@ -78,7 +76,9 @@ class TranslateViewModel(
         say(message)
     }
 
-    fun stopTalking() { _state.update { it.copy(talking = null) } }
+    fun stopTalking() {
+        _state.update { it.copy(talking = null) }
+    }
 
     fun setText(text: String) {
         _state.update { it.copy(source = it.source.copy(text = text.take(MyMemoryTranslator.MAX_CHARS)), error = null) }
@@ -86,7 +86,10 @@ class TranslateViewModel(
 
     fun translate() {
         val text = _state.value.source.text.trim()
-        if (text.isEmpty()) { say("Type something to translate"); return }
+        if (text.isEmpty()) {
+            say("Type something to translate")
+            return
+        }
         translate(text, sourceLanguage, targetLanguage, reverse = false)
     }
 
@@ -98,8 +101,11 @@ class TranslateViewModel(
                 val result = translator.translate(text, from, to)
                 repository.add(text, result, from, to)
                 _state.update {
-                    if (reverse) it.copy(source = it.source.copy(text = result), target = it.target.copy(text = text), translating = false)
-                    else it.copy(target = it.target.copy(text = result), translating = false)
+                    if (reverse) {
+                        it.copy(source = it.source.copy(text = result), target = it.target.copy(text = text), translating = false)
+                    } else {
+                        it.copy(target = it.target.copy(text = result), translating = false)
+                    }
                 }
                 if (_state.value.talking != null) _speech.tryEmit(SpeechRequest(result, to))
             } catch (e: CancellationException) {
@@ -123,7 +129,7 @@ class TranslateViewModel(
         _state.update {
             it.copy(
                 source = TranslatePane(sourceLanguage.label, it.target.text),
-                target = TranslatePane(targetLanguage.label, it.source.text),
+                target = TranslatePane(targetLanguage.label, it.source.text)
             )
         }
     }
@@ -145,7 +151,9 @@ class TranslateViewModel(
         _state.update { it.copy(source = it.source.copy(text = ""), target = it.target.copy(text = ""), error = null) }
     }
 
-    fun show(mode: TranslateMode) { _state.update { it.copy(mode = mode) } }
+    fun show(mode: TranslateMode) {
+        _state.update { it.copy(mode = mode) }
+    }
     fun open(entry: Translation) {
         sourceLanguage = entry.source
         targetLanguage = entry.target
@@ -153,7 +161,7 @@ class TranslateViewModel(
             it.copy(
                 source = TranslatePane(entry.source.label, entry.sourceText),
                 target = TranslatePane(entry.target.label, entry.translatedText),
-                mode = TranslateMode.Translate,
+                mode = TranslateMode.Translate
             )
         }
     }
@@ -165,19 +173,15 @@ class TranslateViewModel(
     }
 
     fun say(message: String) {
-        errorJob?.cancel()
         _state.update { it.copy(error = message) }
-        errorJob = viewModelScope.launch { delay(3_000); _state.update { it.copy(error = null) } }
     }
 
     fun dismissError() {
-        errorJob?.cancel()
         _state.update { it.copy(error = null) }
     }
 
     override fun onCleared() {
         translateJob?.cancel()
-        errorJob?.cancel()
     }
 }
 

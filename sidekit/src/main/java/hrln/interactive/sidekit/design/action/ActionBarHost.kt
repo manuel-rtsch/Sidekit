@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -73,6 +74,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -258,6 +260,17 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
     val target = state.actions
     val owned = state.hasOwner
     SideEffect { if (owned) model.sync(target, scope) }
+
+    // A notice owns the bar for a short, fixed time. The timer lives here rather than in each
+    // screen so every app gets the same duration and the bar always comes back.
+    val autoDismiss = target.firstOrNull { it.autoDismissMs != null }
+    val latestAutoDismiss by rememberUpdatedState(autoDismiss)
+    LaunchedEffect(autoDismiss?.key, autoDismiss?.label, autoDismiss?.autoDismissMs) {
+        val action = latestAutoDismiss ?: return@LaunchedEffect
+        val delayMs = action.autoDismissMs ?: return@LaunchedEffect
+        delay(delayMs)
+        latestAutoDismiss?.onClick?.invoke()
+    }
 
     if (model.slots.isEmpty()) return
 

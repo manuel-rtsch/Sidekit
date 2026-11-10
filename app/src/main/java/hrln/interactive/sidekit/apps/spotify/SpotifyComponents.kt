@@ -53,10 +53,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.apps.media.RemoteArtworkImage
 import hrln.interactive.sidekit.apps.media.formatDuration
-import hrln.interactive.sidekit.design.action.ActionMotion
-import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.undoBar
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitIconItem
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -284,21 +283,6 @@ fun PagingFooter(loading: Boolean, onLoadMore: () -> Unit) {
     EmptyMessage(if (loading) "Loading more…" else "More", null)
 }
 
-fun withNotice(notice: String?, onDismiss: () -> Unit, actions: List<SideAction>): List<SideAction> = if (notice == null) {
-    actions
-} else {
-    listOf(
-        SideAction(
-            "notice",
-            notice,
-            tone = ActionTone.Muted,
-            dense = true,
-            motion = ActionMotion.Up,
-            onClick = onDismiss
-        )
-    )
-}
-
 fun spotifyBack(label: String, onBack: () -> Unit) = listOf(SideAction.back("back", label, onBack))
 
 /**
@@ -316,7 +300,7 @@ fun spotifyBar(
     return if (undo != null) {
         undoBar(continueWith, SideAction.undo(contentDescription = undo.contentDescription, onClick = onUndo))
     } else {
-        withNotice(state.notice, onDismissNotice, listOf(continueWith) + extra)
+        withNotice(state.notice, onDismissNotice, listOf(continueWith) + extra, state.noticeKind)
     }
 }
 

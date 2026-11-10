@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.home.HomePreferences
@@ -73,7 +74,8 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     }
 
     val list = rememberLazyListState()
-    SidekitScaffold("Apps", actions = listOf(SideAction.back("back", "Home", back))) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Home", back)))
+    SidekitScaffold("Apps", actions = actions) { padding ->
         SidekitList(padding, state = list) {
             item { AppSearchField(query) { vm.query.value = it } }
             item {

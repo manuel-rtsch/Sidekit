@@ -148,8 +148,10 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
     val options = if (confirmingDiscard) {
         emptyList()
     } else {
-        listOf(
+        // Reset is only useful while the buffer differs from the built-in default.
+        listOfNotNull(
             SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() })
+                .takeUnless { arranger.isDefault }
         )
     }
     SidekitScaffold(

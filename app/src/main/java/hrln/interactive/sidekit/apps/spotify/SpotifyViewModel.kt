@@ -9,6 +9,7 @@ import hrln.interactive.sidekit.apps.spotify.data.SpotifyHistoryRepository
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyLibraryWriter
 import hrln.interactive.sidekit.apps.spotify.data.SpotifyQueueRepository
 import hrln.interactive.sidekit.apps.spotify.data.SpotifySession
+import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.ui.UndoWindow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -76,6 +77,7 @@ data class SpotifyUiState(
     val query: String = "",
     val audioQuality: AudioQuality = AudioQuality.High,
     val notice: String? = null,
+    val noticeKind: NoticeKind = NoticeKind.Other,
     val undo: SpotifyUndo? = null
 ) {
     val savedCurrent: Boolean get() = current?.let { it.id in savedTrackIds } ?: false
@@ -183,7 +185,7 @@ class SpotifyViewModel(
 
     fun refresh() = loadAccount()
 
-    fun notice(text: String) = _state.update { it.copy(notice = text) }
+    fun notice(text: String, kind: NoticeKind = NoticeKind.Other) = _state.update { it.copy(notice = text, noticeKind = kind) }
 
     fun collection(type: SpotifyCollectionType, id: String): SpotifyCollection? = _state.value.collections[collectionKey(type, id)]
 
@@ -521,6 +523,7 @@ class SpotifyViewModel(
             it.copy(
                 savedTrackIds = ids,
                 notice = label?.let { name -> if (saved) "Saved to $name" else "Removed from $name" },
+                noticeKind = NoticeKind.Success,
                 undo = if (offerUndo) action else it.undo
             )
         }
@@ -558,6 +561,7 @@ class SpotifyViewModel(
             it.copy(
                 savedCollectionKeys = keys,
                 notice = if (saved) "Saved to Library" else "Removed from Library",
+                noticeKind = NoticeKind.Success,
                 undo = if (offerUndo) action else it.undo
             )
         }
@@ -594,6 +598,7 @@ class SpotifyViewModel(
             it.copy(
                 followedArtistIds = ids,
                 notice = if (following) "Following $name" else "Unfollowed $name",
+                noticeKind = NoticeKind.Success,
                 undo = if (offerUndo) action else it.undo
             )
         }
@@ -691,12 +696,12 @@ class SpotifyViewModel(
         history.clear()
         val snapshot = queue.clearHistory()
         applyQueue(snapshot, syncNowPlaying = false)
-        _state.update { it.copy(recent = emptyList(), notice = "Listening history cleared") }
+        _state.update { it.copy(recent = emptyList(), notice = "Listening history cleared", noticeKind = NoticeKind.Success) }
     }
 
     fun clearCache() {
         clearArtworkCache()
-        _state.update { it.copy(notice = "Artwork cache cleared") }
+        _state.update { it.copy(notice = "Artwork cache cleared", noticeKind = NoticeKind.Success) }
     }
 
     fun moveToNext(item: SpotifyMediaItem) {
@@ -714,7 +719,8 @@ class SpotifyViewModel(
         _state.update {
             it.copy(
                 recent = history.items().filterIsInstance<SpotifyTrack>(),
-                notice = "${item.title} removed from history"
+                notice = "${item.title} removed from history",
+                noticeKind = NoticeKind.Success
             )
         }
     }

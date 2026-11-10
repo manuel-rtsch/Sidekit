@@ -69,7 +69,7 @@ fun NavGraphBuilder.sideweatherGraph(nav: NavHostController) {
                     nav.navigate("$root/locations") { launchSingleTop = true }
                     Unit
                 }
-                val options = listOf(SideAction("locations", "Locations", onClick = locations), SideAction("units", if (imperial) "Use °C" else "Use °F") { vm.repository.settings.edit { it.copy(fahrenheit = !it.fahrenheit) } })
+                val options = listOf(SideAction("units", if (imperial) "Use °C" else "Use °F") { vm.repository.settings.edit { it.copy(fahrenheit = !it.fahrenheit) } })
                 when (page) {
                     "search" -> PlaceSearch(back) {
                         vm.repository.select(it)
@@ -113,7 +113,7 @@ fun NavGraphBuilder.sideweatherGraph(nav: NavHostController) {
                         }
                     }
 
-                    "home" -> SideweatherHomeScreen(forecast?.let { f -> place?.let { f.current(it, imperial) } } ?: CurrentConditions(place?.name ?: "Choose a location", "—", "", ""), forecast?.summary(imperial).orEmpty() + WeatherRow(error ?: status, ""), { nav.navigate("$root/hourly") }, { nav.navigate("$root/five-day") }, options)
+                    "home" -> SideweatherHomeScreen(forecast?.let { f -> place?.let { f.current(it, imperial) } } ?: CurrentConditions(place?.name ?: "Choose a location", "—", "", ""), forecast?.summary(imperial).orEmpty() + WeatherRow(error ?: status, ""), { nav.navigate("$root/hourly") }, { nav.navigate("$root/five-day") }, locations, options)
 
                     else -> ForecastScreen(if (page == "hourly") "Hourly forecast" else "5-day forecast", (if (page == "hourly") forecast?.hourly(imperial) else forecast?.daily(imperial)).orEmpty() + WeatherRow(status, ""), back, locations)
                 }

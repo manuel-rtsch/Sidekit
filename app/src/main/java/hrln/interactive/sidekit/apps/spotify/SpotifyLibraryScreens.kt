@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
+import hrln.interactive.sidekit.design.action.withNotice
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitItemRow
 import hrln.interactive.sidekit.design.components.SidekitList
@@ -49,15 +50,13 @@ fun SideplayHomeScreen(
         listOf(
             SideAction("queue", "Queue", SidekitIcon.QueueMusic, onClick = onQueue),
             SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
-        )
+        ),
+        state.noticeKind
     )
     SidekitScaffold(
         title = "Sideplay",
         actions = bar,
-        options = listOf(
-            SideAction("refresh", "Refresh", SidekitIcon.Undo, onClick = onRefresh),
-            SideAction("settings", "Settings", SidekitIcon.Settings, onClick = onSettings)
-        )
+        options = listOf(SideAction("refresh", "Refresh", SidekitIcon.Undo, onClick = onRefresh))
     ) { padding ->
         val listState = rememberLazyListState()
         val swipes = rememberSwipeRevealGroup()
@@ -87,6 +86,9 @@ fun SideplayHomeScreen(
                         )
                     }
                 }
+            }
+            item(key = "settings") {
+                SidekitItem("Settings", Modifier.listFade(listState, recent.size + 2), showLinkArrow = true, onClick = onSettings)
             }
         }
     }
@@ -119,7 +121,8 @@ fun LibraryScreen(
     val actions = withNotice(
         state.notice,
         onDismissNotice,
-        listOf(spotifyBack("Sideplay", onBack).first(), SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch))
+        listOf(spotifyBack("Sideplay", onBack).first(), SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)),
+        state.noticeKind
     )
     val filters = LibraryFilter.entries.map { filter ->
         SideAction(
@@ -205,9 +208,7 @@ fun CollectionScreen(
                 onClick = onSave
             )
         )
-        if (collection.artistId != null) add(SideAction("artist", "Artist", SidekitIcon.Artist, onClick = onArtist))
         collection.items.firstOrNull()?.let { add(SideAction("queue", "Add to queue", SidekitIcon.QueueMusic, onClick = onQueue)) }
-        add(SideAction("nowPlaying", "Go to now playing", SidekitIcon.MusicNote2, onClick = onNowPlaying))
     }
     SidekitScaffold(title = collection.title, actions = actions, options = options) { padding ->
         val listState = rememberLazyListState()
@@ -239,11 +240,14 @@ fun CollectionScreen(
                     maxLines = 1
                 )
             }
+            item(key = "nowPlaying") {
+                SidekitItem("Now playing", Modifier.listFade(listState, 2), showLinkArrow = true, onClick = onNowPlaying)
+            }
             itemsIndexed(collection.items, key = { index, item -> "$index:${item.id}" }) { index, item ->
                 SidekitSwipeRow(
                     key = item.id,
                     group = swipes,
-                    modifier = Modifier.listFade(listState, index + 2),
+                    modifier = Modifier.listFade(listState, index + 3),
                     action = queueAction(item, onQueueItem)
                 ) {
                     SpotifyMediaRow(
@@ -292,8 +296,7 @@ fun ArtistScreen(
         title = artist.name,
         actions = actions,
         options = listOf(
-            SideAction("follow", if (followed) "Following" else "Follow", tone = if (followed) ActionTone.Secondary else ActionTone.Primary, onClick = onFollow),
-            SideAction("nowPlaying", "Go to now playing", SidekitIcon.MusicNote2, onClick = onNowPlaying)
+            SideAction("follow", if (followed) "Following" else "Follow", tone = if (followed) ActionTone.Secondary else ActionTone.Primary, onClick = onFollow)
         )
     ) { padding ->
         val listState = rememberLazyListState()
@@ -305,12 +308,15 @@ fun ArtistScreen(
                     ArtworkTile(artist.artRes, "${artist.name} artwork", Modifier.weight(1f), artist.artUrl)
                 }
             }
+            item(key = "nowPlaying") {
+                SidekitItem("Now playing", Modifier.listFade(listState, 1), showLinkArrow = true, onClick = onNowPlaying)
+            }
             item(key = "topLabel") { SectionLabel("Top tracks") }
             itemsIndexed(tracks, key = { _, track -> track.id }) { index, track ->
                 SidekitSwipeRow(
                     key = track.id,
                     group = swipes,
-                    modifier = Modifier.listFade(listState, index + 2),
+                    modifier = Modifier.listFade(listState, index + 3),
                     action = queueAction(track, onQueue)
                 ) {
                     SpotifyMediaRow(track, Modifier, secondary = track.artist, onClick = { onTrack(track) })
@@ -325,7 +331,7 @@ fun ArtistScreen(
                     album.artRes,
                     album.title,
                     "${album.year}" + if (album.trackCount > 0) " · ${album.trackCount} tracks" else "",
-                    Modifier.listFade(listState, index + tracks.size + 3),
+                    Modifier.listFade(listState, index + tracks.size + 4),
                     artUrl = album.artUrl
                 ) { onAlbum(album) }
             }

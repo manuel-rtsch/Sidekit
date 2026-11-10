@@ -187,8 +187,7 @@ class LauncherSearchTest {
         compose.onNodeWithText("Hidden").assertExists()
         compose.mainClock.advanceTimeBy(1000)
         compose.onRoot().captureRoboImage("screenshots/onboarding/13-hide-apps-settings.png")
-        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Show all apps"))
-        compose.onNodeWithText("Show all apps").performClick()
+        compose.onNodeWithText("Show all").performClick()
         assertTrue(prefs.hiddenApps.isEmpty())
     }
 }
