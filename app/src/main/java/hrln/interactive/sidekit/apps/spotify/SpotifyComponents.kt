@@ -233,15 +233,17 @@ fun NowPlayingTile(
 
 @Composable
 fun LibraryTile(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    SidekitTile(modifier, onClick = onClick, onClickLabel = "Library") {
-        Column(
-            Modifier.padding(horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            SidekitIconImage(SidekitIcon.PhotoLibrary, size = SidekitTheme.spacing.tileIconSize)
-            SidekitText("Library", style = SidekitTheme.typography.bodySmall)
-        }
+    SidekitTile(
+        modifier,
+        color = SidekitTheme.colors.emphasisA1,
+        onClick = onClick,
+        onClickLabel = "Library"
+    ) {
+        SidekitIconImage(
+            SidekitIcon.Album,
+            size = SidekitTheme.spacing.tileIconSize,
+            contentDescription = "Library"
+        )
     }
 }
 
