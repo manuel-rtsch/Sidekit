@@ -143,6 +143,7 @@ class SideplayScreenshotTest {
             onSave = {},
             onQueue = {},
             onAlbum = {},
+            onShow = {},
             onArtist = {},
             onUndo = {},
             onDismissNotice = {}

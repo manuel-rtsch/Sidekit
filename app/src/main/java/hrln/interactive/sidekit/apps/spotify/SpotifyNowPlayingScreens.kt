@@ -57,15 +57,17 @@ fun SpotifyNowPlayingScreen(
     onSave: () -> Unit,
     onQueue: () -> Unit,
     onAlbum: () -> Unit,
+    onShow: () -> Unit,
     onArtist: () -> Unit,
     onUndo: () -> Unit,
     onDismissNotice: () -> Unit
 ) {
     val current = state.current
-    val save = current?.let {
+    // Episodes have no saved-track endpoint, so Save is a track-only action.
+    val save = (current as? SpotifyTrack)?.let {
         SideAction.square(
             "save",
-            if (state.savedCurrent) SidekitIcon.Bookmark else SidekitIcon.BookmarkBorder,
+            if (state.savedCurrent) SidekitIcon.Check else SidekitIcon.Bookmark,
             if (state.savedCurrent) "Saved" else "Save",
             onSave,
             tone = if (state.savedCurrent) ActionTone.Secondary else ActionTone.Muted,
@@ -106,7 +108,17 @@ fun SpotifyNowPlayingScreen(
                         shape = SidekitTheme.shapes.item,
                         bordered = true,
                         contentDescription = "${current.title} artwork",
-                        artUrl = current.artUrl
+                        artUrl = current.artUrl,
+                        onClick = when (current) {
+                            is SpotifyTrack -> onAlbum
+                            is SpotifyEpisode -> onShow
+                            else -> null
+                        },
+                        onClickLabel = when (current) {
+                            is SpotifyTrack -> "Open album"
+                            is SpotifyEpisode -> "Open show"
+                            else -> null
+                        }
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

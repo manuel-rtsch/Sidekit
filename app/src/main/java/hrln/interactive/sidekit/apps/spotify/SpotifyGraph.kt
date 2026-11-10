@@ -227,6 +227,11 @@ fun NavGraphBuilder.sideplayGraph(nav: NavHostController) {
                         nav.navigate(collectionRoute(SpotifyCollectionType.Album, track.albumId))
                     }
                 },
+                onShow = {
+                    (state.current as? SpotifyEpisode)?.let { episode ->
+                        nav.navigate(collectionRoute(SpotifyCollectionType.Show, episode.showId))
+                    }
+                },
                 onArtist = {
                     state.current?.artistId?.let { nav.navigate(artistRoute(it)) }
                 },

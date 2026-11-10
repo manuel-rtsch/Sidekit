@@ -44,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
@@ -73,7 +74,9 @@ fun SpotifyCover(
     shape: androidx.compose.ui.graphics.Shape = SidekitTheme.shapes.control,
     bordered: Boolean = false,
     contentDescription: String? = null,
-    artUrl: String? = null
+    artUrl: String? = null,
+    onClick: (() -> Unit)? = null,
+    onClickLabel: String? = null
 ) {
     val colors = SidekitTheme.colors
     Box(
@@ -81,6 +84,7 @@ fun SpotifyCover(
             .clip(shape)
             .background(colors.surfaceA2)
             .then(if (bordered) Modifier.border(1.dp, colors.light, shape) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = onClickLabel, onClick = onClick) else Modifier)
     ) {
         when {
             artUrl != null -> RemoteArtworkImage(
@@ -332,7 +336,7 @@ fun SpotifySeek(positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, modi
     val step = if (seekable) 5_000f / durationMs else 0f
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(contentAlignment = Alignment.CenterEnd) {
-            SidekitText(widest, Modifier.alpha(0f), style = timeStyle)
+            SidekitText(widest, Modifier.alpha(0f).clearAndSetSemantics {}, style = timeStyle)
             SidekitText(formatDuration(positionMs), style = timeStyle)
         }
         Box(
