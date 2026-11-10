@@ -1,5 +1,7 @@
 package hrln.interactive.sidekit.apps.apps
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Process
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -40,6 +42,7 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     val home = remember(context) { HomePreferences(context) }
     var homeRevision by remember { mutableIntStateOf(0) }
     var opened by remember { mutableStateOf<LaunchableApp?>(null) }
+    var selected by remember { mutableStateOf<LaunchableApp?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     fun perform(action: () -> Unit) {
         try {
@@ -75,7 +78,20 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
 
     val list = rememberLazyListState()
     val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Home", back)))
-    SidekitScaffold("Apps", actions = actions) { padding ->
+    val options = selected?.let { app ->
+        listOf(
+            SideAction("info", "App info") { perform { vm.repository.info(app) } },
+            SideAction("uninstall", "Uninstall") {
+                perform {
+                    context.startActivity(
+                        Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}"))
+                            .putExtra(Intent.EXTRA_USER, app.user)
+                    )
+                }
+            }
+        )
+    }.orEmpty()
+    SidekitScaffold("Apps", actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             item { AppSearchField(query) { vm.query.value = it } }
             item { SidekitCard { SidekitText(selected?.let { "${it.label} selected. Press Options for app info or uninstall." } ?: "Tap to open · hold an app for Options", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } }
@@ -91,7 +107,10 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
                     vm.repository,
                     Modifier.listFade(list, index + rowsStart),
                     secondary = if (target.user != Process.myUserHandle()) "Work profile" else null,
-                    onClick = { perform { vm.repository.launch(target) } },
+                    onClick = {
+                        selected = target
+                        perform { vm.repository.launch(target) }
+                    },
                     onLongClick = { opened = target },
                     onLongClickLabel = "App page"
                 )
