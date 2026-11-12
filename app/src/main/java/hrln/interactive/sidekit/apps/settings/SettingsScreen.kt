@@ -98,7 +98,7 @@ internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour:
             item { SidekitItem("Home app", Modifier.height(CompactRowHeight).listFade(list, 2), secondary = if (home) "Sidekit" else "Choose", secondaryToEnd = true, onClick = { open(Settings.ACTION_HOME_SETTINGS) }) }
             // Everything below opens another page: full-height rows with a link arrow.
             item { SidekitItem("Arrange apps", Modifier.listFade(list, 3), showLinkArrow = true, onClick = onArrange) }
-            item { SidekitItem("Case colour", Modifier.listFade(list, 4), secondary = caseColour?.label ?: "Blue", showLinkArrow = true, onClick = onCaseColour) }
+            item { SidekitItem("Case colour", Modifier.listFade(list, 4), secondary = caseColour?.label ?: "Original blue", showLinkArrow = true, onClick = onCaseColour) }
             // All keypad preferences live together on the Keyboard page, with the key diagram.
             item { SidekitItem("Keyboard", Modifier.listFade(list, 5), showLinkArrow = true, onClick = onKeyboard) }
             item { SidekitItem("Hide apps", showLinkArrow = true, onClick = onHiddenApps) }
