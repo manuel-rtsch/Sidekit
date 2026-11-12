@@ -21,7 +21,7 @@ import hrln.interactive.sidekit.design.input.SystemKeys
  * It requests no accessibility events and can't read window content, so it costs nothing while
  * idle. Consumers declare it in their own manifest; enable it in Settings > Accessibility.
  */
-class KeypadAccessibilityService : AccessibilityService() {
+open class KeypadAccessibilityService : AccessibilityService() {
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (!SystemKeys.isBack(event)) return false

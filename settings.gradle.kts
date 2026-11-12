@@ -26,6 +26,12 @@ dependencyResolutionManagement {
             name = "sidekitLocal"
             url = uri(rootDir.resolve("build/local-repo"))
         }
+        // The exact tree the publish workflow deploys to GitHub Pages, so a release can be
+        // verified locally before it is pushed. Consumers use the https:// URL instead.
+        maven {
+            name = "sidekitPages"
+            url = uri(rootDir.resolve("build/pages-repo"))
+        }
     }
 }
 

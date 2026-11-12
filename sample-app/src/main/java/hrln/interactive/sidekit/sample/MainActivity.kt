@@ -44,6 +44,7 @@ class MainActivity : SidekitActivity() {
                 when (status) {
                     HostStatus.Available -> "Host: Sidekit ${config?.hostVersion.orEmpty()}"
                     HostStatus.InstalledUnsupported -> "Host: installed, unsupported schema"
+                    HostStatus.NotPermitted -> "Host: installed, not trusted for this app"
                     HostStatus.NotInstalled -> "Host: not installed, using local settings"
                 },
                 style = SidekitTheme.typography.body.copy(color = SidekitTheme.colors.light)

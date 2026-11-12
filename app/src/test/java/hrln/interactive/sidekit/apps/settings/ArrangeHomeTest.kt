@@ -13,6 +13,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.home.HomePreferences
+import hrln.interactive.sidekit.launcher.NativeApps
+import hrln.interactive.sidekit.launcher.addNativeAppForTest
 import hrln.interactive.sidekit.navigation.SubApp
 import org.junit.Before
 import org.junit.Rule
@@ -37,6 +39,9 @@ class ArrangeHomeTest {
     fun cleanPrefs() {
         HomePreferences(context).reset()
         SidekitPreferences(context).hiddenApps = emptySet()
+        NativeApps.invalidate()
+        addNativeAppForTest(context, "test.sideplay", "Sideplay")
+        NativeApps.cached(context) { true }
     }
 
     private fun arrange() {

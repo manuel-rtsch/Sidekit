@@ -27,6 +27,9 @@ import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
  *
  * Only the keys listed in [SidekitConfigCodec] leave the process. Hidden apps, home order,
  * credentials, messages and the other app-private stores are never read here.
+ *
+ * Holding the permission is not enough: the caller's signing certificate must also be trusted
+ * (see [TrustedCallers]), because a `normal` permission is granted to any app that requests it.
  */
 // The provider is the host side of the SDK's internal wire format; the codec and file names are
 // restricted so third-party apps cannot depend on them.
@@ -51,7 +54,8 @@ open class SidekitConfigProvider : ContentProvider() {
 
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         if (!callerCanRead()) {
-            throw SecurityException("Missing ${SidekitContract.PERMISSION_READ_APP_CONFIG}")
+            val permission = context?.packageName?.let(SidekitContract::readPermissionForPackage)
+            throw SecurityException("Missing $permission")
         }
         return when (method) {
             SidekitContract.METHOD_GET_VERSION -> readConfig().let { config ->
@@ -65,14 +69,20 @@ open class SidekitConfigProvider : ContentProvider() {
     }
 
     /**
-     * Whether the current caller holds the read permission.
+     * Whether the current caller holds the read permission *and* is signed by a trusted
+     * certificate.
      *
      * `readPermission` guards normal provider access, but it does not automatically guard [call].
-     * This hook is open so tests can exercise both outcomes without a second installed app.
+     * The permission is named after this build's package, so the stable and dev builds each
+     * declare and check their own. The certificate check is what actually limits access: any app
+     * can request a `normal` permission. This hook is open so tests can exercise both outcomes
+     * without a second installed app.
      */
     internal open fun callerCanRead(): Boolean {
         val context = context ?: return false
-        return context.checkCallingPermission(SidekitContract.PERMISSION_READ_APP_CONFIG) == PackageManager.PERMISSION_GRANTED
+        val permission = SidekitContract.readPermissionForPackage(context.packageName)
+        if (context.checkCallingPermission(permission) != PackageManager.PERMISSION_GRANTED) return false
+        return TrustedCallers.isTrustedCaller(context)
     }
 
     private fun readConfig(): SidekitConfig {

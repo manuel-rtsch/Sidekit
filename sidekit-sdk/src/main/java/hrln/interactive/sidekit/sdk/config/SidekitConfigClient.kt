@@ -16,6 +16,14 @@ enum class HostStatus {
     /** Sidekit is installed, but it does not expose a configuration this SDK understands. */
     InstalledUnsupported,
 
+    /**
+     * Sidekit is installed and readable, but it does not trust this app's signing certificate.
+     *
+     * Hosts advertise [SidekitContract.CAPABILITY_TRUST]; ask the Sidekit author to add this app's
+     * certificate digest. Local stores keep working in the meantime.
+     */
+    NotPermitted,
+
     /** A compatible host provider answered and can be read. */
     Available
 }
@@ -93,23 +101,26 @@ object SidekitConfigClient {
     private data class Resolved(val authority: String?, val status: HostStatus)
 
     private fun resolve(context: Context, hostAuthority: String?): Resolved {
-        var installed = false
+        // The first host that exists but cannot serve is the one worth reporting; strict priority
+        // ordering would let an unrelated build's refusal mask a schema problem in the preferred
+        // one.
+        var failure = HostStatus.NotInstalled
         if (hostAuthority != null) {
             val status = probe(context, hostAuthority)
             if (status == HostStatus.Available) return Resolved(hostAuthority, status)
             // A dev build can be uninstalled while the app is still running. Fall back to the
             // other known Sidekit builds, but never to an authority this contract does not know.
             if (!SidekitContract.isKnownAuthority(hostAuthority)) return Resolved(null, status)
-            if (status == HostStatus.InstalledUnsupported) installed = true
+            failure = status.takeIf { it != HostStatus.NotInstalled } ?: failure
         }
 
         for (authority in SidekitContract.AUTHORITIES) {
             if (authority == hostAuthority) continue
             val status = probe(context, authority)
             if (status == HostStatus.Available) return Resolved(authority, status)
-            if (status == HostStatus.InstalledUnsupported) installed = true
+            if (failure == HostStatus.NotInstalled) failure = status.takeIf { it != HostStatus.NotInstalled } ?: failure
         }
-        return Resolved(null, if (installed) HostStatus.InstalledUnsupported else HostStatus.NotInstalled)
+        return Resolved(null, failure)
     }
 
     private fun probe(context: Context, authority: String): HostStatus {
@@ -119,9 +130,10 @@ object SidekitConfigClient {
         val version = try {
             context.contentResolver.call(configUri(authority), SidekitContract.METHOD_GET_VERSION, null, null)
         } catch (e: SecurityException) {
-            // The provider is there but this app may not read it: that is a host compatibility
-            // problem, not an absent host.
-            return HostStatus.InstalledUnsupported
+            // The provider is there but this app may not read it: either it is not trusted by the
+            // host's signer policy or it lacks the permission. Both are "ask the host", not
+            // "not installed".
+            return HostStatus.NotPermitted
         } catch (e: IllegalArgumentException) {
             return HostStatus.InstalledUnsupported
         } catch (e: RuntimeException) {

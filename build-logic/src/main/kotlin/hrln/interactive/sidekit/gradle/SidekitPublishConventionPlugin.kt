@@ -12,8 +12,10 @@ import org.gradle.kotlin.dsl.create
  * Maven publication for a Sidekit Android library.
  *
  * A local staging repository is configured so CI can build a consumer against the published
- * coordinates without credentials. GitHub Packages is added when `-PsidekitPublishGitHub=true`
- * is set, using the workflow's `GITHUB_REPOSITORY`, `GITHUB_ACTOR` and `GITHUB_TOKEN`.
+ * coordinates without credentials. The repository that is actually served to third-party apps is
+ * added when `-PsidekitPublishPages=true` is set: it stages into `build/pages-repo`, which the
+ * publish workflow pushes to the `gh-pages` branch as a static Maven repository. Consumers need no
+ * credentials, unlike GitHub Packages.
  */
 class SidekitPublishConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -21,12 +23,10 @@ class SidekitPublishConventionPlugin : Plugin<Project> {
         project.group = "hrln.interactive.sidekit"
         project.version = GitVersion.name(project)
 
-        val publishGitHub = project.providers.gradleProperty("sidekitPublishGitHub")
+        val publishPages = project.providers.gradleProperty("sidekitPublishPages")
             .map(String::toBoolean)
             .getOrElse(false)
         val githubRepository = project.providers.environmentVariable("GITHUB_REPOSITORY").orNull
-        val githubToken = project.providers.environmentVariable("GITHUB_TOKEN").orNull
-        val githubActor = project.providers.environmentVariable("GITHUB_ACTOR").orNull
 
         project.extensions.configure<PublishingExtension> {
             repositories {
@@ -34,24 +34,21 @@ class SidekitPublishConventionPlugin : Plugin<Project> {
                     name = "sidekitLocal"
                     url = project.rootProject.layout.buildDirectory.dir("local-repo").get().asFile.toURI()
                 }
-                if (publishGitHub) {
-                    require(!githubRepository.isNullOrBlank()) {
-                        "GITHUB_REPOSITORY is required when publishing to GitHub Packages."
-                    }
-                    require(!githubToken.isNullOrBlank()) {
-                        "GITHUB_TOKEN is required when publishing to GitHub Packages."
-                    }
+                if (publishPages) {
+                    // Staged, not uploaded: the publish workflow copies this tree into the
+                    // gh-pages branch, where GitHub Pages serves it without authentication.
                     maven {
-                        name = "sidekitGitHub"
-                        url = project.uri("https://maven.pkg.github.com/$githubRepository")
-                        credentials {
-                            username = githubActor ?: "github"
-                            password = githubToken
-                        }
+                        name = "sidekitPages"
+                        url = project.rootProject.layout.buildDirectory.dir("pages-repo").get().asFile.toURI()
                     }
                 }
             }
         }
+
+        // The POM points at whichever repository runs the workflow, so a fork's artifacts still
+        // describe where the code lives, with the canonical project as the fallback.
+        val projectUrl = githubRepository?.let { "https://github.com/$it" }
+            ?: "https://github.com/HarlenPostill/Sidekit"
 
         val sidekitPublish = project.extensions.create<SidekitPublishExtension>("sidekitPublish")
         sidekitPublish.artifactId.convention(project.name)
@@ -79,7 +76,7 @@ class SidekitPublishConventionPlugin : Plugin<Project> {
                         pom {
                             name.set(project.name)
                             description.set(sidekitPublish.description.get())
-                            url.set("https://github.com/manuel-rtsch/Sidekit")
+                            url.set(projectUrl)
                             licenses {
                                 license {
                                     name.set("MIT License")

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Signing certificates allowed to read Sidekit's configuration and to appear as
+        Sidekit-native apps (see TrustedCallers and docs/third-party-apps-permissions.md).
+
+        Apps signed with Sidekit's own certificate are trusted without an entry here, so a
+        Sidekit-signed companion app and the debug build's own apps need nothing. Add one line
+        per partner, the SHA-256 digest of the certificate that signs their released APKs:
+
+            apksigner verify "-print-certs" app-release.apk  and read the SHA-256 line
+
+        Colons are optional. A debug certificate must never be added here: the debug keystore is
+        public, so listing it would trust anyone.
+    -->
+    <string-array name="sidekit_trusted_app_digests" />
+</resources>

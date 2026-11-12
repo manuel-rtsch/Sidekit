@@ -46,11 +46,13 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/android-setup
-      - name: Publish the SDK to the local staging repository
+      # The Pages staging tree is the exact layout the Publish SDK workflow serves, so this job
+      # also proves the artifact host a third-party app will use.
+      - name: Publish the SDK to the Pages staging repository
         run: >
-          ./gradlew :sidekit:publishAllPublicationsToSidekitLocalRepository
-          :sidekit-sdk:publishAllPublicationsToSidekitLocalRepository
-          --stacktrace
+          ./gradlew :sidekit:publishAllPublicationsToSidekitPagesRepository
+          :sidekit-sdk:publishAllPublicationsToSidekitPagesRepository
+          -PsidekitPublishPages=true --stacktrace
       - name: Build the sample against the published artifacts
         run: ./gradlew :sample-app:assembleDebug -PsidekitUsePublished=true --stacktrace
 

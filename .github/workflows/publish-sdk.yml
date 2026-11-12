@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  packages: write
+  # The artifacts are served from the gh-pages branch, so this workflow has to push to it.
+  contents: write
 
 concurrency:
   group: publish-sdk-${{ github.ref }}
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish to GitHub Packages
+    name: Publish to GitHub Pages
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -25,9 +25,36 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/android-setup
       - name: Publish sidekit-design and sidekit-sdk
+        run: >
+          ./gradlew :sidekit:publishAllPublicationsToSidekitPagesRepository
+          :sidekit-sdk:publishAllPublicationsToSidekitPagesRepository
+          -PsidekitPublishPages=true --stacktrace
+
+      # GitHub Pages serves the repository as plain files, so the Maven layout is the site. Only
+      # this workflow writes to gh-pages, and it keeps older versions: consumers pin versions.
+      - name: Deploy to gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >
-          ./gradlew :sidekit:publishAllPublicationsToSidekitGitHubRepository
-          :sidekit-sdk:publishAllPublicationsToSidekitGitHubRepository
-          -PsidekitPublishGitHub=true --stacktrace
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" gh-pages > /dev/null; then
+            git clone --depth 1 --branch gh-pages "$remote" pages
+          else
+            mkdir pages
+            git -C pages init --quiet
+            git -C pages checkout --quiet --orphan gh-pages
+          fi
+          mkdir -p pages/maven
+          cp -a build/pages-repo/. pages/maven/
+          # Keep GitHub Pages from running Jekyll over the artifacts.
+          touch pages/.nojekyll
+          git -C pages add --all
+          if git -C pages diff --cached --quiet; then
+            echo "Nothing new to publish."
+            exit 0
+          fi
+          git -C pages -c user.name="github-actions[bot]" \
+            -c user.email="github-actions[bot]@users.noreply.github.com" \
+            commit --quiet --message "Publish ${GITHUB_REF_NAME}"
+          git -C pages push --quiet "$remote" gh-pages

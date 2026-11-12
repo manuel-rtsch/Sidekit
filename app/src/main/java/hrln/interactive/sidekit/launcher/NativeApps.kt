@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Build
 import android.os.Bundle
+import hrln.interactive.sidekit.config.TrustedCallers
 import hrln.interactive.sidekit.sdk.SidekitContract
 
 /**
@@ -17,6 +18,10 @@ import hrln.interactive.sidekit.sdk.SidekitContract
  * supplies [appId], [minSchema] and an optional [launchRoute]. The launcher only uses the
  * descriptor for placement, label and icon: launching is an explicit intent to [component], so a
  * tile can never start anything other than the activity that advertised itself.
+ *
+ * Advertising the action is not enough: the app's signing certificate must be trusted (see
+ * `TrustedCallers`), so an arbitrary app cannot take a tile on the home screen, and an [appId]
+ * that collides with a built-in app or with another native app is ignored.
  */
 data class NativeApp(
     val packageName: String,
@@ -54,20 +59,27 @@ object NativeApps {
      * An app whose [NativeApp.minSchema] is newer than [SidekitContract.SCHEMA_VERSION] is skipped,
      * because it has declared that this host cannot read the configuration it needs.
      */
-    fun discover(context: Context): List<NativeApp> {
+    fun discover(
+        context: Context,
+        isTrusted: (packageName: String) -> Boolean = { TrustedCallers.isTrustedPackage(context, it) }
+    ): List<NativeApp> {
         val intent = Intent(SidekitContract.ACTION_NATIVE_APP).addCategory(Intent.CATEGORY_DEFAULT)
         val resolved = context.packageManager.queryIntentActivities(intent)
         return resolved
-            .mapNotNull { toNativeApp(context, it) }
+            .mapNotNull { toNativeApp(context, it, isTrusted) }
             .distinctBy { it.packageName }
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
+            .distinctBy { it.appId }
     }
 
     /**
      * The last [discover] result, or a fresh one. Call [invalidate] when the app list may have
      * changed (for example on resume) so the next caller re-queries the package manager.
      */
-    fun cached(context: Context): List<NativeApp> = cached ?: discover(context).also { cached = it }
+    fun cached(
+        context: Context,
+        isTrusted: (packageName: String) -> Boolean = { TrustedCallers.isTrustedPackage(context, it) }
+    ): List<NativeApp> = cached ?: discover(context, isTrusted).also { cached = it }
 
     /** The cached list, or null when nothing has been discovered yet. */
     fun cachedOrNull(): List<NativeApp>? = cached
@@ -77,11 +89,16 @@ object NativeApps {
         cached = null
     }
 
-    private fun toNativeApp(context: Context, resolved: ResolveInfo): NativeApp? {
+    private fun toNativeApp(
+        context: Context,
+        resolved: ResolveInfo,
+        isTrusted: (packageName: String) -> Boolean
+    ): NativeApp? {
         val activity = resolved.activityInfo ?: return null
         val packageName = activity.packageName ?: return null
         val activityName = activity.name ?: return null
         if (packageName == context.packageName || !activity.enabled) return null
+        if (!isTrusted(packageName)) return null
 
         val minSchema = activity.metaData?.minSchema() ?: 0
         if (minSchema > SidekitContract.SCHEMA_VERSION) return null
@@ -90,11 +107,13 @@ object NativeApps {
             .getOrNull()
             ?.takeIf { it.isNotBlank() }
             ?: packageName
+        val appId = activity.metaData?.getString(SidekitContract.META_DATA_APP_ID)?.takeIf { it.isNotBlank() } ?: packageName
+        if (appId.startsWith(BUILT_IN_ID_PREFIX)) return null
         return NativeApp(
             packageName = packageName,
             activityName = activityName,
             label = label,
-            appId = activity.metaData?.getString(SidekitContract.META_DATA_APP_ID)?.takeIf { it.isNotBlank() } ?: packageName,
+            appId = appId,
             minSchema = minSchema,
             launchRoute = activity.metaData?.getString(SidekitContract.META_DATA_LAUNCH_ROUTE)?.takeIf { it.isNotBlank() }
         )
@@ -109,6 +128,12 @@ object NativeApps {
         is String -> value.toIntOrNull() ?: 0
         else -> 0
     }
+
+    /**
+     * Built-in apps own ids under this prefix. A native app that claims one would inherit the
+     * built-in app's home position, hidden state and settings row.
+     */
+    private const val BUILT_IN_ID_PREFIX = "builtin:"
 
     private fun PackageManager.queryIntentActivities(intent: Intent): List<ResolveInfo> = runCatching {
         // GET_META_DATA fills ActivityInfo.metaData, which carries the descriptor.

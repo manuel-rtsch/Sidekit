@@ -10,8 +10,17 @@ object SidekitContract {
     /** Contract revision exposed as `schema` in `getVersion` and `getConfig`. */
     const val SCHEMA_VERSION = 1
 
-    /** Normal permission every consumer is granted at install time. */
+    /**
+     * Normal permission the stable Sidekit build defines and every consumer is granted at install.
+     *
+     * The name is derived from the host's application id, because two builds of the same app that
+     * are signed with different keys cannot both define one permission name. See
+     * [readPermissionForPackage].
+     */
     const val PERMISSION_READ_APP_CONFIG = "hrln.interactive.sidekit.permission.READ_APP_CONFIG"
+
+    /** The same permission as defined by the dev build. */
+    const val PERMISSION_READ_APP_CONFIG_DEV = "hrln.interactive.sidekit.dev.permission.READ_APP_CONFIG"
 
     /** Stable Sidekit build. */
     const val PACKAGE_STABLE = "hrln.interactive.sidekit"
@@ -20,6 +29,14 @@ object SidekitContract {
     /** Sidekit dev build (`hrln.interactive.sidekit.dev`). */
     const val PACKAGE_DEV = "hrln.interactive.sidekit.dev"
     const val AUTHORITY_DEV = "$PACKAGE_DEV.config"
+
+    /**
+     * Every read permission a client requests, one per Sidekit build that can host it.
+     *
+     * Each build defines only its own name; requesting the other is harmless, because Android
+     * ignores a request for a permission nothing has defined yet.
+     */
+    val READ_PERMISSIONS: List<String> = listOf(PERMISSION_READ_APP_CONFIG, PERMISSION_READ_APP_CONFIG_DEV)
 
     /** Authorities probed by the configuration client, stable first. */
     val AUTHORITIES: List<String> = listOf(AUTHORITY_STABLE, AUTHORITY_DEV)
@@ -36,8 +53,17 @@ object SidekitContract {
     const val CAPABILITY_KEYPAD = "keypad"
     const val CAPABILITY_INPUT = "input"
 
+    /**
+     * The host decides who may read by signing certificate, not only by the read permission.
+     *
+     * A host that advertises this answers `SecurityException` to an app it does not trust, which a
+     * client sees as [SidekitConfigClient.HostStatus.NotPermitted]. Trust is granted by the host's
+     * author (a bundled certificate list), so an app that needs it has to ask to be added.
+     */
+    const val CAPABILITY_TRUST = "trust"
+
     /** Capabilities every provider built against this contract offers. */
-    val CAPABILITIES: List<String> = listOf(CAPABILITY_THEME, CAPABILITY_KEYPAD, CAPABILITY_INPUT)
+    val CAPABILITIES: List<String> = listOf(CAPABILITY_THEME, CAPABILITY_KEYPAD, CAPABILITY_INPUT, CAPABILITY_TRUST)
 
     /**
      * The configuration authority of the Sidekit build whose package is [packageName].
@@ -45,6 +71,14 @@ object SidekitContract {
      * The stable build resolves to [AUTHORITY_STABLE] and the dev build to [AUTHORITY_DEV].
      */
     fun authorityForPackage(packageName: String): String = "$packageName.$PATH_CONFIG"
+
+    /**
+     * The read permission the Sidekit build whose package is [packageName] defines.
+     *
+     * The host checks this instead of a fixed name, so the stable and dev builds can be installed
+     * together even though they are signed with different keys.
+     */
+    fun readPermissionForPackage(packageName: String): String = "$packageName.permission.READ_APP_CONFIG"
 
     /**
      * The package that owns [authority], or null for an authority this contract does not know.
