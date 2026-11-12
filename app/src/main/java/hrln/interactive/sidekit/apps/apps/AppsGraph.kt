@@ -81,7 +81,7 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     val options = selected?.let { app ->
         listOf(
             SideAction("info", "App info") { perform { vm.repository.info(app) } },
-            SideAction("uninstall", "Uninstall") {
+            SideAction.delete("uninstall", "Uninstall") {
                 perform {
                     context.startActivity(
                         Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}"))
