@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.emulator
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.graphics.Bitmap
@@ -286,6 +287,8 @@ class EmulatorActivity :
         return super.dispatchKeyEvent(event)
     }
 
+    // The dialog listens for Back to cancel keyboard capture; it is not a predictive-back path.
+    @SuppressLint("GestureBackNavigation")
     private fun configureControls() {
         paused = true
         stop()
