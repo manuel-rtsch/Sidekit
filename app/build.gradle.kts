@@ -100,7 +100,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     packaging { resources.merges += setOf("META-INF/NOTICE.md", "META-INF/LICENSE.md", "META-INF/LICENSE.txt", "META-INF/NOTICE.txt") }
-    sourceSets["main"].jniLibs.directories.add(layout.buildDirectory.dir("generated/spotifyJniLibs").get().asFile.absolutePath)
     buildFeatures {
         compose = true
     }
@@ -115,51 +114,6 @@ android {
     }
 }
 
-// Sideplay' librespot bridge. The generated ABI directory is a normal jniLibs source, so an
-// unsupported ABI simply has no .so and the Kotlin bridge reports it as unavailable.
-val spotifyJniLibs = layout.buildDirectory.dir("generated/spotifyJniLibs")
-val cargo = listOf(
-    File(System.getProperty("user.home"), ".cargo/bin/cargo"),
-    File("/usr/bin/cargo"),
-    File("/usr/local/bin/cargo")
-).firstOrNull { it.canExecute() }
-
-// Resolve the NDK only when Cargo is present. CI has no Rust toolchain, and asking Gradle for
-// the NDK directory eagerly would fail configuration even though the task is disabled.
-val ndk = if (cargo == null) {
-    null
-} else {
-    runCatching { androidComponents.sdkComponents.ndkDirectory.get().asFile }.getOrNull()
-}
-
-val buildSpotifyNative = tasks.register<Exec>("buildSpotifyNative") {
-    description = "Build libsidekit_spotify.so for arm64-v8a and x86_64."
-    group = "native"
-    enabled = cargo != null && ndk != null
-    when {
-        cargo == null -> logger.warn("Sideplay: cargo is unavailable; libsidekit_spotify.so will not be packaged.")
-        ndk == null -> logger.warn("Sideplay: the Android NDK is unavailable; libsidekit_spotify.so will not be packaged.")
-    }
-    workingDir = rootProject.file("native/sidekit-spotify")
-    commandLine(
-        cargo?.absolutePath.orEmpty(),
-        "ndk",
-        "-t", "arm64-v8a",
-        "-t", "x86_64",
-        "-o", spotifyJniLibs.get().asFile.absolutePath,
-        "build", "--release"
-    )
-    if (ndk != null) environment("ANDROID_NDK_HOME", ndk.absolutePath)
-    inputs.dir(rootProject.file("native/sidekit-spotify/src"))
-    inputs.files(rootProject.file("native/sidekit-spotify/Cargo.toml"), rootProject.file("native/sidekit-spotify/Cargo.lock"))
-    outputs.dir(spotifyJniLibs)
-}
-
-tasks.matching {
-    it.name.startsWith("merge") && (it.name.endsWith("NativeLibs") || it.name.endsWith("JniLibFolders"))
-}.configureEach {
-    dependsOn(buildSpotifyNative)
-}
 
 dependencies {
     implementation(project(":sidekit"))

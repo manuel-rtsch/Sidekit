@@ -32,8 +32,6 @@ import hrln.interactive.sidekit.apps.sideport.openPorted
 import hrln.interactive.sidekit.apps.sideport.sideportGraph
 import hrln.interactive.sidekit.apps.sideticks.sideticksGraph
 import hrln.interactive.sidekit.apps.sideweather.sideweatherGraph
-import hrln.interactive.sidekit.apps.spotify.SideplayLinks
-import hrln.interactive.sidekit.apps.spotify.sideplayGraph
 import hrln.interactive.sidekit.apps.translate.translateGraph
 import hrln.interactive.sidekit.apps.tripplanning.tripPlanningGraph
 import hrln.interactive.sidekit.apps.vault.vaultGraph
@@ -57,8 +55,6 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
     IncomingLinks.Follow(navController)
     // A projected app's "Messages and media" opens its Sideport hub.
     SideportLinks.Follow(navController)
-    // Tapping the Sideplay playback notification opens Now Playing.
-    SideplayLinks.Follow(navController)
     // No screen transition. Every screen is the same frame (title, body, action bar) and the
     // title and bar are shared chrome that morph on their own, so navigating swaps only the body,
     // which plays its own entrance (rows rising in). Nothing moves as a whole screen, and only one
@@ -89,7 +85,6 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
         translateGraph(navController)
         calculatorGraph(navController)
         musicGraph(navController)
-        sideplayGraph(navController)
         cameraGraph(navController)
         sideweatherGraph(navController)
         // Sidephone everyday apps (96:419)
