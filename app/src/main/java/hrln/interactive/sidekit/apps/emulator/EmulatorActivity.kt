@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.emulator
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.graphics.Bitmap
@@ -286,6 +287,9 @@ class EmulatorActivity :
         return super.dispatchKeyEvent(event)
     }
 
+    // The key listener below remaps controller buttons inside a dialog: Back there cancels the
+    // dialog, it does not intercept the activity's navigation, which is what the check looks for.
+    @SuppressLint("GestureBackNavigation")
     private fun configureControls() {
         paused = true
         stop()
