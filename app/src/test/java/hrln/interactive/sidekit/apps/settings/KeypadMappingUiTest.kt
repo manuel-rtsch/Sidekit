@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import androidx.compose.runtime.*
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.core.app.ApplicationProvider
@@ -198,8 +199,10 @@ class KeypadMappingUiTest {
         compose.onNodeWithText("Keypad Back key").assertDoesNotExist()
         compose.onNodeWithText("Keypad mapping").assertDoesNotExist()
         compose.onRoot().captureRoboImage("screenshots/keyboard_settings_home.png")
-        compose.onNodeWithText("Keyboard").performClick()
-        assertEquals(1, opened)
+        // Activate the row semantically: a coordinate tap lands wherever the row happens to sit
+        // after scrolling, and the Settings bar's action count can push it under the clip edge.
+        compose.onNodeWithText("Keyboard").performSemanticsAction(SemanticsActions.OnClick)
+        compose.runOnIdle { assertEquals(1, opened) }
     }
 
     @Test fun keyboardPageShowsPreferencesAndDiagram() {
