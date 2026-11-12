@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <provider android:authorities="hrln.interactive.sidekit.config" />
+        <provider android:authorities="hrln.interactive.sidekit.dev.config" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:label="Sidekit permission test" />
+</manifest>

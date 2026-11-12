@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.luminance
 import hrln.interactive.sidekit.design.theme.contentColorFor
 import androidx.test.core.app.ApplicationProvider
 import hrln.interactive.sidekit.design.input.T9Mode
+import hrln.interactive.sidekit.design.theme.CaseColour
 import org.junit.Assert.*
 import kotlin.math.pow
 import kotlin.math.sqrt

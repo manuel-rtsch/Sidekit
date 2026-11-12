@@ -102,6 +102,8 @@ android {
     packaging { resources.merges += setOf("META-INF/NOTICE.md", "META-INF/LICENSE.md", "META-INF/LICENSE.txt", "META-INF/NOTICE.txt") }
     buildFeatures {
         compose = true
+        // BuildConfig.VERSION_NAME identifies the host build in the config contract.
+        buildConfig = true
     }
     testOptions {
         unitTests {
@@ -117,6 +119,7 @@ android {
 
 dependencies {
     implementation(project(":sidekit"))
+    implementation(project(":sidekit-sdk"))
     implementation("com.sun.mail:android-mail:1.6.8")
     implementation("com.sun.mail:android-activation:1.6.8")
     implementation("com.klinkerapps:android-smsmms:5.2.6")

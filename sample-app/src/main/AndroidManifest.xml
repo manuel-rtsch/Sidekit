@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:label="Sidekit SDK sample"
+        android:supportsRtl="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- The launcher discovers SDK-built apps through this action and its metadata. -->
+            <intent-filter>
+                <action android:name="hrln.interactive.sidekit.action.NATIVE_APP" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="hrln.interactive.sidekit.app.ID"
+                android:value="sample" />
+            <meta-data
+                android:name="hrln.interactive.sidekit.app.MIN_SCHEMA"
+                android:value="1" />
+            <meta-data
+                android:name="hrln.interactive.sidekit.app.LAUNCH_ROUTE"
+                android:value="home" />
+        </activity>
+    </application>
+</manifest>

@@ -31,13 +31,14 @@ import hrln.interactive.sidekit.design.theme.SidekitSpacing
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SidekitNavHost
 import hrln.interactive.sidekit.onboarding.OnboardingScreen
+import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 
 class MainActivity : ComponentActivity() {
     /** Bumped when Home is pressed while SideKit is already in front; the nav host returns to the launcher. */
     private val homeRequests = mutableIntStateOf(0)
 
     /** The swappable keypad. T9 typing and its dictionary only load once T9 is actually used. */
-    private val keypad by lazy { Keypad.create(this, lifecycleScope) }
+    private val keypad by lazy { Keypad.create(this, lifecycleScope, SharedPreferencesKeypadPreferences(this)) }
 
     /** The shared title + action bar; held here so hardware keys (Options) can reach it. */
     private val chrome = ChromeState()

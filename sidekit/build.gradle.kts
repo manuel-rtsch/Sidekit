@@ -1,28 +1,15 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.compose)
+    id("sidekit.android.library")
+    id("sidekit.publish")
 }
 
 android {
     namespace = "hrln.interactive.sidekit.design"
-    compileSdk {
-        version = release(37)
-    }
+}
 
-    defaultConfig {
-        minSdk = 31
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
-    }
-    testOptions {
-        unitTests.isIncludeAndroidResources = true
-    }
+sidekitPublish {
+    artifactId.set("sidekit-design")
+    description.set("Sidekit's Compose design system, keypad and T9 input")
 }
 
 dependencies {
@@ -30,7 +17,12 @@ dependencies {
     api(libs.androidx.compose.ui)
     api(libs.androidx.compose.foundation)
     api(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.activity.compose)
+    // Part of the public API: SidekitCanvas uses BackHandler, Dictation observes the lifecycle,
+    // and Keypad takes a CoroutineScope.
+    api(libs.androidx.activity.compose)
+    api(libs.androidx.lifecycle.runtime.compose)
+    api(libs.androidx.lifecycle.common)
+    api(libs.kotlinx.coroutines.core)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)

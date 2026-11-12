@@ -9,8 +9,10 @@ Gradle cache setup in [`.github/actions/android-setup`](../.github/actions/andro
 | Job | Command | Catches |
 | --- | --- | --- |
 | Gradle wrapper validation | `gradle/actions/wrapper-validation` | A modified or unverified `gradle-wrapper.jar` |
-| Build | `./gradlew :app:assembleDebug :app:assembleRelease :sidekit:assembleDebug` | Compile errors and R8/keep-rule breakage that only release builds show |
-| Unit tests | `./gradlew testDebugUnitTest` | JVM, Robolectric and Compose tests in both modules |
+| Build | `./gradlew :app:assembleDebug :app:assembleRelease :sidekit:assembleDebug :sidekit-sdk:assembleDebug :sample-app:assembleDebug :permission-test-app:assembleDebug :permission-test-app:assembleDebugAndroidTest` | Compile errors and R8/keep-rule breakage that only release builds show |
+| Published SDK consumer | publish to `build/local-repo`, then `:sample-app:assembleDebug -PsidekitUsePublished=true` | Missing POM dependencies, broken transitive `sidekit-design` resolution and consumer rules |
+| Publish SDK | tag `v*` or manual dispatch, then publish to GitHub Packages | Release artifacts and POM metadata |
+| Unit tests | `./gradlew testDebugUnitTest` | JVM, Robolectric and Compose tests in every module |
 | Android Lint | `./gradlew lintDebug` | API-level, manifest and resource problems; uploads SARIF to code scanning |
 | Kotlin formatting | `./gradlew spotlessCheck` | ktlint violations in files changed since `main` |
 | Secret scan | `gitleaks/gitleaks-action` | Committed credentials, private keys and tokens |
@@ -23,6 +25,41 @@ an emulator: the only `androidTest` source today is the generated example, and t
 [PR template](../.github/pull_request_template.md) already requires physical-device
 testing for app changes. Add a `connectedDebugAndroidTest` job once real
 instrumentation tests exist.
+
+## Publishing
+
+`:sidekit` and `:sidekit-sdk` are publishable libraries. Version metadata comes from git tags
+through the `sidekit.version` and `sidekit.publish` convention plugins in
+[`build-logic`](../build-logic). The convention plugin configures a local staging repository at
+`build/local-repo` so CI can validate the published artifacts without credentials, and adds
+GitHub Packages when `-PsidekitPublishGitHub=true` is set.
+
+```bash
+./gradlew :sidekit:publishAllPublicationsToSidekitLocalRepository \
+  :sidekit-sdk:publishAllPublicationsToSidekitLocalRepository
+./gradlew :sample-app:assembleDebug -PsidekitUsePublished=true
+```
+
+`:sample-app` uses the project dependency by default. The `Published SDK consumer` CI job
+publishes both libraries to the local staging repository and rebuilds the sample with
+`-PsidekitUsePublished=true`, which exercises the POM, the transitive `sidekit-design`
+dependency and the consumer rules.
+
+The `Publish SDK` workflow runs on `v*` tags (or manually) and publishes to
+`https://maven.pkg.github.com/${{ github.repository }}` with the workflow token. Consumers add
+that repository with their own GitHub credentials:
+
+```kotlin
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/HarlenPostill/Sidekit")
+        credentials {
+            username = System.getenv("GITHUB_ACTOR")
+            password = System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+```
 
 ## Formatting
 
@@ -55,13 +92,14 @@ ref.
 ## Running the pipeline locally
 
 ```bash
-./gradlew :app:assembleDebug :app:assembleRelease :sidekit:assembleDebug
+./gradlew :app:assembleDebug :app:assembleRelease :sidekit:assembleDebug :sidekit-sdk:assembleDebug :sample-app:assembleDebug :permission-test-app:assembleDebug :permission-test-app:assembleDebugAndroidTest
 ./gradlew testDebugUnitTest
 ./gradlew lintDebug
 ./gradlew spotlessCheck
 ```
 
-Reports are written to `app/build/reports/` and `sidekit/build/reports/`.
+Reports are written to `app/build/reports/`, `sidekit/build/reports/`, `sidekit-sdk/build/reports/`
+and `sample-app/build/reports/`.
 
 ## Branch protection
 

@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -19,31 +18,10 @@ import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.icons.SidekitIcon
+import hrln.interactive.sidekit.design.theme.CaseColour
 import hrln.interactive.sidekit.design.theme.SidekitColors
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.readableContentOn
-
-enum class CaseColour(val label: String, val color: Color, private val success: Color? = null) {
-    // Green accents need a teal commit colour, otherwise Primary and Secondary are two greens.
-    Lime("Lime", Color(0xFFA2F49F), success = Color(0xFF0E7070)),
-    Orange("Orange", Color(0xFFF68A02)),
-    Blue("Blue", Color(0xFF82C7F3)),
-    Pink("Pink", Color(0xFFF575D1)),
-    Sage("Sage", Color(0xFF90C190), success = Color(0xFF0E7070)),
-    Lavender("Lavender", Color(0xFFAE99D1));
-
-    fun palette(): SidekitColors {
-        val base = SidekitColors()
-        return base.copy(
-            primaryA1 = color,
-            primaryA2 = lerp(color, Color.White, 0.12f),
-            primaryA3 = lerp(color, Color.White, 0.24f),
-            successA1 = success ?: base.successA1,
-            successA2 = success?.let { lerp(it, Color.White, 0.30f) } ?: base.successA2,
-            successA3 = success?.let { lerp(it, Color.White, 0.55f) } ?: base.successA3
-        )
-    }
-}
 
 @Composable
 internal fun rememberCaseColour(prefs: SidekitPreferences): CaseColour? {

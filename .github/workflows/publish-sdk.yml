@@ -1,0 +1,33 @@
+name: Publish SDK
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-sdk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # The version is derived from the tag and the commit count.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/android-setup
+      - name: Publish sidekit-design and sidekit-sdk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          ./gradlew :sidekit:publishAllPublicationsToSidekitGitHubRepository
+          :sidekit-sdk:publishAllPublicationsToSidekitGitHubRepository
+          -PsidekitPublishGitHub=true --stacktrace

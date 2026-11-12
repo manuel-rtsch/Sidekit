@@ -60,6 +60,11 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
+        <!-- Sidekit-native apps advertise this action so the launcher can place their tiles. -->
+        <intent>
+            <action android:name="hrln.interactive.sidekit.action.NATIVE_APP" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
     </queries>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -176,6 +181,13 @@
 
         <provider android:name="com.klinker.android.send_message.MmsFileProvider" tools:node="remove" />
         <receiver android:name=".apps.sidemessage.MmsResultReceiver" android:exported="false" />
+        <!-- Read-only theme/keypad contract for apps built with the Sidekit SDK. -->
+        <provider
+            android:name=".config.SidekitConfigProvider"
+            android:authorities="${applicationId}.config"
+            android:exported="true"
+            android:readPermission="hrln.interactive.sidekit.permission.READ_APP_CONFIG"
+            android:grantUriPermissions="false" />
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.mms" android:exported="false" android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/mms_paths" />

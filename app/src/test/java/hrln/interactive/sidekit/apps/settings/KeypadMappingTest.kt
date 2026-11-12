@@ -9,6 +9,7 @@ import hrln.interactive.sidekit.design.input.Keypad
 import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.input.PhysicalKey
 import hrln.interactive.sidekit.design.input.T9Words
+import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.*
@@ -20,7 +21,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class KeypadMappingTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val prefs = context.getSharedPreferences("keypad_mapping_test", Context.MODE_PRIVATE)
+    private val prefs = SharedPreferencesKeypadPreferences(context, "keypad_mapping_test")
 
     /** Events from device 7 come from the external keyboard; everything else from the keypad. */
     private fun mapper() = KeyMapper.forTesting(prefs) { if (it.deviceId == 7) "External keyboard" else QIN }
@@ -33,7 +34,7 @@ class KeypadMappingTest {
     private fun Keypad.press(code: Int, device: Int = 1): List<Int?> =
         listOf(translate(event(KeyEvent.ACTION_DOWN, code, device))?.keyCode, translate(event(KeyEvent.ACTION_UP, code, device))?.keyCode)
 
-    @Before fun clear() { prefs.edit().clear().commit() }
+    @Before fun clear() { context.getSharedPreferences("keypad_mapping_test", Context.MODE_PRIVATE).edit().clear().commit() }
 
     @Test fun automaticMappingLeavesEveryKeyAlone() {
         val keypad = keypad()

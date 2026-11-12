@@ -33,7 +33,7 @@ jobs:
           languages: java-kotlin
           build-mode: manual
       - name: Build for analysis
-        run: ./gradlew :app:assembleDebug :sidekit:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleDebug :sidekit:assembleDebug :sidekit-sdk:assembleDebug :sample-app:assembleDebug --stacktrace
       - name: Analyze
         uses: github/codeql-action/analyze@v3
         with:

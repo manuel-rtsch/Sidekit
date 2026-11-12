@@ -28,6 +28,8 @@ data class SidekitSpacing(
     val headerPaddingTop: Dp = 30.dp,
     val headerHeight: Dp = 103.dp,
     val itemHeight: Dp = 104.dp,
+    /** Height of the compact list rows used by settings and file lists. */
+    val compactRowHeight: Dp = 74.dp,
     val actionBarHeight: Dp = 112.dp,
     val iconSize: Dp = 40.dp,
     val tileIconSize: Dp = 44.dp
@@ -51,5 +53,10 @@ data class SidekitSpacing(
 data class SidekitShapes(
     val item: RoundedCornerShape = RoundedCornerShape(36.dp),
     val actionButton: RoundedCornerShape = RoundedCornerShape(48.dp),
-    val control: RoundedCornerShape = RoundedCornerShape(12.dp)
+    val control: RoundedCornerShape = RoundedCornerShape(12.dp),
+    /**
+     * Artwork inside a list item. 24 on a 68 thumbnail keeps roughly the item's 36:104 corner
+     * ratio, so the cover follows the row without turning into a circle.
+     */
+    val artwork: RoundedCornerShape = RoundedCornerShape(24.dp)
 )

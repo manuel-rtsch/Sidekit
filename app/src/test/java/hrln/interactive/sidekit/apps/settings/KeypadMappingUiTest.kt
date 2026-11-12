@@ -14,6 +14,7 @@ import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -27,12 +28,12 @@ import org.robolectric.annotation.GraphicsMode
 class KeypadMappingUiTest {
     @get:Rule val compose = createComposeRule()
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val prefs = context.getSharedPreferences("keypad_mapping_ui_test", Context.MODE_PRIVATE)
+    private val prefs = SharedPreferencesKeypadPreferences(context, "keypad_mapping_ui_test")
     private val chrome = ChromeState()
     private lateinit var keypad: Keypad
 
     @Before fun clear() {
-        prefs.edit().clear().commit()
+        context.getSharedPreferences("keypad_mapping_ui_test", Context.MODE_PRIVATE).edit().clear().commit()
     }
 
     private fun show(module: KeypadModule = KeypadModule.T9, content: @Composable () -> Unit) {

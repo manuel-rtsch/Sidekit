@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Declared here so a consumer merges both the definition and the uses-permission. Installing
+        a client before Sidekit would otherwise leave it unable to read the host configuration.
+    -->
+    <permission
+        android:name="hrln.interactive.sidekit.permission.READ_APP_CONFIG"
+        android:protectionLevel="normal" />
+    <uses-permission android:name="hrln.interactive.sidekit.permission.READ_APP_CONFIG" />
+
+    <!-- Android 11 package visibility for SidekitConfigClient's host probe. -->
+    <queries>
+        <package android:name="hrln.interactive.sidekit" />
+        <package android:name="hrln.interactive.sidekit.dev" />
+    </queries>
+</manifest>

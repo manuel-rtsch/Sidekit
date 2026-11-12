@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -19,10 +20,18 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Local staging repository used by the published-consumer CI job. It is empty during
+        // normal development, where :sample-app uses the project dependency instead.
+        maven {
+            name = "sidekitLocal"
+            url = uri(rootDir.resolve("build/local-repo"))
+        }
     }
 }
 
 rootProject.name = "Sidekit"
 include(":app")
 include(":sidekit")
- 
+include(":sidekit-sdk")
+include(":sample-app")
+include(":permission-test-app")

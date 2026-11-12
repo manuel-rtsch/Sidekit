@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import hrln.interactive.sidekit.design.theme.CaseColour
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
 import org.junit.Assert.*
 import org.junit.Rule

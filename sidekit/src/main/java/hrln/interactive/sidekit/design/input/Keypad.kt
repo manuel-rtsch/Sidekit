@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.design.input
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.view.KeyEvent
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -48,7 +47,7 @@ enum class KeypadModule(val label: String, val typesOnKeypad: Boolean) {
  */
 @Stable
 class Keypad internal constructor(
-    private val prefs: SharedPreferences?,
+    private val preferences: KeypadPreferences?,
     private val userWordsFile: File?,
     private val scope: CoroutineScope,
     private val loadWords: (suspend () -> T9Words)?,
@@ -86,7 +85,7 @@ class Keypad internal constructor(
         if (detected == next) return
         if (module != (mapper.customModule ?: next)) session?.finish()
         detected = next
-        prefs?.edit()?.putString(PREF_MODULE, next.name)?.apply()
+        preferences?.writeModule(next)
         if (typing) loadResources()
     }
 
@@ -222,29 +221,28 @@ class Keypad internal constructor(
     }
 
     companion object {
-        private const val PREF_T9 = "t9"
-        private const val PREF_MODULE = "module"
         private const val SAVE_DELAY_MS = 2_000L
 
         fun isTypingKey(code: Int) = code in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 ||
             code == KeyEvent.KEYCODE_STAR || code == KeyEvent.KEYCODE_POUND || code == KeyEvent.KEYCODE_DEL ||
             code in QwertyLayout.letters || code == KeyEvent.KEYCODE_SPACE
 
-        /** The keypad for this app. The dictionary loads off the main thread the first time T9 is used. */
-        fun create(context: Context, scope: CoroutineScope): Keypad {
+        /**
+         * The keypad for an app. [preferences] supplies the module choice and custom profiles;
+         * the dictionary loads off the main thread the first time T9 is used.
+         */
+        fun create(context: Context, scope: CoroutineScope, preferences: KeypadPreferences): Keypad {
             val app = context.applicationContext
-            val prefs = app.getSharedPreferences("sidekit_keypad", Context.MODE_PRIVATE)
             return Keypad(
-                prefs = prefs,
+                preferences = preferences,
                 userWordsFile = File(app.filesDir, "t9_user_words.txt"),
                 scope = scope,
                 loadWords = { app.assets.open("t9/en_words.txt").bufferedReader().use { T9Words.parse(it.readText()) } },
-                initialModule = prefs.getString(PREF_MODULE, null)
-                    ?.let { name -> KeypadModule.entries.firstOrNull { it.name == name } }
+                initialModule = preferences.module()
                     // Before modules were told apart, T9 was the only one that typed.
-                    ?: if (prefs.getBoolean(PREF_T9, true)) KeypadModule.T9 else KeypadModule.Sundial,
+                    ?: if (preferences.legacyT9()) KeypadModule.T9 else KeypadModule.Sundial,
                 longPressMs = KeypadTiming.LONG_PRESS_MS,
-                mapper = KeyMapper.create(prefs)
+                mapper = KeyMapper.create(preferences)
             )
         }
 

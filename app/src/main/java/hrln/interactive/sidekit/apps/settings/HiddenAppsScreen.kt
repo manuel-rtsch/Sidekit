@@ -18,6 +18,8 @@ import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.home.HomePreferences
 import hrln.interactive.sidekit.home.homeId
+import hrln.interactive.sidekit.launcher.NativeApp
+import hrln.interactive.sidekit.launcher.rememberNativeApps
 import hrln.interactive.sidekit.navigation.SubApp
 
 internal fun SubApp.visibilityId() = "builtin:$name"
@@ -43,6 +45,7 @@ internal fun HiddenAppsScreen(back: () -> Unit) {
     val ported by remember { PortedApps.get(context).apps }.collectAsStateWithLifecycle()
     val repository = remember(context) { AppsRepository(context.applicationContext) }
     val installed by remember { repository.apps }.collectAsStateWithLifecycle(emptyList())
+    val native = rememberNativeApps()
     // Only directly-pinned installed apps are home entries, so only they can be hidden.
     val pinned = remember(installed) {
         val ids = home.homeOrder.filter { it.startsWith(HomePreferences.INSTALLED_PREFIX) }.toSet()
@@ -53,7 +56,7 @@ internal fun HiddenAppsScreen(back: () -> Unit) {
         if (hidden.isNotEmpty()) add(SideAction("showAll", "Show all", tone = ActionTone.Secondary) { prefs.hiddenApps = emptySet() })
     }
     SidekitScaffold("Hide apps", actions = actions) { padding ->
-        SidekitList(padding) { hiddenAppChoices(hidden, ported, pinned) { prefs.hiddenApps = it } }
+        SidekitList(padding) { hiddenAppChoices(hidden, ported, pinned, native) { prefs.hiddenApps = it } }
     }
 }
 
@@ -61,11 +64,12 @@ internal fun LazyListScope.hiddenAppChoices(
     hidden: Set<String>,
     ported: List<PortedApp>,
     installed: List<Pair<String, String>> = emptyList(),
+    native: List<NativeApp> = emptyList(),
     save: (Set<String>) -> Unit
 ) {
     item { SidekitText("Hide apps from home, search and the dock. Tap again to restore. Apps stay installed; Settings remains in Options.", style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp), maxLines = Int.MAX_VALUE) }
     val choices = SubApp.entries.map { it.visibilityId() to it.label } +
-        ported.map { it.visibilityId() to it.label } + installed
+        ported.map { it.visibilityId() to it.label } + installed + native.map { it.visibilityId to it.label }
     items(choices, key = { it.first }) { (id, label) ->
         SidekitItem(label, Modifier.height(76.dp), secondary = if (id in hidden) "Hidden" else "Shown", onClick = {
             save(if (id in hidden) hidden - id else hidden + id)

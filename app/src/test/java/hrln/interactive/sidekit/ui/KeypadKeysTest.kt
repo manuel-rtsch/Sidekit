@@ -5,6 +5,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -89,7 +90,7 @@ class KeypadKeysTest {
             val keypad = hrln.interactive.sidekit.design.input.Keypad.forTesting(
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined),
                 hrln.interactive.sidekit.design.input.T9Words.Empty,
-                mapper = hrln.interactive.sidekit.design.input.KeyMapper.create(compose.activity.getSharedPreferences("sidekit_keypad", android.content.Context.MODE_PRIVATE))
+                mapper = hrln.interactive.sidekit.design.input.KeyMapper.create(SharedPreferencesKeypadPreferences(compose.activity, "sidekit_keypad"))
             )
             keypad.useCustomMapping(hrln.interactive.sidekit.design.input.KeypadModule.T9)
             keypad.mapper.bind(

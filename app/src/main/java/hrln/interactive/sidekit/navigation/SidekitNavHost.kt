@@ -38,6 +38,7 @@ import hrln.interactive.sidekit.apps.vault.vaultGraph
 import hrln.interactive.sidekit.apps.video.videoGraph
 import hrln.interactive.sidekit.apps.webbrowser.webBrowserGraph
 import hrln.interactive.sidekit.launcher.LauncherRoute
+import hrln.interactive.sidekit.launcher.launch
 
 const val LAUNCHER_ROUTE = "launcher"
 
@@ -72,7 +73,9 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
             LauncherRoute(
                 onOpenApp = { app -> navController.navigate(app.route) { launchSingleTop = true } },
                 // Ported apps open straight into their projection; if that can't start, Sideport explains why.
-                onOpenPorted = { app -> if (openPorted(context, app) != null) navController.navigate(SubApp.Sideport.route) { launchSingleTop = true } }
+                onOpenPorted = { app -> if (openPorted(context, app) != null) navController.navigate(SubApp.Sideport.route) { launchSingleTop = true } },
+                // Native apps are their own APK: launch them explicitly and pass this build's config authority.
+                onOpenNative = { app -> app.launch(context) }
             )
         }
         composable(SubApp.Emulator.route) { hrln.interactive.sidekit.apps.emulator.EmulatorLibrary { navController.popBackStack() } }

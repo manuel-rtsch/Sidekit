@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import hrln.interactive.sidekit.design.input.T9Mode
+import hrln.interactive.sidekit.design.theme.CaseColour
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 

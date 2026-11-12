@@ -32,6 +32,7 @@ import hrln.interactive.sidekit.apps.sideport.ui.ProjectionOverlay
 import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.input.Keypad
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -65,7 +66,7 @@ class OverlayHost(private val context: Context, private val controller: Projecti
     override val onBackPressedDispatcher: OnBackPressedDispatcher get() = dispatcher
 
     val chrome = ChromeState()
-    val keypad: Keypad = Keypad.create(context, scope)
+    val keypad: Keypad = Keypad.create(context, scope, SharedPreferencesKeypadPreferences(context))
 
     private var full: View? = null
     private var pill: View? = null

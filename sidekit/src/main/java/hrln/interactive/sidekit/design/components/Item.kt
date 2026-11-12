@@ -26,12 +26,13 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.contentColorFor
 
 /** Item "Colour Variant" from the Item component set (62:950). */
-enum class ItemColour { Primary, Secondary, Destructive, Muted }
+enum class ItemColour { Primary, Secondary, Success, Destructive, Muted }
 
 @Composable
 fun ItemColour.container(): Color = when (this) {
     ItemColour.Primary -> SidekitTheme.colors.surfaceA3
     ItemColour.Secondary -> SidekitTheme.colors.emphasisA2
+    ItemColour.Success -> SidekitTheme.colors.successA1
     ItemColour.Destructive -> SidekitTheme.colors.dangerA2
     ItemColour.Muted -> SidekitTheme.colors.surfaceA2
 }
@@ -120,6 +121,57 @@ fun SidekitItem(
                     if (secondary == null) Modifier.weight(1f) else Modifier,
                     contentAlignment = Alignment.CenterEnd
                 ) {
+                    SidekitIconImage(SidekitIcon.ArrowRightAlt)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Compact Item: the short 74-high row used for list-level actions such as "See more" and
+ * "Search in". It keeps the item variants but steps the type scale down so the row still reads
+ * as a row instead of a squeezed tile. A secondary value sits at the right edge so label/value
+ * rows scan as two columns.
+ */
+@Composable
+fun SidekitCompactItem(
+    title: String,
+    modifier: Modifier = Modifier,
+    secondary: String? = null,
+    icon: SidekitIcon? = null,
+    showLinkArrow: Boolean = false,
+    colour: ItemColour = ItemColour.Primary,
+    titleDecoration: TextDecoration? = null,
+    onClick: (() -> Unit)? = null,
+    leading: (@Composable RowScope.() -> Unit)? = null
+) {
+    SidekitTile(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(SidekitTheme.spacing.compactRowHeight),
+        color = colour.container(),
+        onClick = onClick,
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap)
+        ) {
+            leading?.invoke(this)
+            if (icon != null) SidekitIconImage(icon)
+            SidekitText(title, style = SidekitTheme.typography.bodySmall, textDecoration = titleDecoration)
+            if (secondary != null) {
+                SidekitText(
+                    secondary,
+                    Modifier.weight(1f),
+                    style = SidekitTheme.typography.small,
+                    color = LocalSidekitContentColor.current.copy(alpha = 0.82f),
+                    textAlign = TextAlign.End
+                )
+            } else if (showLinkArrow) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
                     SidekitIconImage(SidekitIcon.ArrowRightAlt)
                 }
             }
