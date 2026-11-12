@@ -91,6 +91,15 @@ SDK-built apps can read the theme and keypad setup.
 - [x] **Hide implementation details.** `SidekitPreferenceFiles` and `SidekitConfigCodec` are
       marked `@RestrictTo(LIBRARY_GROUP)`; a separate internal artifact is still an option.
 
+## Known integration pitfall: host permission ownership
+
+`sidekit-sdk` declares `READ_APP_CONFIG` in its library manifest, so every consumer inherits the
+declaration. A differently signed consumer installed beside Sidekit then fails with
+`INSTALL_FAILED_DUPLICATE_PERMISSION`. Consumers must strip the inherited `<permission>` with
+`tools:node="remove"` and keep only the `<uses-permission>`. See
+[third-party-apps-permissions.md](third-party-apps-permissions.md). The durable fix is to move the
+declaration into the Sidekit host manifest in a future SDK release.
+
 ## Accepted for v1
 
 - Unrestricted `normal`-permission sharing of the selected contract.
