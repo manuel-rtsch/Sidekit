@@ -128,6 +128,7 @@ class NativeSpotifyGatewayTest {
         override fun stop() = isAvailable
         override fun seek(positionMs: Long) = isAvailable
         override fun readAudio(timeoutMs: Long): ByteArray? = null
+        override fun drainAudio() = Unit
         override fun audioFormat(): String? = null
         override fun pollEvent(): String? = null
         override fun catalogLibrary(filter: String, offset: Long, limit: Long): String? = null

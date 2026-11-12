@@ -149,6 +149,7 @@ class NativeSpotifyCatalogTest {
         override fun stop() = true
         override fun seek(positionMs: Long) = true
         override fun readAudio(timeoutMs: Long): ByteArray? = null
+        override fun drainAudio() = Unit
         override fun audioFormat(): String? = null
         override fun pollEvent(): String? = null
         override fun catalogLibrary(filter: String, offset: Long, limit: Long): String {
