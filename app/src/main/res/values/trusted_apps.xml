@@ -13,5 +13,8 @@
         Colons are optional. A debug certificate must never be added here: the debug keystore is
         public, so listing it would trust anyone.
     -->
-    <string-array name="sidekit_trusted_app_digests" />
+    <string-array name="sidekit_trusted_app_digests">
+        <!-- Sideplay release certificate: CN=Sideplay, O=manuel-rtsch, OU=Release, C=DE -->
+        <item>51:03:11:57:7A:77:9A:3D:A6:EF:BB:F5:DE:5F:A0:56:B8:BB:2E:7B:F6:92:4C:57:D9:D7:83:F4:E4:FD:74:AC</item>
+    </string-array>
 </resources>
