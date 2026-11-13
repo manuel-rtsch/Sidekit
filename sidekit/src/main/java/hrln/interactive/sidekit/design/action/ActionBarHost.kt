@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.GraphicsLayerScope
@@ -274,16 +276,29 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
 
     if (model.slots.isEmpty()) return
 
+    // The Options hold asks this requester for the first visible button. It stays attached to
+    // whichever slot is first, so the bar can morph between screens without losing the target.
+    val firstFocus = remember { FocusRequester() }
+    DisposableEffect(state, firstFocus) {
+        state.registerActionBarFocus(firstFocus)
+        onDispose { state.unregisterActionBarFocus(firstFocus) }
+    }
+
     val spacing = SidekitTheme.spacing
     val gapPx = with(LocalDensity.current) { spacing.actionButtonGap.toPx() }
     // Labels may reach into the button's generous side padding; only this margin is sacred.
     val edgePx = with(LocalDensity.current) { LABEL_EDGE.toPx() }
     val iconPx = with(LocalDensity.current) { spacing.iconSize.roundToPx() }
     val slots = model.slots
+    val firstVisible = slots.indexOfFirst { !it.removing }
 
     Layout(
         contents = listOf(
-            { slots.forEach { slot -> key(slot) { SlotSurface(slot, model) } } },
+            {
+                slots.forEachIndexed { index, slot ->
+                    key(slot) { SlotSurface(slot, model, if (index == firstVisible) firstFocus else null) }
+                }
+            },
             { slots.forEach { slot -> key(slot) { SlotContent(slot) } } }
         ),
         modifier = modifier
@@ -395,7 +410,7 @@ private fun layoutSlots(
 }
 
 @Composable
-private fun SlotSurface(slot: ActionSlot, model: ActionBarModel) {
+private fun SlotSurface(slot: ActionSlot, model: ActionBarModel, focusRequester: FocusRequester?) {
     val colors = SidekitTheme.colors
     val shape = SidekitTheme.shapes.actionButton
     val color by animateColorAsState(slot.action.tone.color(colors), SidekitMotion.tone, label = "actionTone")
@@ -418,6 +433,7 @@ private fun SlotSurface(slot: ActionSlot, model: ActionBarModel) {
     val action = slot.action
     Box(
         Modifier
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .graphicsLayer {
                 val s = 1f - PRESS_SCALE * slot.press.value
                 scaleX = s

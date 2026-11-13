@@ -26,7 +26,11 @@ Sidekit only treats the keypad modules' own input devices as keypads. A headset 
 
 ## Sundial holds
 
-The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter** for Options. Hold the left/right edges (**Previous** / **Next**) for left/right; a tap on them still sends the media command. Keypad holds follow Android's long-press timeout (`ViewConfiguration.getLongPressTimeout()`, 400 ms by default), so a device or accessibility tool that changes the system value also changes them. The Back-to-dialer hold stays at 600 ms.
+The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter** for Options. Hold the left/right edges (**Previous** / **Next**) for left/right; a tap on them still sends the media command. Hold **Up** for Search and **Down** for Home. Hold the **centre Play/Pause** key for Confirm, and hold the **left corner** for Options when a revision reports Enter as the centre media key; taps still control media. Keypad holds follow Android's long-press timeout (`ViewConfiguration.getLongPressTimeout()`, 400 ms by default), so a device or accessibility tool that changes the system value also changes them. The Back-to-dialer hold stays at 600 ms.
+
+## Game controller
+
+The controller's D-pad moves focus, **A** confirms, **B** goes back, **X** or **Select** opens Options, **Start** goes home, and either shoulder opens Search. **Y** jumps straight to the first action-bar button.
 
 ## Scope
 

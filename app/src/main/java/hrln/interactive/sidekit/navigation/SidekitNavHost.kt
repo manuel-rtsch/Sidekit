@@ -45,9 +45,15 @@ const val LAUNCHER_ROUTE = "launcher"
 /**
  * @param homeRequests incremented each time the Home button is pressed while SideKit is already
  * the foreground home app; every increment returns to the launcher.
+ * @param searchRequests incremented by the controller's Search button; returns to the launcher and
+ * opens app search.
  */
 @Composable
-fun SidekitNavHost(navController: NavHostController = rememberNavController(), homeRequests: Int = 0) {
+fun SidekitNavHost(
+    navController: NavHostController = rememberNavController(),
+    homeRequests: Int = 0,
+    searchRequests: Int = 0
+) {
     val back: () -> Unit = { navController.popBackStack() }
     LaunchedEffect(homeRequests) {
         if (homeRequests > 0) navController.popBackStack(LAUNCHER_ROUTE, inclusive = false)
@@ -71,6 +77,7 @@ fun SidekitNavHost(navController: NavHostController = rememberNavController(), h
         composable(LAUNCHER_ROUTE) {
             val context = androidx.compose.ui.platform.LocalContext.current
             LauncherRoute(
+                searchRequest = searchRequests,
                 onOpenApp = { app -> navController.navigate(app.route) { launchSingleTop = true } },
                 // Ported apps open straight into their projection; if that can't start, Sideport explains why.
                 onOpenPorted = { app -> if (openPorted(context, app) != null) navController.navigate(SubApp.Sideport.route) { launchSingleTop = true } },

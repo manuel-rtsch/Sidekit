@@ -16,7 +16,9 @@ import android.view.KeyEvent
 object SystemKeys {
     fun isBack(event: KeyEvent): Boolean = event.keyCode == KeyEvent.KEYCODE_CALL
 
-    fun isOptions(event: KeyEvent): Boolean = event.keyCode == KeyEvent.KEYCODE_ENDCALL || event.keyCode == KeyEvent.KEYCODE_MENU
+    fun isOptions(event: KeyEvent): Boolean = isOptions(event.keyCode)
+
+    fun isOptions(keyCode: Int): Boolean = keyCode == KeyEvent.KEYCODE_ENDCALL || keyCode == KeyEvent.KEYCODE_MENU
 
     /**
      * Hold the Back key this long to open the dialer instead. Kept separate from

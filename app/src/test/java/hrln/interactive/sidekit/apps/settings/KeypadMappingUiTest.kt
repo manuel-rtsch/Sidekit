@@ -219,7 +219,7 @@ class KeypadMappingUiTest {
         compose.runOnIdle { assertEquals(KeypadModule.Qwerty, keypad.module) }
         compose.onNodeWithText("Mini QWERTY").assertIsDisplayed()
         // The diagram is below the preferences: scroll to it and check a key and its caption.
-        scrollTo("Tap a key to learn its action.")
+        scrollTo("Mini QWERTY diagram")
         compose.onNodeWithText("QW").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keyboard_settings_page.png")
         scrollTo("Mapping").performClick()

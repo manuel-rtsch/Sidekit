@@ -314,6 +314,26 @@ class ChromeState {
         if (canvasContentFocus === requester) canvasContentFocus = null
     }
 
+    /** The first visible action button, registered by the action bar host. */
+    private var actionBarFocus: FocusRequester? = null
+
+    internal fun registerActionBarFocus(requester: FocusRequester) {
+        actionBarFocus = requester
+    }
+
+    internal fun unregisterActionBarFocus(requester: FocusRequester) {
+        if (actionBarFocus === requester) actionBarFocus = null
+    }
+
+    /**
+     * Moves focus to the first action button, if the action bar is showing one. Used by the
+     * Options hold so a long list does not have to be walked to reach the actions.
+     */
+    fun focusActionBar(): Boolean {
+        val requester = actionBarFocus ?: return false
+        return runCatching { requester.requestFocus() }.getOrDefault(false)
+    }
+
     private val activeContentFocus: FocusRequester?
         get() = contentFocus ?: canvasContentFocus
 

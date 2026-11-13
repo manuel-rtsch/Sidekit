@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -129,6 +130,7 @@ fun LauncherRoute(
     onOpenApp: (SubApp) -> Unit,
     onOpenPorted: (PortedApp) -> Unit = {},
     onOpenNative: (NativeApp) -> Unit = {},
+    searchRequest: Int = 0,
     viewModel: LauncherViewModel = viewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -173,6 +175,7 @@ fun LauncherRoute(
     }
     LauncherScreen(
         state = state,
+        searchRequest = searchRequest,
         hiddenApps = hidden,
         onOpenApp = onOpenApp,
         onToggleLayout = viewModel::toggleLayout,
@@ -197,6 +200,7 @@ fun LauncherScreen(
     state: LauncherUiState,
     onOpenApp: (SubApp) -> Unit,
     onToggleLayout: () -> Unit,
+    searchRequest: Int = 0,
     home: List<LauncherEntry> = emptyList(),
     onOpenPorted: (PortedApp) -> Unit = {},
     onOpenNative: (NativeApp) -> Unit = {},
@@ -211,6 +215,9 @@ fun LauncherScreen(
     val chrome = LocalChrome.current
     val focusManager = LocalFocusManager.current
     var searching by remember { mutableStateOf(false) }
+    // Controller Search can arrive while the launcher is already composed or after returning to it.
+    // Remembering the handled request keeps a later recomposition from opening search again.
+    var handledSearch by rememberSaveable { mutableIntStateOf(0) }
     // Row (grid) or item (list) that holds navigation focus, or -1 when nothing does. Up only steps
     // into the query field from the first row; anywhere lower it is ordinary focus movement.
     var focusedRow by remember { mutableStateOf(-1) }
@@ -225,6 +232,12 @@ fun LauncherScreen(
     }
     fun startSearch() {
         searching = true
+    }
+    LaunchedEffect(searchRequest) {
+        if (searchRequest > handledSearch) {
+            handledSearch = searchRequest
+            startSearch()
+        }
     }
     // The field is only focusable while searching (`canFocus` below), so focus it once the frame
     // that made it focusable has been composed, not from the key event that started the search.

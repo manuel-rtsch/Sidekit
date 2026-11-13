@@ -77,19 +77,20 @@ object KeypadControls {
             control(KeyEvent.KEYCODE_MEDIA_NEXT, "Right edge", "Next track; hold for right"),
             control(KeyEvent.KEYCODE_DPAD_DOWN, "Bottom", "Move down"),
             control(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Left edge", "Previous track; hold for left"),
-            control(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Centre", "Play or pause"),
-            control(KeyEvent.KEYCODE_DPAD_LEFT, "Corner ←", "Move left"),
+            control(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Centre", "Play or pause; hold for Confirm"),
+            control(KeyEvent.KEYCODE_DPAD_LEFT, "Corner ←", "Move left; hold for Options fallback"),
             control(KeyEvent.KEYCODE_DPAD_RIGHT, "Corner →", "Move right"),
             control(KeyEvent.KEYCODE_TAB, "Tab", "Next control; hold for Back"),
-            control(KeyEvent.KEYCODE_ENTER, "Enter", "Select; hold for Options")
+            control(KeyEvent.KEYCODE_ENTER, "Enter", "Select; hold for Options (some revisions report Play/Pause)")
         )
 
         KeypadModule.GamePad -> system + dpad + listOf(
             control(KeyEvent.KEYCODE_BUTTON_A, "A", "Confirm"),
             control(KeyEvent.KEYCODE_BUTTON_B, "B", "Back in games"),
-            control(KeyEvent.KEYCODE_BUTTON_X, "X", "Game action"),
-            control(KeyEvent.KEYCODE_BUTTON_Y, "Y", "Game action"),
-            control(KeyEvent.KEYCODE_BUTTON_L1, "Shoulder", "Game action")
+            control(KeyEvent.KEYCODE_BUTTON_X, "X", "Options; hold for the action bar"),
+            control(KeyEvent.KEYCODE_BUTTON_Y, "Y", "Jump to the action bar"),
+            control(KeyEvent.KEYCODE_BUTTON_L1, "Shoulder", "Open search"),
+            control(KeyEvent.KEYCODE_BUTTON_START, "Start", "Go to the home screen")
         )
     }
 

@@ -31,16 +31,21 @@ object NavControls {
     const val Back = KeyEvent.KEYCODE_BACK
     const val Options = KeyEvent.KEYCODE_ENDCALL
 
-    /** Every canonical navigation key, for contract tests. */
-    val all = listOf(Up, Down, Left, Right, Confirm, Back, Options)
+    /** Universal chrome actions the host handles (not focus movement). */
+    const val Home = KeyEvent.KEYCODE_HOME
+    const val Search = KeyEvent.KEYCODE_SEARCH
+
+    /** Every canonical key, for contract tests. */
+    val all = listOf(Up, Down, Left, Right, Confirm, Back, Options, Home, Search)
 
     /**
      * How each module's native keys map to canonical navigation, active while the module is
      * auto-detected and no text field owns the keypad (see [Keypad.translateForUi]).
      *
      * - T9 and the Sundial already send the canonical keys, so they map nothing.
-     * - The game controller's D-pad is canonical too; A confirms and B goes back (useless to
-     *   anyone in Sidekit's own UI until now). X/Y and the shoulder stay game actions.
+     * - The game controller's D-pad is canonical too; A confirms and B goes back. X and Select
+     *   open Options, Start goes Home and either shoulder opens Search. Y is handled by the SDK
+     *   input loop as a direct jump to the action bar.
      * - Mini QWERTY: its bottom row is the modifier keys (SUGGEST / SYM / CASE = Ctrl / Alt /
      *   Shift) and its only dedicated directional control is a single up-down rocker (code 113),
      *   so navigation uses a cross of letter keys measured on-device: **T up, D left, B down,
@@ -54,7 +59,12 @@ object NavControls {
         KeypadModule.Sundial to emptyMap(),
         KeypadModule.GamePad to mapOf(
             KeyEvent.KEYCODE_BUTTON_A to Confirm,
-            KeyEvent.KEYCODE_BUTTON_B to Back
+            KeyEvent.KEYCODE_BUTTON_B to Back,
+            KeyEvent.KEYCODE_BUTTON_X to Options,
+            KeyEvent.KEYCODE_BUTTON_SELECT to Options,
+            KeyEvent.KEYCODE_BUTTON_START to Home,
+            KeyEvent.KEYCODE_BUTTON_L1 to Search,
+            KeyEvent.KEYCODE_BUTTON_R1 to Search
         ),
         KeypadModule.Qwerty to mapOf(
             // Measured on-device: T / D / B / J around the tablet's centre form a directional cross.
@@ -74,7 +84,14 @@ object NavControls {
         KeyEvent.KEYCODE_TAB to Back,
         KeyEvent.KEYCODE_ENTER to Options,
         KeyEvent.KEYCODE_MEDIA_PREVIOUS to Left,
-        KeyEvent.KEYCODE_MEDIA_NEXT to Right
+        KeyEvent.KEYCODE_MEDIA_NEXT to Right,
+        KeyEvent.KEYCODE_DPAD_UP to Search,
+        KeyEvent.KEYCODE_DPAD_DOWN to Home,
+        // Some Sundial revisions report the bottom-right Enter key as the centre media key.
+        // A hold still gives Confirm, while a tap keeps its media behaviour.
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm,
+        // Fallback for Options when Enter is that media key.
+        KeyEvent.KEYCODE_DPAD_LEFT to Options
     )
 
     /** The canonical navigation key [code] becomes in [module]'s UI, or null to keep it as sent. */

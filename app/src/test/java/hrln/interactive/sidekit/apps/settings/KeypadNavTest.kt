@@ -28,9 +28,13 @@ class KeypadNavTest {
         assertEquals(KeyEvent.KEYCODE_BUTTON_A, keypad.translate(down(KeyEvent.KEYCODE_BUTTON_A))?.keyCode)
     }
 
-    @Test fun gamePadXDpadAndCanonicalKeysPassThrough() {
+    @Test fun gamePadMenuHomeAndSearchMapInUi() {
         val keypad = keypad(KeypadModule.GamePad)
-        assertEquals(KeyEvent.KEYCODE_BUTTON_X, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_X))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_ENDCALL, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_X))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_ENDCALL, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_SELECT))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_HOME, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_START))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_SEARCH, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_L1))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_SEARCH, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_R1))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_DPAD_UP, keypad.translateForUi(down(KeyEvent.KEYCODE_DPAD_UP))?.keyCode)
     }
 
