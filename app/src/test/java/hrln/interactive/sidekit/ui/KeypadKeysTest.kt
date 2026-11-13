@@ -3,9 +3,9 @@ package hrln.interactive.sidekit.ui
 import android.view.KeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
-import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import hrln.interactive.sidekit.MainActivity
+import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -47,6 +48,23 @@ class KeypadKeysTest {
         }
         compose.waitForIdle()
         return handled
+    }
+
+    @Test fun holdingOptionsFocusesTheFirstAction() {
+        compose.runOnIdle {
+            compose.activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENDCALL))
+        }
+        val looper = org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper())
+        looper.idleFor(java.time.Duration.ofMillis(1_000))
+        looper.idle()
+        compose.runOnIdle {
+            compose.activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENDCALL))
+        }
+        compose.waitForIdle()
+
+        // The dock is the launcher's action bar; the app tile shares the label, so take the last.
+        compose.onAllNodes(hasContentDescription("Sidemessage")).onLast().assertIsFocused()
+        compose.onNodeWithContentDescription("Close options").assertDoesNotExist()
     }
 
     @Test fun optionsKeyShowsTheScreensOptionsAndBackClosesThem() {

@@ -40,10 +40,22 @@ class NavControlsTest {
         assertEquals(NavControls.Back, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_B))
     }
 
-    @Test fun gamePadLeavesGameActionsAndCanonicalKeysAlone() {
-        assertNull(mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_X))
+    @Test fun gamePadMenuButtonsOpenOptions() {
+        for (code in listOf(KeyEvent.KEYCODE_BUTTON_X, KeyEvent.KEYCODE_BUTTON_SELECT)) {
+            assertEquals(KeyEvent.KEYCODE_ENDCALL, mapped(KeypadModule.GamePad, code))
+            assertEquals(NavControls.Options, mapped(KeypadModule.GamePad, code))
+        }
+    }
+
+    @Test fun gamePadStartGoesHomeAndShouldersSearch() {
+        assertEquals(NavControls.Home, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_START))
+        assertEquals(NavControls.Search, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_L1))
+        assertEquals(NavControls.Search, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_R1))
+    }
+
+    @Test fun gamePadLeavesActionBarKeyAndCanonicalKeysAlone() {
+        // Y is a direct action-bar jump, handled by SidekitInputController.
         assertNull(mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_Y))
-        assertNull(mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_L1))
         assertNull(mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_DPAD_UP))
     }
 
@@ -77,6 +89,10 @@ class NavControlsTest {
         assertEquals(NavControls.Options, NavControls.sundialHoldFor[KeyEvent.KEYCODE_ENTER])
         assertEquals(NavControls.Left, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
         assertEquals(NavControls.Right, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
+        assertEquals(NavControls.Search, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_UP])
+        assertEquals(NavControls.Home, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_DOWN])
+        assertEquals(NavControls.Confirm, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE])
+        assertEquals(NavControls.Options, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_LEFT])
     }
 
     @Test fun everyDefaultTargetIsACanonicalNavKey() {
@@ -87,9 +103,9 @@ class NavControlsTest {
         }
     }
 
-    @Test fun everyGamePadDefaultTargetIsADirectionConfirmOrBack() {
+    @Test fun everyGamePadDefaultTargetIsACanonicalNavKey() {
         NavControls.defaultFor.getValue(KeypadModule.GamePad).values.forEach {
-            assertTrue("unexpected canonical target $it", isDirection(it) || it == NavControls.Confirm || it == NavControls.Back)
+            assertTrue("unexpected canonical target $it", it in NavControls.all)
         }
     }
 }

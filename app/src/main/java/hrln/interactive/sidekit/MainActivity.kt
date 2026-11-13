@@ -37,6 +37,9 @@ class MainActivity : ComponentActivity() {
     /** Bumped when Home is pressed while SideKit is already in front; the nav host returns to the launcher. */
     private val homeRequests = mutableIntStateOf(0)
 
+    /** Bumped to focus the launcher's app search, returning to the launcher first if needed. */
+    private val searchRequests = mutableIntStateOf(0)
+
     /** The swappable keypad. T9 typing and its dictionary only load once T9 is actually used. */
     private val keypad by lazy { Keypad.create(this, lifecycleScope, SharedPreferencesKeypadPreferences(this)) }
 
@@ -45,6 +48,14 @@ class MainActivity : ComponentActivity() {
 
     /** The Sundial has no Back/Options key: hold Tab / Enter, and hold Previous/Next for left/right. */
     private val sundialHold = HoldToAct(onHold = { action, source -> performSundialHold(action, source) })
+
+    /** Tap Options opens the options; holding it jumps to the first action button. */
+    private val optionsHold = HoldToAct(
+        onHold = { _, _ ->
+            keypad.finishTyping()
+            chrome.focusActionBar()
+        }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +79,7 @@ class MainActivity : ComponentActivity() {
             SidekitTheme(colors = caseColour?.palette() ?: SidekitColors(), spacing = spacing) {
                 SidekitCanvas(chrome = chrome, keypad = keypad) {
                     if (setupComplete) {
-                        SidekitNavHost(homeRequests = homeRequests.intValue)
+                        SidekitNavHost(homeRequests = homeRequests.intValue, searchRequests = searchRequests.intValue)
                     } else {
                         OnboardingScreen(onFinish = { setupComplete = true })
                     }
@@ -88,6 +99,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         sundialHold.reset()
+        optionsHold.reset()
         super.onPause()
     }
 
@@ -105,6 +117,16 @@ class MainActivity : ComponentActivity() {
         // keep their normal behaviour, as does a T9 OK if the remembered module is stale.
         val fromSundial = event.device?.name in SUNDIAL_DEVICES || event.deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD
         when (val hold = sundialHold.handle(translated) { code -> if (fromSundial) sundialHoldAction(code) else null }) {
+            HoldToAct.Result.Pass -> Unit
+
+            HoldToAct.Result.Consume -> return true
+
+            is HoldToAct.Result.Deliver -> {
+                hold.events.forEach(::dispatchTranslated)
+                return true
+            }
+        }
+        when (val hold = optionsHold.handle(translated) { code -> if (SystemKeys.isOptions(code)) code else null }) {
             HoldToAct.Result.Pass -> Unit
 
             HoldToAct.Result.Consume -> return true
@@ -134,6 +156,13 @@ class MainActivity : ComponentActivity() {
                 chrome.toggleOptions()
             }
 
+            NavControls.Home -> homeRequests.intValue++
+
+            NavControls.Search -> {
+                homeRequests.intValue++
+                searchRequests.intValue++
+            }
+
             else -> dispatchNav(action, source)
         }
     }
@@ -161,6 +190,19 @@ class MainActivity : ComponentActivity() {
     /** Routes an already-translated event; also used for the tap released by [sundialHold]. */
     @SuppressLint("RestrictedApi")
     private fun dispatchTranslated(event: KeyEvent): Boolean {
+        if (keypad.module == KeypadModule.GamePad &&
+            (event.keyCode == NavControls.Home || event.keyCode == NavControls.Search)
+        ) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                if (event.keyCode == NavControls.Home) {
+                    homeRequests.intValue++
+                } else {
+                    homeRequests.intValue++
+                    searchRequests.intValue++
+                }
+            }
+            return true
+        }
         when {
             // Keypad top-right: the universal Options key. Acts on release; the press is consumed
             // so the system's end-call handling never sees it.

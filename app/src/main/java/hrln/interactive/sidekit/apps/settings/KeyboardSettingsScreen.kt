@@ -19,7 +19,7 @@ import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.input.LocalKeypad
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.onboarding.KeypadDemo
+import hrln.interactive.sidekit.sdk.settings.KeypadGuide
 
 private val KEYBOARD = "${SubApp.Settings.route}/keyboard"
 
@@ -116,7 +116,7 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
                     onClick = onKeypadMapping
                 )
             }
-            item { KeypadDemo(module, idleHint = "Tap a key to learn its action.") }
+            item { KeypadGuide(module) }
         }
     }
 }

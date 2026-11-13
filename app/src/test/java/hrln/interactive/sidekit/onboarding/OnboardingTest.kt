@@ -11,6 +11,7 @@ import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.*
 import hrln.interactive.sidekit.design.theme.*
+import hrln.interactive.sidekit.sdk.settings.keypadGuideRows
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -84,8 +85,8 @@ class OnboardingTest {
     @Test fun `current keypad is first and other demos do not change it`() {
         launch(6, KeypadModule.Qwerty)
         compose.onNodeWithText("1 / 4 · Mini QWERTY").assertIsDisplayed()
-        compose.onNodeWithText("aA").performScrollTo().performClick()
-        compose.onNodeWithText("Tap to change letter case. Hold to switch letters / numbers.").assertExists()
+        compose.onNodeWithText("Mini QWERTY diagram").performScrollTo().assertExists()
+        compose.onNodeWithText("Long hold functionalities").assertExists()
         shot("07-qwerty")
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Skip / next keypad"))
         compose.onNodeWithText("Skip / next keypad").performClick()
@@ -104,6 +105,21 @@ class OnboardingTest {
         compose.onNodeWithText("Mini QWERTY is your current selection.", substring = true).assertExists()
     }
 
+    @Test fun `T9 demo follows the physical keypad`() {
+        assertEquals(
+            listOf(
+                listOf("Back", null, "Up", null, "Options"),
+                listOf(null, "Left", "Select", "Right", null),
+                listOf("Home", null, "Down", null, "Delete"),
+                listOf("1", "2", "3"),
+                listOf("4", "5", "6"),
+                listOf("7", "8", "9"),
+                listOf("Symbols", "0", "Case")
+            ),
+            keypadGuideRows(KeypadModule.T9).map { row -> row.map { it?.label } }
+        )
+    }
+
     @Test fun `Sundial demo follows the physical ring`() {
         assertEquals(
             listOf(
@@ -111,7 +127,7 @@ class OnboardingTest {
                 listOf("Previous", "Play / pause", "Next"),
                 listOf("Tab", "↓", "Enter")
             ),
-            demoRows(KeypadModule.Sundial).map { row -> row.map { it.label } }
+            keypadGuideRows(KeypadModule.Sundial).map { row -> row.map { it?.label } }
         )
     }
 
