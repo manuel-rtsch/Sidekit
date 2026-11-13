@@ -206,23 +206,36 @@ class KeypadMappingUiTest {
         compose.runOnIdle { assertEquals(1, opened) }
     }
 
-    @Test fun keyboardPageShowsPreferencesAndDiagram() {
+    @Test fun keyboardPageShowsPreferencesAndGuideLink() {
         var mapping = 0
-        show(KeypadModule.T9) { KeyboardSettingsScreen({}, onKeypadMapping = { mapping++ }) }
+        var guide = 0
+        show(KeypadModule.T9) { KeyboardSettingsScreen({}, onKeypadMapping = { mapping++ }, onKeyGuide = { guide++ }) }
         compose.onNodeWithText("Keyboard").assertIsDisplayed()
-        compose.onNodeWithText("Keypad").assertIsDisplayed()
-        compose.onNodeWithText("Input mode").assertIsDisplayed()
-        compose.onNodeWithText("Keypad Back key").assertIsDisplayed()
-        compose.onNodeWithText("Mapping").assertIsDisplayed()
-        // Tapping the keypad row cycles the module, and the diagram follows it.
-        compose.onNodeWithText("Keypad").performClick()
+        compose.onNodeWithText("Module").assertIsDisplayed()
+        compose.onNodeWithText("Typing").assertIsDisplayed()
+        compose.onNodeWithText("Back key").assertIsDisplayed()
+        compose.onNodeWithText("Key mapping").assertIsDisplayed()
+        compose.onNodeWithText("Key guide").assertIsDisplayed()
+        // Tapping the module row cycles it; the guide is a separate page.
+        compose.onNodeWithText("Module").performClick()
         compose.runOnIdle { assertEquals(KeypadModule.Qwerty, keypad.module) }
         compose.onNodeWithText("Mini QWERTY").assertIsDisplayed()
-        // The diagram is below the preferences: scroll to it and check a key and its caption.
-        scrollTo("Mini QWERTY diagram")
-        compose.onNodeWithText("QW").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keyboard_settings_page.png")
-        scrollTo("Mapping").performClick()
+        scrollTo("Key guide").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(1, guide)
+        scrollTo("Key mapping").performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(1, mapping)
+    }
+
+    @Test fun keyGuideShowsOneActionAtATime() {
+        show(KeypadModule.T9) { KeypadGuideScreen {} }
+        compose.onNodeWithText("Key guide").assertIsDisplayed()
+        compose.onNodeWithText("Tap a key to see what it does.").assertIsDisplayed()
+        compose.onNodeWithText("OK").performClick()
+        compose.onNodeWithText("Activate the focused control or confirm a suggestion.").assertIsDisplayed()
+        compose.onNodeWithText("No long press").assertIsDisplayed()
+        compose.onNodeWithText("Back").performClick()
+        compose.onNodeWithText("Open the dialer.").assertIsDisplayed()
+        compose.onRoot().captureRoboImage("screenshots/keyboard_guide_page.png")
     }
 }

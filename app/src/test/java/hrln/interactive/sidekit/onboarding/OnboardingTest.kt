@@ -85,8 +85,8 @@ class OnboardingTest {
     @Test fun `current keypad is first and other demos do not change it`() {
         launch(6, KeypadModule.Qwerty)
         compose.onNodeWithText("1 / 4 · Mini QWERTY").assertIsDisplayed()
-        compose.onNodeWithText("Mini QWERTY diagram").performScrollTo().assertExists()
-        compose.onNodeWithText("Long hold functionalities").assertExists()
+        compose.onNodeWithText("Tap a key to see what it does.").performScrollTo().assertExists()
+        compose.onNodeWithText("QW").assertExists()
         shot("07-qwerty")
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Skip / next keypad"))
         compose.onNodeWithText("Skip / next keypad").performClick()
@@ -109,12 +109,12 @@ class OnboardingTest {
         assertEquals(
             listOf(
                 listOf("Back", null, "Up", null, "Options"),
-                listOf(null, "Left", "Select", "Right", null),
+                listOf(null, "Left", "OK", "Right", null),
                 listOf("Home", null, "Down", null, "Delete"),
-                listOf("1", "2", "3"),
-                listOf("4", "5", "6"),
-                listOf("7", "8", "9"),
-                listOf("Symbols", "0", "Case")
+                listOf(null, "1", "2", "3", null),
+                listOf(null, "4", "5", "6", null),
+                listOf(null, "7", "8", "9", null),
+                listOf(null, "*", "0", "#", null)
             ),
             keypadGuideRows(KeypadModule.T9).map { row -> row.map { it?.label } }
         )

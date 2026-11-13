@@ -19,29 +19,33 @@ import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.input.LocalKeypad
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.sdk.settings.KeypadGuide
 
 private val KEYBOARD = "${SubApp.Settings.route}/keyboard"
+private val GUIDE = "$KEYBOARD/guide"
 
 internal fun keyboardSettingsRoute() = KEYBOARD
+
+internal fun keyboardGuideRoute() = GUIDE
 
 /** Settings > Keyboard: what the keypad does and what its keys look like. */
 internal fun NavGraphBuilder.keyboardSettingsGraph(nav: NavHostController) {
     composable(KEYBOARD) {
         KeyboardSettingsScreen(
             back = { nav.popBackStack() },
-            onKeypadMapping = { nav.navigate(keypadMappingRoute()) }
+            onKeypadMapping = { nav.navigate(keypadMappingRoute()) },
+            onKeyGuide = { nav.navigate(keyboardGuideRoute()) }
         )
     }
+    composable(GUIDE) { KeypadGuideScreen(back = { nav.popBackStack() }) }
 }
 
 /**
  * One page for the keypad preferences that used to be separate rows on the Settings home:
- * the module, the input mode, the Back key service and the custom mapping. The diagram below
- * describes the keys of the module in use, including a custom mapping's choice.
+ * the module, the typing mode, the Back key service and the custom mapping. The key guide is a
+ * separate page so this one stays a short, scannable list.
  */
 @Composable
-internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Unit) {
+internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Unit, onKeyGuide: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { SidekitPreferences(context) }
     val keypad = LocalKeypad.current
@@ -65,7 +69,7 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             // A custom mapping fixes the module: the row opens its editor instead of cycling.
             item {
                 SidekitItem(
-                    "Keypad",
+                    "Module",
                     Modifier.height(CompactRowHeight).listFade(list, 0),
                     secondary = custom?.let { "${it.label} · custom" } ?: module.label,
                     secondaryToEnd = true,
@@ -81,23 +85,34 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             }
             item {
                 SidekitItem(
-                    "Input mode",
+                    "Typing",
                     Modifier.height(CompactRowHeight).listFade(list, 1),
-                    secondary = if (inputMode == T9Mode.Numeric) "Numbers" else "Letters",
+                    secondary = if (!module.typesOnKeypad) {
+                        "On-screen keyboard"
+                    } else if (inputMode == T9Mode.Numeric) {
+                        "Numbers"
+                    } else {
+                        "Letters"
+                    },
                     secondaryToEnd = true,
-                    onClick = {
-                        prefs.inputMode = T9Mode.entries[(prefs.inputMode.ordinal + 1) % T9Mode.entries.size]
-                        keypad?.let { prefs.applyInputDefault(it) }
-                        revision++
+                    onClick = if (module.typesOnKeypad) {
+                        {
+                            prefs.inputMode = T9Mode.entries[(prefs.inputMode.ordinal + 1) % T9Mode.entries.size]
+                            keypad?.let { prefs.applyInputDefault(it) }
+                            revision++
+                        }
+                    } else {
+                        null
                     }
                 )
             }
             item {
                 SidekitItem(
-                    "Keypad Back key",
-                    Modifier.listFade(list, 2),
+                    "Back key",
+                    Modifier.height(CompactRowHeight).listFade(list, 2),
                     secondary = if (accessibility) "On" else "Off",
                     showLinkArrow = true,
+                    showLinkArrowWithSecondary = true,
                     onClick = {
                         try {
                             context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -109,14 +124,17 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             }
             item {
                 SidekitItem(
-                    "Mapping",
-                    Modifier.listFade(list, 3),
-                    secondary = if (custom != null) "Custom" else "Automatic",
+                    "Key mapping",
+                    Modifier.height(CompactRowHeight).listFade(list, 3),
+                    secondary = if (custom != null) "Custom" else "Auto",
                     showLinkArrow = true,
+                    showLinkArrowWithSecondary = true,
                     onClick = onKeypadMapping
                 )
             }
-            item { KeypadGuide(module) }
+            // The guide is the page's main reference, so it stays at full opacity and compact
+            // enough to sit above the action bar without scrolling.
+            item { SidekitItem("Key guide", Modifier.height(CompactRowHeight), showLinkArrow = true, onClick = onKeyGuide) }
         }
     }
 }
