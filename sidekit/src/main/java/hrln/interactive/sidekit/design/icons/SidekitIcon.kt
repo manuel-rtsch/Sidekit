@@ -20,6 +20,7 @@ enum class SidekitIcon(@DrawableRes val drawable: Int) {
     ArrowRightAlt(R.drawable.sk_ic_arrow_right_alt),
     ArrowUpward(R.drawable.sk_ic_arrow_upward),
     Artist(R.drawable.sk_ic_artist),
+    ArtistBorder(R.drawable.sk_ic_artist_border),
     Bedtime(R.drawable.sk_ic_bedtime),
     Bluetooth(R.drawable.sk_ic_bluetooth),
     Bookmark(R.drawable.sk_ic_bookmark),
