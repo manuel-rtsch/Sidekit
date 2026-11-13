@@ -5,7 +5,6 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
@@ -21,15 +20,16 @@ import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
 /**
  * Exposes Sidekit's theme and keypad configuration to Sidekit-native apps.
  *
- * The provider is exported with the SDK's normal read permission only. It has no write or file
- * path: clients call `getVersion` and `getConfig`, and the provider notifies
- * `content://<authority>/config` observers whenever the settings that feed the contract change.
+ * The provider is exported read-only. It has no write or file path: clients call `getVersion` and
+ * `getConfig`, and the provider notifies `content://<authority>/config` observers whenever the
+ * settings that feed the contract change.
  *
  * Only the keys listed in [SidekitConfigCodec] leave the process. Hidden apps, home order,
  * credentials, messages and the other app-private stores are never read here.
  *
- * Holding the permission is not enough: the caller's signing certificate must also be trusted
- * (see [TrustedCallers]), because a `normal` permission is granted to any app that requests it.
+ * Access is decided by the caller's signing certificate (see [TrustedCallers]). The normal read
+ * permission remains the declared intent, but it is not part of the access decision: it adds no
+ * identity, and a client installed before Sidekit defined it can stay ungranted forever.
  */
 // The provider is the host side of the SDK's internal wire format; the codec and file names are
 // restricted so third-party apps cannot depend on them.
@@ -69,19 +69,17 @@ open class SidekitConfigProvider : ContentProvider() {
     }
 
     /**
-     * Whether the current caller holds the read permission *and* is signed by a trusted
-     * certificate.
+     * Whether the current caller is signed by a trusted certificate.
      *
-     * `readPermission` guards normal provider access, but it does not automatically guard [call].
-     * The permission is named after this build's package, so the stable and dev builds each
-     * declare and check their own. The certificate check is what actually limits access: any app
-     * can request a `normal` permission. This hook is open so tests can exercise both outcomes
-     * without a second installed app.
+     * The provider's `android:readPermission` is not checked here: Android does not enforce it
+     * for [call], and the permission is `normal`, so it records intent rather than identity. A
+     * client installed before Sidekit defined the permission can also remain permanently
+     * ungranted. The signing-certificate allowlist is the real gate, so install order no longer
+     * decides whether a trusted app can read the configuration. This hook is open so tests can
+     * exercise both outcomes without a second installed app.
      */
     internal open fun callerCanRead(): Boolean {
         val context = context ?: return false
-        val permission = SidekitContract.readPermissionForPackage(context.packageName)
-        if (context.checkCallingPermission(permission) != PackageManager.PERMISSION_GRANTED) return false
         return TrustedCallers.isTrustedCaller(context)
     }
 

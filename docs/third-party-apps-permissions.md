@@ -1,9 +1,10 @@
 # Third-party app permissions and the host config provider
 
 The SDK exposes Sidekit's theme and keypad configuration through an exported, read-only provider.
-Access is guarded by a `normal` permission that Android grants at install time:
+The contract declares a `normal` permission as the client's statement of intent:
 `hrln.interactive.sidekit.permission.READ_APP_CONFIG` for the stable build and
-`hrln.interactive.sidekit.dev.permission.READ_APP_CONFIG` for the dev build.
+`hrln.interactive.sidekit.dev.permission.READ_APP_CONFIG` for the dev build. Access itself is
+decided by the caller's signing certificate, not by the permission.
 
 ## Who declares what
 
@@ -31,7 +32,8 @@ whichever build is installed grants its own. `SidekitContract.readPermissionForP
 name the host checks, and `SidekitContract.READ_PERMISSIONS` lists the ones a client requests.
 
 A consumer therefore needs no manifest changes of its own. It can ask for the permission from the
-moment it is built, and reading the provider starts working as soon as Sidekit is installed.
+moment it is built. Actual reading depends on the signing certificate, so a trusted app works even
+if it was installed before Sidekit defined the permission.
 
 ## Why the name follows the application id
 
@@ -52,9 +54,10 @@ unchanged, so clients built against the contract keep working.
 
 ## Who may read it
 
-Holding the permission is necessary but not sufficient. `normal` is granted to any app that asks
-for it, so it records intent, not identity — the actual decision is the caller's **signing
-certificate** (`TrustedCallers`):
+The permission records intent, not identity. `normal` is granted to any app that asks for it, and
+a client installed before Sidekit defined the name can remain permanently ungranted. The actual
+decision is therefore the caller's **signing certificate** (`TrustedCallers`), and the provider
+does not check the permission for `call`:
 
 - an APK signed with Sidekit's own certificate is first-party and trusted;
 - any other app is trusted only when the SHA-256 digest of its signing certificate is listed in

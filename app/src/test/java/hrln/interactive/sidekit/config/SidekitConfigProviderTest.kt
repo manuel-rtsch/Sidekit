@@ -84,7 +84,7 @@ class SidekitConfigProviderTest {
     }
 
     @Test
-    fun `a caller without the read permission is denied`() {
+    fun `a caller without a trusted certificate is denied`() {
         val provider = provider(allowed = false)
         assertThrows(SecurityException::class.java) {
             provider.call(SidekitContract.METHOD_GET_CONFIG, null, null)
@@ -202,6 +202,7 @@ class SidekitConfigProviderTest {
 
     @Test
     fun `an incompatible host is installed but unsupported`() {
+        refuseStableHost()
         registerHost(SidekitContract.AUTHORITY_DEV, SidekitConfig(schema = SidekitContract.SCHEMA_VERSION + 1))
 
         assertEquals(HostStatus.InstalledUnsupported, SidekitConfigClient.status(context, SidekitContract.AUTHORITY_DEV))
@@ -210,6 +211,7 @@ class SidekitConfigProviderTest {
 
     @Test
     fun `a host that refuses the caller reports not permitted`() {
+        refuseStableHost()
         val refusing = object : ContentProvider() {
             override fun onCreate(): Boolean = true
             override fun call(method: String, arg: String?, extras: Bundle?): Bundle? = throw SecurityException("not trusted")
@@ -227,6 +229,7 @@ class SidekitConfigProviderTest {
 
     @Test
     fun `a host without a version response is unsupported`() {
+        refuseStableHost()
         val provider = object : ContentProvider() {
             override fun onCreate(): Boolean = true
             override fun call(method: String, arg: String?, extras: Bundle?): Bundle? = null
@@ -260,6 +263,9 @@ class SidekitConfigProviderTest {
     }
 
     private fun provider(allowed: Boolean = true): TestProvider = Robolectric.buildContentProvider(TestProvider::class.java).create().get().also { it.allowed = allowed }
+
+    /** Keeps the real stable host from answering when a test is about the dev authority. */
+    private fun refuseStableHost() = registerHost(SidekitContract.AUTHORITY_STABLE, provider(allowed = false))
 
     private fun registerHost(authority: String, config: SidekitConfig): FakeConfigProvider {
         val provider = FakeConfigProvider(config)

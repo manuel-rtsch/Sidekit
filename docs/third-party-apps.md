@@ -250,11 +250,9 @@ object SidekitConfigClient {
 
 ### 3.4 Security model
 
-- Theme and keypad data are not secrets. A `normal` permission is the right friction
-  level for a public SDK; the provider is read-only and exposes no personal data.
-- Optional hardening: verify the caller against a curated allowlist or signing-certificate
-  hash. This is appropriate only if Sidekit wants a closed ecosystem; it blocks arbitrary
-  third-party apps.
+- Theme and keypad data are not secrets. The provider is read-only and exposes no personal data.
+- Access is limited to apps signed by Sidekit's certificate or by an allowlisted partner
+  certificate; the `normal` permission records intent but is not the security boundary.
 - Add a disclosure in Sidekit Settings/About that apps built with the Sidekit SDK can
   read the case colour and keypad setup.
 - Add a lint or test that the provider is exported only with the read permission and that
