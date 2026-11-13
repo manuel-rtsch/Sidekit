@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.SideAction
@@ -163,13 +164,18 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
                     }
 
                     6 -> {
-                        item { SidekitText("${tourIndex + 1} / ${modules.size} · ${modules[tourIndex].label}", style = SidekitTheme.typography.headline) }
+                        item {
+                            SidekitItem(
+                                "Module",
+                                Modifier.height(CompactRowHeight).listFade(listState, 0),
+                                secondary = "${tourIndex + 1} / ${modules.size} · ${tourLabel(modules[tourIndex])}",
+                                secondaryToEnd = true,
+                                onClick = { tourIndex = (tourIndex + 1) % modules.size }
+                            )
+                        }
+                        item { SidekitLineButton("Use ${modules[tourIndex].label}", { keypad?.useModule(modules[tourIndex]) }, variant = LineButtonVariant.Secondary) }
                         item { KeypadGuide(modules[tourIndex]) }
                         item { SidekitText("${keypad?.module?.label ?: "T9"} is your current selection. Press a letter, digit or media key to detect yours.", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) }
-
-                        item { SidekitLineButton("Skip / next keypad", { tourIndex = (tourIndex + 1) % modules.size }, variant = LineButtonVariant.Secondary) }
-                        item { SidekitLineButton("Use ${modules[tourIndex].label}", { keypad?.useModule(modules[tourIndex]) }) }
-                        item { Copy("Ready when you are", "Tap Finish to open your home screen. Revisit this tour from Settings → Setup & keypad tour.") }
                     }
                 }
                 message?.let { item { Copy("Access update", it) } }
@@ -208,3 +214,9 @@ private fun LayoutChoice(list: Boolean, selected: Boolean, choose: () -> Unit) {
 }
 
 internal fun orderedModules(current: KeypadModule) = listOf(current) + KeypadModule.entries.filter { it != current }
+
+private fun tourLabel(module: KeypadModule) = when (module) {
+    KeypadModule.Qwerty -> "QWERTY"
+    KeypadModule.GamePad -> "Controller"
+    else -> module.label
+}

@@ -230,12 +230,13 @@ class KeypadMappingUiTest {
     @Test fun keyGuideShowsOneActionAtATime() {
         show(KeypadModule.T9) { KeypadGuideScreen {} }
         compose.onNodeWithText("Key guide").assertIsDisplayed()
-        compose.onNodeWithText("Tap a key to see what it does.").assertIsDisplayed()
+        compose.onNodeWithText("Tap a key to see what it does.").assertDoesNotExist()
+        compose.onRoot().captureRoboImage("screenshots/keyboard_guide_page.png")
         compose.onNodeWithText("OK").performClick()
         compose.onNodeWithText("Activate the focused control or confirm a suggestion.").assertIsDisplayed()
         compose.onNodeWithText("No long press").assertIsDisplayed()
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Open the dialer.").assertIsDisplayed()
-        compose.onRoot().captureRoboImage("screenshots/keyboard_guide_page.png")
+        compose.onRoot().captureRoboImage("screenshots/keyboard_guide_selected.png")
     }
 }

@@ -1,5 +1,8 @@
 package hrln.interactive.sidekit.sdk.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -144,7 +147,13 @@ fun KeypadGuide(module: KeypadModule) {
     var selected by remember(module) { mutableStateOf<KeypadGuideKey?>(null) }
     val spacing = SidekitTheme.spacing
     Column(verticalArrangement = Arrangement.spacedBy(spacing.pageGap)) {
-        KeypadGuideDetail(selected)
+        AnimatedVisibility(
+            visible = selected != null,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            selected?.let { KeypadGuideDetail(it) }
+        }
         Column(verticalArrangement = Arrangement.spacedBy(spacing.itemOuterGap)) {
             rows.forEach { row ->
                 val keyHeight = if (row.size > 3) 52.dp else 64.dp
@@ -186,32 +195,18 @@ fun KeypadGuide(module: KeypadModule) {
 }
 
 @Composable
-private fun KeypadGuideDetail(key: KeypadGuideKey?) {
+private fun KeypadGuideDetail(key: KeypadGuideKey) {
     SidekitTile(
-        Modifier.fillMaxWidth().height(132.dp),
+        Modifier.fillMaxWidth().height(112.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        if (key == null) {
-            Column(
-                Modifier.fillMaxSize().padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                SidekitText(
-                    "Tap a key to see what it does.",
-                    style = SidekitTheme.typography.label,
-                    color = SidekitTheme.colors.surfaceA6,
-                    maxLines = 2
-                )
-            }
-        } else {
-            Column(
-                Modifier.fillMaxSize().padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                SidekitText(key.label, style = SidekitTheme.typography.label, maxLines = 1)
-                GuideAction("Tap", key.tap)
-                GuideAction("Hold", key.hold ?: "No long press", muted = key.hold == null)
-            }
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            SidekitText(key.label, style = SidekitTheme.typography.label, maxLines = 1)
+            GuideAction("Tap", key.tap)
+            GuideAction("Hold", key.hold ?: "No long press", muted = key.hold == null)
         }
     }
 }

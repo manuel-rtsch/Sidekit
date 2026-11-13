@@ -8,7 +8,7 @@ First launch opens a seven-step setup using Sidekit's existing canvas, theme, ca
 4. Hide apps you do not want on home. The same controls are in Settings → Hide apps. Built-in and Sideport apps can be hidden or restored, including with Show all apps. Hidden apps are excluded from grid, list, search and dock; they are not uninstalled. Settings remains in Options.
 5. Review feature-specific permissions and special access. Nothing is requested automatically. Declining access never blocks completion; the affected feature still needs its permission. Returning from Android settings refreshes status. A repeated runtime-permission request opens App settings so permanently denied access can be changed.
 6. Choose letters or numbers as the default input mode.
-7. Explore tappable, schematic keypad diagrams. The remembered/detected module comes first. Skip through all four without changing the active module, or explicitly select one with “Use”. Finish opens home.
+7. Explore tappable, schematic keypad diagrams. The remembered/detected module comes first. Tap the Module row to cycle through all four without changing the active module, or explicitly select one with “Use”. Finish opens home.
 
 The keypad hardware exposes no distinct module identifier. Existing detection recognises distinctive key events, persists the last module and initially defaults to T9. Setup does not claim to detect a module before such a key is pressed. Controller actions depend on the app/game; the tour does not promise universal game mappings. For keypads Sidekit does not recognise, or to move keys, see [Keypad mapping](keypad-mapping.md).
 
