@@ -116,7 +116,6 @@ android {
     }
 }
 
-
 dependencies {
     implementation(project(":sidekit"))
     implementation(project(":sidekit-sdk"))
