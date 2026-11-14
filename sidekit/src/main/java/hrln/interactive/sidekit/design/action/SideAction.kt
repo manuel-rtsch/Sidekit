@@ -93,6 +93,8 @@ class SideAction(
     val motion: ActionMotion = ActionMotion.None,
     val contentDescription: String? = null,
     val dense: Boolean = false,
+    /** Keep the Options bar open after this option runs. Use for toggles that should stay visible. */
+    val keepOptionsOpen: Boolean = false,
     /** When set, the bar calls [onClick] after this many milliseconds. Used by notices. */
     val autoDismissMs: Long? = null,
     val artKey: Any? = null,
@@ -185,8 +187,18 @@ class SideAction(
             contentDescription: String,
             onClick: () -> Unit,
             tone: ActionTone = ActionTone.Primary,
-            motion: ActionMotion = ActionMotion.None
-        ) = SideAction(key, icon = icon, tone = tone, square = true, motion = motion, contentDescription = contentDescription, onClick = onClick)
+            motion: ActionMotion = ActionMotion.None,
+            keepOptionsOpen: Boolean = false
+        ) = SideAction(
+            key,
+            icon = icon,
+            tone = tone,
+            square = true,
+            motion = motion,
+            contentDescription = contentDescription,
+            keepOptionsOpen = keepOptionsOpen,
+            onClick = onClick
+        )
     }
 }
 
@@ -397,7 +409,7 @@ internal class ChromePublisher {
                     "options.${o.key}", o.label, o.icon, o.iconAtEnd, o.tone, o.weight, o.square,
                     ActionMotion.Up, o.contentDescription, dense = o.dense || opts.size > 2, artKey = o.artKey, art = o.art
                 ) {
-                    close()
+                    if (!o.keepOptionsOpen) close()
                     o.onClick()
                 }
             } + SideAction.square("options.close", SidekitIcon.Close, "Close options", close, tone = ActionTone.Muted)
