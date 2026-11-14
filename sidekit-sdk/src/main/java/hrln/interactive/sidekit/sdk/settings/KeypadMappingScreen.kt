@@ -73,7 +73,10 @@ fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadControl) -
                     SidekitCompactItem(
                         control.label,
                         Modifier.listFade(list, index + 4),
-                        secondary = bound?.label ?: "Default",
+                        // Show what the key does when it is still on its default binding. The
+                        // Sundial's right edge, for example, is media-next on a tap and right on
+                        // a hold; "Default" alone hid that distinction.
+                        secondary = bound?.label ?: control.hint,
                         // Moved keys stand out; the rest read as defaults.
                         icon = if (bound != null) SidekitIcon.Edit else null,
                         onClick = { learn(custom, control) }
