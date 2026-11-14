@@ -96,7 +96,7 @@ fun SideticksScreen(
             if (state.dueText != null) {
                 row("due") { modifier ->
                     SidekitCard(modifier.fillMaxWidth()) {
-                        SidekitTextField(state.dueText, { onDue(it) }, placeholder = "YYYY-MM-DD HH:mm", singleLine = true, onDone = { screenFocus.requestFocus() })
+                        SidekitTextField(state.dueText, { onDue(it) }, placeholder = "YYYY-MM-DD HH:mm", singleLine = true, dictation = false, onDone = { screenFocus.requestFocus() })
                     }
                 }
             }

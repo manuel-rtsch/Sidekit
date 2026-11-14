@@ -159,7 +159,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                         SidekitCard(Modifier.listFade(list, 2).fillMaxWidth()) {
                             Column {
                                 SidekitText("Start · YYYY-MM-DD HH:mm", style = SidekitTheme.typography.caption)
-                                SidekitTextField(start.orEmpty(), { start = it }, singleLine = true, onDone = { focus.requestFocus() })
+                                SidekitTextField(start.orEmpty(), { start = it }, singleLine = true, dictation = false, onDone = { focus.requestFocus() })
                             }
                         }
                     }
@@ -167,7 +167,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                         SidekitCard(Modifier.listFade(list, 3).fillMaxWidth()) {
                             Column {
                                 SidekitText("End · YYYY-MM-DD HH:mm", style = SidekitTheme.typography.caption)
-                                SidekitTextField(end.orEmpty(), { end = it }, singleLine = true, onDone = { focus.requestFocus() })
+                                SidekitTextField(end.orEmpty(), { end = it }, singleLine = true, dictation = false, onDone = { focus.requestFocus() })
                             }
                         }
                     }

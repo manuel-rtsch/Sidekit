@@ -160,7 +160,8 @@ private fun TranslateBody(
                         modifier = Modifier.fillMaxWidth().testTag(TranslateTags.INPUT),
                         placeholder = "Type or speak",
                         focusOnKeypad = true,
-                        autoFocus = true
+                        autoFocus = true,
+                        dictation = false
                     )
                 }
             } else {
