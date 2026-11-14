@@ -126,6 +126,7 @@ abstract class SidekitActivity : ComponentActivity() {
         return deliver(translated)
     }
 
+    @SuppressLint("RestrictedApi")
     private fun deliver(event: KeyEvent): Boolean {
         val handled = input.handleTranslated(event) ?: return true
         return super.dispatchKeyEvent(handled)
