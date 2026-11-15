@@ -26,6 +26,7 @@ import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.input.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.sdk.settings.KeypadGuide
+import hrln.interactive.sidekit.sdk.theme.caseColourChoices
 
 @Composable
 internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {

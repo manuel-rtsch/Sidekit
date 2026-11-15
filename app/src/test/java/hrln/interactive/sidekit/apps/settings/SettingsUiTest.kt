@@ -42,7 +42,7 @@ class SettingsUiTest {
             }
         }
         compose.mainClock.advanceTimeBy(1000)
-        val expected = listOf(0xFFA2F49F, 0xFFF68A02, 0xFF82C7F3, 0xFFF575D1, 0xFF90C190, 0xFFAE99D1)
+        val expected = listOf(0xFFEDE8E8, 0xFF82C7F3, 0xFFA2F49F, 0xFF90C190, 0xFFFF8A00, 0xFFAE99D1, 0xFFF575D1)
         CaseColour.entries.forEachIndexed { index, colour ->
             compose.onNodeWithContentDescription(colour.label).performClick()
             compose.onNodeWithContentDescription(colour.label).assertIsSelected()
