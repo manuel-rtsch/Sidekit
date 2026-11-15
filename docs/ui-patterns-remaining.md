@@ -67,7 +67,7 @@ When `integration` lands on `main`, rebase this branch onto `main` before openin
 - **Calculator** — private `CalcKey.color()` language; map keys onto tones.
 - **Calendar** — Delete and Save have no tones; delete is only in Options without confirmation.
 - **Bank Up sync** — the only connector action without an icon.
-- **Launcher** — the only `trailingAction` user; document it as the pattern, not the exception.
+- **Trailing actions** — the action bar has leading and trailing zones. Use `trailingActions` for screen-scoped utilities that belong at the right edge (Launcher search clear, typing clear); Options' close button uses the same zone. This is the pattern, not a Launcher exception.
 
 ### 5. Verification
 

@@ -65,10 +65,11 @@ fun SidekitHeader(
  * A SideKit screen: title at the top, body in the middle, action bar at the bottom.
  *
  * Only [content] (the body) is drawn here. [title] and [actions] are published to the system
- * chrome, which morphs them from the previous screen's, while the body rises in. [options] are
- * what the keypad's Options key (top right) shows in the action bar: settings and less common
- * actions that don't earn a permanent button. Passing a
- * [header] replaces the shared title with custom content drawn in the body (e.g. a search field).
+ * chrome, which morphs them from the previous screen's, while the body rises in. [actions] fill
+ * the leading zone; [trailingActions] are pinned to the right edge (for example a search clear
+ * button). [options] are what the keypad's Options key (top right) shows in the action bar:
+ * settings and less common actions that don't earn a permanent button. Passing a [header]
+ * replaces the shared title with custom content drawn in the body (e.g. a search field).
  *
  * [content] receives padding that keeps its last item clear of the action bar.
  */
@@ -81,12 +82,12 @@ fun SidekitScaffold(
     titleAlign: TextAlign = TextAlign.Start,
     titleModifier: Modifier = Modifier,
     header: (@Composable () -> Unit)? = null,
-    trailingAction: SideAction? = null,
+    trailingActions: List<SideAction> = emptyList(),
     content: @Composable (PaddingValues) -> Unit
 ) {
     val spacing = SidekitTheme.spacing
     val spec = if (header == null && title != null) HeaderSpec(title, titleAlign, titleModifier) else null
-    PublishChrome(spec, actions, options, trailingAction)
+    PublishChrome(spec, actions, options, trailingActions)
 
     // Lets the action bar hand Up back to the content by name instead of by geometry. The
     // requester survives content changes (list swaps, new screens) and restoreFocusedChild()
@@ -128,7 +129,8 @@ fun SidekitScaffold(
                         }
                     }
             ) {
-                val bottom = if (actions.isNotEmpty()) spacing.actionBarHeight + spacing.pageGap + spacing.pagePadding else spacing.pagePadding
+                val hasBar = actions.isNotEmpty() || trailingActions.isNotEmpty()
+                val bottom = if (hasBar) spacing.actionBarHeight + spacing.pageGap + spacing.pagePadding else spacing.pagePadding
                 CompositionLocalProvider(LocalBodyEntrance provides entrance) {
                     content(PaddingValues(bottom = bottom))
                 }

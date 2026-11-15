@@ -276,14 +276,19 @@ class ChromeState {
         if (optionsOwner === publisher) optionsOwner = null
     }
 
-    /** Actions to show: open options, else the latest override, else the latest screen's. */
-    internal val actions: List<SideAction>
+    /** The bar to show: open options, else the latest override, else the latest screen's. */
+    internal val bar: ActionBarSpec
         get() {
             val owner = optionsOwner
             val source = if (owner != null && owner === optionsSource) owner else overrides.lastOrNull() ?: publishers.lastOrNull()
-            val base = if (owner != null && source === owner) owner.optionsBar(::closeOptions) else source?.actions.orEmpty()
-            val trailing = source?.trailingAction ?: return base
-            return base + trailing
+            val base = if (owner != null && source === owner) {
+                owner.optionsBar(::closeOptions)
+            } else {
+                ActionBarSpec(leading = source?.actions.orEmpty())
+            }
+            val trailing = source?.trailingActions.orEmpty()
+            if (trailing.isEmpty()) return base
+            return ActionBarSpec(base.leading, base.trailing + trailing)
         }
 
     /**
@@ -387,32 +392,38 @@ internal class ChromePublisher {
     // Referential: a new list from a recomposed screen must reach the host so its click handlers
     // are fresh. The host itself only animates when visible content differs.
     var actions: List<SideAction> by mutableStateOf(emptyList(), referentialEqualityPolicy())
-    var trailingAction: SideAction? by mutableStateOf(null, referentialEqualityPolicy())
+    var trailingActions: List<SideAction> by mutableStateOf(emptyList(), referentialEqualityPolicy())
     var header: HeaderSpec? by mutableStateOf(null, referentialEqualityPolicy())
     var options: List<SideAction> by mutableStateOf(emptyList(), referentialEqualityPolicy())
 
-    private var bar: List<SideAction>? = null
+    private var bar: ActionBarSpec? = null
     private var barFor: List<SideAction>? = null
 
     /**
      * The options as an action bar: each option closes the bar after running, and a square close
-     * button ends it. Cached per options list so the bar host sees a stable list while open.
+     * button owns the trailing edge. Cached per options list so the bar host sees a stable spec
+     * while open.
      */
-    fun optionsBar(close: () -> Unit): List<SideAction> {
+    fun optionsBar(close: () -> Unit): ActionBarSpec {
         val opts = options
         if (barFor === opts) bar?.let { return it }
         val built = if (opts.isEmpty()) {
-            listOf(SideAction("options.none", "No options here", tone = ActionTone.Muted, motion = ActionMotion.Up, onClick = close))
+            ActionBarSpec(
+                leading = listOf(SideAction("options.none", "No options here", tone = ActionTone.Muted, motion = ActionMotion.Up, onClick = close))
+            )
         } else {
-            opts.map { o ->
-                SideAction(
-                    "options.${o.key}", o.label, o.icon, o.iconAtEnd, o.tone, o.weight, o.square,
-                    ActionMotion.Up, o.contentDescription, dense = o.dense || opts.size > 2, artKey = o.artKey, art = o.art
-                ) {
-                    if (!o.keepOptionsOpen) close()
-                    o.onClick()
-                }
-            } + SideAction.square("options.close", SidekitIcon.Close, "Close options", close, tone = ActionTone.Muted)
+            ActionBarSpec(
+                leading = opts.map { o ->
+                    SideAction(
+                        "options.${o.key}", o.label, o.icon, o.iconAtEnd, o.tone, o.weight, o.square,
+                        ActionMotion.Up, o.contentDescription, dense = o.dense || opts.size > 2, artKey = o.artKey, art = o.art
+                    ) {
+                        if (!o.keepOptionsOpen) close()
+                        o.onClick()
+                    }
+                },
+                trailing = listOf(SideAction.square("options.close", SidekitIcon.Close, "Close options", close, tone = ActionTone.Muted))
+            )
         }
         bar = built
         barFor = opts
@@ -445,28 +456,37 @@ fun KeysFromActionBar(onKey: (KeyEvent) -> Boolean) {
  * still composed while leaving keeps updating its own entry without taking the chrome back.
  */
 @Composable
-fun PublishChrome(header: HeaderSpec?, actions: List<SideAction>, options: List<SideAction> = emptyList(), trailingAction: SideAction? = null) {
+fun PublishChrome(
+    header: HeaderSpec?,
+    actions: List<SideAction>,
+    options: List<SideAction> = emptyList(),
+    trailingActions: List<SideAction> = emptyList()
+) {
     val chrome = LocalChrome.current ?: return
     Publish(chrome, chrome.publishers) {
         it.header = header
         it.actions = actions
         it.options = options
-        it.trailingAction = trailingAction
+        it.trailingActions = trailingActions
     }
 }
 
 /**
  * Shows [actions] in place of the screen's while composed (used by T9 typing). [options], if
- * any, replace the screen's options for the Options key too. [trailingAction] stays at the right
+ * any, replace the screen's options for the Options key too. [trailingActions] stay at the right
  * edge in both bars.
  */
 @Composable
-fun PublishActionOverride(actions: List<SideAction>, options: List<SideAction> = emptyList(), trailingAction: SideAction? = null) {
+fun PublishActionOverride(
+    actions: List<SideAction>,
+    options: List<SideAction> = emptyList(),
+    trailingActions: List<SideAction> = emptyList()
+) {
     val chrome = LocalChrome.current ?: return
     Publish(chrome, chrome.overrides) {
         it.actions = actions
         it.options = options
-        it.trailingAction = trailingAction
+        it.trailingActions = trailingActions
     }
 }
 

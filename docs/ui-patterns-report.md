@@ -14,10 +14,10 @@ Five pieces of chrome are owned by the shell, not by the screens:
 | Layer | File | What it does |
 |---|---|---|
 | Canvas | `design/canvas/SidekitCanvas.kt:96` | Draws `HeaderHost` + `ActionBarHost` over the screens, on a fixed 480×640 canvas. Also owns `BackHandler(optionsOpen)`. |
-| Publish | `design/action/SideAction.kt:207` (`PublishChrome`) | A screen hands over `header`, `actions`, `options`, `trailingAction`; last attached publisher wins. |
-| Scaffold | `design/components/Scaffold.kt:76` | The only intended entry point: `SidekitScaffold(title, actions, options, header, trailingAction)`. |
+| Publish | `design/action/SideAction.kt:207` (`PublishChrome`) | A screen hands over `header`, `actions`, `options`, `trailingActions`; last attached publisher wins. |
+| Scaffold | `design/components/Scaffold.kt:76` | The only intended entry point: `SidekitScaffold(title, actions, options, header, trailingActions)`. |
 | Action bar | `design/action/ActionBarHost.kt:230` | Morphs between the previous screen's buttons and the new one's. |
-| Typing | `design/components/SidekitTextField.kt:107` | While T9 typing is live, an *override* publisher replaces the bar with suggestions + Done + `trailingAction`. |
+| Typing | `design/components/SidekitTextField.kt:107` | While T9 typing is live, an *override* publisher replaces the bar with suggestions + Done + `trailingActions`. |
 
 ### 1.1 The button type system
 
@@ -221,7 +221,7 @@ In-body buttons in the Add-app screen use `SidekitLineButton` (`:387`).
 Projected apps (`ProjectionScreens.kt:289`) build the bar from the ported app's own `ActionSpec` list: square Muted Back + up to two `motion = Forward` buttons, tones mapped 1:1 from the source app. Their forms never set `focusOnKeypad` (`:270`), and in-body button blocks map to `SidekitLineButton` with `Primary/Secondary/Destructive` (`:244`).
 
 ### 3.26 Launcher (the chrome reference)
-`LauncherScreen.kt:174`: the **dock is the action bar** — `dockActions(dock, hiddenApps, …)` — so opening an app morphs the tapped dock tile into that app's first button. In search mode the bar becomes a single dense query chip plus a `trailingAction` square clear button (`:207-215`) — the only use of `trailingAction` in the codebase. Options: grid/list toggle + Settings. The clock title is a tap/long-press gesture surface (`clockGestures`, `:255`), not a button.
+`LauncherScreen.kt:174`: the **dock is the action bar** — `dockActions(dock, hiddenApps, …)` — so opening an app morphs the tapped dock tile into that app's first button. In search mode the bar becomes a single dense query chip plus a trailing-zone square clear button (`:207-215`). Launcher search and T9 typing are the current trailing-zone users. Options: grid/list toggle + Settings. The clock title is a tap/long-press gesture surface (`clockGestures`, `:255`), not a button.
 
 ---
 
@@ -338,7 +338,7 @@ So "swipe = delete + Undo" is the established contract (10 of 13 swipe screens);
 - **Mixed** (Files, Mail, Phonebook, Banking): rows navigate, bar commits.
 - **Gesture-only affordances**: launcher clock (tap = search, long-press = grid/list), Apps long-press → Options, swipe-to-delete, video poke-to-show-controls. None of these is discoverable from the bar; two of them (launcher clock, Apps selection) are the *only* way to reach the corresponding action.
 - **TextField keypad capture**: `focusOnKeypad` is set on 20 of 30 fields. Omitted on Mail subject/body, Banking amount/note (only payee and account name opt in), Calendar start/end, Sideticks due-time, and all Sideport-projected fields. In those, pressing a keypad letter with nothing focused does nothing, while on the *previous* screen it started typing.
-- **Trailing action**: used once (launcher search). Camera's "Photos" and Music's album art are effectively trailing actions hard-coded into `actions`.
+- **Trailing actions**: Launcher search and T9 typing use the trailing zone. Camera's "Photos" and Music's album art are effectively trailing actions hard-coded into `actions`.
 
 ### K. Parallel duplicate screens drift — **M**
 Everyday "mock" screens coexist with live ones and already disagree:
@@ -365,7 +365,7 @@ These are preview/screenshot surfaces, but they are the ones a reader compares a
 5. **One delete contract.** Either "swipe = confirm in bar" everywhere (and disable the pass-the-threshold short-circuit when a confirm is configured), or "swipe = delete + Undo" everywhere. Not both.
 6. **Confirmation for irreversible operations regardless of entry point** — Options-invoked deletes (Calendar, Banking erase, Apps uninstall, Keypad reset, Translate clear) should route through the same `ConfirmBar` as Files/Photos.
 7. **Either populate Options or remove the key per screen.** Health, Settings, Placeholder, Sidenotes list and Mail folders should either gain one entry ("About", "Sort", "Refresh") or the shell should not advertise an empty bar.
-8. **`focusOnKeypad` on every field that is the screen's main input**, and `trailingAction` for screen-scoped utilities (Camera "Photos", Music album art) instead of positional hacks.
+8. **`focusOnKeypad` on every field that is the screen's main input**, and `trailingActions` for screen-scoped utilities (Camera "Photos", Music album art) instead of positional hacks.
 9. **Square = icon-only, always.** Migrate Camera's and Music Now Playing's icon-only wide buttons to `SideAction.square`, or give them labels. Never a third shape.
 10. **Retire the duplicate mock screens** (or generate them from the live action lists) so previews cannot drift from shipped behaviour.
 11. ✅ **Roles, not tones.** A screen names the act (`save`, `send`, `delete`, `cancel`, `undo`) and the design system decides colour, icon and motion. Extending the vocabulary is one companion edit.
@@ -470,7 +470,7 @@ Navigation is settled: it belongs in rows with a right arrow. Options is now onl
 | **Calendar** (`CalendarEditor.kt:82,93`) | `Delete` with no tone, `Save` with no tone, delete reachable only through Options without confirmation | Tone pass |
 | **Health / Settings / Placeholder** | Only apps with no Options anywhere (dead Options key) | Give each one entry or accept the dead key |
 | **Bank Up sync** (`UpBankScreen.kt:48`) | Only connector action without an icon | Icon pass |
-| **Launcher** (`LauncherScreen.kt:207`) | Only user of `trailingAction`; clock is gesture-only; dock-as-bar is a one-off idea | Document as the pattern, not the exception |
+| **Launcher** (`LauncherScreen.kt:207`) | Uses the trailing zone for search clear; clock is gesture-only; dock-as-bar is a one-off idea | Document as the pattern, not the exception |
 | **Maps mock vs live** (`MapsScreen.kt:55` vs `MapsLive.kt:53`) | Green Go in previews, blue Go in the app | Generate previews from the live action list |
 
 ### 7.5 The decision order

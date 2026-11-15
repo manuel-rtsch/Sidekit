@@ -182,7 +182,7 @@ fun SidekitTextField(
                     contentDescription = "Input mode $label"
                 ) { session.setMode(mode) }
             },
-            trailingAction = trailingTypingAction
+            trailingActions = listOfNotNull(trailingTypingAction)
         )
     }
 

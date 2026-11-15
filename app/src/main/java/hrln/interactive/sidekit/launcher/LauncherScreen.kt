@@ -314,7 +314,7 @@ fun LauncherScreen(
         } else {
             dockActions(dock.ifEmpty { defaultDock() }, hiddenApps, onOpenApp, onOpenPorted, onOpenNative, onOpenInstalled, appsSource)
         },
-        trailingAction = if (searching || text.isNotEmpty()) clear else null,
+        trailingActions = if (searching || text.isNotEmpty()) listOf(clear) else emptyList(),
         // Keypad Options key: the long-press gesture, as a button.
         options = listOf(
             SideAction("layout", if (state.layout == LauncherLayout.Grid) "List" else "Grid", contentDescription = "Switch grid or list", onClick = onToggleLayout),

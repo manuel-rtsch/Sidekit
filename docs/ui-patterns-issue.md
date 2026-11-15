@@ -211,7 +211,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 **Music** — Home is a square album-art action plus `Search→`. Library screens are a single `←Music`. Now Playing has four buttons, none labelled and none toned. Options carry shuffle/repeat as state labels. Permission state bypasses the scaffold.
 
 - [ ] Give Now Playing a shape and a primary: `square` transport controls plus one green action.
-- [ ] Decide whether album art belongs in `trailingAction` rather than the action list.
+- [ ] Decide whether album art belongs in `trailingActions` rather than the action list.
 - [ ] Check playlist creation: it currently exists only as an Options entry on the home screen.
 
 **Video** — Gallery is square `Back` + `Allow` or `Open settings→`. Player is square `Back`, wide `Play/Pause`, square `Skip` — three shapes in one bar. Auto-hiding the controls empties the action list so the bar slides away.
@@ -262,7 +262,7 @@ Each app starts with a short note on the patterns it currently uses, then the co
 - [ ] Set keypad capture on ported forms.
 - [x] Remove Sidekit's in-body line buttons; ported-app content remains the exception.
 
-**Launcher** — The dock is the action bar, so opening an app morphs the tapped tile into that app's first action. Search mode replaces the bar with a dense query chip plus a `trailingAction` clear button. Options toggle grid/list and open Settings. The clock responds to tap and long-press.
+**Launcher** — The dock is the action bar, so opening an app morphs the tapped tile into that app's first action. Search mode replaces the bar with a dense query chip plus a trailing-zone clear button. Options toggle grid/list and open Settings. The clock responds to tap and long-press.
 
 - [ ] Document the dock and the trailing action as the system pattern rather than a one-off.
 - [ ] Surface the clock gestures somewhere visible.

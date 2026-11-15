@@ -10,17 +10,18 @@ class ActionBarOrderTest {
             slot("home"),
             slot("about"),
             slot("settings"),
-            slot("surplus"),
+            slot("surplus")
         )
 
         alignSlotsToTarget(
             slots,
-            listOf(action("home"), action("settings"), action("about")),
+            listOf(target("home"), target("settings"), target("about"))
         )
 
         assertEquals(listOf("home", "settings", "about", "surplus"), slots.map { it.key })
     }
 
     private fun slot(key: String) = ActionSlot(action(key), present = true)
+    private fun target(key: String) = ActionTarget(action(key), ActionPlacement.Leading)
     private fun action(key: String) = SideAction(key, label = key, onClick = {})
 }

@@ -84,10 +84,18 @@ import kotlinx.coroutines.launch
  * animations can be retargeted rather than restarted.
  */
 @Stable
-internal class ActionSlot(action: SideAction, present: Boolean) {
+internal class ActionSlot(
+    action: SideAction,
+    present: Boolean,
+    initialPlacement: ActionPlacement = ActionPlacement.Leading
+) {
     /** The action this button currently shows. Changes when a different action takes it over. */
     var key: String = action.key
     var action: SideAction by mutableStateOf(action, referentialEqualityPolicy())
+        private set
+
+    /** Which side of the bar this slot belongs to. */
+    var placement: ActionPlacement by mutableStateOf(initialPlacement)
         private set
 
     /** Content being swapped out, drawn under [action] until [contentProgress] reaches 1. */
@@ -121,7 +129,8 @@ internal class ActionSlot(action: SideAction, present: Boolean) {
     var latest: SideAction = action
         private set
 
-    fun update(next: SideAction, scope: CoroutineScope) {
+    fun update(next: SideAction, nextPlacement: ActionPlacement, scope: CoroutineScope) {
+        placement = nextPlacement
         latest = next
         val old = action
         if (old.sameLook(next)) return
@@ -145,19 +154,22 @@ internal class ActionBarModel {
     val slots = mutableStateListOf<ActionSlot>()
     val shown = Animatable(0f)
     private var hideJob: Job? = null
-    private var synced: List<SideAction>? = null
+    private var synced: ActionBarSpec? = null
 
     /** Key of the button the user last pressed; its action's successor takes this very button. */
     var lastPressed: String? = null
 
-    fun sync(target: List<SideAction>, scope: CoroutineScope) {
-        if (target === synced) return
+    fun sync(target: ActionBarSpec, scope: CoroutineScope) {
+        // The state builds a fresh spec wrapper on every read; the lists are the stable part.
+        // Comparing them referentially keeps a normal recomposition from reconciling the whole bar.
+        if (target.leading === synced?.leading && target.trailing === synced?.trailing) return
         synced = target
         reconcile(target, scope)
     }
 
-    fun reconcile(target: List<SideAction>, scope: CoroutineScope) {
-        if (target.isEmpty()) {
+    fun reconcile(target: ActionBarSpec, scope: CoroutineScope) {
+        val targets = target.targets()
+        if (targets.isEmpty()) {
             if (slots.isEmpty() || hideJob?.isActive == true) return
             // Slide the last actions away as they are; morphing them to nothing would read as a bug.
             hideJob = scope.launch {
@@ -171,14 +183,14 @@ internal class ActionBarModel {
         hideJob = null
         if (slots.isEmpty()) {
             // Arriving from no bar: build the final layout and slide it up whole.
-            target.forEach { slots.add(ActionSlot(it, present = true)) }
+            targets.forEach { slots.add(ActionSlot(it.action, present = true, initialPlacement = it.placement)) }
             scope.launch { shown.animateTo(1f, SidekitMotion.enter) }
             return
         }
         if (shown.targetValue < 1f || shown.value < 1f) scope.launch { shown.animateTo(1f, SidekitMotion.enter) }
 
-        val keys = HashSet<String>(target.size * 2)
-        target.forEach { keys.add(it.key) }
+        val keys = HashSet<String>(targets.size * 2)
+        targets.forEach { keys.add(it.action.key) }
 
         // Buttons free to be taken over by actions with new keys: the one just pressed first (so
         // the button you tapped becomes the next screen's button), then the rest left to right.
@@ -190,7 +202,8 @@ internal class ActionBarModel {
         }
         lastPressed = null
 
-        target.forEachIndexed { i, action ->
+        targets.forEachIndexed { i, targetAction ->
+            val action = targetAction.action
             var slot = slots.firstOrNull { it.key == action.key }
             if (slot == null && free.isNotEmpty()) {
                 slot = free.removeAt(0)
@@ -198,15 +211,15 @@ internal class ActionBarModel {
             }
             if (slot != null) {
                 slot.removing = false
-                slot.update(action, scope)
+                slot.update(action, targetAction.placement, scope)
                 if (slot.presence.targetValue != 1f || slot.presence.value != 1f) {
                     val s = slot
                     scope.launch { s.presence.animateTo(1f, SidekitMotion.morph) }
                 }
             } else {
                 // More actions than buttons: split a new one out next to its neighbour.
-                val created = ActionSlot(action, present = false)
-                val prevKey = if (i == 0) null else target[i - 1].key
+                val created = ActionSlot(action, present = false, initialPlacement = targetAction.placement)
+                val prevKey = if (i == 0) null else targets[i - 1].action.key
                 val index = if (prevKey == null) 0 else slots.indexOfFirst { it.key == prevKey } + 1
                 slots.add(index.coerceIn(0, slots.size), created)
                 scope.launch { created.presence.animateTo(1f, SidekitMotion.morph) }
@@ -225,14 +238,14 @@ internal class ActionBarModel {
         // Existing keys can stay in the bar while their target order changes (for example when the
         // launcher dock is reordered). Move those slots to the requested order; removing slots stay
         // where they are and fade out, so they do not block the final positions.
-        alignSlotsToTarget(slots, target)
+        alignSlotsToTarget(slots, targets)
     }
 }
 
 /** Places slots carrying target keys in target order, leaving surplus slots to fade out. */
-internal fun alignSlotsToTarget(slots: MutableList<ActionSlot>, target: List<SideAction>) {
+internal fun alignSlotsToTarget(slots: MutableList<ActionSlot>, target: List<ActionTarget>) {
     target.forEachIndexed { index, action ->
-        val current = slots.indexOfFirst { it.key == action.key }
+        val current = slots.indexOfFirst { it.key == action.action.key }
         if (current >= 0 && current != index) slots.add(index, slots.removeAt(current))
     }
 }
@@ -256,16 +269,16 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
     // Publishers notify synchronously (same frame as the screen's recomposition); the SideEffect
     // is a backstop for changes that arrive without a notification. Both are idempotent.
     DisposableEffect(state, model) {
-        state.onChange = { if (state.hasOwner) model.sync(state.actions, scope) }
+        state.onChange = { if (state.hasOwner) model.sync(state.bar, scope) }
         onDispose { state.onChange = null }
     }
-    val target = state.actions
+    val target = state.bar
     val owned = state.hasOwner
     SideEffect { if (owned) model.sync(target, scope) }
 
     // A notice owns the bar for a short, fixed time. The timer lives here rather than in each
     // screen so every app gets the same duration and the bar always comes back.
-    val autoDismiss = target.firstOrNull { it.autoDismissMs != null }
+    val autoDismiss = target.actions().firstOrNull { it.autoDismissMs != null }
     val latestAutoDismiss by rememberUpdatedState(autoDismiss)
     LaunchedEffect(autoDismiss?.key, autoDismiss?.label, autoDismiss?.autoDismissMs) {
         val action = latestAutoDismiss ?: return@LaunchedEffect
@@ -364,7 +377,7 @@ private const val PRESS_SCALE = 0.04f
  * The gap before slot i is `gap * min(p_i, max(p_0..p_{i-1}))`: a slot appearing at either end or
  * in the middle brings exactly one gap with it, and one merging away takes exactly one with it.
  */
-private fun layoutSlots(
+internal fun layoutSlots(
     slots: List<ActionSlot>,
     n: Int,
     width: Int,
@@ -406,6 +419,15 @@ private fun layoutSlots(
     val remaining = (width - gapTotal - fixedTotal).coerceAtLeast(0f)
     for (i in 0 until n) {
         outWidths[i] = fixed[i] + if (flexTotal > 0f) remaining * outWidths[i] / flexTotal else 0f
+    }
+    // No flexible slot absorbed the leftover width. If a trailing zone exists, that space belongs
+    // between the zones, which pins the trailing group to the right edge. With no trailing zone
+    // the bar stays left-aligned, as before.
+    if (flexTotal <= 0f && outGaps != null) {
+        val firstTrailing = (0 until n).firstOrNull {
+            !slots[it].removing && slots[it].placement == ActionPlacement.Trailing
+        }
+        if (firstTrailing != null) outGaps[firstTrailing] += remaining
     }
 }
 
