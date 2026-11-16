@@ -118,18 +118,33 @@ object RemoteArtwork {
     }
 
     private fun readDisk(context: Context, url: String, w: Int, h: Int): Bitmap? = try {
-        val file = File(cacheDir(context), fileName(url, w, h))
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.absolutePath, bounds)
-        val options = BitmapFactory.Options().apply {
-            inPreferredConfig = Bitmap.Config.RGB_565
-            inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, w, h)
+        decodeCached(cacheDir(context), url, w, h) { file ->
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            val options = BitmapFactory.Options().apply {
+                inPreferredConfig = Bitmap.Config.RGB_565
+                inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, w, h)
+            }
+            BitmapFactory.decodeFile(file.absolutePath, options)
         }
-        BitmapFactory.decodeFile(file.absolutePath, options)
     } catch (_: Exception) {
         null
     } catch (_: OutOfMemoryError) {
         null
+    }
+
+    /**
+     * Runs [decode] on the cached entry for url+size, or returns null when there is none.
+     *
+     * The directory is not stable: [clear] deletes all of it when the user signs out and [trim]
+     * evicts entries on every write, so the file can be gone before the decoder opens it. Handing
+     * a missing path to BitmapFactory made every ordinary miss show up in logcat as
+     * `Unable to decode stream: … ENOENT`, which reads like broken artwork. A cache miss is not
+     * an error, so it must not be reported as one.
+     */
+    internal inline fun <T> decodeCached(dir: File, url: String, w: Int, h: Int, decode: (File) -> T?): T? {
+        val file = File(dir, fileName(url, w, h))
+        return if (file.isFile) decode(file) else null
     }
 
     private suspend fun download(context: Context, url: String, w: Int, h: Int): Bitmap? {
