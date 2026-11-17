@@ -59,6 +59,7 @@ enum class SidekitIcon(@DrawableRes val drawable: Int) {
     PhotoCamera(R.drawable.sk_ic_photo_camera),
     PhotoLibrary(R.drawable.sk_ic_photo_library),
     PlayArrow(R.drawable.sk_ic_play_arrow),
+    PlaylistAdd(R.drawable.sk_ic_playlist_add),
     QrCodeScanner(R.drawable.sk_ic_qr_code_scanner),
     QueueMusic(R.drawable.sk_ic_queue_music),
     Search(R.drawable.sk_ic_search),
