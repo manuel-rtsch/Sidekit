@@ -1,0 +1,152 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "hrln.interactive.sidekit",
+    "module": "sidekit-sdk",
+    "version": "1.7.2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.7.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "hrln.interactive.sidekit",
+          "module": "sidekit-design",
+          "version": {
+            "requires": "1.7.2"
+          }
+        },
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.19.1"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.lifecycle",
+          "module": "lifecycle-runtime-compose",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sidekit-sdk-1.7.2.aar",
+          "url": "sidekit-sdk-1.7.2.aar",
+          "size": 210643,
+          "sha512": "b70d5a26b571622c821ab95da615ebe564eedc75fcad2e0b048b3aabb553bc588794dae90d3faf4ba4e5136d31e59b27beb723c901d4648517d0be2777eebf4b",
+          "sha256": "c669189022735c4dac3be3cba9807b3c7bcd02b5337245bfb097767c94643346",
+          "sha1": "bdca742bc37434f36af6bc66f077217e4ebb4545",
+          "md5": "ba25cca02d477364bad9a142be3711f9"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "hrln.interactive.sidekit",
+          "module": "sidekit-design",
+          "version": {
+            "requires": "1.7.2"
+          }
+        },
+        {
+          "group": "androidx.core",
+          "module": "core-ktx",
+          "version": {
+            "requires": "1.19.1"
+          }
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.lifecycle",
+          "module": "lifecycle-runtime-compose",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sidekit-sdk-1.7.2.aar",
+          "url": "sidekit-sdk-1.7.2.aar",
+          "size": 210643,
+          "sha512": "b70d5a26b571622c821ab95da615ebe564eedc75fcad2e0b048b3aabb553bc588794dae90d3faf4ba4e5136d31e59b27beb723c901d4648517d0be2777eebf4b",
+          "sha256": "c669189022735c4dac3be3cba9807b3c7bcd02b5337245bfb097767c94643346",
+          "sha1": "bdca742bc37434f36af6bc66f077217e4ebb4545",
+          "md5": "ba25cca02d477364bad9a142be3711f9"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "sidekit-sdk-1.7.2-sources.jar",
+          "url": "sidekit-sdk-1.7.2-sources.jar",
+          "size": 42940,
+          "sha512": "c6ec1f2a4a4c6e35b600aef939d4ead8b430cf7dfdd0f0b3faabb17398df8fabb36da75b378b1face42a55c53a11c988159cee5e8803920a3e6a84f47232ec1d",
+          "sha256": "c4e4c5f239abbd5b7b16c82193ee072f9348379e722dd8704f9264e12a7bc9c3",
+          "sha1": "f5d92f5f553d24e7841661441634b1bc50c0689a",
+          "md5": "87c70a8fc025d0af535e0a913abcf088"
+        }
+      ]
+    }
+  ]
+}

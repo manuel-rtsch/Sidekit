@@ -3,11 +3,11 @@
   <groupId>hrln.interactive.sidekit</groupId>
   <artifactId>sidekit-sdk</artifactId>
   <versioning>
-    <latest>1.7.1</latest>
-    <release>1.7.1</release>
+    <latest>1.7.2</latest>
+    <release>1.7.2</release>
     <versions>
-      <version>1.7.1</version>
+      <version>1.7.2</version>
     </versions>
-    <lastUpdated>20261116194608</lastUpdated>
+    <lastUpdated>20261117113630</lastUpdated>
   </versioning>
 </metadata>
