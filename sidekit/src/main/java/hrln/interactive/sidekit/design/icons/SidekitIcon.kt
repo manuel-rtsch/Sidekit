@@ -67,6 +67,7 @@ enum class SidekitIcon(@DrawableRes val drawable: Int) {
     SkipNext(R.drawable.sk_ic_skip_next),
     SkipPrevious(R.drawable.sk_ic_skip_previous),
     SmartDisplay(R.drawable.sk_ic_smart_display),
+    SwapVert(R.drawable.sk_ic_swap_vert),
     Translate(R.drawable.sk_ic_translate),
     Undo(R.drawable.sk_ic_undo),
     Travel(R.drawable.sk_ic_travel),
