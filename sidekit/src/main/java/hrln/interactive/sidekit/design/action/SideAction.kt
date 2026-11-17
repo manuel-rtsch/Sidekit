@@ -331,25 +331,23 @@ class ChromeState {
         if (canvasContentFocus === requester) canvasContentFocus = null
     }
 
-    /** The first visible action button, registered by the action bar host. */
-    private var actionBarFocus: FocusRequester? = null
-
-    internal fun registerActionBarFocus(requester: FocusRequester) {
-        actionBarFocus = requester
-    }
-
-    internal fun unregisterActionBarFocus(requester: FocusRequester) {
-        if (actionBarFocus === requester) actionBarFocus = null
-    }
-
     /**
-     * Moves focus to the first action button, if the action bar is showing one. Used by the
-     * Options hold so a long list does not have to be walked to reach the actions.
+     * Moves focus to the first action button, if the action bar is showing one. The host registers
+     * the move because it also has to leave touch mode first: a clickable button is only focusable
+     * while Compose's input mode is Keyboard. Used by the Options hold so a long list does not have
+     * to be walked to reach the actions.
      */
-    fun focusActionBar(): Boolean {
-        val requester = actionBarFocus ?: return false
-        return runCatching { requester.requestFocus() }.getOrDefault(false)
+    private var actionBarFocus: (() -> Boolean)? = null
+
+    internal fun registerActionBarFocus(focus: () -> Boolean) {
+        actionBarFocus = focus
     }
+
+    internal fun unregisterActionBarFocus(focus: () -> Boolean) {
+        if (actionBarFocus === focus) actionBarFocus = null
+    }
+
+    fun focusActionBar(): Boolean = actionBarFocus?.invoke() ?: false
 
     private val activeContentFocus: FocusRequester?
         get() = contentFocus ?: canvasContentFocus

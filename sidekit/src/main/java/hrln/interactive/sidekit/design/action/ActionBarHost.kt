@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -50,6 +51,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -292,9 +294,19 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
     // The Options hold asks this requester for the first visible button. It stays attached to
     // whichever slot is first, so the bar can morph between screens without losing the target.
     val firstFocus = remember { FocusRequester() }
-    DisposableEffect(state, firstFocus) {
-        state.registerActionBarFocus(firstFocus)
-        onDispose { state.unregisterActionBarFocus(firstFocus) }
+    val inputMode = LocalInputModeManager.current
+    val focusFirst = remember(firstFocus, inputMode) {
+        {
+            // A clickable button is Focusability.SystemDefined, so it cannot take focus while
+            // Compose still thinks the last input was a touch. requestInputMode(Keyboard) leaves
+            // Android's touch mode first, then the focus request can land.
+            inputMode.requestInputMode(InputMode.Keyboard)
+            firstFocus.requestFocus()
+        }
+    }
+    DisposableEffect(state, focusFirst) {
+        state.registerActionBarFocus(focusFirst)
+        onDispose { state.unregisterActionBarFocus(focusFirst) }
     }
 
     val spacing = SidekitTheme.spacing

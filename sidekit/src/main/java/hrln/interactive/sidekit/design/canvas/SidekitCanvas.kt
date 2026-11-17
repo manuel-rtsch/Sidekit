@@ -145,7 +145,13 @@ private fun revealFocusOnKeys(): MutableState<Boolean> {
     val focusManager = LocalFocusManager.current
     DisposableEffect(view) {
         val listener = ViewTreeObserver.OnTouchModeChangeListener { inTouchMode ->
-            if (!inTouchMode && !hasFocus.value) focusManager.moveFocus(FocusDirection.Down)
+            if (!inTouchMode && !hasFocus.value) {
+                // Post the move so an Options hold that is already focusing the action bar can
+                // land first; if it did, this fallback sees the focus and stays out of the way.
+                view.post {
+                    if (!hasFocus.value) focusManager.moveFocus(FocusDirection.Down)
+                }
+            }
         }
         view.viewTreeObserver.addOnTouchModeChangeListener(listener)
         onDispose { view.viewTreeObserver.removeOnTouchModeChangeListener(listener) }

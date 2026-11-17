@@ -59,6 +59,13 @@ class HoldToActTest {
         assertEquals(HoldToAct.Result.Consume, hold.handle(event(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_TAB, 500), ::action))
     }
 
+    @Test fun holdRecoversWhenThePressWasLostToTouchMode() {
+        val hold = hold()
+        val result = hold.handle(event(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER, 700), ::action)
+        assertEquals(HoldToAct.Result.Consume, result)
+        assertEquals(listOf(KeyEvent.KEYCODE_ENDCALL), holds.map { it.first })
+    }
+
     @Test fun holdFiresOnReleaseWhenTheTimerDidNotRun() {
         val hold = hold()
         assertEquals(HoldToAct.Result.Consume, hold.handle(event(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER, 0), ::action))

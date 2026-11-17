@@ -80,9 +80,16 @@ class HoldToAct(
 
             KeyEvent.ACTION_UP -> {
                 val down = pending
+                // The first key after a touch can lose its down to Android's touch-mode
+                // transition. The release still carries the original downTime, so a hold can be
+                // recovered from it instead of being swallowed as a stray release.
+                if (down == null) {
+                    if (event.eventTime - event.downTime >= holdMs) onHold(action, event)
+                    return Result.Consume
+                }
                 // The release of a hold key that isn't the pending one (its press was dropped):
                 // swallow it and leave the pending key's timer running.
-                if (down == null || down.keyCode != event.keyCode) return Result.Consume
+                if (down.keyCode != event.keyCode) return Result.Consume
                 timer?.cancel()
                 timer = null
                 if (fired) {
