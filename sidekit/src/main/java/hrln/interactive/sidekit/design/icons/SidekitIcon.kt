@@ -52,6 +52,7 @@ enum class SidekitIcon(@DrawableRes val drawable: Int) {
     Map(R.drawable.sk_ic_map),
     Mic(R.drawable.sk_ic_mic),
     MicOff(R.drawable.sk_ic_mic_off),
+    MoreHoriz(R.drawable.sk_ic_more_horiz),
     MusicNote2(R.drawable.sk_ic_music_note_2),
     NotificationsOff(R.drawable.sk_ic_notifications_off),
     PartlyCloudyDay(R.drawable.sk_ic_partly_cloudy_day),
