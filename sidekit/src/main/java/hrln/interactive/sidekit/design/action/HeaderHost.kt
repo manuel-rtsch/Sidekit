@@ -166,7 +166,9 @@ private fun HeaderOptionsButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val label = if (expanded) "Close options" else "Options"
+    // Not "Close options": the action bar's own close button already says that, and two controls
+    // with the same description on one screen are ambiguous to screen readers and to tests.
+    val label = if (expanded) "Hide options" else "Options"
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
