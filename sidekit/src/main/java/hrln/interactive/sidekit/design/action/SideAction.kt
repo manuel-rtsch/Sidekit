@@ -248,6 +248,10 @@ class ChromeState {
     val optionsOpen: Boolean
         get() = optionsOwner.let { it != null && it === optionsSource }
 
+    /** True when the current screen publishes at least one option for [toggleOptions]. */
+    val hasOptions: Boolean
+        get() = optionsSource?.options?.isNotEmpty() == true
+
     /**
      * The Options key (the keypad's top-right key): every screen's universal "more" button. Swaps
      * the action bar to the screen's [ChromePublisher.options] (plus a close button) and back. A

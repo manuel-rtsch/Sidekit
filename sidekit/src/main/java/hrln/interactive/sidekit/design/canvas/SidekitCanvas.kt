@@ -84,6 +84,9 @@ fun SidekitCanvas(
             LocalKeypad provides keypad
         ) {
             val hasFocus = revealFocusOnKeys()
+            // The header's Options button is a touch affordance: it follows the window's input
+            // mode, so a keypad press hides it again in the same frame it arrives.
+            val touchMode = rememberTouchMode()
             // Screens that publish chrome without a scaffold (camera, video) still need an Up
             // target. The scaffold registers a better one that includes its header.
             val canvasFocus = remember { FocusRequester() }
@@ -112,6 +115,7 @@ fun SidekitCanvas(
                 BackHandler(enabled = chrome.optionsOpen) { chrome.closeOptions() }
                 HeaderHost(
                     state = chrome,
+                    touchMode = touchMode.value,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(start = SidekitTheme.spacing.pagePadding, end = SidekitTheme.spacing.pagePadding, top = SidekitTheme.spacing.pagePadding)
@@ -131,6 +135,23 @@ fun SidekitCanvas(
 private val Key.isNavigationKey: Boolean
     get() = this == Key.DirectionUp || this == Key.DirectionDown ||
         this == Key.DirectionLeft || this == Key.DirectionRight
+
+/**
+ * Whether the window is in touch mode. Android flips this on the first keypad press and back on
+ * the first touch, before the event is dispatched, so the header's touch-only Options button can
+ * hide and show in the same frame as the input that changed the mode.
+ */
+@Composable
+private fun rememberTouchMode(): MutableState<Boolean> {
+    val view = LocalView.current
+    val touchMode = remember(view) { mutableStateOf(view.isInTouchMode) }
+    DisposableEffect(view) {
+        val listener = ViewTreeObserver.OnTouchModeChangeListener { touchMode.value = it }
+        view.viewTreeObserver.addOnTouchModeChangeListener(listener)
+        onDispose { view.viewTreeObserver.removeOnTouchModeChangeListener(listener) }
+    }
+    return touchMode
+}
 
 /**
  * Android swallows the first D-pad press after a touch: it only takes the window out of touch
