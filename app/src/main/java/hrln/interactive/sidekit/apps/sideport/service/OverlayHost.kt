@@ -51,7 +51,10 @@ import kotlinx.coroutines.cancel
  * [PortMode.Original] swaps the full window for a small "Sidekit" pill over the real app.
  */
 class OverlayHost(private val context: Context, private val controller: ProjectionController) :
-    LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner, OnBackPressedDispatcherOwner {
+    LifecycleOwner,
+    SavedStateRegistryOwner,
+    ViewModelStoreOwner,
+    OnBackPressedDispatcherOwner {
 
     private val windowManager = context.getSystemService(WindowManager::class.java)
     private val lifecycleRegistry = LifecycleRegistry(this)
@@ -88,8 +91,15 @@ class OverlayHost(private val context: Context, private val controller: Projecti
 
     fun show(mode: PortMode) {
         when (mode) {
-            PortMode.Projected -> { removePill(); addFull() }
-            PortMode.Original -> { removeFull(); addPill() }
+            PortMode.Projected -> {
+                removePill()
+                addFull()
+            }
+
+            PortMode.Original -> {
+                removeFull()
+                addPill()
+            }
         }
         lifecycleRegistry.currentState = Lifecycle.State.RESUMED
     }
@@ -152,7 +162,7 @@ class OverlayHost(private val context: Context, private val controller: Projecti
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             baseFlags() or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             // The projection paints every pixel; an opaque window lets the compositor skip the app below.
-            PixelFormat.OPAQUE,
+            PixelFormat.OPAQUE
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
@@ -175,7 +185,7 @@ class OverlayHost(private val context: Context, private val controller: Projecti
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-            PixelFormat.TRANSLUCENT,
+            PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.END
             x = PILL_MARGIN_PX
@@ -218,7 +228,9 @@ class OverlayHost(private val context: Context, private val controller: Projecti
     /** Root of the full window: hands keys to the controller when the window has focus. */
     @SuppressLint("ViewConstructor")
     private inner class ViewGroupHost(context: Context, val content: ComposeView) : FrameLayout(context) {
-        init { addView(content, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)) }
+        init {
+            addView(content, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        }
 
         override fun dispatchKeyEvent(raw: KeyEvent): Boolean {
             val event = keypad.translateForUi(raw) ?: return true

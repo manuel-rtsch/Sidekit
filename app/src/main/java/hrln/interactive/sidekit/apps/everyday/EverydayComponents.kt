@@ -1,8 +1,6 @@
 package hrln.interactive.sidekit.apps.everyday
 
 import androidx.compose.foundation.layout.Arrangement
-import hrln.interactive.sidekit.design.action.ActionTone
-import hrln.interactive.sidekit.design.action.SideAction
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,9 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import hrln.interactive.sidekit.design.components.SidekitTile
+import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitText
+import hrln.interactive.sidekit.design.components.SidekitTile
 import hrln.interactive.sidekit.design.icons.SidekitIcon
+import hrln.interactive.sidekit.design.theme.SidekitSpacing
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
 /*
@@ -31,7 +32,7 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
  */
 
 /** Height of the compact list rows (Files, Settings, Web browser address bar). */
-val CompactRowHeight: Dp = 74.dp
+val CompactRowHeight: Dp = SidekitSpacing().compactRowHeight
 
 /** Gap between the top-aligned title and secondary text of [TopAlignedRow]. */
 private val TopAlignedRowGap: Dp = 6.dp
@@ -48,7 +49,7 @@ fun EverydayContent(padding: PaddingValues, content: @Composable ColumnScope.() 
             .verticalScroll(rememberScrollState())
             .padding(padding),
         verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemOuterGap),
-        content = content,
+        content = content
     )
 }
 
@@ -63,14 +64,14 @@ fun InfoStrip(
     top: Dp,
     modifier: Modifier = Modifier,
     style: TextStyle = SidekitTheme.typography.label,
-    color: Color = SidekitTheme.colors.light,
+    color: Color = SidekitTheme.colors.light
 ) {
     SidekitTile(modifier = modifier.fillMaxWidth().height(height), contentAlignment = Alignment.TopStart) {
         SidekitText(
             text = text,
             modifier = Modifier.padding(start = SidekitTheme.spacing.itemPadding, end = SidekitTheme.spacing.itemPadding, top = top),
             style = style,
-            color = color,
+            color = color
         )
     }
 }
@@ -87,23 +88,23 @@ fun TopAlignedRow(
     top: Dp,
     titleStyle: TextStyle,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null
 ) {
     SidekitTile(
         modifier = modifier.fillMaxWidth().height(height),
         onClick = onClick,
-        contentAlignment = Alignment.TopStart,
+        contentAlignment = Alignment.TopStart
     ) {
         Row(
             modifier = Modifier.padding(start = SidekitTheme.spacing.itemPadding, end = SidekitTheme.spacing.itemPadding, top = top),
-            horizontalArrangement = Arrangement.spacedBy(TopAlignedRowGap),
+            horizontalArrangement = Arrangement.spacedBy(TopAlignedRowGap)
         ) {
             SidekitText(title, style = titleStyle)
             SidekitText(
                 secondary,
                 Modifier.weight(1f, fill = false),
                 style = SidekitTheme.typography.caption,
-                color = SidekitTheme.colors.surfaceA6,
+                color = SidekitTheme.colors.surfaceA6
             )
         }
     }
@@ -117,9 +118,8 @@ fun dualArrowActions(
     back: String,
     forward: String,
     onBack: () -> Unit = {},
-    onForward: () -> Unit = {},
+    onForward: () -> Unit = {}
 ): List<SideAction> = listOf(SideAction.back("back", back, onBack), SideAction.forward("forward", forward, onForward))
 
 /** Dual action bar with a plain Secondary (green) right-hand button, as in Maps' "Go". */
-fun backAndGoActions(back: String, forward: String, onBack: () -> Unit = {}, onForward: () -> Unit = {}): List<SideAction> =
-    listOf(SideAction.back("back", back, onBack), SideAction("go", forward, tone = ActionTone.Secondary, onClick = onForward))
+fun backAndGoActions(back: String, forward: String, onBack: () -> Unit = {}, onForward: () -> Unit = {}): List<SideAction> = listOf(SideAction.back("back", back, onBack), SideAction("go", forward, tone = ActionTone.Secondary, onClick = onForward))

@@ -21,8 +21,8 @@ import hrln.interactive.sidekit.design.action.undoBar
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.ui.UndoWindowLifecycle
-import hrln.interactive.sidekit.ui.rememberUndoWindow
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
+import hrln.interactive.sidekit.sdk.ui.rememberUndoWindow
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -173,9 +173,10 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
 
                         else -> listOf(SideAction.back("back", "Back", back), SideAction.forward("plan", "Plan", ::plan))
                     }.let { actions ->
-                        // The undo window belongs to the list the delete happened on ("places", "saved");
-                        // it must not evict Save from the editor if the user navigates during the window.
-                        val undoAction = undo?.takeIf { page == "places" || page == "saved" }
+                        // The undo window belongs to the lists a delete can happen on: saved places, and
+                        // the saved trips shown on both "home" and "saved". It must not evict Save from the
+                        // editor if the user navigates during the window.
+                        val undoAction = undo?.takeIf { page == "places" || page == "saved" || page == "home" }
                             ?.let { restore ->
                                 SideAction.undo {
                                     undoWindow.cancel()

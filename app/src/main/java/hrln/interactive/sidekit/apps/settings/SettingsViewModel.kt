@@ -5,12 +5,18 @@ import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.design.theme.CaseColour
+import hrln.interactive.sidekit.sdk.input.applyInputMode
+import hrln.interactive.sidekit.sdk.theme.SharedPreferencesSidekitThemeStore
+import hrln.interactive.sidekit.sdk.theme.SidekitThemeStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** Small preferences, also consumed by the launcher and the activity's existing keypad. */
 class SidekitPreferences(context: Context) {
     private val prefs = context.getSharedPreferences("sidekit_settings", Context.MODE_PRIVATE)
+
+    /** The theme choices, shared with the SDK's local theme store. */
+    val theme: SidekitThemeStore = SharedPreferencesSidekitThemeStore(context)
     var hiddenApps: Set<String>
         get() = prefs.getStringSet("hidden_apps", emptySet()).orEmpty().toSet()
         set(value) {
@@ -36,7 +42,7 @@ class SidekitPreferences(context: Context) {
             prefs.edit().putInt("setup_step", value.coerceIn(0, 6)).apply()
         }
     var caseColour: CaseColour?
-        get() = CaseColour.entries.firstOrNull { it.name == prefs.getString("case_colour", null) }
+        get() = CaseColour.named(prefs.getString("case_colour", null))
         set(value) {
             prefs.edit().putString("case_colour", value?.name).apply()
         }
@@ -74,18 +80,7 @@ class SidekitPreferences(context: Context) {
         set(value) {
             prefs.edit().putString("input_mode", value.name).apply()
         }
-    fun applyInputDefault(keypad: hrln.interactive.sidekit.design.input.Keypad) {
-        keypad.finishTyping()
-        keypad.engine.setMode(
-            inputMode,
-            object : hrln.interactive.sidekit.design.input.T9Buffer {
-                override val text: CharSequence = ""
-                override val selectionStart = 0
-                override val selectionEnd = 0
-                override fun replace(start: Int, end: Int, text: String, selectStart: Int, selectEnd: Int) {}
-            }
-        )
-    }
+    fun applyInputDefault(keypad: hrln.interactive.sidekit.design.input.Keypad) = keypad.applyInputMode(inputMode)
 
     /**
      * Legacy write-only stub kept for backward compatibility. It stored a component path, not a

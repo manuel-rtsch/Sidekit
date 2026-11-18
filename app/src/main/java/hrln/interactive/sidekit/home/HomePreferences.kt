@@ -14,7 +14,8 @@ import org.json.JSONArray
  * A single ordered home list drives everything: both the grid and the list render from the same
  * home order, and the dock is derived as the **first [DOCK_MAX] apps** of that order (no separate
  * pinned set — reordering an app into/out of the top four changes the dock). IDs are the existing
- * [visibilityId] strings (`builtin:Name` for Sidekit apps, `ported:package` for Sideport apps,
+ * launcher ids (`builtin:Name` for Sidekit apps, `ported:package` for Sideport apps,
+ * `native:package` for apps installed with the Sidekit SDK, and
  * `installed:serial:package/activity` for installed apps pinned to start without Sideport).
  *
  * Unknown or uninstalled IDs are kept in storage but skipped at render time, so a reinstalled app
@@ -27,7 +28,10 @@ import org.json.JSONArray
 class HomePreferences(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences("sidekit_home", Context.MODE_PRIVATE)
 
-    /** Full home order that both the grid and list render from. Default = builtin enum order. */
+    /**
+     * Full home order that both the grid and list render from. Default = builtin enum order;
+     * [homeOrderFor] appends freshly seen ported and native app ids after it.
+     */
     val homeOrder: List<String>
         get() = read(KEY_HOME_ORDER, SubApp.entries.map { it.visibilityId() })
 
@@ -86,9 +90,9 @@ class HomePreferences(context: Context) {
     }
 
     /**
-     * The home order restricted to the [known] ids (installed builtin + ported apps), preserving
-     * stored order. Ids that are freshly seen (not yet in the stored order) are appended in [known]
-     * order, so a new app appears without a manual edit.
+     * The home order restricted to the [known] ids (installed builtin, ported and native apps),
+     * preserving stored order. Ids that are freshly seen (not yet in the stored order) are appended
+     * in [known] order, so a newly installed app appears without a manual edit.
      */
     fun homeOrderFor(known: Iterable<String>): List<String> {
         val stored = homeOrder

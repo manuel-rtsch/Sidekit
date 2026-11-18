@@ -19,7 +19,8 @@ internal fun addNativeAppForTest(
     appId: String? = null,
     minSchema: Int? = null,
     minSchemaString: String? = null,
-    launchRoute: String? = null
+    launchRoute: String? = null,
+    exported: Boolean = true
 ) {
     val pkg = packageName
     val info = ResolveInfo().apply {
@@ -28,6 +29,7 @@ internal fun addNativeAppForTest(
             name = activityName
             nonLocalizedLabel = label
             enabled = true
+            this.exported = exported
             applicationInfo = ApplicationInfo().apply {
                 this.packageName = pkg
                 nonLocalizedLabel = label

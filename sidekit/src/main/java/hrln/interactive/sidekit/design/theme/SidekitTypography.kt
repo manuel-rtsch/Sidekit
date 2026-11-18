@@ -14,15 +14,15 @@ import hrln.interactive.sidekit.design.R
  * Inter Display (tighter spacing than text-size Inter).
  */
 val Inter = FontFamily(
-    Font(R.font.inter_display_regular, FontWeight.Normal),
-    Font(R.font.inter_display_medium, FontWeight.Medium),
+    Font(R.font.sk_inter_display_regular, FontWeight.Normal),
+    Font(R.font.sk_inter_display_medium, FontWeight.Medium)
 )
 
 private fun inter(size: Int, lineHeight: Int) = TextStyle(
     fontFamily = Inter,
     fontWeight = FontWeight.Normal,
     fontSize = size.sp,
-    lineHeight = lineHeight.sp,
+    lineHeight = lineHeight.sp
 )
 
 /**
@@ -44,5 +44,5 @@ data class SidekitTypography(
     val label: TextStyle = inter(30, 36),
     val caption: TextStyle = inter(28, 34),
     val small: TextStyle = inter(24, 29),
-    val tiny: TextStyle = inter(22, 27),
+    val tiny: TextStyle = inter(22, 27)
 )

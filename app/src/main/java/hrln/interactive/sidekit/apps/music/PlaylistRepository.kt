@@ -130,30 +130,6 @@ class PlaylistRepository(
         return id
     }
 
-    /**
-     * The Save button: adds [trackIds] to the reserved [SAVED_PLAYLIST] playlist, or removes
-     * them when they are already all saved. Creates the playlist on first use and drops it once
-     * it empties, so pressing Save twice never leaves a second copy behind. Returns true when the
-     * tracks are saved afterwards.
-     */
-    fun toggleSaved(trackIds: List<Long>): Boolean {
-        val ids = trackIds.distinct()
-        if (ids.isEmpty()) return false
-        var saved = false
-        mutate { list ->
-            val existing = list.firstOrNull { it.name == SAVED_PLAYLIST }
-            if (existing == null) {
-                saved = true
-                list + Playlist(nextId(), SAVED_PLAYLIST, ids)
-            } else {
-                saved = ids.any { it !in existing.trackIds }
-                val tracks = if (saved) (existing.trackIds + ids).distinct() else existing.trackIds - ids.toSet()
-                if (tracks.isEmpty()) list - existing else list.map { if (it.id == existing.id) it.copy(trackIds = tracks) else it }
-            }
-        }
-        return saved
-    }
-
     /** Appends tracks not already in the playlist. */
     fun add(id: Long, trackIds: List<Long>) = mutate { list ->
         list.map { p -> if (p.id == id) p.copy(trackIds = p.trackIds + trackIds.filter { it !in p.trackIds }.distinct()) else p }

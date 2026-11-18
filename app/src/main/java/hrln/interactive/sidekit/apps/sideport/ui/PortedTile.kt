@@ -1,9 +1,6 @@
 package hrln.interactive.sidekit.apps.sideport.ui
 
-import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -19,27 +16,7 @@ import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitTile
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-
-/** Small rasterised app icons for launcher tiles, loaded off the main thread and cached. */
-internal object PortedIcons {
-    private const val SIZE = 64
-    private val cache = object : LruCache<String, Bitmap>(512 * 1024) {
-        override fun sizeOf(key: String, value: Bitmap) = value.byteCount
-    }
-
-    suspend fun load(context: Context, pkg: String): Bitmap? = cache.get(pkg) ?: withContext(Dispatchers.IO) {
-        runCatching {
-            val drawable = context.packageManager.getApplicationIcon(pkg)
-            Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888).also { bitmap ->
-                drawable.setBounds(0, 0, SIZE, SIZE)
-                drawable.draw(Canvas(bitmap))
-                cache.put(pkg, bitmap)
-            }
-        }.getOrNull()
-    }
-}
+import hrln.interactive.sidekit.system.AppIcons
 
 /** Monochrome, so foreign app icons sit with Sidekit's own white symbols. */
 private val Monochrome = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
@@ -48,7 +25,7 @@ private val Monochrome = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatu
 @Composable
 fun PortedTile(app: PortedApp, onOpen: (PortedApp) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val icon by produceState<Bitmap?>(null, app.packageName) { value = PortedIcons.load(context, app.packageName) }
+    val icon by produceState<Bitmap?>(null, app.packageName) { value = AppIcons.load(context, app.packageName) }
     SidekitTile(modifier = modifier, onClick = { onOpen(app) }, onClickLabel = app.label) {
         val bitmap = icon
         if (bitmap != null) {

@@ -20,8 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -34,8 +37,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.design.action.ActionTone
+import hrln.interactive.sidekit.design.action.LocalChrome
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.withNotice
+import hrln.interactive.sidekit.design.components.ItemColour
 import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitIconItem
@@ -71,6 +76,12 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
         val history by vm.history.collectAsStateWithLifecycle()
         val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission(), vm::microphonePermissionResult)
         TranslateSpeechEffects(vm, state.talking, state.microphonePermissionNeeded, state.source.language, state.target.language)
+        val chrome = LocalChrome.current
+        // Registered after the canvas's own handler, so this one is asked first: close open options
+        // (History's "Clear history") before leaving the mode, as Back does everywhere else.
+        BackHandler(enabled = state.mode != TranslateMode.Translate) {
+            if (chrome?.optionsOpen == true) chrome.closeOptions() else vm.show(TranslateMode.Translate)
+        }
         val baseActions = when (state.mode) {
             TranslateMode.Translate -> if (state.translating) {
                 listOf(SideAction.cancel("translate", onClick = vm::cancelTranslation))
@@ -81,7 +92,7 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
                 )
             }
 
-            TranslateMode.History, TranslateMode.Large -> listOf(SideAction.back("back", "Translate") { vm.show(TranslateMode.Translate) })
+            TranslateMode.History, TranslateMode.Large, TranslateMode.Language -> listOf(SideAction.back("back", "Translate") { vm.show(TranslateMode.Translate) })
         }
         val actions = when {
             state.error != null -> withNotice(state.error, vm::dismissError, emptyList())
@@ -95,8 +106,8 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
         }
         val options = if (state.mode == TranslateMode.Translate) {
             listOf(
-                SideAction("source", "From: ${state.source.language}") { vm.nextLanguage(TranslateSide.Source) },
-                SideAction("target", "To: ${state.target.language}") { vm.nextLanguage(TranslateSide.Target) },
+                SideAction("source", "From: ${state.source.language}") { vm.pickLanguage(TranslateSide.Source) },
+                SideAction("target", "To: ${state.target.language}") { vm.pickLanguage(TranslateSide.Target) },
                 SideAction("swap", "Swap languages", SidekitIcon.Translate, onClick = vm::swapLanguages),
                 SideAction("large", "Large text", SidekitIcon.SmartDisplay) { vm.show(TranslateMode.Large) },
                 SideAction("clear", "Clear", SidekitIcon.Close, onClick = vm::clear)
@@ -106,17 +117,16 @@ fun NavGraphBuilder.translateGraph(nav: NavHostController) {
         } else {
             emptyList()
         }
-        SidekitScaffold(
-            title = when (state.mode) {
-                TranslateMode.Translate -> "Translate"
-                TranslateMode.History -> "Translations"
-                TranslateMode.Large -> state.target.language
-            },
-            actions = actions,
-            options = options
-        ) { padding ->
+        val title = when (state.mode) {
+            TranslateMode.Translate -> "Translate"
+            TranslateMode.History -> "Translations"
+            TranslateMode.Large -> state.target.language
+            TranslateMode.Language -> if (state.picking == TranslateSide.Source) "Translate from" else "Translate to"
+        }
+        SidekitScaffold(title = title, actions = actions, options = options) { padding ->
             when (state.mode) {
-                TranslateMode.Translate -> TranslateBody(padding, state, vm::onMic, vm::setText, vm::speak)
+                TranslateMode.Translate -> TranslateBody(padding, state, vm::onMic, vm::setText, vm::pickLanguage, vm::speak)
+                TranslateMode.Language -> LanguageList(padding, vm.language(state.picking), vm::chooseLanguage)
                 TranslateMode.Large -> LargeTranslation(padding, state.target.text)
                 TranslateMode.History -> TranslationHistory(padding, history.orEmpty(), vm::open, vm::remove)
             }
@@ -133,7 +143,7 @@ fun TranslateScreen(
     onTranslate: () -> Unit = {}
 ) {
     SidekitScaffold(title = "Translate", actions = listOf(SideAction.forward("translate", "Translate", onTranslate))) { padding ->
-        TranslateBody(padding, state, onMic, onText, { _, _ -> })
+        TranslateBody(padding, state, onMic, onText, {}, { _, _ -> })
     }
 }
 
@@ -143,6 +153,7 @@ private fun TranslateBody(
     state: TranslateUiState,
     onMic: (TranslateSide) -> Unit,
     onText: (String) -> Unit,
+    onPickLanguage: (TranslateSide) -> Unit,
     onSpeak: (String, TranslateSide) -> Unit
 ) {
     Column(
@@ -151,7 +162,7 @@ private fun TranslateBody(
     ) {
         TranslateSide.entries.forEach { side ->
             val pane = state.pane(side)
-            LanguageRow(pane.language, talking = state.talking == side, onMic = { onMic(side) }, onSpeak = { onSpeak(pane.text, side) })
+            LanguageRow(pane.language, talking = state.talking == side, onPick = { onPickLanguage(side) }, onMic = { onMic(side) })
             if (side == TranslateSide.Source) {
                 SidekitCard(Modifier.fillMaxWidth().heightIn(min = SidekitTheme.spacing.itemHeight), color = SidekitTheme.colors.surfaceA2) {
                     SidekitTextField(
@@ -161,11 +172,16 @@ private fun TranslateBody(
                         placeholder = "Type or speak",
                         focusOnKeypad = true,
                         autoFocus = true,
+                        // Translate has its own mic, which listens in the chosen source language.
                         dictation = false
                     )
                 }
             } else {
-                TextRow(if (state.translating) "Translating…" else pane.text.ifEmpty { "Translation" })
+                TextRow(
+                    if (state.translating) "Translating…" else pane.text.ifEmpty { "Translation" },
+                    // Tapping the result reads it aloud in the target language.
+                    onClick = if (pane.text.isNotBlank() && !state.translating) ({ onSpeak(pane.text, side) }) else null
+                )
             }
         }
         if (state.microphonePermissionNeeded) {
@@ -176,13 +192,14 @@ private fun TranslateBody(
 }
 
 @Composable
-private fun LanguageRow(language: String, talking: Boolean, onMic: () -> Unit, onSpeak: () -> Unit) {
+private fun LanguageRow(language: String, talking: Boolean, onPick: () -> Unit, onMic: () -> Unit) {
     val colors = SidekitTheme.colors
     SidekitItemRow {
-        SidekitTile(Modifier.weight(1f), onClick = onSpeak, contentAlignment = Alignment.CenterStart) {
+        SidekitTile(Modifier.weight(1f), onClick = onPick, onClickLabel = "Change language", contentAlignment = Alignment.CenterStart) {
             Row(Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SidekitIconImage(SidekitIcon.Translate, size = 44.dp)
-                SidekitText(language)
+                SidekitText(language, Modifier.weight(1f))
+                SidekitIconImage(SidekitIcon.ArrowRightAlt)
             }
         }
         SidekitIconItem(
@@ -197,9 +214,46 @@ private fun LanguageRow(language: String, talking: Boolean, onMic: () -> Unit, o
 }
 
 @Composable
-private fun TextRow(text: String) {
-    SidekitCard(Modifier.fillMaxWidth().heightIn(min = SidekitTheme.spacing.itemHeight), color = SidekitTheme.colors.surfaceA2) {
+private fun TextRow(text: String, onClick: (() -> Unit)? = null) {
+    SidekitCard(Modifier.fillMaxWidth().heightIn(min = SidekitTheme.spacing.itemHeight), color = SidekitTheme.colors.surfaceA2, onClick = onClick) {
         SidekitText(text, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
+    }
+}
+
+/** The language list on its own, for previews and screenshot tests. */
+@Composable
+fun TranslateLanguageScreen(side: TranslateSide, selected: TranslateLanguage, onChoose: (TranslateLanguage) -> Unit = {}) {
+    SidekitScaffold(
+        title = if (side == TranslateSide.Source) "Translate from" else "Translate to",
+        actions = listOf(SideAction.back("back", "Translate") {})
+    ) { padding -> LanguageList(padding, selected, onChoose) }
+}
+
+@Composable
+private fun LanguageList(
+    padding: androidx.compose.foundation.layout.PaddingValues,
+    selected: TranslateLanguage,
+    onChoose: (TranslateLanguage) -> Unit
+) {
+    val listState = rememberLazyListState()
+    // The row that opened the list is gone, so nothing holds focus and Up/Down would do nothing.
+    // Start on the ticked language; a frame is needed because LazyColumn composes rows during layout.
+    val selectedFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        runCatching { selectedFocus.requestFocus() }
+    }
+    SidekitList(padding, state = listState) {
+        itemsIndexed(TranslateLanguage.entries, key = { _, it -> it.name }) { index, language ->
+            val active = language == selected
+            SidekitItem(
+                language.label,
+                Modifier.listFade(listState, index).then(if (active) Modifier.focusRequester(selectedFocus) else Modifier),
+                icon = if (active) SidekitIcon.Check else null,
+                colour = if (active) ItemColour.Secondary else ItemColour.Primary,
+                onClick = { onChoose(language) }
+            )
+        }
     }
 }
 
@@ -242,3 +296,7 @@ private fun TranslateTalkingPreview() = SidekitPreviewFrame { TranslateScreen(Tr
 private fun TranslateLargePromptPreview() = SidekitPreviewFrame {
     TranslateScreen(TranslateSampleData.state().copy(source = TranslatePane("English", TranslateSampleData.heard.first), target = TranslatePane("Chinese", TranslateSampleData.heard.second)), {})
 }
+
+@SidephonePreview
+@Composable
+private fun TranslateLanguagePreview() = SidekitPreviewFrame { TranslateLanguageScreen(TranslateSide.Target, TranslateLanguage.Chinese) }

@@ -89,10 +89,11 @@ class NavControlsTest {
         assertEquals(NavControls.Options, NavControls.sundialHoldFor[KeyEvent.KEYCODE_ENTER])
         assertEquals(NavControls.Left, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
         assertEquals(NavControls.Right, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
-        assertEquals(NavControls.Search, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_UP])
-        assertEquals(NavControls.Home, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_DOWN])
         assertEquals(NavControls.Confirm, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE])
-        assertEquals(NavControls.Options, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_LEFT])
+        // The arrows must keep moving on press and repeating while held.
+        for (arrow in listOf(NavControls.Up, NavControls.Down, NavControls.Left, NavControls.Right)) {
+            assertNull("arrow $arrow must not be a hold key", NavControls.sundialHoldFor[arrow])
+        }
     }
 
     @Test fun everyDefaultTargetIsACanonicalNavKey() {

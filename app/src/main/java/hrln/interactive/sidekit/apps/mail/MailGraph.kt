@@ -44,7 +44,7 @@ import hrln.interactive.sidekit.design.components.rememberSwipeRevealGroup
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.ui.UndoWindowLifecycle
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
 
 private val ROOT = SubApp.Mail.route
 private val HOME = "$ROOT/home"

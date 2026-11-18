@@ -81,14 +81,10 @@ class MusicViewModel(
 
     private fun List<Track>.indexOfFirstId(id: Long) = indexOfFirst { it.id == id }
 
-    /**
-     * The Save buttons on Now Playing and an album: add those tracks to the one saved playlist,
-     * or take them out again when they are all in it.
-     */
-    fun toggleSaved(tracks: List<Track>) = playlists.toggleSaved(tracks.map { it.id })
-
-    /** Saving one track (Now Playing) instead of a whole album. */
-    fun toggleSaved(track: Track) = toggleSaved(listOf(track))
+    /** The bookmark tiles make a persistent playlist from the current album or track. */
+    fun saveTracks(name: String, tracks: List<Track>) {
+        if (tracks.isNotEmpty()) playlists.create(name, tracks.map { it.id })
+    }
 
     fun createPlaylist() = playlists.create("")
 

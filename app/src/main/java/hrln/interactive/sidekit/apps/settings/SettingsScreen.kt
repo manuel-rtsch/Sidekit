@@ -150,7 +150,16 @@ private fun AboutScreen(back: () -> Unit) {
     // name, and names itself and its package on its own row.
     val appName = stringResource(R.string.app_name)
     val devBuild = context.resources.getBoolean(R.bool.is_dev_build)
-    var rows by remember { mutableStateOf(listOf("Device" to "${Build.MANUFACTURER} ${Build.MODEL}", "Android" to "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})", "Build" to Build.DISPLAY)) }
+    var rows by remember {
+        mutableStateOf(
+            listOf(
+                "Device" to "${Build.MANUFACTURER} ${Build.MODEL}",
+                "Android" to "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
+                "Build" to Build.DISPLAY,
+                "Third-party apps" to "Apps built with the Sidekit SDK can read your case colour and keypad setup. They cannot read messages, credentials, hidden apps or home order."
+            )
+        )
+    }
     LaunchedEffect(Unit) {
         val summaries = withContext(Dispatchers.IO) {
             val memory = ActivityManager.MemoryInfo().also { context.getSystemService(ActivityManager::class.java).getMemoryInfo(it) }

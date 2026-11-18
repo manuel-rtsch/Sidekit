@@ -35,13 +35,6 @@ data class Track(
 @Immutable
 data class Playlist(val id: Long, val name: String, val trackIds: List<Long>)
 
-/**
- * The one playlist the Save buttons write to. It is reserved by name so that saving the same
- * track twice is a no-op and un-saving it is possible; an ordinary playlist made with
- * [PlaylistRepository.create] never takes this name (blank names become "Playlist N").
- */
-const val SAVED_PLAYLIST = "Saved songs"
-
 fun albumArtUri(albumId: Long): Uri = ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumId)
 
 /** A row in the home list or the search results. */
@@ -67,14 +60,6 @@ class MusicLibrary(
     fun album(id: Long): Album? = albumById[id]
     fun track(id: Long): Track? = trackById[id]
     fun playlist(id: Long): Playlist? = playlists.firstOrNull { it.id == id }
-    fun savedSongs(): Playlist? = playlists.firstOrNull { it.name == SAVED_PLAYLIST }
-    fun isSaved(trackId: Long): Boolean = savedSongs()?.trackIds?.contains(trackId) == true
-
-    /** True when every track is saved, which is when the Save button reads "Saved". */
-    fun areSaved(trackIds: List<Long>): Boolean {
-        val saved = savedSongs()?.trackIds.orEmpty()
-        return trackIds.isNotEmpty() && trackIds.all { it in saved }
-    }
     fun tracksOf(album: Album): List<Track> = album.trackIds.mapNotNull(::track)
     fun tracksOf(playlist: Playlist): List<Track> = playlist.trackIds.mapNotNull(::track)
     fun albumsBy(artist: Artist): List<Album> = albums.filter { it.artistId == artist.id }

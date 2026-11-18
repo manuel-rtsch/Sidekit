@@ -75,6 +75,7 @@ import hrln.interactive.sidekit.design.components.rememberSwipeRevealGroup
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
 import hrln.interactive.sidekit.ui.SidephonePreview
 import hrln.interactive.sidekit.ui.UndoWindowLifecycle

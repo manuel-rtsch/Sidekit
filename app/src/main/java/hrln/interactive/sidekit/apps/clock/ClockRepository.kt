@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.core.util.AtomicFile
-import hrln.interactive.sidekit.ui.UndoWindow
+import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.*

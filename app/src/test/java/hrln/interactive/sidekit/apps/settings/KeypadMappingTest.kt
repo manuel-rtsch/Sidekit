@@ -21,20 +21,19 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class KeypadMappingTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val prefs = SharedPreferencesKeypadPreferences(context, "keypad_mapping_test")
+    private val prefs = context.getSharedPreferences("keypad_mapping_test", Context.MODE_PRIVATE)
 
     /** Events from device 7 come from the external keyboard; everything else from the keypad. */
-    private fun mapper() = KeyMapper.forTesting(prefs) { if (it.deviceId == 7) "External keyboard" else QIN }
-    private fun keypad(mapper: KeyMapper = mapper(), module: KeypadModule = KeypadModule.T9) =
-        Keypad.forTesting(CoroutineScope(Dispatchers.Unconfined), T9Words.Empty, module, mapper)
+    private fun mapper() = KeyMapper.forTesting(SharedPreferencesKeypadPreferences(context, "keypad_mapping_test")) { if (it.deviceId == 7) "External keyboard" else QIN }
+    private fun keypad(mapper: KeyMapper = mapper(), module: KeypadModule = KeypadModule.T9) = Keypad.forTesting(CoroutineScope(Dispatchers.Unconfined), T9Words.Empty, module, mapper)
 
-    private fun event(action: Int, code: Int, device: Int = 1, repeat: Int = 0, scan: Int = 0) =
-        KeyEvent(100L, 100L + repeat, action, code, repeat, 0, device, scan, 0, 0)
+    private fun event(action: Int, code: Int, device: Int = 1, repeat: Int = 0, scan: Int = 0) = KeyEvent(100L, 100L + repeat, action, code, repeat, 0, device, scan, 0, 0)
 
-    private fun Keypad.press(code: Int, device: Int = 1): List<Int?> =
-        listOf(translate(event(KeyEvent.ACTION_DOWN, code, device))?.keyCode, translate(event(KeyEvent.ACTION_UP, code, device))?.keyCode)
+    private fun Keypad.press(code: Int, device: Int = 1): List<Int?> = listOf(translate(event(KeyEvent.ACTION_DOWN, code, device))?.keyCode, translate(event(KeyEvent.ACTION_UP, code, device))?.keyCode)
 
-    @Before fun clear() { context.getSharedPreferences("keypad_mapping_test", Context.MODE_PRIVATE).edit().clear().commit() }
+    @Before fun clear() {
+        prefs.edit().clear().commit()
+    }
 
     @Test fun automaticMappingLeavesEveryKeyAlone() {
         val keypad = keypad()
@@ -90,7 +89,10 @@ class KeypadMappingTest {
     @Test fun aCapturedPressIsSwallowedWholeIncludingAfterCaptureEnds() {
         val keypad = keypad()
         val heard = mutableListOf<PhysicalKey>()
-        val stop = keypad.mapper.capture { key, _ -> heard += key; true }
+        val stop = keypad.mapper.capture { key, _ ->
+            heard += key
+            true
+        }
         // A release whose press started before the capture is dropped too.
         assertNull(keypad.translate(event(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER)))
         assertNull(keypad.translate(event(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_F1)))

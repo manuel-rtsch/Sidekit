@@ -15,6 +15,7 @@ import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
+import hrln.interactive.sidekit.sdk.settings.*
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -28,18 +29,18 @@ import org.robolectric.annotation.GraphicsMode
 class KeypadMappingUiTest {
     @get:Rule val compose = createComposeRule()
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val prefs = SharedPreferencesKeypadPreferences(context, "keypad_mapping_ui_test")
+    private val prefs = context.getSharedPreferences("keypad_mapping_ui_test", Context.MODE_PRIVATE)
     private val chrome = ChromeState()
     private lateinit var keypad: Keypad
 
     @Before fun clear() {
-        context.getSharedPreferences("keypad_mapping_ui_test", Context.MODE_PRIVATE).edit().clear().commit()
+        prefs.edit().clear().commit()
     }
 
     private fun show(module: KeypadModule = KeypadModule.T9, content: @Composable () -> Unit) {
         compose.setContent {
             val scope = rememberCoroutineScope()
-            keypad = remember { Keypad.forTesting(scope, T9Words.Empty, module, KeyMapper.forTesting(prefs) { if (it.deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD) "Virtual" else "Test keypad" }) }
+            keypad = remember { Keypad.forTesting(scope, T9Words.Empty, module, KeyMapper.forTesting(SharedPreferencesKeypadPreferences(context, "keypad_mapping_ui_test")) { if (it.deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD) "Virtual" else "Test keypad" }) }
             SidekitTheme { SidekitCanvas(keypad = keypad, chrome = chrome) { content() } }
         }
         compose.mainClock.advanceTimeBy(1000)
@@ -194,16 +195,16 @@ class KeypadMappingUiTest {
     @Test fun settingsHasOneKeyboardEntry() {
         var opened = 0
         show { SettingsHome({}, {}, onKeyboard = { opened++ }) }
-        scrollTo("Keyboard")
+        compose.onRoot().captureRoboImage("screenshots/keyboard_settings_home.png")
+        compose.onNode(hasScrollAction()).performScrollToIndex(5)
+        compose.mainClock.advanceTimeBy(1000)
+        compose.onNodeWithText("Keyboard").assertIsDisplayed()
         // The old separate keypad rows are gone: one entry leads to the Keyboard page.
         compose.onNodeWithText("Input mode").assertDoesNotExist()
         compose.onNodeWithText("Keypad Back key").assertDoesNotExist()
         compose.onNodeWithText("Keypad mapping").assertDoesNotExist()
-        compose.onRoot().captureRoboImage("screenshots/keyboard_settings_home.png")
-        // Activate the row semantically: a coordinate tap lands wherever the row happens to sit
-        // after scrolling, and the Settings bar's action count can push it under the clip edge.
-        compose.onNodeWithText("Keyboard").performSemanticsAction(SemanticsActions.OnClick)
-        compose.runOnIdle { assertEquals(1, opened) }
+        compose.onNodeWithText("Keyboard").performClick()
+        assertEquals(1, opened)
     }
 
     @Test fun keyboardPageShowsPreferencesAndGuideLink() {
@@ -238,5 +239,13 @@ class KeypadMappingUiTest {
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Open the dialer.").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keyboard_guide_selected.png")
+    }
+
+    @Test fun keyGuideModuleRowPreviewsWithoutChangingTheModuleInUse() {
+        show(KeypadModule.T9) { KeypadGuideScreen {} }
+        compose.onNodeWithText("T9 · in use").assertIsDisplayed()
+        compose.onNodeWithText("Module").performClick()
+        compose.onNodeWithText("Mini QWERTY").assertIsDisplayed()
+        compose.runOnIdle { assertEquals(KeypadModule.T9, keypad.module) }
     }
 }

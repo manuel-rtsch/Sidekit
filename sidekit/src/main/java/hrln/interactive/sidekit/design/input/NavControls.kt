@@ -85,13 +85,11 @@ object NavControls {
         KeyEvent.KEYCODE_ENTER to Options,
         KeyEvent.KEYCODE_MEDIA_PREVIOUS to Left,
         KeyEvent.KEYCODE_MEDIA_NEXT to Right,
-        KeyEvent.KEYCODE_DPAD_UP to Search,
-        KeyEvent.KEYCODE_DPAD_DOWN to Home,
         // Some Sundial revisions report the bottom-right Enter key as the centre media key.
         // A hold still gives Confirm, while a tap keeps its media behaviour.
-        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm,
-        // Fallback for Options when Enter is that media key.
-        KeyEvent.KEYCODE_DPAD_LEFT to Options
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm
+        // The arrows stay plain: a hold defers the press to its release and swallows key repeat,
+        // so holding ↓ through a long list would stop scrolling and jump Home instead.
     )
 
     /** The canonical navigation key [code] becomes in [module]'s UI, or null to keep it as sent. */

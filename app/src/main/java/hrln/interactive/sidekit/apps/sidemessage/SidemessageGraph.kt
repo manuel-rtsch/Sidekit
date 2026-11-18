@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,7 +37,8 @@ import hrln.interactive.sidekit.apps.phonebook.PhonebookRoutes
 import hrln.interactive.sidekit.apps.phonebook.rememberPermissionGate
 import hrln.interactive.sidekit.navigation.LAUNCHER_ROUTE
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.ui.UndoWindowLifecycle
+import hrln.interactive.sidekit.sdk.ui.PauseUndoWhileHidden
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -125,10 +127,12 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
                 entry,
                 factory = remember(entry) { viewModelFactory { initializer { ConversationViewModel(repo, addresses, threadArg, body) } } }
             )
-            UndoWindowLifecycle(repo.undoWindow, vm::commitUndo)
             val access = rememberSmsAccess()
             LaunchedEffect(access.canRead, access.isDefault) { vm.setAccess(access.canRead, access.isDefault) }
             val state by vm.state.collectAsStateWithLifecycle()
+            // An open draft hides Undo (Send keeps its place), so the offer waits until the draft closes.
+            UndoWindowLifecycle(repo.undoWindow, vm::commitUndo)
+            PauseUndoWhileHidden(repo.undoWindow, shown = state.draft == null, pending = state.canUndo)
             val threadId by vm.threadId.collectAsState()
 
             // While this conversation is on screen its messages don't notify, and opening it clears them.
@@ -206,7 +210,7 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
                     if (message.key.startsWith("m")) {
                         mmsScope.launch {
                             try {
-                                MmsTransport.resend(context.applicationContext, Uri.parse("content://mms/${message.rowId}"))
+                                MmsTransport.resend(context.applicationContext, "content://mms/${message.rowId}".toUri())
                                 mmsNotice = "MMS resubmitted to carrier"
                             } catch (e: Exception) {
                                 mmsNotice = e.message ?: "MMS could not be retried"

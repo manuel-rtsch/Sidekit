@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.onboarding
 
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -16,15 +15,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
+import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.input.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.launcher.rememberNativeApps
 import hrln.interactive.sidekit.sdk.settings.KeypadGuide
 import hrln.interactive.sidekit.sdk.theme.caseColourChoices
 
@@ -38,6 +40,7 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
     val keypad = LocalKeypad.current
     val hidden = rememberHiddenApps(prefs)
     val ported by remember { PortedApps.get(context).apps }.collectAsStateWithLifecycle()
+    val native = rememberNativeApps()
     val selectedColour = rememberCaseColour(prefs)
     var listLayout by remember { mutableStateOf(prefs.listLayout) }
     var inputMode by remember { mutableStateOf(prefs.inputMode) }
@@ -79,7 +82,7 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
         if (entry.intent != null) {
             open(entry.intent.invoke(context))
         } else if (entry.title in requested) {
-            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri()))
         } else {
             requested.add(entry.title)
             permissionResult.launch(entry.permissions.toTypedArray())
@@ -97,6 +100,8 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
         titles[step],
         actions = buildList {
             if (step > 0 || replay) add(SideAction.back("back", "Back") { if (step > 0) move(step - 1) else onFinish() })
+            // The hide-apps step shares its list with Settings, so it shares the bar's Show all too.
+            if (step == 3 && hidden.isNotEmpty()) add(SideAction("showAll", "Show all", tone = ActionTone.Secondary) { prefs.hiddenApps = emptySet() })
             add(SideAction.forward("next", if (step == 6) "Finish" else "Next", { if (step == 6) finish() else move(step + 1) }))
         }
     ) { padding ->
@@ -133,7 +138,7 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
                         }
                     }
 
-                    3 -> hiddenAppChoices(hidden, ported) { prefs.hiddenApps = it }
+                    3 -> hiddenAppChoices(hidden, ported, native = native) { prefs.hiddenApps = it }
 
                     4 -> {
                         item { Copy("You’re in control", "Enable access for the features you want, or continue without it. Status updates when you return.") }

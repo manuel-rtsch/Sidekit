@@ -19,7 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.ui.UndoWindowLifecycle
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
 
 private val ROOT = SubApp.Sidenotes.route
 private val LIST = "$ROOT/list"

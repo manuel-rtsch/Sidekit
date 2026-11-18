@@ -2,13 +2,12 @@ package hrln.interactive.sidekit.apps.banking
 
 import android.content.Context
 import androidx.core.util.AtomicFile
-import hrln.interactive.sidekit.apps.integrations.KeystoreCipher
-import hrln.interactive.sidekit.apps.integrations.SecretCipher
+import hrln.interactive.sidekit.sdk.crypto.ByteCipher
+import hrln.interactive.sidekit.sdk.crypto.KeystoreCipher
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.security.GeneralSecurityException
-import java.security.KeyStore
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -39,9 +38,6 @@ object ManualTracker : BankConnector {
     override suspend fun sync(): BankBook? = null
 }
 
-/** Banking's view of the shared cipher. */
-typealias BookCipher = SecretCipher
-
 /** Where the book lives. Called off the main thread only. */
 interface BankStore {
     /** The stored book, an empty one if nothing was stored yet. Throws if it exists but can't be read. */
@@ -50,7 +46,7 @@ interface BankStore {
 }
 
 /** The book encrypted in one file, replaced atomically so a crash mid-write keeps the old copy. */
-class EncryptedFileBankStore(file: File, private val cipher: BookCipher) : BankStore {
+class EncryptedFileBankStore(file: File, private val cipher: ByteCipher) : BankStore {
     private val file = AtomicFile(file)
 
     override fun read(): BankBook {

@@ -44,7 +44,10 @@ object SidekitStores {
         localKeypadFile: String = "sidekit_keypad"
     ): Stores {
         val requested = SidekitConfigClient.authorityFrom(intent)
+        // A Sidekit build is never its own host: its provider is read-only, so host-backed stores
+        // would silently drop every keypad and theme change the user makes inside Sidekit.
         val authority = SidekitConfigClient.hostAuthority(context, requested)
+            ?.takeIf { SidekitContract.packageForAuthority(it) != context.packageName }
         // A provider can advertise a compatible schema and still fail to return a snapshot (for
         // example, a partially installed or broken host). Treat that as no host, not as an empty
         // configuration, so the app keeps working standalone.

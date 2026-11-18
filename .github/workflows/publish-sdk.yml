@@ -3,14 +3,16 @@ name: Publish SDK
 on:
   push:
     tags: ["v*"]
+  # Manual runs must be started from a release tag; the first step refuses anything else.
   workflow_dispatch:
 
 permissions:
   # The artifacts are served from the gh-pages branch, so this workflow has to push to it.
   contents: write
 
+# One publish at a time across all tags: each run pushes to the same gh-pages branch.
 concurrency:
-  group: publish-sdk-${{ github.ref }}
+  group: publish-sdk
   cancel-in-progress: false
 
 jobs:
@@ -19,11 +21,50 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      # The version is derived from the tag and the commit count.
+      # A branch run would publish a "1.2.3-4-g<sha>" build to the public repository for good.
+      - name: Require a release tag
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ] || ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Publish only from a vX.Y.Z tag (got $REF_TYPE '$REF_NAME')."
+            exit 1
+          fi
+
+      # The version is derived from the tag and the commit count. The token is not left in
+      # .git/config, so the Gradle build cannot read it; only the deploy step uses it.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/android-setup
+
+      # Seed the staging repository with what is already published, so Gradle merges each
+      # artifact's maven-metadata.xml instead of replacing it with a list of one version.
+      - name: Fetch published artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" gh-pages > /dev/null; then
+            git clone --quiet --depth 1 --branch gh-pages "$remote" pages
+          else
+            mkdir pages
+            git -C pages init --quiet
+            git -C pages checkout --quiet --orphan gh-pages
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          for artifact in sidekit-design sidekit-sdk; do
+            if [ -d "pages/maven/hrln/interactive/sidekit/$artifact/$version" ]; then
+              echo "::error::$artifact $version is already published; release a new tag instead."
+              exit 1
+            fi
+          done
+          mkdir -p build/pages-repo pages/maven
+          cp -a pages/maven/. build/pages-repo/
+
       - name: Publish sidekit-design and sidekit-sdk
         run: >
           ./gradlew :sidekit:publishAllPublicationsToSidekitPagesRepository
@@ -38,14 +79,6 @@ jobs:
         run: |
           set -euo pipefail
           remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          if git ls-remote --exit-code --heads "$remote" gh-pages > /dev/null; then
-            git clone --depth 1 --branch gh-pages "$remote" pages
-          else
-            mkdir pages
-            git -C pages init --quiet
-            git -C pages checkout --quiet --orphan gh-pages
-          fi
-          mkdir -p pages/maven
           cp -a build/pages-repo/. pages/maven/
           # Keep GitHub Pages from running Jekyll over the artifacts.
           touch pages/.nojekyll

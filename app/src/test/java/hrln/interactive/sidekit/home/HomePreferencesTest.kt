@@ -104,12 +104,12 @@ class HomePreferencesTest {
     }
 
     @Test
-    fun `newly seen ids are appended after the stored order`() {
+    fun `newly seen ported and native ids are appended after the stored order`() {
         val home = fresh()
-        val seen = allIds + "ported:com.example.New"
+        val seen = allIds + "ported:com.example.New" + "native:com.example.Sideplay"
         val order = home.homeOrderFor(seen)
         assertEquals(allIds, order.take(allIds.size))
-        assertEquals("ported:com.example.New", order.last())
+        assertEquals(listOf("ported:com.example.New", "native:com.example.Sideplay"), order.takeLast(2))
     }
 
     @Test

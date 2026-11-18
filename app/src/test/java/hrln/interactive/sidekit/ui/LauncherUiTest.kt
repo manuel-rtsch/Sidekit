@@ -3,16 +3,16 @@ package hrln.interactive.sidekit.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onLast
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -23,6 +23,8 @@ import hrln.interactive.sidekit.launcher.LauncherLayout
 import hrln.interactive.sidekit.launcher.LauncherScreen
 import hrln.interactive.sidekit.launcher.LauncherTags
 import hrln.interactive.sidekit.launcher.LauncherUiState
+import hrln.interactive.sidekit.launcher.NativeApp
+import hrln.interactive.sidekit.launcher.NativeAppEntry
 import hrln.interactive.sidekit.navigation.SubApp
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -47,7 +49,7 @@ class LauncherUiTest {
                     state = state.copy(layout = if (state.layout == LauncherLayout.Grid) LauncherLayout.List else LauncherLayout.Grid)
                 },
                 home = home,
-                dock = dock,
+                dock = dock
             )
         }
     }
@@ -78,5 +80,24 @@ class LauncherUiTest {
         compose.onNodeWithTag(LauncherTags.LIST).assertIsDisplayed()
         compose.onNodeWithText("Sideticks").performClick()
         assertEquals(listOf(SubApp.Sideticks), opened)
+    }
+
+    @Test fun tappingANativeAppTileOpensThatNativeApp() {
+        val native = NativeApp("test.sideplay", "test.sideplay.MainActivity", "Sideplay")
+        var openedNative: NativeApp? = null
+        compose.setContent {
+            SidekitPreviewFrame {
+                LauncherScreen(
+                    state = state,
+                    onOpenApp = {},
+                    onToggleLayout = {},
+                    home = listOf(NativeAppEntry(native)),
+                    dock = listOf(BuiltinEntry(SubApp.Mail)),
+                    onOpenNative = { openedNative = it }
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Sideplay").performClick()
+        assertEquals(native, openedNative)
     }
 }

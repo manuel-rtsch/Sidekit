@@ -47,9 +47,11 @@ internal fun HiddenAppsScreen(back: () -> Unit) {
     val installed by remember { repository.apps }.collectAsStateWithLifecycle(emptyList())
     val native = rememberNativeApps()
     // Only directly-pinned installed apps are home entries, so only they can be hidden.
-    val pinned = remember(installed) {
+    val pinned = remember(installed, native) {
         val ids = home.homeOrder.filter { it.startsWith(HomePreferences.INSTALLED_PREFIX) }.toSet()
-        installed.map { it.homeId(context) to it.label }.filter { it.first in ids }
+        val nativePackages = native.mapTo(HashSet()) { it.packageName }
+        installed.filter { it.component.packageName !in nativePackages }
+            .map { it.homeId(context) to it.label }.filter { it.first in ids }
     }
     val actions = buildList {
         add(SideAction.back("back", "Settings", back))
@@ -69,7 +71,7 @@ internal fun LazyListScope.hiddenAppChoices(
 ) {
     item { SidekitText("Hide apps from home, search and the dock. Tap again to restore. Apps stay installed; Settings remains in Options.", style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp), maxLines = Int.MAX_VALUE) }
     val choices = SubApp.entries.map { it.visibilityId() to it.label } +
-        ported.map { it.visibilityId() to it.label } + installed + native.map { it.visibilityId to it.label }
+        ported.map { it.visibilityId() to it.label } + native.map { it.visibilityId to it.label } + installed
     items(choices, key = { it.first }) { (id, label) ->
         SidekitItem(label, Modifier.height(76.dp), secondary = if (id in hidden) "Hidden" else "Shown", onClick = {
             save(if (id in hidden) hidden - id else hidden + id)

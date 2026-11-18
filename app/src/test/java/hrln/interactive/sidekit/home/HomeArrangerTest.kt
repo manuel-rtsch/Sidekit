@@ -188,4 +188,22 @@ class HomeArrangerTest {
         assertTrue(stored.isInDock(photos))
         assertEquals(SubApp.dock.map { it.visibilityId() }.dropLast(1) + listOf(photos), arranger.dock)
     }
+
+    @Test
+    fun `commit keeps a pinned installed app the screen could not list`() {
+        val home = HomePreferences(context)
+        val pinned = "installed:0:test.notes/test.notes.Main"
+        home.pin(pinned)
+        home.move(pinned, -3)
+        val before = home.homeOrder
+        // Hidden (or unavailable) pinned apps are left out of the arranger's known ids.
+        val arranger = HomeArranger(home, known)
+        assertFalse(arranger.order.contains(pinned))
+        arranger.move(photos, -1)
+        arranger.commit()
+
+        val stored = HomePreferences(context).homeOrder
+        assertEquals(before.indexOf(pinned), stored.indexOf(pinned))
+        assertEquals(arranger.order, stored - pinned)
+    }
 }

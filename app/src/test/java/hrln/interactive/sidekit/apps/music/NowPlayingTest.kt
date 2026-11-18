@@ -1,9 +1,6 @@
 package hrln.interactive.sidekit.apps.music
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -19,7 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.GraphicsMode
 
-/** The parts of Now Playing that are behaviour rather than looks: saving, and seeking. */
+/** The parts of Now Playing that are behaviour rather than looks: the bar, seeking, and the empty queue. */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class NowPlayingTest {
@@ -31,31 +28,44 @@ class NowPlayingTest {
     /** Paused at 42s, so the position doesn't tick between a key press and its assertion. */
     private val paused = playing.copy(isPlaying = false)
 
-    @Test fun saveIsOneBarButtonThatReportsWhetherTheTrackIsSaved() {
-        compose.setContent {
-            var saved by remember { mutableStateOf(false) }
-            SidekitPreviewFrame { NowPlayingScreen(playing, saved, NowPlayingActions(onSave = { saved = !saved })) }
-        }
-        compose.onNodeWithContentDescription("Save").assertIsDisplayed().performClick()
-        compose.onNodeWithContentDescription("Saved").assertIsDisplayed().performClick()
-        compose.onNodeWithContentDescription("Save").assertIsDisplayed()
-    }
+    @Composable
+    private fun NowPlaying(
+        state: PlaybackState = playing,
+        onSeek: (Long) -> Unit = {},
+        onShuffle: () -> Unit = {},
+        onRepeat: () -> Unit = {},
+        onPlayPause: () -> Unit = {}
+    ) = NowPlayingScreen(
+        playback = state,
+        onAlbum = {},
+        onArtist = {},
+        onPlayPause = onPlayPause,
+        onPrevious = {},
+        onNext = {},
+        onSeek = onSeek,
+        onShuffle = onShuffle,
+        onRepeat = onRepeat,
+        onBookmark = {},
+        onBack = {}
+    )
 
-    @Test fun theBarHoldsBackAlbumArtistAndSave() {
-        compose.setContent { SidekitPreviewFrame { NowPlayingScreen(playing, false, NowPlayingActions()) } }
+    @Test
+    fun theBarHoldsBackAlbumArtistAndSave() {
+        compose.setContent { SidekitPreviewFrame { NowPlaying() } }
         compose.onNodeWithContentDescription("Back to Music").assertIsDisplayed()
         compose.onNodeWithContentDescription("Album").assertIsDisplayed()
         compose.onNodeWithContentDescription("Artist").assertIsDisplayed()
         compose.onNodeWithContentDescription("Save").assertIsDisplayed()
     }
 
-    @Test fun optionsHoldShuffleAndRepeat() {
+    @Test
+    fun optionsHoldShuffleAndRepeat() {
         lateinit var chrome: ChromeState
         val calls = mutableListOf<String>()
         compose.setContent {
             SidekitPreviewFrame {
                 chrome = LocalChrome.current!!
-                NowPlayingScreen(playing, false, NowPlayingActions(onShuffle = { calls += "shuffle" }, onRepeat = { calls += "repeat" }))
+                NowPlaying(onShuffle = { calls += "shuffle" }, onRepeat = { calls += "repeat" })
             }
         }
         compose.runOnUiThread { chrome.toggleOptions() }
@@ -66,9 +76,10 @@ class NowPlayingTest {
         assertEquals(listOf("shuffle", "repeat"), calls)
     }
 
-    @Test fun seekIsASliderThatCanBeScrubbed() {
+    @Test
+    fun seekIsASliderThatCanBeScrubbed() {
         var sought = -1L
-        compose.setContent { SidekitPreviewFrame { NowPlayingScreen(paused, false, NowPlayingActions(onSeek = { sought = it })) } }
+        compose.setContent { SidekitPreviewFrame { NowPlaying(paused, onSeek = { sought = it }) } }
         val seek = compose.onNodeWithContentDescription("Seek")
         val info = seek.fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo]
         assertEquals(0f..1f, info.range)
@@ -77,9 +88,10 @@ class NowPlayingTest {
         assertEquals(90_000L, sought)
     }
 
-    @Test fun theSeekBarStepsWithTheDpad() {
+    @Test
+    fun theSeekBarStepsWithTheDpad() {
         var sought = -1L
-        compose.setContent { SidekitPreviewFrame { NowPlayingScreen(paused, false, NowPlayingActions(onSeek = { sought = it })) } }
+        compose.setContent { SidekitPreviewFrame { NowPlaying(paused, onSeek = { sought = it }) } }
         compose.onNodeWithContentDescription("Seek").requestFocus()
         compose.onRoot().performKeyInput { pressKey(Key.DirectionRight) }
         assertEquals(42_000L + 5_000L, sought)
@@ -87,9 +99,10 @@ class NowPlayingTest {
         assertEquals(42_000L - 5_000L, sought)
     }
 
-    @Test fun emptyQueueHasNoTransportOrSave() {
+    @Test
+    fun emptyQueueHasNoTransportOrSave() {
         var played = 0
-        compose.setContent { SidekitPreviewFrame { NowPlayingScreen(PlaybackState(), false, NowPlayingActions(onPlayPause = { played++ })) } }
+        compose.setContent { SidekitPreviewFrame { NowPlaying(PlaybackState(), onPlayPause = { played++ }) } }
         compose.onNodeWithText("Nothing playing").assertIsDisplayed()
         compose.onNodeWithContentDescription("Play").assertDoesNotExist()
         compose.onNodeWithContentDescription("Save").assertDoesNotExist()

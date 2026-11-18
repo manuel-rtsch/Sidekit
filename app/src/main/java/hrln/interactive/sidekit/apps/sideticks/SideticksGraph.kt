@@ -17,7 +17,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.ui.UndoWindowLifecycle
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
 
 fun NavGraphBuilder.sideticksGraph(@Suppress("UNUSED_PARAMETER") nav: NavHostController) {
     composable(SubApp.Sideticks.route) {

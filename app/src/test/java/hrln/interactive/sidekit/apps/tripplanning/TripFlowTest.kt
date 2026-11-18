@@ -15,6 +15,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class TripFlowTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
     @Test fun createTripOpenSavedDetailsAndEdit() {
         lateinit var nav: NavHostController
         compose.setContent {
@@ -34,14 +35,36 @@ class TripFlowTest {
         compose.onNodeWithText("Saved").performClick()
         compose.onNodeWithText("Home → Park").assertIsDisplayed()
     }
+
+    @Test fun deletingATripOnHomeOffersUndo() {
+        compose.setContent {
+            val nav = rememberNavController()
+            SidekitPreviewFrame { NavHost(nav, startDestination = SubApp.TripPlanning.route) { tripPlanningGraph(nav) } }
+        }
+        compose.waitUntil(5_000) { TripRepository.get(compose.activity).store.state.value != null }
+        compose.onNodeWithText("Plan").performClick()
+        compose.onNodeWithText("From").performTextInput("Undo start")
+        compose.onNodeWithText("To").performTextInput("Undo end")
+        compose.onNodeWithText("Save").performClick()
+        val row = hasAnyDescendant(hasText("Undo start → Undo end")) and SemanticsMatcher.keyIsDefined(androidx.compose.ui.semantics.SemanticsActions.CustomActions)
+        compose.runOnIdle {
+            compose.onNode(row).fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.CustomActions].first().action()
+        }
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Undo start → Undo end").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("Undo").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Undo start → Undo end").fetchSemanticsNodes().isNotEmpty() }
+    }
+
     @Test fun selectNswStopsFindJourneySaveAndReadItsLegs() {
-        val api = NswTransit(hrln.interactive.sidekit.apps.integrations.JsonRequest { url, _, body ->
-            when {
-                body != null -> org.json.JSONObject(javaClass.getResource("/transit/journeys.json")!!.readText())
-                url.contains("name=Central") -> org.json.JSONObject("{locations:[{id:'200060',name:'Central, Sydney',type:'stop'}]}")
-                else -> org.json.JSONObject("{locations:[{id:'200070',name:'Town Hall, Sydney',type:'stop'}]}")
+        val api = NswTransit(
+            hrln.interactive.sidekit.apps.integrations.JsonRequest { url, _, body ->
+                when {
+                    body != null -> org.json.JSONObject(javaClass.getResource("/transit/journeys.json")!!.readText())
+                    url.contains("name=Central") -> org.json.JSONObject("{locations:[{id:'200060',name:'Central, Sydney',type:'stop'}]}")
+                    else -> org.json.JSONObject("{locations:[{id:'200070',name:'Town Hall, Sydney',type:'stop'}]}")
+                }
             }
-        })
+        )
         compose.setContent {
             val nav = rememberNavController()
             SidekitPreviewFrame { NavHost(nav, startDestination = SubApp.TripPlanning.route) { liveTripsGraph(nav, api) } }
@@ -64,5 +87,4 @@ class TripFlowTest {
         compose.onNodeWithText("Central, Sydney → Town Hall, Sydney").performScrollTo().performClick()
         compose.onNodeWithText("T8: Platform 17 → Platform 6 · 12:02–12:05 · Scheduled").assertIsDisplayed()
     }
-
 }

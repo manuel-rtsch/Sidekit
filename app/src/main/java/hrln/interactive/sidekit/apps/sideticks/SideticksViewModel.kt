@@ -2,7 +2,7 @@ package hrln.interactive.sidekit.apps.sideticks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import hrln.interactive.sidekit.ui.UndoWindow
+import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

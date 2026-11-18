@@ -40,8 +40,8 @@ class CaseColourScreenshotTest {
             SidekitColors(
                 primaryA1 = accent,
                 primaryA2 = lerp(accent, Color.White, 0.12f),
-                primaryA3 = lerp(accent, Color.White, 0.24f),
-            ),
+                primaryA3 = lerp(accent, Color.White, 0.24f)
+            )
         )
     }
 

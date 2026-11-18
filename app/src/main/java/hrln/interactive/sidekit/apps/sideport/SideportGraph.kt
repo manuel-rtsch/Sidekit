@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -138,8 +139,12 @@ internal fun SideportHomeScreen(onHome: () -> Unit, onAdd: () -> Unit, onHub: (S
     }
     var message by remember { mutableStateOf<String?>(null) }
     val list = rememberLazyListState()
+    // Progress stays in the list until the install ends; only the outcome is a transient notice,
+    // so the notice's auto-dismiss can't reset the installer's status mid-install.
+    val progress = installMessage(install).takeIf { install is InstallStatus.Working || install is InstallStatus.Confirming }
+    val outcome = installMessage(install).takeIf { progress == null }
     val actions = withNotice(
-        message ?: installMessage(install),
+        message ?: outcome,
         {
             message = null
             ApkInstaller.clear()
@@ -150,6 +155,14 @@ internal fun SideportHomeScreen(onHome: () -> Unit, onAdd: () -> Unit, onHub: (S
     SidekitScaffold("Sideport", actions = actions) { padding ->
         SidekitList(padding, state = list) {
             var index = 0
+            progress?.let { text ->
+                val i = index++
+                item(key = "install") {
+                    SidekitCard(Modifier.fillMaxWidth().listFade(list, i)) {
+                        SidekitText(text, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE)
+                    }
+                }
+            }
             if (apps.isEmpty()) {
                 val i = index++
                 item(key = "intro") {
@@ -241,7 +254,7 @@ internal fun SideportAddScreen(onDone: () -> Unit) {
     }
     fun installApk() {
         if (!ApkInstaller.canInstall(context)) {
-            context.openSettings(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+            context.openSettings(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${context.packageName}".toUri())
             message = "Allow Sidekit to install apps, then choose Install APK again."
         } else {
             picker.launch(arrayOf("application/vnd.android.package-archive", "application/zip", "application/octet-stream"))
@@ -329,7 +342,7 @@ internal fun SideportHubScreen(pkg: String, onBack: () -> Unit, onChat: (String)
         onChat = onChat,
         onPlayer = onPlayer,
         onBridge = { context.openSettings(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS) },
-        onInfo = { context.openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg")) },
+        onInfo = { context.openSettings(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$pkg".toUri()) },
         onMode = { ported.setMode(pkg, if (app.mode == PortMode.Projected) PortMode.Original else PortMode.Projected) },
         onDismissMessage = { message = null },
         onAsk = { confirming = it },
@@ -338,7 +351,7 @@ internal fun SideportHubScreen(pkg: String, onBack: () -> Unit, onChat: (String)
             ported.remove(pkg)
             onBack()
         },
-        onUninstall = { context.startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        onUninstall = { context.startActivity(Intent(Intent.ACTION_DELETE, "package:$pkg".toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     )
 }
 

@@ -25,7 +25,7 @@ import androidx.navigation.navArgument
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.navigation.SubApp
-import hrln.interactive.sidekit.ui.UndoWindowLifecycle
+import hrln.interactive.sidekit.sdk.ui.UndoWindowLifecycle
 
 private val ROOT = SubApp.Banking.route
 private val HOME = "$ROOT/home"

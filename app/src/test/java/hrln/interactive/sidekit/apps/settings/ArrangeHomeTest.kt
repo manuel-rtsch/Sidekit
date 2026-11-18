@@ -84,6 +84,8 @@ class ArrangeHomeTest {
         compose.onAllNodesWithText("In dock").assertCountEquals(HomePreferences.DOCK_MAX)
         SubApp.dock.forEach { compose.onNodeWithText(it.label).assertIsDisplayed() }
         compose.onNodeWithText("Photos").assertExists()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Sideplay"))
+        compose.onNodeWithText("Sideplay").assertIsDisplayed()
     }
 
     @Test

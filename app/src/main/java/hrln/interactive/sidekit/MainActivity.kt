@@ -1,225 +1,77 @@
 package hrln.interactive.sidekit
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyCharacterMap
-import android.view.KeyEvent
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import hrln.interactive.sidekit.apps.settings.SidekitPreferences
-import hrln.interactive.sidekit.apps.settings.rememberCaseColour
-import hrln.interactive.sidekit.apps.settings.rememberCompactLayout
 import hrln.interactive.sidekit.apps.sidemessage.IncomingLinks
 import hrln.interactive.sidekit.apps.sideport.SideportLinks
-import hrln.interactive.sidekit.design.action.ChromeState
-import hrln.interactive.sidekit.design.canvas.SidekitCanvas
-import hrln.interactive.sidekit.design.input.HoldToAct
 import hrln.interactive.sidekit.design.input.Keypad
-import hrln.interactive.sidekit.design.input.KeypadModule
-import hrln.interactive.sidekit.design.input.NavControls
-import hrln.interactive.sidekit.design.input.SystemKeys
-import hrln.interactive.sidekit.design.theme.SidekitColors
-import hrln.interactive.sidekit.design.theme.SidekitSpacing
-import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SidekitNavHost
 import hrln.interactive.sidekit.onboarding.OnboardingScreen
-import hrln.interactive.sidekit.sdk.input.SharedPreferencesKeypadPreferences
+import hrln.interactive.sidekit.sdk.SidekitStores
+import hrln.interactive.sidekit.sdk.app.SidekitActivity
 
-class MainActivity : ComponentActivity() {
+/**
+ * Sidekit itself, on the shared SDK shell.
+ *
+ * The theme, canvas, keypad and key loop live in [SidekitActivity]; this class keeps only what is
+ * Sidekit's own: the home intent, the message/projection links and the screens to show.
+ */
+class MainActivity : SidekitActivity() {
     /** Bumped when Home is pressed while SideKit is already in front; the nav host returns to the launcher. */
     private val homeRequests = mutableIntStateOf(0)
 
     /** Bumped to focus the launcher's app search, returning to the launcher first if needed. */
     private val searchRequests = mutableIntStateOf(0)
 
-    /** The swappable keypad. T9 typing and its dictionary only load once T9 is actually used. */
-    private val keypad by lazy { Keypad.create(this, lifecycleScope, SharedPreferencesKeypadPreferences(this)) }
-
-    /** The shared title + action bar; held here so hardware keys (Options) can reach it. */
-    private val chrome = ChromeState()
-
-    /** The Sundial has no Back/Options key: hold Tab / Enter, and hold Previous/Next for left/right. */
-    private val sundialHold = HoldToAct(onHold = { action, source -> performSundialHold(action, source) })
-
-    /** Tap Options opens the options; holding it jumps to the first action button. */
-    private val optionsHold = HoldToAct(
-        onHold = { _, _ ->
-            keypad.finishTyping()
-            chrome.focusActionBar()
-        }
-    )
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Opened from an sms: link or a message notification: go to that conversation.
-        if (savedInstanceState == null && !SideportLinks.handle(intent)) {
-            IncomingLinks.handle(intent)
-        }
-        enableEdgeToEdge()
-        // The mocks use the whole 480 x 640 display; the launcher header carries the clock.
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.systemBars())
-        }
-        setContent {
-            val prefs = remember { SidekitPreferences(this) }
-            var setupComplete by remember { mutableStateOf(prefs.setupComplete) }
-            val caseColour = rememberCaseColour(prefs)
-            // Compact layout (Settings) trims the header and the action bar on every screen.
-            val compact = rememberCompactLayout(prefs)
-            val spacing = remember(compact) { if (compact) SidekitSpacing.Compact else SidekitSpacing() }
-            SidekitTheme(colors = caseColour?.palette() ?: SidekitColors(), spacing = spacing) {
-                SidekitCanvas(chrome = chrome, keypad = keypad) {
-                    if (setupComplete) {
-                        SidekitNavHost(homeRequests = homeRequests.intValue, searchRequests = searchRequests.intValue)
-                    } else {
-                        OnboardingScreen(onFinish = { setupComplete = true })
-                    }
-                }
-            }
-        }
-        // The canvas paints every pixel, so the window background would only be overdraw: one
-        // extra full-screen fill per frame on a GPU (PowerVR GE8320) that is fill-rate bound.
-        // It stays in the theme so the first frame before Compose draws is black, not garbage.
-        window.decorView.post { window.setBackgroundDrawable(null) }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        hrln.interactive.sidekit.apps.settings.SidekitPreferences(this).applyInputDefault(keypad)
-    }
-
-    override fun onPause() {
-        sundialHold.reset()
-        optionsHold.reset()
-        super.onPause()
-    }
-
-    // Overriding dispatchKeyEvent is the only way to see a keypad event before Compose or the
-    // system consumes it; lint flags the override because ComponentActivity marks it @RestrictTo.
-    @SuppressLint("RestrictedApi")
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        // Detect the module from the raw key before navigation rewrites it, so a first QWERTY press
-        // on a letter that is also a navigator (T/D/B/J) still reveals the module.
-        keypad.observe(event)
-        // Keypad mapping first, plus each module's default navigation, so Options, Back, focus and
-        // typing all see the mapped key.
-        val translated = keypad.translateForUi(event) ?: return true
-        // Holds belong to the Sundial ring only: Tab/Enter on a Bluetooth keyboard or Next on a headset
-        // keep their normal behaviour, as does a T9 OK if the remembered module is stale.
-        val fromSundial = event.device?.name in SUNDIAL_DEVICES || event.deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD
-        when (val hold = sundialHold.handle(translated) { code -> if (fromSundial) sundialHoldAction(code) else null }) {
-            HoldToAct.Result.Pass -> Unit
-
-            HoldToAct.Result.Consume -> return true
-
-            is HoldToAct.Result.Deliver -> {
-                hold.events.forEach(::dispatchTranslated)
-                return true
-            }
-        }
-        when (val hold = optionsHold.handle(translated) { code -> if (SystemKeys.isOptions(code)) code else null }) {
-            HoldToAct.Result.Pass -> Unit
-
-            HoldToAct.Result.Consume -> return true
-
-            is HoldToAct.Result.Deliver -> {
-                hold.events.forEach(::dispatchTranslated)
-                return true
-            }
-        }
-        return dispatchTranslated(translated)
-    }
-
     /**
-     * Performs a Sundial hold after the timer fires or the key is released late.
-     *
-     * Back comes from holding a hardware key, not from a system back gesture, so the
-     * predictive-back lint does not apply; the dispatcher still routes through registered
-     * callbacks.
+     * Sidekit is the host, so it keeps its own writable settings. Reading them back through its own
+     * read-only provider would drop every keypad change made in Settings.
      */
-    @SuppressLint("GestureBackNavigation")
-    private fun performSundialHold(action: Int, source: KeyEvent) {
-        when (action) {
-            KeyEvent.KEYCODE_BACK -> onBackPressedDispatcher.onBackPressed()
+    override val stores: SidekitStores.Stores by lazy { SidekitStores.local(this) }
 
-            KeyEvent.KEYCODE_ENDCALL -> {
-                keypad.finishTyping()
-                chrome.toggleOptions()
-            }
+    override fun onSidekitCreate(savedInstanceState: Bundle?) {
+        // The launcher saves the last Search request it handled; restore the counter too, or a
+        // recreated activity would ignore the next few Search presses. Home needs no restore: its
+        // nav host acts on any non-zero count, so restoring it would jump to the launcher.
+        savedInstanceState?.let { searchRequests.intValue = it.getInt(STATE_SEARCH_REQUESTS) }
+        // Opened from an sms: link or a message notification: go to that conversation.
+        if (savedInstanceState == null && !SideportLinks.handle(intent)) IncomingLinks.handle(intent)
+    }
 
-            NavControls.Home -> homeRequests.intValue++
-
-            NavControls.Search -> {
-                homeRequests.intValue++
-                searchRequests.intValue++
-            }
-
-            else -> dispatchNav(action, source)
+    @Composable
+    override fun SidekitContent() {
+        val prefs = remember { SidekitPreferences(this) }
+        var setupComplete by remember { mutableStateOf(prefs.setupComplete) }
+        if (setupComplete) {
+            SidekitNavHost(homeRequests = homeRequests.intValue, searchRequests = searchRequests.intValue)
+        } else {
+            OnboardingScreen(onFinish = { setupComplete = true })
         }
     }
 
-    /** The Sundial keys that get a hold action, and only while its layout is auto-detected. */
-    private fun sundialHoldAction(code: Int): Int? {
-        if (keypad.module != KeypadModule.Sundial || keypad.mapper.customModule != null) return null
-        return NavControls.sundialHoldFor[code]
+    override fun onSidekitResume(keypad: Keypad) {
+        SidekitPreferences(this).applyInputDefault(keypad)
     }
 
-    /** Sends a held Sundial key's navigation action as a normal press/release. */
-    private fun dispatchNav(code: Int, from: KeyEvent) {
-        val down = KeyEvent(
-            from.downTime, from.eventTime, KeyEvent.ACTION_DOWN, code, 0,
-            from.metaState, from.deviceId, from.scanCode, from.flags, from.source
-        )
-        val up = KeyEvent(
-            from.downTime, from.eventTime + 1, KeyEvent.ACTION_UP, code, 0,
-            from.metaState, from.deviceId, from.scanCode, from.flags, from.source
-        )
-        dispatchTranslated(down)
-        dispatchTranslated(up)
+    override fun onSidekitHome() {
+        homeRequests.intValue++
     }
 
-    /** Routes an already-translated event; also used for the tap released by [sundialHold]. */
-    @SuppressLint("RestrictedApi")
-    private fun dispatchTranslated(event: KeyEvent): Boolean {
-        if (keypad.module == KeypadModule.GamePad &&
-            (event.keyCode == NavControls.Home || event.keyCode == NavControls.Search)
-        ) {
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                if (event.keyCode == NavControls.Home) {
-                    homeRequests.intValue++
-                } else {
-                    homeRequests.intValue++
-                    searchRequests.intValue++
-                }
-            }
-            return true
-        }
-        when {
-            // Keypad top-right: the universal Options key. Acts on release; the press is consumed
-            // so the system's end-call handling never sees it.
-            SystemKeys.isOptions(event) -> {
-                if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
-                    keypad.finishTyping()
-                    chrome.toggleOptions()
-                }
-                return true
-            }
+    override fun onSidekitSearch() {
+        homeRequests.intValue++
+        searchRequests.intValue++
+    }
 
-            // Keypad top-left (CALL) is turned into Back by KeypadAccessibilityService before the
-            // system can open the dialer. Without the service only its release reaches us, after
-            // the dialer has launched: swallow it so nothing happens twice.
-            SystemKeys.isBack(event) -> return true
-        }
-        return keypad.dispatch(event) || super.dispatchKeyEvent(event)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STATE_SEARCH_REQUESTS, searchRequests.intValue)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -233,7 +85,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
-        /** Input devices that carry the Sundial ring (newer media module, older combined keyboard). */
-        val SUNDIAL_DEVICES = setOf("gxa535_media", "gxa535_keyboard")
+        const val STATE_SEARCH_REQUESTS = "sidekit.searchRequests"
     }
 }

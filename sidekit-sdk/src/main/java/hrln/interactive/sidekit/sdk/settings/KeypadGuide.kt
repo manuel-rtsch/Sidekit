@@ -90,9 +90,9 @@ fun keypadGuideRows(module: KeypadModule): List<List<KeypadGuideKey?>> {
         // on the module: top-left is left, top-right is right, bottom-left is Tab, bottom-right is
         // Enter, and the media keys are the middle row.
         KeypadModule.Sundial -> listOf(
-            listOf(key("←", "Move focus left.", "Open options if Enter reports Play/Pause."), key("↑", "Move focus up.", "Open search."), key("→", "Move focus right from the corner.")),
+            listOf(key("←", "Move focus left."), key("↑", "Move focus up."), key("→", "Move focus right.")),
             listOf(key("Previous", "Previous media track.", "Move focus left."), key("Play / pause", "Play or pause media.", "Confirm the focused control."), key("Next", "Next media track.", "Move focus right.")),
-            listOf(key("Tab", "Move to the next control.", "Go back."), key("↓", "Move focus down.", "Go to the home screen."), key("Enter", "Activate the focused control.", "Open options."))
+            listOf(key("Tab", "Move to the next control.", "Go back."), key("↓", "Move focus down."), key("Enter", "Activate the focused control.", "Open options."))
         )
 
         // Five columns follow the controller exactly: the D-pad cross on the left, the small
@@ -177,7 +177,7 @@ fun KeypadGuide(module: KeypadModule) {
         }
         if (module == KeypadModule.Sundial) {
             SidekitText(
-                "Some Sundials report Enter as Play/Pause. Hold ← for Options. Right edge: tap Next, hold Right.",
+                "Some Sundials report Enter as Play/Pause. Hold it for Confirm.",
                 style = SidekitTheme.typography.small,
                 color = SidekitTheme.colors.surfaceA6,
                 maxLines = 2

@@ -2,7 +2,6 @@ package hrln.interactive.sidekit.apps.apps
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Process
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
@@ -119,7 +119,7 @@ internal fun AppDetailScreen(
                         {
                             perform {
                                 context.startActivity(
-                                    Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}"))
+                                    Intent(Intent.ACTION_DELETE, "package:${app.component.packageName}".toUri())
                                         .putExtra(Intent.EXTRA_USER, app.user)
                                 )
                             }

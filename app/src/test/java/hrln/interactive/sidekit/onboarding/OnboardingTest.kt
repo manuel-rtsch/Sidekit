@@ -82,6 +82,17 @@ class OnboardingTest {
         compose.onNodeWithText("Make it yours").assertIsDisplayed()
     }
 
+    @Test fun `hide apps step offers Show all once something is hidden`() {
+        launch(3)
+        compose.onNodeWithText("Show all").assertDoesNotExist()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Sidemessage"))
+        compose.onNodeWithText("Sidemessage").performClick()
+        assertTrue(prefs.hiddenApps.isNotEmpty())
+        compose.mainClock.advanceTimeBy(1000)
+        compose.onNodeWithText("Show all").performClick()
+        assertTrue(prefs.hiddenApps.isEmpty())
+    }
+
     @Test fun `current keypad is first and other demos do not change it`() {
         launch(6, KeypadModule.Qwerty)
         compose.onNodeWithText("1 / 4 · QWERTY").assertIsDisplayed()

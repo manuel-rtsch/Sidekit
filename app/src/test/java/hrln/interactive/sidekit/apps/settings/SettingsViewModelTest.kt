@@ -3,13 +3,13 @@ package hrln.interactive.sidekit.apps.settings
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import hrln.interactive.sidekit.design.theme.contentColorFor
 import androidx.test.core.app.ApplicationProvider
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.design.theme.CaseColour
-import org.junit.Assert.*
+import hrln.interactive.sidekit.design.theme.contentColorFor
 import kotlin.math.pow
 import kotlin.math.sqrt
+import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -66,6 +66,7 @@ class SettingsViewModelTest {
         assertEquals(SettingKey.entries.toSet(), rows.map { it.key }.toSet())
         rows.forEach { assertTrue(it.key.settingsAction().startsWith("android.settings.")) }
     }
+
     @Test fun `layout and input mode survive a new preferences instance`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val prefs = SidekitPreferences(context)

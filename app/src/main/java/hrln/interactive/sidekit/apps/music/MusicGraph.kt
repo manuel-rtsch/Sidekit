@@ -71,22 +71,13 @@ fun NavGraphBuilder.musicGraph(nav: NavHostController) {
             val state by vm.state.collectAsStateWithLifecycle()
             val album = state.library.album(entry.arguments?.getLong("id") ?: -1) ?: return@composable
             val tracks = state.library.tracksOf(album)
-            AlbumScreen(
-                album,
-                tracks,
-                state.library.areSaved(tracks.map { it.id }),
-                { nav.navigate(artistRoute(album.artistId)) },
-                {
-                    vm.playAlbum(album.id)
-                    nav.navigate(NOW_PLAYING)
-                },
-                {
-                    vm.playTrack(it.id)
-                    nav.navigate(NOW_PLAYING)
-                },
-                { vm.toggleSaved(tracks) },
-                backToMusic
-            )
+            AlbumScreen(album, tracks, { nav.navigate(artistRoute(album.artistId)) }, {
+                vm.playAlbum(album.id)
+                nav.navigate(NOW_PLAYING)
+            }, {
+                vm.playTrack(it.id)
+                nav.navigate(NOW_PLAYING)
+            }, { vm.saveTracks(album.title, tracks) }, backToMusic)
         }
         composable(ARTIST, arguments = idArg) { entry ->
             val vm = entry.musicViewModel(nav)
@@ -102,22 +93,7 @@ fun NavGraphBuilder.musicGraph(nav: NavHostController) {
             val state by vm.state.collectAsStateWithLifecycle()
             val track = state.nowPlaying
             val album = track?.let { state.library.album(it.albumId) }
-            NowPlayingScreen(
-                state.playback,
-                track != null && state.library.isSaved(track.id),
-                NowPlayingActions(
-                    onPlayPause = vm::togglePlayPause,
-                    onPrevious = vm::skipPrevious,
-                    onNext = vm::skipNext,
-                    onSeek = vm::seekTo,
-                    onShuffle = { vm.setShuffle(!state.playback.queue.shuffle) },
-                    onRepeat = vm::cycleRepeat,
-                    onSave = { track?.let { vm.toggleSaved(it) } },
-                    onAlbum = { album?.let { nav.navigate(albumRoute(it.id)) } },
-                    onArtist = { track?.let { nav.navigate(artistRoute(it.artistId)) } },
-                    onBack = backToMusic
-                )
-            )
+            NowPlayingScreen(state.playback, { album?.let { nav.navigate(albumRoute(it.id)) } }, { track?.let { nav.navigate(artistRoute(it.artistId)) } }, vm::togglePlayPause, vm::skipPrevious, vm::skipNext, vm::seekTo, { vm.setShuffle(!state.playback.queue.shuffle) }, vm::cycleRepeat, { track?.let { vm.saveTracks(it.title, listOf(it)) } }, backToMusic)
         }
         composable(SEARCH) { entry ->
             val vm = entry.musicViewModel(nav)

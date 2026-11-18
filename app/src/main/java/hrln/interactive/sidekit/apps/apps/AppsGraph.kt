@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.apps.apps
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Process
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -9,6 +8,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -44,6 +44,8 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     var opened by remember { mutableStateOf<LaunchableApp?>(null) }
     var selected by remember { mutableStateOf<LaunchableApp?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
+    // Held above the app page's early return, so Back from the page lands where the list was.
+    val list = rememberLazyListState()
     fun perform(action: () -> Unit) {
         try {
             action()
@@ -76,31 +78,29 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
         return
     }
 
-    val list = rememberLazyListState()
-    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Home", back)))
     val options = selected?.let { app ->
         listOf(
             SideAction("info", "App info") { perform { vm.repository.info(app) } },
             SideAction.delete("uninstall", "Uninstall") {
                 perform {
                     context.startActivity(
-                        Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.component.packageName}"))
+                        Intent(Intent.ACTION_DELETE, "package:${app.component.packageName}".toUri())
                             .putExtra(Intent.EXTRA_USER, app.user)
                     )
                 }
             }
         )
     }.orEmpty()
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Home", back)))
     SidekitScaffold("Apps", actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             item { AppSearchField(query) { vm.query.value = it } }
-            item { SidekitCard { SidekitText(selected?.let { "${it.label} selected. Press Options for app info or uninstall." } ?: "Tap to open · hold an app for Options", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } }
-            val banner = message ?: state.error
-            banner?.let { item { SidekitCard(onClick = { message = null }) { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
+            item { SidekitCard { SidekitText(selected?.let { "${it.label} selected. Press Options for app info or uninstall." } ?: "Tap to open · hold an app for its page", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } }
+            state.error?.let { item { SidekitCard { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             if (!state.loaded && state.error == null) item { SidekitItem("Loading apps…") }
             if (state.loaded && state.apps.isEmpty()) item { SidekitItem("No matching apps") }
             // listFade needs the row's real list index: search field and hint, plus the banner if shown.
-            val rowsStart = 2 + if (banner != null) 1 else 0
+            val rowsStart = 2 + if (state.error != null) 1 else 0
             itemsIndexed(state.apps, key = { _, it -> it.key }) { index, target ->
                 AppRow(
                     target,

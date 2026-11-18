@@ -11,6 +11,7 @@ import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import hrln.interactive.sidekit.apps.sideport.recipes.RecipeJson
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
+import hrln.interactive.sidekit.sdk.system.KeypadSystemBack
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +29,7 @@ class SideportService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         _connected.value = true
+        KeypadSystemBack.delegate = systemBack
         idle()
     }
 
@@ -45,6 +47,7 @@ class SideportService : AccessibilityService() {
         controller?.end()
         controller = null
         if (instance === this) instance = null
+        if (KeypadSystemBack.delegate === systemBack) KeypadSystemBack.delegate = null
         _connected.value = false
     }
 
@@ -55,7 +58,7 @@ class SideportService : AccessibilityService() {
         // (AOSP Settings has FallbackHome), and those are apps the user may well port.
         val homes = setOfNotNull(
             packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY)
-                ?.activityInfo?.packageName?.takeIf { it != "android" },
+                ?.activityInfo?.packageName?.takeIf { it != "android" }
         ) - app.packageName
         val session = ProjectionController(this, app, RecipeJson.load(this), homes) { ended ->
             if (controller === ended) {
@@ -85,7 +88,7 @@ class SideportService : AccessibilityService() {
     private fun listen() = configure(
         events = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
             AccessibilityEvent.TYPE_VIEW_SCROLLED or AccessibilityEvent.TYPE_WINDOWS_CHANGED,
-        filterKeys = true,
+        filterKeys = true
     )
 
     private fun idle() = configure(events = 0, filterKeys = false)
@@ -103,14 +106,18 @@ class SideportService : AccessibilityService() {
     companion object {
         private const val NOTIFICATION_TIMEOUT_MS = 80L
 
+        private val systemBack: () -> Boolean = { handleSystemBack() }
+
         @Volatile var instance: SideportService? = null
             private set
 
         private val _connected = MutableStateFlow(false)
+
         /** Whether the user has enabled the service (Settings > Accessibility > Sideport). */
         val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
         private val _session = MutableStateFlow<String?>(null)
+
         /** Package of the ported app being projected, if any. */
         val session: StateFlow<String?> = _session.asStateFlow()
 

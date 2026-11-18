@@ -2,6 +2,7 @@ package hrln.interactive.sidekit.sdk.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -116,6 +117,32 @@ fun UndoWindowLifecycle(window: UndoWindow, commit: () -> Unit) {
             window.cancel()
             latestCommit()
         }
+    }
+}
+
+/**
+ * Pauses [window] while the screen hides its Undo button (for example a draft's Send took its
+ * place), so an offer the user cannot see never expires. Call it after [UndoWindowLifecycle];
+ * [pending] must change when a new offer starts so that one is paused too.
+ */
+@Composable
+fun PauseUndoWhileHidden(window: UndoWindow, shown: Boolean, pending: Boolean) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val latestShown by rememberUpdatedState(shown)
+    LaunchedEffect(window, shown, pending) {
+        if (!shown) {
+            window.pause()
+        } else if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            window.resume()
+        }
+    }
+    // UndoWindowLifecycle resumes on ON_START; registered after it, this pauses again while hidden.
+    DisposableEffect(lifecycle, window) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START && !latestShown) window.pause()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
     }
 }
 

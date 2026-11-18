@@ -18,7 +18,7 @@ import hrln.interactive.sidekit.apps.media.AudioFocus
 import hrln.interactive.sidekit.apps.media.MediaPlayerCore
 import hrln.interactive.sidekit.apps.media.MediaSessionOwner
 import hrln.interactive.sidekit.apps.media.MediaSessions
-import hrln.interactive.sidekit.apps.media.Thumbnails
+import hrln.interactive.sidekit.sdk.media.Thumbnails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

@@ -65,20 +65,20 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
     val ported by remember { PortedApps.get(context).apps }.collectAsStateWithLifecycle()
     val repository = remember(context) { AppsRepository(context.applicationContext) }
     val installed by remember { repository.apps }.collectAsStateWithLifecycle(emptyList())
-    val nativeApps = rememberNativeApps()
+    val native = rememberNativeApps()
     val subsById = remember(SubApp.entries) { SubApp.entries.associateBy { it.visibilityId() } }
     val portedById = remember(ported) { ported.associateBy { it.visibilityId() } }
+    val nativeById = remember(native) { native.associateBy { it.visibilityId } }
     // Only directly-pinned installed apps belong here; unpinned installed apps are not home entries.
-    val installedById = remember(installed, ported) {
+    val installedById = remember(installed, ported, native) {
         val pinned = home.homeOrder.filter { it.startsWith(HomePreferences.INSTALLED_PREFIX) }.toSet()
-        val portedPackages = ported.mapTo(HashSet()) { it.packageName }
+        val shadowed = ported.mapTo(HashSet()) { it.packageName } + native.map { it.packageName }
         installed.map { it.homeId(context) to it }.toMap()
             .filterKeys { it in pinned }
-            .filterValues { it.component.packageName !in portedPackages }
+            .filterValues { it.component.packageName !in shadowed }
     }
-    val nativeById = remember(nativeApps) { nativeApps.associateBy { it.visibilityId } }
-    val known = remember(subsById, portedById, installedById, nativeById, hidden) {
-        (subsById.keys + portedById.keys + installedById.keys + nativeById.keys) - hidden
+    val known = remember(subsById, portedById, nativeById, installedById, hidden) {
+        (subsById.keys + portedById.keys + nativeById.keys + installedById.keys) - hidden
     }
     // Editing buffer, seeded from the stored prefs once. Nothing is written until commit() (Done).
     val arranger = remember(home, known) { HomeArranger(home, known) }
@@ -156,20 +156,16 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
             SideAction("discard", "Discard", icon = SidekitIcon.Undo, tone = ActionTone.Destructive, motion = ActionMotion.Up, onClick = ::discard)
         )
     } else {
-        listOf(
-            SideAction.back("back", "Settings", ::requestBack),
-            SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check)
-        )
+        buildList {
+            add(SideAction.back("back", "Settings", ::requestBack))
+            // Reset is only useful while the buffer differs from the built-in default.
+            if (!arranger.isDefault) {
+                add(SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() }))
+            }
+            add(SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check))
+        }
     }
-    val options = if (confirmingDiscard) {
-        emptyList()
-    } else {
-        // Reset is only useful while the buffer differs from the built-in default.
-        listOfNotNull(
-            SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() })
-                .takeUnless { arranger.isDefault }
-        )
-    }
+    val options = emptyList<SideAction>()
     SidekitScaffold(
         "Arrange apps",
         // With nothing selected, Up/Down are left to focus traversal, so the keypad walks the app
@@ -207,7 +203,7 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
             item { ArrangeHint() }
             val last = order.lastIndex
             itemsIndexed(order, key = { _, id -> id }) { index, id ->
-                val label = subsById[id]?.label ?: portedById[id]?.label ?: installedById[id]?.label ?: nativeById[id]?.label ?: return@itemsIndexed
+                val label = subsById[id]?.label ?: portedById[id]?.label ?: nativeById[id]?.label ?: installedById[id]?.label ?: return@itemsIndexed
                 val enabledUp = index > 0
                 val enabledDown = index < last
                 val isSelected = arranger.isSelected(id)
@@ -232,7 +228,6 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                             arranger.isInDock(id) -> "In dock"
                             else -> null
                         },
-                        secondaryToEnd = true,
                         colour = if (isSelected) ItemColour.Secondary else ItemColour.Primary,
                         onClick = { arranger.select(id) }
                     )

@@ -1,40 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("sidekit.version")
 }
 
-// Version metadata is read from git instead of being hand-edited here, so a build always reports
-// the code it was made from: a tagged commit is exactly "1.2.3", anything after it is
-// "1.2.3-3-g<sha>", and uncommitted changes add "-dirty". `versionCode` counts commits, so it only
-// ever grows and a newer build always installs over an older one — including over the 1.2.3 stable
-// build, which was bumped by hand to 6. A checkout without git (exported source, a CI tarball)
-// falls back to the last release; pass -PsidekitVersionName=… / -PsidekitVersionCode=… to override.
-val fallbackVersionName = "1.2.3"
-val fallbackVersionCode = 6
-
-fun git(vararg args: String) = providers.exec {
-    commandLine("git", *args)
-    workingDir = rootDir
-    isIgnoreExitValue = true
-}.standardOutput.asText.map(String::trim)
-
-// `--always` prints the bare sha when no release tag is reachable (a shallow clone, say), so such a
-// build reads "0.0.0-g<sha>" rather than passing itself off as the last release.
-val gitVersionName = git("describe", "--tags", "--match", "v[0-9]*", "--dirty", "--always")
-    .map { described ->
-        val name = described.removePrefix("v")
-        when {
-            name.isEmpty() -> fallbackVersionName
-            name.first().isDigit() -> name
-            else -> "0.0.0-g$name"
-        }
-    }
-val gitVersionCode = git("rev-list", "--count", "HEAD")
-    .map { it.toIntOrNull() ?: fallbackVersionCode }
-
-// A machine without a `git` binary makes the exec itself throw, rather than exit non-zero.
-fun versionCodeFromGit() = runCatching { gitVersionCode.get() }.getOrDefault(fallbackVersionCode)
-fun versionNameFromGit() = runCatching { gitVersionName.get() }.getOrDefault(fallbackVersionName)
+// Version metadata is read from git by the shared `sidekit.version` convention plugin, so a build
+// always reports the code it was made from: a tagged commit is exactly "1.2.3", anything after it
+// is "1.2.3-3-g<sha>", and uncommitted changes add "-dirty". `versionCode` counts commits, so it
+// only ever grows and a newer build always installs over an older one. Pass
+// -PsidekitVersionName=… / -PsidekitVersionCode=… to override.
+val sidekitVersionName: String by extra
+val sidekitVersionCode: Int by extra
 
 android {
     ndkVersion = "27.1.12297006"
@@ -55,9 +31,9 @@ android {
         targetSdk = 36
         versionCode = providers.gradleProperty("sidekitVersionCode")
             .map(String::toInt)
-            .getOrElse(versionCodeFromGit())
+            .getOrElse(sidekitVersionCode)
         versionName = providers.gradleProperty("sidekitVersionName")
-            .getOrElse(versionNameFromGit())
+            .getOrElse(sidekitVersionName)
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -2,7 +2,6 @@ package hrln.interactive.sidekit.sdk.app
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,11 +12,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import hrln.interactive.sidekit.design.action.ChromeState
-import hrln.interactive.sidekit.design.input.HoldToAct
 import hrln.interactive.sidekit.design.input.Keypad
-import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.input.KeypadPreferences
-import hrln.interactive.sidekit.design.input.NavControls
 import hrln.interactive.sidekit.sdk.SidekitStores
 import hrln.interactive.sidekit.sdk.input.SidekitInputController
 import hrln.interactive.sidekit.sdk.theme.SidekitThemeStore
@@ -50,11 +46,15 @@ abstract class SidekitActivity : ComponentActivity() {
     protected val keypad: Keypad by lazy { Keypad.create(this, lifecycleScope, keypadPreferences) }
 
     private val input by lazy {
-        SidekitInputController(keypad, chrome, onHome = ::onSidekitHome, onSearch = ::onSidekitSearch)
+        SidekitInputController(
+            keypad = keypad,
+            chrome = chrome,
+            dispatch = ::dispatchToPlatform,
+            onBack = { onBackPressedDispatcher.onBackPressed() },
+            onHome = ::onSidekitHome,
+            onSearch = ::onSidekitSearch
+        )
     }
-
-    /** No dedicated Back/Options on the Sundial: hold ring keys for the same actions. */
-    private val sundialHold = HoldToAct(onHold = { action, source -> performSundialHold(action, source) })
 
     final override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,73 +97,23 @@ abstract class SidekitActivity : ComponentActivity() {
         onSidekitResume(keypad)
     }
 
-    override fun onPause() {
+    final override fun onPause() {
         input.reset()
-        sundialHold.reset()
         super.onPause()
     }
 
     // Overriding dispatchKeyEvent is the only way to see a keypad event before Compose or the
-    // system consumes it; lint flags the override because ComponentActivity marks it @RestrictTo.
+    // system consumes it; lint flags both the override and the super call because ComponentActivity
+    // marks them @RestrictTo.
     @SuppressLint("RestrictedApi")
-    final override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val translated = input.translate(event) ?: return true
-        // Holds belong to the Sundial ring only. Tab/Enter on a Bluetooth keyboard or Next on a
-        // headset keep their normal behaviour, as does a T9 OK if the remembered module is stale.
-        val fromSundial = event.device?.name in SUNDIAL_DEVICES ||
-            event.deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD
-        val holdModule = keypad.module == KeypadModule.Sundial && keypad.mapper.customModule == null
-        when (val hold = sundialHold.handle(translated) { code -> if (fromSundial && holdModule) NavControls.sundialHoldFor[code] else null }) {
-            HoldToAct.Result.Pass -> Unit
+    final override fun dispatchKeyEvent(event: KeyEvent): Boolean = input.handle(event)
 
-            HoldToAct.Result.Consume -> return true
-
-            is HoldToAct.Result.Deliver -> {
-                hold.events.forEach(::deliver)
-                return true
-            }
-        }
-        return deliver(translated)
-    }
-
+    /**
+     * The platform path for a key Sidekit did not consume; also used by the Sundial holds.
+     *
+     * [SidekitInputController.handle] already ends here for an unhandled key, so the override must
+     * not dispatch it a second time as well.
+     */
     @SuppressLint("RestrictedApi")
-    private fun deliver(event: KeyEvent): Boolean {
-        val handled = input.handleTranslated(event) ?: return true
-        return super.dispatchKeyEvent(handled)
-    }
-
-    private fun performSundialHold(action: Int, source: KeyEvent) {
-        when (action) {
-            NavControls.Back -> onBackPressedDispatcher.onBackPressed()
-
-            NavControls.Options -> {
-                keypad.finishTyping()
-                chrome.toggleOptions()
-            }
-
-            NavControls.Home -> onSidekitHome()
-
-            NavControls.Search -> onSidekitSearch()
-
-            else -> dispatchNav(action, source)
-        }
-    }
-
-    private fun dispatchNav(code: Int, from: KeyEvent) {
-        val down = KeyEvent(
-            from.downTime, from.eventTime, KeyEvent.ACTION_DOWN, code, 0,
-            from.metaState, from.deviceId, from.scanCode, from.flags, from.source
-        )
-        val up = KeyEvent(
-            from.downTime, from.eventTime + 1, KeyEvent.ACTION_UP, code, 0,
-            from.metaState, from.deviceId, from.scanCode, from.flags, from.source
-        )
-        deliver(down)
-        deliver(up)
-    }
-
-    private companion object {
-        /** Input devices that carry the Sundial ring (newer media module, older combined keyboard). */
-        val SUNDIAL_DEVICES = setOf("gxa535_media", "gxa535_keyboard")
-    }
+    private fun dispatchToPlatform(event: KeyEvent): Boolean = super.dispatchKeyEvent(event)
 }

@@ -3,7 +3,7 @@ package hrln.interactive.sidekit.apps.mail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import hrln.interactive.sidekit.design.action.NoticeKind
-import hrln.interactive.sidekit.ui.UndoWindow
+import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

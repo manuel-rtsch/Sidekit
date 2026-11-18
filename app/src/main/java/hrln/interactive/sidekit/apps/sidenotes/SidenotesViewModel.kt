@@ -2,7 +2,7 @@ package hrln.interactive.sidekit.apps.sidenotes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import hrln.interactive.sidekit.ui.UndoWindow
+import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

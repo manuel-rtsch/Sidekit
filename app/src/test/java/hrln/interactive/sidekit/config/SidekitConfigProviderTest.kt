@@ -18,6 +18,7 @@ import hrln.interactive.sidekit.design.input.PhysicalKey
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.design.theme.CaseColour
 import hrln.interactive.sidekit.sdk.SidekitContract
+import hrln.interactive.sidekit.sdk.SidekitStores
 import hrln.interactive.sidekit.sdk.config.HostStatus
 import hrln.interactive.sidekit.sdk.config.SidekitConfig
 import hrln.interactive.sidekit.sdk.config.SidekitConfigClient
@@ -168,6 +169,18 @@ class SidekitConfigProviderTest {
 
         assertEquals(HostStatus.Available, SidekitConfigClient.status(context, SidekitContract.AUTHORITY_DEV))
         assertEquals(CaseColour.Orange.name, SidekitConfigClient.read(context, SidekitContract.AUTHORITY_DEV)?.caseColour)
+    }
+
+    @Test
+    fun `a Sidekit build never uses its own provider as its host`() {
+        // The unit-test package is the stable Sidekit, so its own authority answers the probe.
+        assertEquals(SidekitContract.PACKAGE_STABLE, context.packageName)
+        registerHost(SidekitContract.AUTHORITY_STABLE, SidekitConfig(caseColour = CaseColour.Lime.name))
+        assertEquals(HostStatus.Available, SidekitConfigClient.status(context))
+
+        val stores = SidekitStores.forHostOrLocal(context)
+        assertFalse(stores.isHostBacked)
+        assertTrue(stores.keypad is SharedPreferencesKeypadPreferences)
     }
 
     @Test

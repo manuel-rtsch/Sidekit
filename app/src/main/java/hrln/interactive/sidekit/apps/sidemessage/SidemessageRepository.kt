@@ -6,7 +6,7 @@ import androidx.compose.runtime.Immutable
 import androidx.core.util.AtomicFile
 import hrln.interactive.sidekit.apps.phonebook.ContactNames
 import hrln.interactive.sidekit.apps.phonebook.Phonebook
-import hrln.interactive.sidekit.ui.UndoWindow
+import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicLong

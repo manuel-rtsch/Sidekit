@@ -97,7 +97,8 @@ object NativeApps {
         val activity = resolved.activityInfo ?: return null
         val packageName = activity.packageName ?: return null
         val activityName = activity.name ?: return null
-        if (packageName == context.packageName || !activity.enabled) return null
+        // A non-exported activity cannot be started from Sidekit, so it would be a dead tile.
+        if (packageName == context.packageName || !activity.enabled || !activity.exported) return null
         if (!isTrusted(packageName)) return null
 
         val minSchema = activity.metaData?.minSchema() ?: 0

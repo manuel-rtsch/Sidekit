@@ -12,16 +12,17 @@ import org.gradle.api.Project
 object GitVersion {
     private const val FALLBACK_NAME = "1.2.3"
     private const val FALLBACK_CODE = 6
+    private val RELEASE = Regex("""^\d+\.\d+\.\d+""")
 
     fun name(project: Project): String = runCatching {
         val described = git(project, "describe", "--tags", "--match", "v[0-9]*", "--dirty", "--always")
         val name = described.removePrefix("v")
         when {
             name.isEmpty() -> FALLBACK_NAME
-            name.first().isDigit() -> name
+            RELEASE.containsMatchIn(name) -> name
             // `--always` prints the bare sha when no release tag is reachable (a shallow clone,
             // say), so such a build reads "0.0.0-g<sha>" rather than passing itself off as the
-            // last release.
+            // last release. A sha can start with a digit, so test for "X.Y.Z", not a digit.
             else -> "0.0.0-g$name"
         }
     }.getOrDefault(FALLBACK_NAME)

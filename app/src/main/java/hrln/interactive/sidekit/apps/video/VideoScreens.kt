@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import hrln.interactive.sidekit.apps.media.Access
 import hrln.interactive.sidekit.apps.media.PermissionRationale
-import hrln.interactive.sidekit.apps.media.Thumbnail
 import hrln.interactive.sidekit.apps.media.formatDuration
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
@@ -66,6 +65,7 @@ import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.listFade
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.sdk.media.Thumbnail
 import hrln.interactive.sidekit.ui.SidekitPreviewFrame
 import hrln.interactive.sidekit.ui.SidephonePreview
 import kotlinx.coroutines.delay

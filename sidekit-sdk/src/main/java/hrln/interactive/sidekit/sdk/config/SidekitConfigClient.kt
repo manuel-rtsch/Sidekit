@@ -139,7 +139,8 @@ object SidekitConfigClient {
         } catch (e: RuntimeException) {
             return HostStatus.InstalledUnsupported
         }
-        val config = SidekitConfigCodec.decodeVersion(version) ?: return HostStatus.InstalledUnsupported
+        // A malformed reply (for example a Bundle with an unknown Parcelable) must not crash the app.
+        val config = runCatching { SidekitConfigCodec.decodeVersion(version) }.getOrNull() ?: return HostStatus.InstalledUnsupported
         return if (config.isCompatible()) HostStatus.Available else HostStatus.InstalledUnsupported
     }
 
@@ -155,7 +156,7 @@ object SidekitConfigClient {
         } catch (e: RuntimeException) {
             return null
         }
-        return SidekitConfigCodec.decodeConfig(bundle)?.takeIf { it.isCompatible() }
+        return runCatching { SidekitConfigCodec.decodeConfig(bundle) }.getOrNull()?.takeIf { it.isCompatible() }
     }
 
     private fun observeFrom(context: Context, authority: String, onChange: (SidekitConfig) -> Unit): () -> Unit {

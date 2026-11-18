@@ -44,11 +44,20 @@ fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadControl) -
     fun nextLayout() {
         custom?.let { keypad.useCustomMapping(KeypadModule.entries[(it.ordinal + 1) % KeypadModule.entries.size]) }
     }
-    val options = buildList {
-        if (custom != null && bindings.isNotEmpty()) add(SideAction("reset", "Reset keys", SidekitIcon.Undo, tone = ActionTone.Destructive) { mapper.resetAll(custom) })
-        if (custom != null) add(SideAction("automatic", "Use automatic", tone = ActionTone.Muted) { keypad.useCustomMapping(null) })
+    // Reset is a bar action only when there is something to reset, so it never sits around as a
+    // dead option. Switching back to automatic stays in Options: it is a mode change, not a reset.
+    val actions = buildList {
+        add(SideAction.back("back", "Settings", back))
+        if (custom != null && bindings.isNotEmpty()) {
+            add(SideAction("reset", "Reset keys", SidekitIcon.Undo, tone = ActionTone.Destructive) { mapper.resetAll(custom) })
+        }
     }
-    SidekitScaffold("Keypad mapping", actions = listOf(SideAction.back("back", "Settings", back)), options = options) { padding ->
+    val options = if (custom != null) {
+        listOf(SideAction("automatic", "Use automatic", tone = ActionTone.Muted) { keypad.useCustomMapping(null) })
+    } else {
+        emptyList()
+    }
+    SidekitScaffold("Keypad mapping", actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             item {
                 SidekitCompactItem("Mapping", Modifier.listFade(list, 0), secondary = if (custom == null) "Automatic" else "Custom", onClick = ::toggle)
@@ -73,7 +82,7 @@ fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadControl) -
                     SidekitCompactItem(
                         control.label,
                         Modifier.listFade(list, index + 4),
-                        // Show what the key does when it is still on its default binding. The
+                        // Show what the key does while it is still on its default binding. The
                         // Sundial's right edge, for example, is media-next on a tap and right on
                         // a hold; "Default" alone hid that distinction.
                         secondary = bound?.label ?: control.hint,
@@ -81,11 +90,6 @@ fun KeypadMappingScreen(back: () -> Unit, learn: (KeypadModule, KeypadControl) -
                         icon = if (bound != null) SidekitIcon.Edit else null,
                         onClick = { learn(custom, control) }
                     )
-                }
-                if (bindings.isNotEmpty()) {
-                    item {
-                        SidekitLineButton("Reset ${custom.label} keys", { mapper.resetAll(custom) }, icon = SidekitIcon.Undo, variant = LineButtonVariant.Destructive)
-                    }
                 }
             }
         }
@@ -177,7 +181,7 @@ private fun heard(mapper: KeyMapper, module: KeypadModule, control: KeypadContro
 fun KeyCaptureContent(module: KeypadModule, control: KeypadControl, step: CaptureStep, cancel: () -> Unit, retry: () -> Unit, save: () -> Unit) {
     val heard = step as? CaptureStep.Heard
     val actions = if (heard == null) {
-        listOf(SideAction.back("cancel", "Cancel", cancel))
+        listOf(SideAction.cancel("cancel", onClick = cancel))
     } else {
         listOf(
             SideAction("retry", "Try again", SidekitIcon.Undo, tone = ActionTone.Muted, onClick = retry),

@@ -16,6 +16,7 @@ import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.system.AppIcons
 
 /** Monochrome, so foreign app icons sit with Sidekit's own white symbols. */
 private val Monochrome = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
@@ -27,7 +28,7 @@ private val Monochrome = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatu
 @Composable
 fun PortedAppIcon(app: PortedApp, size: Dp = SidekitTheme.spacing.iconSize, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val icon by produceState<Bitmap?>(null, app.packageName) { value = PortedIcons.load(context, app.packageName) }
+    val icon by produceState<Bitmap?>(null, app.packageName) { value = AppIcons.load(context, app.packageName) }
     val bitmap = icon
     if (bitmap != null) {
         Image(bitmap.asImageBitmap(), app.label, modifier.size(size), colorFilter = Monochrome)

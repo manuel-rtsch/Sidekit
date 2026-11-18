@@ -87,6 +87,14 @@ class NativeAppsTest {
     }
 
     @Test
+    fun `an activity that is not exported gets no tile`() {
+        addNativeAppForTest(context, "test.hidden", "Hidden", exported = false)
+        addNativeApp("test.open", "Open")
+
+        assertEquals(listOf("test.open"), discover().map { it.packageName })
+    }
+
+    @Test
     fun `an app cannot claim a built-in id`() {
         addNativeApp("test.spoof", "Spoof", appId = "builtin:Mail")
         addNativeApp("test.real", "Real")

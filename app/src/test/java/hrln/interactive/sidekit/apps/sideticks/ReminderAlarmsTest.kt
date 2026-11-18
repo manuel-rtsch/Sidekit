@@ -3,8 +3,8 @@ package hrln.interactive.sidekit.apps.sideticks
 import android.app.AlarmManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import org.junit.Test
 import org.junit.Assert.*
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -12,6 +12,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 class ReminderAlarmsTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
+
     @Test fun `due reminders schedule without exact permission and completion cancels delivery`() {
         val manager = context.getSystemService(AlarmManager::class.java)
         org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(false)
@@ -22,6 +23,15 @@ class ReminderAlarmsTest {
         alarm.reconcile(listOf(tick), listOf(tick.copy(ticked = true)))
         assertTrue(shadowOf(manager).scheduledAlarms.isEmpty())
     }
+
+    @Test fun `scheduled reminder carries the reminder action`() {
+        val manager = context.getSystemService(AlarmManager::class.java)
+        org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(true)
+        ReminderAlarms(context).reconcile(emptyList(), listOf(Tick(71, "Milk", dueAt = System.currentTimeMillis() + 60000)))
+        val operation = shadowOf(manager).scheduledAlarms.first().operation
+        assertEquals(ReminderReceiver.ACTION_REMINDER, shadowOf(operation).savedIntent.action)
+    }
+
     @Test fun `restoring a snapshot schedules only undelivered open reminders`() {
         val manager = context.getSystemService(AlarmManager::class.java)
         org.robolectric.shadows.ShadowAlarmManager.setCanScheduleExactAlarms(true)

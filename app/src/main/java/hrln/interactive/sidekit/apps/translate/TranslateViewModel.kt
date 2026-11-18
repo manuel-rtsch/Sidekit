@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 /** The two language/text pairs on the Translate screen, top to bottom. */
 enum class TranslateSide { Source, Target }
 data class TranslatePane(val language: String, val text: String)
-enum class TranslateMode { Translate, History, Large }
+enum class TranslateMode { Translate, History, Large, Language }
 data class SpeechRequest(val text: String, val language: TranslateLanguage)
 
 data class TranslateUiState(
@@ -25,6 +25,8 @@ data class TranslateUiState(
     val talking: TranslateSide? = null,
     val translating: Boolean = false,
     val mode: TranslateMode = TranslateMode.Translate,
+    /** The side whose language is being chosen while [mode] is [TranslateMode.Language]. */
+    val picking: TranslateSide = TranslateSide.Source,
     val error: String? = null,
     val microphonePermissionNeeded: Boolean = false
 ) {
@@ -123,6 +125,8 @@ class TranslateViewModel(
     }
 
     fun swapLanguages() {
+        // An in-flight result belongs to the old direction and would land in the wrong pane.
+        cancelTranslation()
         val oldSource = sourceLanguage
         sourceLanguage = targetLanguage
         targetLanguage = oldSource
@@ -134,16 +138,44 @@ class TranslateViewModel(
         }
     }
 
-    fun nextLanguage(side: TranslateSide) {
-        val languages = TranslateLanguage.entries
-        if (side == TranslateSide.Source) {
-            sourceLanguage = languages[(languages.indexOf(sourceLanguage) + 1).mod(languages.size)]
-            if (sourceLanguage == targetLanguage) targetLanguage = languages[(languages.indexOf(sourceLanguage) + 1).mod(languages.size)]
-        } else {
-            targetLanguage = languages[(languages.indexOf(targetLanguage) + 1).mod(languages.size)]
-            if (targetLanguage == sourceLanguage) sourceLanguage = languages[(languages.indexOf(targetLanguage) + 1).mod(languages.size)]
+    fun language(side: TranslateSide): TranslateLanguage = if (side == TranslateSide.Source) sourceLanguage else targetLanguage
+
+    /** Opens the language list for [side], dropping any pending microphone request. */
+    fun pickLanguage(side: TranslateSide) {
+        _state.update { it.copy(mode = TranslateMode.Language, picking = side, talking = null, microphonePermissionNeeded = false) }
+    }
+
+    /**
+     * Sets the language being picked and returns to the translator. Choosing the language already on the
+     * other side swaps the pair rather than translating a language into itself. An existing translation
+     * is redone in the new pair so the result never sits under the wrong language.
+     */
+    fun chooseLanguage(language: TranslateLanguage) {
+        val side = _state.value.picking
+        val changed = language != language(side)
+        val other = if (side == TranslateSide.Source) targetLanguage else sourceLanguage
+        if (language == other) {
+            // A swap moves each text with its language, so nothing needs translating again.
+            swapLanguages()
+            show(TranslateMode.Translate)
+            return
         }
-        _state.update { it.copy(source = it.source.copy(language = sourceLanguage.label), target = it.target.copy(language = targetLanguage.label)) }
+        if (side == TranslateSide.Source) sourceLanguage = language else targetLanguage = language
+        _state.update {
+            it.copy(
+                source = it.source.copy(language = sourceLanguage.label),
+                target = it.target.copy(language = targetLanguage.label),
+                mode = TranslateMode.Translate
+            )
+        }
+        if (!changed) return
+        val current = _state.value
+        // A translation still in flight is for the old pair: redo it too, or drop it if there's nothing to redo.
+        if (current.source.text.isNotBlank() && (current.target.text.isNotEmpty() || current.translating)) {
+            translate()
+        } else if (current.translating) {
+            cancelTranslation()
+        }
     }
 
     fun clear() {

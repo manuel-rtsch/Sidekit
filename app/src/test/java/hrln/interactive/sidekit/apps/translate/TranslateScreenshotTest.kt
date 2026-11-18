@@ -27,9 +27,14 @@ class TranslateScreenshotTest {
     @Test fun talking() = shoot("translate_talking_1-837") { TranslateScreen(TranslateSampleData.state(TranslateSide.Target), {}) }
 
     @Test fun largePrompt() = shoot("translate_large_1-872") {
-        TranslateScreen(TranslateSampleData.state().copy(
-            source = TranslatePane("English", TranslateSampleData.heard.first),
-            target = TranslatePane("Chinese", TranslateSampleData.heard.second),
-        ), {})
+        TranslateScreen(
+            TranslateSampleData.state().copy(
+                source = TranslatePane("English", TranslateSampleData.heard.first),
+                target = TranslatePane("Chinese", TranslateSampleData.heard.second)
+            ),
+            {}
+        )
     }
+
+    @Test fun languageList() = shoot("translate_language") { TranslateLanguageScreen(TranslateSide.Target, TranslateLanguage.Chinese) }
 }
