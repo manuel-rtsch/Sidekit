@@ -1,0 +1,196 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "hrln.interactive.sidekit",
+    "module": "sidekit-design",
+    "version": "1.8.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.7.0"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.compose",
+          "module": "compose-bom",
+          "version": {
+            "requires": "2026.09.00"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          }
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui"
+        },
+        {
+          "group": "androidx.compose.foundation",
+          "module": "foundation"
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui-tooling-preview"
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.lifecycle",
+          "module": "lifecycle-runtime-compose",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "androidx.lifecycle",
+          "module": "lifecycle-common",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.11.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sidekit-design-1.8.0.aar",
+          "url": "sidekit-design-1.8.0.aar",
+          "size": 1066358,
+          "sha512": "d3b24ba499509a0215d74fed0655604902000e84c0e28fd9ecb9f3024c5e72391f376c20b778264d7657159254d44866bf4b7a714de79343842acfb493f6cd2a",
+          "sha256": "199344c712f4777b646771cde63ddc351b507c3fc869a0eef8087ee2c0830d30",
+          "sha1": "c02de4455837d62eeb7d181a4100894f6c74c713",
+          "md5": "a18c265a53f36b66aeb9093571cc7bec"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "androidx.compose",
+          "module": "compose-bom",
+          "version": {
+            "requires": "2026.09.00"
+          },
+          "attributes": {
+            "org.gradle.category": "platform"
+          }
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui"
+        },
+        {
+          "group": "androidx.compose.foundation",
+          "module": "foundation"
+        },
+        {
+          "group": "androidx.compose.ui",
+          "module": "ui-tooling-preview"
+        },
+        {
+          "group": "androidx.activity",
+          "module": "activity-compose",
+          "version": {
+            "requires": "1.13.0"
+          }
+        },
+        {
+          "group": "androidx.lifecycle",
+          "module": "lifecycle-runtime-compose",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "androidx.lifecycle",
+          "module": "lifecycle-common",
+          "version": {
+            "requires": "2.11.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.11.0"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.4.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "sidekit-design-1.8.0.aar",
+          "url": "sidekit-design-1.8.0.aar",
+          "size": 1066358,
+          "sha512": "d3b24ba499509a0215d74fed0655604902000e84c0e28fd9ecb9f3024c5e72391f376c20b778264d7657159254d44866bf4b7a714de79343842acfb493f6cd2a",
+          "sha256": "199344c712f4777b646771cde63ddc351b507c3fc869a0eef8087ee2c0830d30",
+          "sha1": "c02de4455837d62eeb7d181a4100894f6c74c713",
+          "md5": "a18c265a53f36b66aeb9093571cc7bec"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "sidekit-design-1.8.0-sources.jar",
+          "url": "sidekit-design-1.8.0-sources.jar",
+          "size": 83854,
+          "sha512": "4dc2cabdc10d02d5180d9e425de7910fdc89458393dbb54f300e332a69f03557ba2838a7965ed805e7aee67c4cd3b28e9c7099964067c28b10359700c66589c7",
+          "sha256": "2a18bfcbe11e3778330f76de995b7dd4e1ce5fc2b818524ec4ca3ac5b066bfc6",
+          "sha1": "9bc8626db0f4c3e16150cdf79c2a3425709ce70a",
+          "md5": "210251ba92e7e26108f515c9bcd89d00"
+        }
+      ]
+    }
+  ]
+}
