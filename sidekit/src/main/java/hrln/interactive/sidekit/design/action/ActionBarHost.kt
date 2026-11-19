@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.GraphicsLayerScope
@@ -59,6 +60,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -73,6 +75,7 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.contentColorFor
 import hrln.interactive.sidekit.design.theme.drawFocusRing
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -593,10 +596,21 @@ private fun GraphicsLayerScope.applyTravel(motion: ActionMotion, t: Float, dista
 }
 
 /**
- * An action label that wraps onto a second row instead of truncating. It is measured at [oneLine]
- * first; only a label that cannot fit on one line falls back to [twoLine] (a step down the type
- * scale) and is allowed to wrap to two lines. Labels too long even for two are ellipsized, so a
- * button never grows a third row.
+ * An action label that wraps onto a second row rather than truncating. A wrapped label keeps the
+ * action's type size: the old one-step-down "two line" style made neighbouring buttons disagree
+ * about their type scale, which read as a bug. Two lines use a tighter leading so they fit the
+ * fixed bar height.
+ *
+ * A label that still does not fit two rows is scaled down in small steps (down to
+ * [MIN_WRAPPED_LABEL_SCALE]) before it is shortened, so long labels give up type size only when
+ * there is no other way to keep them whole. The final fallback cuts at a word boundary whenever
+ * that still shows most of the message; otherwise the standard end-of-line ellipsis keeps more
+ * of it. The bar height itself never changes: two rows fit because their leading is tighter.
+ *
+ * The layout is only as wide as its widest line ([tightWidth]), not the space it was allowed. A
+ * wrapped label therefore keeps its icon beside it and the pair stays centred in the button; if
+ * the layout kept the full allowance, a short two-word label would leave a void between icon and
+ * text and push both towards the button's edges.
  *
  * Measurement happens in the layout phase against the slot's settled width, which is constant for
  * a whole morph, so text is shaped once per content change rather than every frame. The result is
@@ -605,33 +619,156 @@ private fun GraphicsLayerScope.applyTravel(motion: ActionMotion, t: Float, dista
 @Composable
 private fun ActionLabel(
     text: String,
-    oneLine: TextStyle,
-    twoLine: TextStyle,
+    style: TextStyle,
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    val measurer = rememberTextMeasurer()
-    val singleStyle = remember(oneLine, color) { oneLine.copy(color = color, textAlign = TextAlign.Center) }
-    val wrappedStyle = remember(twoLine, color) { twoLine.copy(color = color, textAlign = TextAlign.Center) }
+    // A wrapped label may measure a handful of candidate scales while it settles; keep them all
+    // cached so a morph re-uses the shaped text instead of shaping it every frame.
+    val measurer = rememberTextMeasurer(cacheSize = 24)
+    val labelStyle = remember(style, color) { style.copy(color = color, textAlign = TextAlign.Center) }
     var drawn by remember { mutableStateOf<TextLayoutResult?>(null) }
     Layout(
         content = {},
         modifier = modifier.drawWithContent {
             drawContent()
-            drawn?.let { drawText(it) }
+            drawn?.let { result ->
+                // The paragraph is laid out across the full allowance and centred inside it. The
+                // label itself is only as wide as its widest line, so shift the paragraph to
+                // keep that tight box centred on the text.
+                drawText(result, topLeft = Offset((size.width - result.size.width) / 2f, 0f))
+            }
         }
     ) { _, constraints ->
         val bounds = Constraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
-        val single = measurer.measure(text, singleStyle, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
-        // lineCount == 1 means it fits on one row at the normal size, so it is never shrunk.
-        val result = if (single.lineCount <= 1) {
-            single
-        } else {
-            measurer.measure(text, wrappedStyle, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
-        }
+        val result = measureActionLabel(measurer, text, labelStyle, bounds)
         drawn = result
-        layout(result.size.width, result.size.height) {}
+        val width = result.tightWidth().coerceAtMost(constraints.maxWidth)
+        layout(width, result.size.height) {}
     }
+}
+
+/** Wrapped labels use a tighter leading than single-line text so two rows fit a fixed bar. */
+private const val TWO_LINE_LEADING = 1.15f
+
+/** How far a label may shrink to stay on two rows before it is shortened instead. */
+private const val MIN_WRAPPED_LABEL_SCALE = 0.8f
+
+/** Each shrink step is small enough to stay close to the action's real type size. */
+private const val LABEL_SCALE_STEP = 0.04f
+
+private fun measureActionLabel(
+    measurer: TextMeasurer,
+    text: String,
+    style: TextStyle,
+    bounds: Constraints
+): TextLayoutResult {
+    val single = measurer.measure(text, style, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
+    if (single.lineCount <= 1) return single
+
+    val wrappedStyle = style.copy(lineHeight = style.fontSize * TWO_LINE_LEADING)
+    val wrapped = measurer.measure(text, wrappedStyle, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
+    if (!wrapped.hasVisualOverflow && wrapped.breaksOnlyBetweenWords(text)) return wrapped
+
+    // Wrapping must not cut a word in half just because the icon left the line a little narrow
+    // ("Rearrang / e order"). Shrink in small steps until the text both fits two rows and breaks
+    // between words. Only when that is impossible is the label cut.
+    var smallestFit: TextLayoutResult? = if (!wrapped.hasVisualOverflow) wrapped else null
+    var scale = 1f - LABEL_SCALE_STEP
+    while (scale >= MIN_WRAPPED_LABEL_SCALE) {
+        val candidate = measurer.measure(
+            text,
+            wrappedStyle.scaled(scale),
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 2,
+            constraints = bounds
+        )
+        if (!candidate.hasVisualOverflow) {
+            if (candidate.breaksOnlyBetweenWords(text)) return candidate
+            // A single word wider than the button still has to split somewhere. Keep the
+            // smallest readable version of it rather than giving up on the two rows.
+            smallestFit = candidate
+        }
+        scale -= LABEL_SCALE_STEP
+    }
+    smallestFit?.let { return it }
+
+    // Shrinking cannot make it fit at all: stay at the action's real size and cut once, so the
+    // button does not lose both size and words.
+    return shortestUsefulCut(measurer, text, wrappedStyle, bounds)
+}
+
+/** True when every line break in [text] falls on whitespace rather than inside a word. */
+private fun TextLayoutResult.breaksOnlyBetweenWords(text: String): Boolean {
+    for (line in 0 until lineCount - 1) {
+        val end = getLineEnd(line, visibleEnd = true)
+        if (end <= 0 || end >= text.length) continue
+        val before = text[end - 1]
+        val after = text[end]
+        if (!before.isWhitespace() && !after.isWhitespace() && before != '-') return false
+    }
+    return true
+}
+
+private fun TextStyle.scaled(scale: Float): TextStyle = copy(fontSize = fontSize * scale, lineHeight = lineHeight * scale)
+
+/**
+ * Cuts an overlong label once. A word-boundary cut is cleaner, but if it would hide most of the
+ * message ("Open…") the standard end-of-line ellipsis keeps far more of it ("Open notificatio…").
+ */
+private fun shortestUsefulCut(
+    measurer: TextMeasurer,
+    text: String,
+    style: TextStyle,
+    bounds: Constraints
+): TextLayoutResult {
+    val midWord = measurer.measure(text, style, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
+    val words = text.trim().split(WHITESPACE)
+    if (words.size <= 1) return midWord
+
+    var low = 1
+    var high = words.size - 1
+    var bestWords = 0
+    var best: TextLayoutResult? = null
+    while (low <= high) {
+        val count = (low + high) / 2
+        val candidate = words.take(count).joinToString(" ") + "…"
+        val measured = measurer.measure(candidate, style, overflow = TextOverflow.Clip, maxLines = 2, constraints = bounds)
+        if (!measured.hasVisualOverflow) {
+            best = measured
+            bestWords = count
+            low = count + 1
+        } else {
+            high = count - 1
+        }
+    }
+    val wordCut = best ?: return midWord
+    // Keep the whole-word cut only when it preserves at least three quarters of what the
+    // mid-word ellipsis would show.
+    val midWordChars = midWord.visibleCharacters()
+    val wordCutChars = text.trim().split(WHITESPACE).take(bestWords).sumOf { it.length }
+    return if (midWordChars == 0 || wordCutChars * 4 >= midWordChars * 3) wordCut else midWord
+}
+
+/** Characters actually shown, excluding the ellipsis and trailing whitespace. */
+private fun TextLayoutResult.visibleCharacters(): Int = if (lineCount == 0) 0 else getLineEnd(lineCount - 1, visibleEnd = true)
+
+private val WHITESPACE = Regex("\\s+")
+
+/**
+ * The width of the widest drawn line. [TextLayoutResult.size] is the allowance handed to the
+ * paragraph, which is the full column whenever the text has to wrap; using it as the label's
+ * width is what pushed icons and short labels out to the button's edges.
+ */
+private fun TextLayoutResult.tightWidth(): Int {
+    var tight = 0f
+    for (line in 0 until lineCount) {
+        val left = getLineLeft(line)
+        val right = getLineRight(line)
+        tight = max(tight, abs(right - left))
+    }
+    val width = ceil(tight).toInt()
+    return if (width > 0) width else size.width
 }
 
 @Composable
@@ -657,11 +794,12 @@ private fun ActionContent(action: SideAction, modifier: Modifier) {
             val typography = SidekitTheme.typography
             ActionLabel(
                 text = label,
-                oneLine = if (action.dense) typography.label else typography.body,
-                twoLine = if (action.dense) typography.caption else typography.label,
+                style = if (action.dense) typography.label else typography.body,
                 color = foreground,
                 // Weighted so the icons are measured first and keep their space: otherwise a
-                // full-width two-line label squeezes a trailing arrow down to nothing.
+                // full-width two-line label squeezes a trailing arrow down to nothing. `fill`
+                // stays false so a wrapped label keeps its tight width and the icon sits beside
+                // the text instead of at the far edge of the column.
                 modifier = Modifier
                     .weight(1f, fill = false)
                     // Drawn text does not expose semantics on its own. Always expose the label as
