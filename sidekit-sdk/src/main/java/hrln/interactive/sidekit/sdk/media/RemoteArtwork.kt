@@ -35,11 +35,12 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.withContext
 
 /**
  * Artwork that lives on the network, for remote libraries (Spotify, podcast feeds).
@@ -50,8 +51,9 @@ import kotlinx.coroutines.withContext
  * - memory: the same 1/32-of-heap LRU as [Thumbnails], shared across sizes;
  * - disk: `cacheDir/artwork`, one file per url+size, trimmed to [MAX_DISK_BYTES] oldest-first, so
  *   scrolling the same list after a restart does not refetch;
- * - network: at most two fetches at once, 10 s timeouts, an 8 MB cap, and cancellation that
- *   disconnects the connection when the row leaves composition;
+ * - network: at most two fetches at once, one fetch per url+size however many rows ask for it,
+ *   10 s timeouts, an 8 MB cap, and cancellation that disconnects the connection once the last
+ *   row wanting it leaves composition;
  * - decode: bounds first, `inSampleSize` to roughly the drawn size, then [Thumbnails.cropTo] in
  *   RGB_565, so a 104 px tile never holds a full-resolution cover.
  *
@@ -63,6 +65,9 @@ object RemoteArtwork {
     private const val TIMEOUT_MS = 10_000
     private const val ATOMIC_TEMP_SUFFIX = ".new"
 
+    /** A write whose temp file is older than this is not in flight; nothing takes an hour. */
+    private const val STALE_TEMP_MS = 60L * 60_000
+
     /** Serialises the delete pass so two trims never account for the same bytes twice. */
     private val trimLock = Any()
 
@@ -70,6 +75,9 @@ object RemoteArtwork {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val fetch = Dispatchers.IO.limitedParallelism(2)
+
+    /** One fetch per url+size, however many rows ask for that picture at the same time. */
+    private val flights = SingleFlight<Bitmap>(CoroutineScope(SupervisorJob() + fetch))
 
     private fun memory(context: Context): LruCache<String, Bitmap> = memory ?: synchronized(this) {
         memory ?: run {
@@ -137,11 +145,15 @@ object RemoteArtwork {
         val cache = memory(context)
         val key = key(url, w, h, headers)
         cache[key]?.let { return it }
-        return withContext(fetch) {
-            cache[key]?.let { return@withContext it }
+        // Two rows routinely want the same picture at the same size — the notification and the
+        // now-playing backdrop, say. Without the shared flight both miss the memory cache, both
+        // download, and both write the same AtomicFile temp path: the first rename wins and the
+        // second fails with `Failed to rename … .img.new`, leaking the temp file it leaves behind.
+        return flights.run(key) {
+            cache[key]?.let { return@run it }
             val bitmap = readDisk(context, url, w, h, headers)
                 ?: download(context, url, w, h, headers)
-                ?: return@withContext null
+                ?: return@run null
             cache.put(key, bitmap)
             bitmap
         }
@@ -301,8 +313,14 @@ object RemoteArtwork {
             atomic.failWrite(null)
             return
         }
+        // finishWrite only logs when its rename fails (a clear() that removed the directory under
+        // this write, say) and leaves the temp file behind. It is not the cache entry, so drop it
+        // rather than let it sit outside trim()'s budget until [STALE_TEMP_MS] passes.
+        if (!file.isFile) tempFile(file).delete()
         trim(cacheDir(context))
     }
+
+    private fun tempFile(file: File) = File(file.path + ATOMIC_TEMP_SUFFIX)
 
     /**
      * Keeps the disk cache under [MAX_DISK_BYTES], dropping least-recently-used files first.
@@ -313,13 +331,25 @@ object RemoteArtwork {
      * `lastModified()` sees a file's key change between comparisons when a concurrent write lands;
      * TimSort then throws `IllegalArgumentException: Comparison method violates its general
      * contract!` and that kills the process.
+     *
+     * Temp files are never charged to the budget — a write that is still running owns its own — but
+     * one older than [STALE_TEMP_MS] is a leftover from a write that failed to rename, and is
+     * removed here so it cannot accumulate for the life of the install.
      */
-    internal fun trim(dir: File, maxBytes: Long = MAX_DISK_BYTES) {
-        val entries = dir.listFiles()
-            ?.filterNot { it.name.endsWith(ATOMIC_TEMP_SUFFIX) }
-            ?.map { file -> Entry(file, file.length(), file.lastModified()) }
-            ?.sortedBy { it.lastModified }
-            ?: return
+    internal fun trim(
+        dir: File,
+        maxBytes: Long = MAX_DISK_BYTES,
+        now: Long = System.currentTimeMillis()
+    ) {
+        val files = dir.listFiles() ?: return
+        val entries = files
+            .filterNot { it.name.endsWith(ATOMIC_TEMP_SUFFIX) }
+            .map { file -> Entry(file, file.length(), file.lastModified()) }
+            .sortedBy { it.lastModified }
+        val staleTemps = files
+            .filter { it.name.endsWith(ATOMIC_TEMP_SUFFIX) }
+            .map { file -> Entry(file, 0L, file.lastModified()) }
+            .filter { now - it.lastModified > STALE_TEMP_MS }
         synchronized(trimLock) {
             var total = entries.sumOf { it.bytes }
             for (entry in entries) {
@@ -327,6 +357,7 @@ object RemoteArtwork {
                 total -= entry.bytes
                 entry.file.delete()
             }
+            staleTemps.forEach { it.file.delete() }
         }
     }
 

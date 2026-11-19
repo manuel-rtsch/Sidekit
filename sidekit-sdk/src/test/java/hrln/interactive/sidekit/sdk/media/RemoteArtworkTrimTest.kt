@@ -71,6 +71,24 @@ class RemoteArtworkTrimTest {
         }
     }
 
+    @Test
+    fun `trim drops a temp file a failed rename left behind`() {
+        val dir = tempDir()
+        try {
+            // finishWrite only logs when its rename fails and leaves the temp file, which is not a
+            // cache entry: it is outside the budget, so nothing else would ever remove it.
+            val leaked = write(dir, "cover.img.new", bytes = 100, ageMinutes = 120)
+            val cached = write(dir, "cover.img", bytes = 10, ageMinutes = 1)
+
+            RemoteArtwork.trim(dir, maxBytes = RemoteArtwork.MAX_DISK_BYTES)
+
+            assertFalse(leaked.exists())
+            assertTrue(cached.exists())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
     private fun tempDir(): File = File.createTempFile("sidekit-artwork", "").apply {
         delete()
         mkdirs()
