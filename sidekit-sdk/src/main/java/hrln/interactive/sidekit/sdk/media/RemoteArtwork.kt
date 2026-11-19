@@ -80,27 +80,68 @@ object RemoteArtwork {
         }
     }
 
-    private fun key(url: String, w: Int, h: Int) = "$url@${w}x$h"
+    private fun key(url: String, w: Int, h: Int, headers: Map<String, String>) = "$url@${w}x$h${headerFingerprint(headers)}"
+
+    /**
+     * Distinguishes entries fetched with different request headers.
+     *
+     * A provider that authenticates artwork by header (Jellyfin sends `Authorization`) must not
+     * share a disk or memory entry with an unauthenticated request for the same URL, and the same
+     * URL can be fetched by two accounts with different headers. The header names and values are
+     * hashed, never stored: a token must not end up in a file name or in a log line. Order does
+     * not matter, so a map built in another order still hits the same entry.
+     */
+    private fun headerFingerprint(headers: Map<String, String>): String {
+        if (headers.isEmpty()) return ""
+        val canonical = headers.entries
+            .sortedBy { it.key.lowercase() }
+            .joinToString("\n") { "${it.key.lowercase()}:${it.value}" }
+        val digest = MessageDigest.getInstance("SHA-256").digest(canonical.toByteArray(Charsets.UTF_8))
+        return "#" + digest.joinToString("") { "%02x".format(it) }
+    }
 
     private fun cacheDir(context: Context) = File(context.cacheDir, "artwork").apply { mkdirs() }
 
-    /** Stable file name for a url+size. Hashed so URLs with query strings stay filesystem-safe. */
-    internal fun fileName(url: String, w: Int, h: Int): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(key(url, w, h).toByteArray(Charsets.UTF_8))
+    /**
+     * Stable file name for a url+size (+headers). Hashed so URLs with query strings and header
+     * values stay out of the filesystem.
+     */
+    internal fun fileName(url: String, w: Int, h: Int, headers: Map<String, String> = emptyMap()): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(key(url, w, h, headers).toByteArray(Charsets.UTF_8))
         return digest.joinToString("") { "%02x".format(it) } + ".img"
     }
 
-    fun cached(context: Context, url: String, w: Int, h: Int): Bitmap? = memory(context)[key(url, w, h)]
+    fun cached(
+        context: Context,
+        url: String,
+        w: Int,
+        h: Int,
+        headers: Map<String, String> = emptyMap()
+    ): Bitmap? = memory(context)[key(url, w, h, headers)]
 
-    /** Loads [url] cropped to [w] x [h] px. Null while offline, on a bad response, or undecodable. */
-    suspend fun load(context: Context, url: String, w: Int, h: Int): Bitmap? {
+    /**
+     * Loads [url] cropped to [w] x [h] px. Null while offline, on a bad response, or undecodable.
+     *
+     * [headers] travel with every request for this image, which is how a provider that authenticates
+     * artwork with a header keeps its token out of the URL.
+     */
+    suspend fun load(
+        context: Context,
+        url: String,
+        w: Int,
+        h: Int,
+        headers: Map<String, String> = emptyMap()
+    ): Bitmap? {
         if (w <= 0 || h <= 0 || url.isBlank()) return null
         val cache = memory(context)
-        val key = key(url, w, h)
+        val key = key(url, w, h, headers)
         cache[key]?.let { return it }
         return withContext(fetch) {
             cache[key]?.let { return@withContext it }
-            val bitmap = readDisk(context, url, w, h) ?: download(context, url, w, h) ?: return@withContext null
+            val bitmap = readDisk(context, url, w, h, headers)
+                ?: download(context, url, w, h, headers)
+                ?: return@withContext null
             cache.put(key, bitmap)
             bitmap
         }
@@ -117,8 +158,14 @@ object RemoteArtwork {
         cacheDir(context).deleteRecursively()
     }
 
-    private fun readDisk(context: Context, url: String, w: Int, h: Int): Bitmap? = try {
-        decodeCached(cacheDir(context), url, w, h) { file ->
+    private fun readDisk(
+        context: Context,
+        url: String,
+        w: Int,
+        h: Int,
+        headers: Map<String, String> = emptyMap()
+    ): Bitmap? = try {
+        decodeCached(cacheDir(context), url, w, h, headers) { file ->
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(file.absolutePath, bounds)
             val options = BitmapFactory.Options().apply {
@@ -142,13 +189,26 @@ object RemoteArtwork {
      * `Unable to decode stream: … ENOENT`, which reads like broken artwork. A cache miss is not
      * an error, so it must not be reported as one.
      */
-    internal inline fun <T> decodeCached(dir: File, url: String, w: Int, h: Int, decode: (File) -> T?): T? {
-        val file = File(dir, fileName(url, w, h))
+    internal inline fun <T> decodeCached(
+        dir: File,
+        url: String,
+        w: Int,
+        h: Int,
+        headers: Map<String, String> = emptyMap(),
+        decode: (File) -> T?
+    ): T? {
+        val file = File(dir, fileName(url, w, h, headers))
         return if (file.isFile) decode(file) else null
     }
 
-    private suspend fun download(context: Context, url: String, w: Int, h: Int): Bitmap? {
-        val bytes = get(url) ?: return null
+    private suspend fun download(
+        context: Context,
+        url: String,
+        w: Int,
+        h: Int,
+        headers: Map<String, String>
+    ): Bitmap? {
+        val bytes = get(url, headers) ?: return null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
@@ -168,17 +228,17 @@ object RemoteArtwork {
             decoded.recycle()
             return null
         }
-        writeDisk(context, url, w, h, bitmap)
+        writeDisk(context, url, w, h, bitmap, headers)
         return bitmap
     }
 
-    private suspend fun get(url: String): ByteArray? {
+    private suspend fun get(url: String, headers: Map<String, String>): ByteArray? {
         val connection = try {
             (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = TIMEOUT_MS
                 readTimeout = TIMEOUT_MS
                 instanceFollowRedirects = true
-                setRequestProperty("Accept", "image/*")
+                applyRequestHeaders(this, headers)
             }
         } catch (_: Exception) {
             return null
@@ -211,8 +271,24 @@ object RemoteArtwork {
         }
     }
 
-    private fun writeDisk(context: Context, url: String, w: Int, h: Int, bitmap: Bitmap) {
-        val file = File(cacheDir(context), fileName(url, w, h))
+    /**
+     * Sets the fixed accept header plus whatever the caller supplies. Provider headers win over the
+     * default when both name the same field.
+     */
+    internal fun applyRequestHeaders(connection: HttpURLConnection, headers: Map<String, String>) {
+        connection.setRequestProperty("Accept", "image/*")
+        headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
+    }
+
+    private fun writeDisk(
+        context: Context,
+        url: String,
+        w: Int,
+        h: Int,
+        bitmap: Bitmap,
+        headers: Map<String, String> = emptyMap()
+    ) {
+        val file = File(cacheDir(context), fileName(url, w, h, headers))
         val atomic = AtomicFile(file)
         try {
             val out = atomic.startWrite()
@@ -274,7 +350,8 @@ fun RemoteArtworkImage(
     url: String?,
     modifier: Modifier = Modifier,
     placeholder: SidekitIcon = SidekitIcon.Album,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    headers: Map<String, String> = emptyMap()
 ) {
     BoxWithConstraints(modifier) {
         RemoteArtworkImage(
@@ -283,7 +360,8 @@ fun RemoteArtworkImage(
             height = maxHeight.value.coerceIn(1f, 1024f).dp,
             modifier = Modifier.fillMaxSize(),
             placeholder = placeholder,
-            contentDescription = contentDescription
+            contentDescription = contentDescription,
+            headers = headers
         )
     }
 }
@@ -295,19 +373,20 @@ fun RemoteArtworkImage(
     height: Dp,
     modifier: Modifier = Modifier,
     placeholder: SidekitIcon = SidekitIcon.Album,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    headers: Map<String, String> = emptyMap()
 ) {
     val context = LocalContext.current.applicationContext
     val density = LocalDensity.current
     val w = with(density) { width.roundToPx() }
     val h = with(density) { height.roundToPx() }
     val inspection = LocalInspectionMode.current
-    var image by remember(url, w, h) {
-        mutableStateOf(url?.let { RemoteArtwork.cached(context, it, w, h)?.asImageBitmap() })
+    var image by remember(url, w, h, headers) {
+        mutableStateOf(url?.let { RemoteArtwork.cached(context, it, w, h, headers)?.asImageBitmap() })
     }
     if (url != null && image == null && !inspection) {
-        LaunchedEffect(url, w, h) {
-            image = RemoteArtwork.load(context, url, w, h)?.asImageBitmap()
+        LaunchedEffect(url, w, h, headers) {
+            image = RemoteArtwork.load(context, url, w, h, headers)?.asImageBitmap()
         }
     }
     Box(modifier.drawBehind { image?.let { drawRemoteArtwork(it) } }) {

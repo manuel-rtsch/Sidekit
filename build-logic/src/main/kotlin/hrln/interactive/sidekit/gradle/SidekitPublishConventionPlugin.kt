@@ -21,7 +21,12 @@ class SidekitPublishConventionPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.pluginManager.apply("maven-publish")
         project.group = "hrln.interactive.sidekit"
-        project.version = GitVersion.name(project)
+        // A consumer that needs an unreleased build (Sidetrack, while a header change waits for its
+        // tag) publishes it locally with -PsidekitVersion=1.9.0. The override only affects where
+        // the artifact lands, never what the publish workflow does: that one still runs on a tag,
+        // where git already reports the right version.
+        project.version = project.providers.gradleProperty("sidekitVersion").orNull
+            ?: GitVersion.name(project)
 
         val publishPages = project.providers.gradleProperty("sidekitPublishPages")
             .map(String::toBoolean)
