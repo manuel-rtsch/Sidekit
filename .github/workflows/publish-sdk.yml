@@ -71,8 +71,77 @@ jobs:
           :sidekit-sdk:publishAllPublicationsToSidekitPagesRepository
           -PsidekitPublishPages=true --stacktrace
 
-      # GitHub Pages serves the repository as plain files, so the Maven layout is the site. Only
-      # this workflow writes to gh-pages, and it keeps older versions: consumers pin versions.
+      # Gradle rewrites each artifact's maven-metadata.xml, and it has already shipped a metadata
+      # file that listed only the last three versions while the version directories for 1.4.2-1.7.3
+      # sat right beside it: consumers that resolve through metadata could not see them. Check the
+      # tree before it is pushed, not after someone fails to upgrade.
+      - name: Verify the metadata lists every published version
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          python3 - "$version" <<'PY'
+          import pathlib
+          import sys
+          import xml.etree.ElementTree as ET
+
+          version = sys.argv[1]
+          root = pathlib.Path("build/pages-repo/hrln/interactive/sidekit")
+          failures = []
+
+          for artifact in ("sidekit-design", "sidekit-sdk"):
+              before = len(failures)
+              base = root / artifact
+              if not base.is_dir():
+                  failures.append(f"{artifact}: no published tree at {base}")
+                  continue
+
+              # The files this run was supposed to produce.
+              for suffix in ("aar", "pom", "module"):
+                  f = base / version / f"{artifact}-{version}.{suffix}"
+                  if not f.is_file():
+                      failures.append(f"{artifact}: missing {f.name}")
+
+              metadata = base / "maven-metadata.xml"
+              if not metadata.is_file():
+                  failures.append(f"{artifact}: missing maven-metadata.xml")
+                  continue
+
+              tree = ET.parse(metadata).getroot()
+              listed = [v.text.strip() for v in tree.iter("version") if v.text]
+              latest = (tree.findtext("versioning/latest") or "").strip()
+              release = (tree.findtext("versioning/release") or "").strip()
+
+              # Every version directory on the branch is reachable by coordinate; metadata that
+              # does not list it hides a working artifact from resolvers that trust metadata.
+              directories = sorted(p.name for p in base.iterdir() if p.is_dir())
+              unlisted = [d for d in directories if d not in listed]
+              if unlisted:
+                  failures.append(
+                      f"{artifact}: maven-metadata.xml omits {', '.join(unlisted)} "
+                      f"(lists {', '.join(listed)})"
+                  )
+              if version not in listed:
+                  failures.append(f"{artifact}: metadata does not list the version being published")
+              if latest != version or release != version:
+                  failures.append(
+                      f"{artifact}: metadata reports latest={latest!r} release={release!r}, "
+                      f"expected {version!r}"
+                  )
+
+              if len(failures) == before:
+                  print(f"{artifact}: {len(directories)} versions, latest={latest}: ok")
+
+          if failures:
+              print("::error::The published Maven tree is not self-consistent:")
+              for failure in failures:
+                  print(f"::error::  {failure}")
+              sys.exit(1)
+          print("Metadata covers every version directory; safe to deploy.")
+          PY
+
+      # GitHub Pages serves the repository as plain files, so the Maven layout is the only thing
+      # on gh-pages. Only this workflow writes to it, and it keeps older versions: consumers pin
+      # versions, so a removed directory would break a build that still asks for it.
       - name: Deploy to gh-pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

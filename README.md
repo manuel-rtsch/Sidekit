@@ -11,7 +11,9 @@ T9 or Mini QWERTY keypad, the D-pad and the touchscreen.
 
 You need a phone running Android 12 (API 31) or later.
 
-1. Download the `.apk` from the [latest release](https://github.com/HarlenPostill/Sidekit/releases/latest).
+1. Download `Sidekit-<version>.apk` from the [latest release](https://github.com/manuel-rtsch/Sidekit/releases/latest).
+   Every release also carries `Sidekit-<version>-release-unsigned.apk` (the same build without a
+   signature) and `SHA256SUMS.txt`; take the signed `.apk` unless you sign it yourself.
 2. Open it on the phone and allow installs from that source, or install it from a computer with
    `adb install -r <file>.apk`.
 3. Go home and choose **Sidekit** as the Home app.
@@ -37,13 +39,17 @@ without one, and Mail and Banking only connect when you add your own details.
 Requirements: JDK 21 and the Android SDK (compile SDK 37). Android Studio sets up both.
 
 ```bash
-git clone https://github.com/HarlenPostill/Sidekit.git
+git clone https://github.com/manuel-rtsch/Sidekit.git
 cd Sidekit
 ./gradlew :app:assembleDebug
 ```
 
 The debug APK is written to `app/build/outputs/apk/debug/`. It installs as `hrln.interactive.sidekit.dev`
 next to a release build.
+
+Release APKs are signed by CI from a keystore that never enters the repository: the `Release APK`
+workflow signs `:app:assembleRelease` and attaches it to the tag's release. See
+[docs/ci.md](docs/ci.md#release-signing) for the secrets it reads.
 
 ### Project layout
 

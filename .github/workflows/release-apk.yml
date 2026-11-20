@@ -1,0 +1,155 @@
+name: Release APK
+
+on:
+  push:
+    tags: ["v*"]
+  # Re-cutting an asset without moving the tag is the common case (a wrong signature, a lost
+  # upload), so manual runs are allowed but still have to start from a release tag.
+  workflow_dispatch:
+
+permissions:
+  # The APK is attached to the GitHub release for the tag.
+  contents: write
+
+# One signing run at a time: two runs would upload to the same release.
+concurrency:
+  group: release-apk
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    name: Build, sign and attach the APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # A branch run would publish a rebuild over a released versionCode.
+      - name: Require a release tag
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$REF_TYPE" != "tag" ] || ! [[ "$REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release the APK only from a vX.Y.Z tag (got $REF_TYPE '$REF_NAME')."
+            exit 1
+          fi
+
+      # versionName and versionCode come from git: a tag is exactly "X.Y.Z" and versionCode is
+      # the commit count, so the checkout must carry the full history or every version regresses.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/android-setup
+
+      - name: Decode the release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SIDEKIT_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::SIDEKIT_KEYSTORE_BASE64 is not set. Add the release keystore and its"
+            echo "::error::passwords as repository secrets (see docs/ci.md, Release signing)."
+            echo "::error::Never sign a release with a debug or throwaway key: the signature is what"
+            echo "::error::lets an installed app be updated in place."
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/sidekit-release.jks"
+
+      # The release build type is unsigned on purpose: the APK that ships is the same binary
+      # whether or not signing is available, and signing is one verifiable step here.
+      - name: Build the unsigned release APK
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Sign the APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.SIDEKIT_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIDEKIT_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SIDEKIT_KEY_PASSWORD }}
+          # The certificate of the key that signed v1.3.0-v1.6.0. A different key can never install
+          # as an update over those releases, so signing fails instead of shipping a dead end.
+          EXPECTED_CERT_SHA256: c7834fd5a5204d2f334a77aab56506b317afa4001b96d8e71b0321c5a0f8cd03
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          unsigned="app/build/outputs/apk/release/app-release-unsigned.apk"
+          signed="Sidekit-$version.apk"
+
+          for name in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is empty. Add the four release secrets listed in docs/ci.md."
+              exit 1
+            fi
+          done
+
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          apksigner="$build_tools/apksigner"
+          [ -x "$apksigner" ] || { echo "::error::apksigner not found in $build_tools"; exit 1; }
+
+          "$apksigner" sign \
+            --ks "$RUNNER_TEMP/sidekit-release.jks" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out "$signed" \
+            "$unsigned"
+
+          certs="$("$apksigner" verify --print-certs "$signed")"
+          echo "$certs"
+          # apksigner prints "V3.0 Signer: certificate SHA-256 digest: <hex>", so the digest is the
+          # last field, not the second one.
+          actual="$(printf '%s\n' "$certs" | awk -F': ' '/certificate SHA-256 digest/{print $NF; exit}')"
+          if [ "$actual" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::Signed with $actual, expected $EXPECTED_CERT_SHA256. This APK would not"
+            echo "::error::install as an update over the existing releases."
+            exit 1
+          fi
+
+          # One asset name per release, so a re-cut replaces the file people already downloaded.
+          cp "$unsigned" "Sidekit-$version-release-unsigned.apk"
+          sha256sum "Sidekit-$version.apk" "Sidekit-$version-release-unsigned.apk" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      # A tag that reaches this job without a release still gets one: the assets are the point,
+      # and the notes are edited afterwards as usual.
+      - name: Create the release if the tag has none
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG exists; updating its assets."
+            exit 0
+          fi
+          previous="$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)"
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "Sidekit ${TAG#v}" \
+            --notes "Signed release build of \`$TAG\`, produced by the Release APK workflow.
+
+          Changes since ${previous:-the start of the fork}: https://github.com/$GITHUB_REPOSITORY/compare/${previous:-HEAD}...$TAG
+
+          The release notes are edited after the workflow runs."
+
+      - name: Attach the assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          # --clobber makes a manual re-cut replace the previous files instead of failing.
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            "Sidekit-$version.apk" "Sidekit-$version-release-unsigned.apk" SHA256SUMS.txt
+
+      - name: Check the published assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          for asset in "Sidekit-$version.apk" "Sidekit-$version-release-unsigned.apk" SHA256SUMS.txt; do
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' \
+              | grep -qx "$asset" || { echo "::error::$asset is missing from $TAG"; exit 1; }
+          done
+          echo "All three assets are on $TAG."

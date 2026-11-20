@@ -11,7 +11,8 @@ Gradle cache setup in [`.github/actions/android-setup`](../.github/actions/andro
 | Gradle wrapper validation | `gradle/actions/wrapper-validation` | A modified or unverified `gradle-wrapper.jar` |
 | Build | `./gradlew :app:assembleDebug :app:assembleRelease :sidekit:assembleDebug :sidekit-sdk:assembleDebug :sample-app:assembleDebug :permission-test-app:assembleDebug :permission-test-app:assembleDebugAndroidTest` | Compile errors and R8/keep-rule breakage that only release builds show |
 | Published SDK consumer | publish to `build/pages-repo`, then `:sample-app:assembleDebug -PsidekitUsePublished=true` | Missing POM dependencies, broken transitive `sidekit-design` resolution, consumer rules and the artifact host itself |
-| Publish SDK | tag `v*` or manual dispatch, then publish to GitHub Pages | Release artifacts and POM metadata |
+| Publish SDK | tag `v*` or manual dispatch, then publish to GitHub Pages | Release artifacts and POM metadata, and a `maven-metadata.xml` that omits a published version |
+| Release APK | tag `v*` or manual dispatch: `:app:assembleRelease`, signed with the repository keystore and attached to the release | A release APK that cannot install over the previous one |
 | Unit tests | `./gradlew testDebugUnitTest` | JVM, Robolectric and Compose tests in every module |
 | Android Lint | `./gradlew lintDebug` | API-level, manifest and resource problems; uploads SARIF to code scanning |
 | Kotlin formatting | `./gradlew spotlessCheck` | ktlint violations in files changed since `main` |
@@ -76,45 +77,19 @@ Pages serves the files untouched. Enable it once in the repository settings: **S
 Deploy from a branch → `gh-pages` / root**. The site URL is
 `https://<owner>.github.io/Sidekit/maven/`.
 
-## Publishing
+Before pushing, the workflow fails the run if the staged metadata is not self-consistent: every
+version directory on the branch has to appear in that artifact's `maven-metadata.xml`, the version
+being published has to be listed, and `latest`/`release` have to name it. Gradle has shipped a
+metadata file that listed only the last three versions while the 1.4.2–1.7.3 directories sat beside
+it, and a resolver that trusts metadata cannot see an artifact it does not list. The check runs
+against the staging tree, so a bad file never reaches `gh-pages`.
 
-`:sidekit` and `:sidekit-sdk` are publishable libraries. Version metadata comes from git tags
-through the `sidekit.version` and `sidekit.publish` convention plugins in
-[`build-logic`](../build-logic). The convention plugin configures a local staging repository at
-`build/local-repo` for quick checks, and stages the published layout at `build/pages-repo` when
-`-PsidekitPublishPages=true` is set.
+## The setup guide (`site/`)
 
-```bash
-./gradlew :sidekit:publishAllPublicationsToSidekitPagesRepository \
-  :sidekit-sdk:publishAllPublicationsToSidekitPagesRepository -PsidekitPublishPages=true
-./gradlew :sample-app:assembleDebug -PsidekitUsePublished=true
-```
+`site/` is a separate, single-page install guide deployed to Vercel, not to GitHub Pages: Pages
+serves only the Maven tree. Edit `site/index.html` there, and keep its download links on this
+repository's releases — the guide describes the APKs this fork signs.
 
-`:sample-app` uses the project dependency by default. The `Published SDK consumer` CI job stages
-the Pages layout and rebuilds the sample with `-PsidekitUsePublished=true`, which exercises the
-POM, the transitive `sidekit-design` dependency, the consumer rules and the exact tree that is
-served to third-party apps (`settings.gradle.kts` lists `build/pages-repo` as a repository).
-
-The `Publish SDK` workflow runs on `v*` tags (or manually), stages the same tree and pushes it into
-the `gh-pages` branch, which GitHub Pages serves as a static Maven repository. Nothing is
-uploaded to a package registry, so consumers need no credentials:
-
-```kotlin
-repositories {
-    google()
-    mavenCentral()
-    maven("https://<owner>.github.io/Sidekit/maven")
-}
-
-dependencies {
-    implementation("hrln.interactive.sidekit:sidekit-sdk:<version>")
-}
-```
-
-The workflow keeps older versions in `gh-pages` (consumers pin versions) and writes `.nojekyll`, so
-Pages serves the files untouched. Enable it once in the repository settings: **Settings → Pages →
-Deploy from a branch → `gh-pages` / root**. The site URL is
-`https://<owner>.github.io/Sidekit/maven/`.
 
 ## Formatting
 
@@ -175,6 +150,55 @@ pull requests to `main`; keep them optional if they are still being tuned.
   third-party service and should run on a schedule or manually, not block a pull
   request.
 - **Emulator tests**: see above.
-- **Release signing and publishing**: wire this up when there is a distribution
-  channel. The `release` build type is currently unsigned, so CI only verifies
-  that R8 succeeds.
+- **Release signing**: it runs on tags in the `Release APK` workflow, not on pull
+  requests. The `release` build type stays unsigned so a PR never needs a key,
+  and CI only verifies that R8 succeeds.
+
+## Release signing
+
+The signature on an APK is its identity to Android: only an APK signed with the same key can install
+as an update over an installed copy. v1.3.0–v1.6.0 were signed with the project's release key, but
+v1.9.1 shipped signed with a local debug keystore, so it could not be upgraded at all — no other
+build can ever reproduce that certificate. The `Release APK` workflow exists so that cannot happen
+again by hand.
+
+It runs on every `vX.Y.Z` tag:
+
+1. checks the run started from a release tag, and checks out the full history so `versionName` and
+   `versionCode` (the commit count) stay honest;
+2. decodes the keystore from secrets into `$RUNNER_TEMP`, never into the workspace;
+3. builds `:app:assembleRelease`, which stays unsigned so the build itself needs no secrets;
+4. signs with `apksigner` (v2/v3) and **fails if the certificate is not the expected one**;
+5. writes `SHA256SUMS.txt`, creates the release for the tag if it does not exist, and uploads
+   `Sidekit-<version>.apk`, `Sidekit-<version>-release-unsigned.apk` and `SHA256SUMS.txt`.
+
+### Secrets it reads
+
+| Secret | Value |
+| --- | --- |
+| `SIDEKIT_KEYSTORE_BASE64` | the `.jks` file, base64-encoded |
+| `SIDEKIT_KEYSTORE_PASSWORD` | store password |
+| `SIDEKIT_KEY_ALIAS` | `manuel-sidekit` |
+| `SIDEKIT_KEY_PASSWORD` | key password |
+
+```bash
+base64 -w0 ~/.android-keys/manuel-sidekit-release.jks | gh secret set SIDEKIT_KEYSTORE_BASE64
+gh secret set SIDEKIT_KEYSTORE_PASSWORD   # paste when prompted, do not pass on the command line
+gh secret set SIDEKIT_KEY_ALIAS
+gh secret set SIDEKIT_KEY_PASSWORD
+```
+
+If `SIDEKIT_KEYSTORE_BASE64` is missing the job fails with an explanation instead of uploading an
+unsigned or debug-signed APK. The keystore file itself never enters the repository: `gitleaks` scans
+for it, and `~/.android-keys/` is outside the working tree.
+
+### Re-cutting a release
+
+Dispatch the workflow manually from an existing tag. `gh release upload --clobber` replaces the
+assets for that version in place, which is the intended way to fix a bad signature or a missing
+upload without moving the tag. `versionCode` and `versionName` do not change, so devices upgrade
+normally; only the signature block differs.
+
+The expected certificate SHA-256 is pinned in `release-apk.yml`
+(`c7834fd5a5204d2f334a77aab56506b317afa4001b96d8e71b0321c5a0f8cd03`). Rotating keys means changing
+that constant — and knowing that no existing install will accept the new key.
