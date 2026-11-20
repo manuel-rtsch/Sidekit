@@ -596,10 +596,10 @@ private fun GraphicsLayerScope.applyTravel(motion: ActionMotion, t: Float, dista
 }
 
 /**
- * An action label that wraps onto a second row rather than truncating. A wrapped label keeps the
- * action's type size: the old one-step-down "two line" style made neighbouring buttons disagree
- * about their type scale, which read as a bug. Two lines use a tighter leading so they fit the
- * fixed bar height.
+ * An action label that wraps onto a second row rather than truncating. A single line keeps the
+ * action's own type size ([style]); a wrapped label steps down one notch ([wrappedStyle], body
+ * to label, label to caption) so two rows still fit the fixed bar with padding instead of filling
+ * it edge to edge, and uses a tighter leading.
  *
  * A label that still does not fit two rows is scaled down in small steps (down to
  * [MIN_WRAPPED_LABEL_SCALE]) before it is shortened, so long labels give up type size only when
@@ -620,6 +620,7 @@ private fun GraphicsLayerScope.applyTravel(motion: ActionMotion, t: Float, dista
 private fun ActionLabel(
     text: String,
     style: TextStyle,
+    wrappedStyle: TextStyle,
     color: Color,
     modifier: Modifier = Modifier
 ) {
@@ -627,6 +628,7 @@ private fun ActionLabel(
     // cached so a morph re-uses the shaped text instead of shaping it every frame.
     val measurer = rememberTextMeasurer(cacheSize = 24)
     val labelStyle = remember(style, color) { style.copy(color = color, textAlign = TextAlign.Center) }
+    val wrappedLabelStyle = remember(wrappedStyle, color) { wrappedStyle.copy(color = color, textAlign = TextAlign.Center) }
     var drawn by remember { mutableStateOf<TextLayoutResult?>(null) }
     Layout(
         content = {},
@@ -641,7 +643,7 @@ private fun ActionLabel(
         }
     ) { _, constraints ->
         val bounds = Constraints(maxWidth = constraints.maxWidth, maxHeight = constraints.maxHeight)
-        val result = measureActionLabel(measurer, text, labelStyle, bounds)
+        val result = measureActionLabel(measurer, text, labelStyle, wrappedLabelStyle, bounds)
         drawn = result
         val width = result.tightWidth().coerceAtMost(constraints.maxWidth)
         layout(width, result.size.height) {}
@@ -661,13 +663,17 @@ private fun measureActionLabel(
     measurer: TextMeasurer,
     text: String,
     style: TextStyle,
+    wrappedStyle: TextStyle,
     bounds: Constraints
 ): TextLayoutResult {
     val single = measurer.measure(text, style, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
     if (single.lineCount <= 1) return single
 
-    val wrappedStyle = style.copy(lineHeight = style.fontSize * TWO_LINE_LEADING)
-    val wrapped = measurer.measure(text, wrappedStyle, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
+    // A single line keeps the action's own type size; a wrapped second row steps down one notch
+    // ([wrappedStyle]) so both rows fit the fixed bar with padding instead of filling it edge to
+    // edge, and uses a tighter leading.
+    val wrappedLeading = wrappedStyle.copy(lineHeight = wrappedStyle.fontSize * TWO_LINE_LEADING)
+    val wrapped = measurer.measure(text, wrappedLeading, overflow = TextOverflow.Ellipsis, maxLines = 2, constraints = bounds)
     if (!wrapped.hasVisualOverflow && wrapped.breaksOnlyBetweenWords(text)) return wrapped
 
     // Wrapping must not cut a word in half just because the icon left the line a little narrow
@@ -678,7 +684,7 @@ private fun measureActionLabel(
     while (scale >= MIN_WRAPPED_LABEL_SCALE) {
         val candidate = measurer.measure(
             text,
-            wrappedStyle.scaled(scale),
+            wrappedLeading.scaled(scale),
             overflow = TextOverflow.Ellipsis,
             maxLines = 2,
             constraints = bounds
@@ -693,9 +699,9 @@ private fun measureActionLabel(
     }
     smallestFit?.let { return it }
 
-    // Shrinking cannot make it fit at all: stay at the action's real size and cut once, so the
-    // button does not lose both size and words.
-    return shortestUsefulCut(measurer, text, wrappedStyle, bounds)
+    // Shrinking cannot make it fit at all: stay at the wrapped size and cut once, so the button
+    // does not lose both size and words.
+    return shortestUsefulCut(measurer, text, wrappedLeading, bounds)
 }
 
 /** True when every line break in [text] falls on whitespace rather than inside a word. */
@@ -794,7 +800,12 @@ private fun ActionContent(action: SideAction, modifier: Modifier) {
             val typography = SidekitTheme.typography
             ActionLabel(
                 text = label,
+                // A single-line label keeps the action's own size. If it wraps to a second row
+                // the label steps down one notch ({caption} for dense, {label} otherwise) so the
+                // two rows still fit the fixed bar with padding instead of filling it edge to
+                // edge.
                 style = if (action.dense) typography.label else typography.body,
+                wrappedStyle = if (action.dense) typography.caption else typography.label,
                 color = foreground,
                 // Weighted so the icons are measured first and keep their space: otherwise a
                 // full-width two-line label squeezes a trailing arrow down to nothing. `fill`
