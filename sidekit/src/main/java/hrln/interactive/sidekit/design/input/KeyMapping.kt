@@ -75,9 +75,9 @@ object KeypadControls {
 
         KeypadModule.Sundial -> system + listOf(
             control(KeyEvent.KEYCODE_DPAD_UP, "Top", "Move up"),
-            control(KeyEvent.KEYCODE_MEDIA_NEXT, "Right edge", "Next track; hold for right"),
+            control(KeyEvent.KEYCODE_MEDIA_NEXT, "Right edge", "Next track"),
             control(KeyEvent.KEYCODE_DPAD_DOWN, "Bottom", "Move down"),
-            control(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Left edge", "Previous track; hold for left"),
+            control(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Left edge", "Previous track"),
             control(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Centre", "Play or pause; hold for Confirm"),
             control(KeyEvent.KEYCODE_DPAD_LEFT, "Corner ←", "Move left; hold for Options fallback"),
             control(KeyEvent.KEYCODE_DPAD_RIGHT, "Corner →", "Move right"),

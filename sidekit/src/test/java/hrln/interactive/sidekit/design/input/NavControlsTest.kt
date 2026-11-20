@@ -89,9 +89,10 @@ class NavControlsTest {
         }
         assertEquals(NavControls.Back, NavControls.sundialHoldFor[KeyEvent.KEYCODE_TAB])
         assertEquals(NavControls.Options, NavControls.sundialHoldFor[KeyEvent.KEYCODE_ENTER])
-        assertEquals(NavControls.Left, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
-        assertEquals(NavControls.Right, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
         assertEquals(NavControls.Confirm, NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE])
+        // Previous/Next are media keys; their holds must not turn them into left/right.
+        assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
+        assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
         // The arrows must keep moving on press and repeating while held.
         for (arrow in listOf(NavControls.Up, NavControls.Down, NavControls.Left, NavControls.Right)) {
             assertNull("arrow $arrow must not be a hold key", NavControls.sundialHoldFor[arrow])

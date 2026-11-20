@@ -18,8 +18,8 @@ import hrln.interactive.sidekit.design.input.SystemKeys
  * 1. detect the keypad module from the raw event, before navigation rewrites it;
  * 2. apply the custom mapping and each module's default navigation, so Options, Back, focus and
  *    typing all see the mapped key;
- * 3. give the Sundial's ring keys their holds (Tab for Back, Enter for Options, Previous/Next for
- *    left/right) while a tap still sends the key's own action;
+ * 3. give the Sundial's ring keys their holds (Tab for Back, Enter for Options) while a tap still
+ *    sends the key's own action;
  * 4. treat the top-right key as Options (on release) and swallow the top-left CALL key, which the
  *    keypad accessibility service turns into Back before the system dialer starts;
  * 5. send typing keys to [Keypad.dispatch] and only then to the platform.
@@ -36,7 +36,7 @@ class SidekitInputController(
     private val onHome: () -> Unit = {},
     private val onSearch: () -> Unit = {}
 ) {
-    /** The Sundial has no Back/Options key: hold Tab / Enter, and hold Previous/Next for left/right. */
+    /** The Sundial has no Back/Options key: hold Tab / Enter. Taps keep their media role. */
     private val sundialHold = HoldToAct(onHold = { action, source -> performSundialHold(action, source) })
 
     /** Tap Options opens the options; holding it jumps to the first action button. */

@@ -10,8 +10,7 @@ import android.view.KeyEvent
  * The press is held back until it is released or [holdMs] passes. A timer fires the hold while the
  * key is still down; a tap is delivered as a normal press/release pair, so a hold never also fires
  * the key's tap action. Used for the Sundial, whose ring has no Back or Options key: hold Tab for
- * Back, Enter for Options, and Previous/Next for left/right while a tap still sends the media
- * command.
+ * Back and Enter for Options while a tap still sends the key's own action.
  */
 class HoldToAct(
     private val holdMs: Long = KeypadTiming.LONG_PRESS_MS,

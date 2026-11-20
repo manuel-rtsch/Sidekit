@@ -82,18 +82,20 @@ object NavControls {
     /**
      * Hold actions for the Sundial's ring. A tap keeps the printed role (media, Tab, Enter); a
      * hold turns it into the navigation action the module has no dedicated key for. Tab/Enter have
-     * no media role to preserve; Previous/Next keep theirs on a tap.
+     * no media role to preserve.
+     *
+     * Previous/Next are deliberately absent. Their tap is the media command, and the Sundial's
+     * corner arrows already move left and right; taking the edge keys' hold away only made those
+     * media controls feel like navigation. The arrows themselves stay plain as well: a hold defers
+     * the press to its release and swallows key repeat, so holding ↓ through a long list would stop
+     * scrolling and jump Home instead.
      */
     val sundialHoldFor: Map<Int, Int> = mapOf(
         KeyEvent.KEYCODE_TAB to Back,
         KeyEvent.KEYCODE_ENTER to Options,
-        KeyEvent.KEYCODE_MEDIA_PREVIOUS to Left,
-        KeyEvent.KEYCODE_MEDIA_NEXT to Right,
         // Some Sundial revisions report the bottom-right Enter key as the centre media key.
         // A hold still gives Confirm, while a tap keeps its media behaviour.
         KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm
-        // The arrows stay plain: a hold defers the press to its release and swallows key repeat,
-        // so holding ↓ through a long list would stop scrolling and jump Home instead.
     )
 
     /** The canonical navigation key [code] becomes in [module]'s UI, or null to keep it as sent. */

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.9.2 — 2026-11-20
+
+- **Sundial:** holding the Previous/Next edges no longer turns them into left/right. Their taps stay media commands, and the corner arrows already provide left/right. The keypad guide and the keypad-mapping docs match.
+
+SDK artifacts for this tag are published to the GitHub Pages Maven repo (`sidekit-design` and `sidekit-sdk`, version `1.9.2`).
+
 ## v1.9.1 — 2026-11-20
 
 Fixes wrapped (two-line) action-button labels so they no longer fill the button edge to edge.
