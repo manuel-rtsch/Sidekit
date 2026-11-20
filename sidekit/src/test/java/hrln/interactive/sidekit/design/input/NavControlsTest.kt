@@ -60,11 +60,13 @@ class NavControlsTest {
     }
 
     @Test fun qwertyLetterCrossNavigates() {
-        // On-device measurement: T/D/B/J around the tablet's centre are the directional cross.
+        // On-device measurement: T/D/B/J around the printed 5 / GH key are the directional cross.
         assertEquals(NavControls.Up, mapped(KeypadModule.Qwerty, KeyEvent.KEYCODE_T))
         assertEquals(NavControls.Down, mapped(KeypadModule.Qwerty, KeyEvent.KEYCODE_B))
         assertEquals(NavControls.Left, mapped(KeypadModule.Qwerty, KeyEvent.KEYCODE_D))
         assertEquals(NavControls.Right, mapped(KeypadModule.Qwerty, KeyEvent.KEYCODE_J))
+        // The centre of that cross is Confirm, like a D-pad's centre.
+        assertEquals(NavControls.Confirm, mapped(KeypadModule.Qwerty, KeyEvent.KEYCODE_G))
     }
 
     @Test fun qwertyModifierKeysAndConfirmStayTyping() {
@@ -107,6 +109,17 @@ class NavControlsTest {
     @Test fun everyGamePadDefaultTargetIsACanonicalNavKey() {
         NavControls.defaultFor.getValue(KeypadModule.GamePad).values.forEach {
             assertTrue("unexpected canonical target $it", it in NavControls.all)
+        }
+    }
+
+    @Test fun everyDefaultNavigationKeyIsARemappableControl() {
+        // Custom mapping skips these defaults, so a default key missing from the module's control
+        // list could neither be remapped nor keep its navigation role.
+        NavControls.defaultFor.forEach { (module, profile) ->
+            val controls = KeypadControls.of(module).map { it.keyCode }.toSet()
+            profile.keys.forEach { code ->
+                assertTrue("$module maps $code but KeypadControls.of() does not list it", code in controls)
+            }
         }
     }
 }

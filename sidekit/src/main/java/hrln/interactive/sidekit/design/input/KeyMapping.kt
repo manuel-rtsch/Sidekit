@@ -58,6 +58,7 @@ object KeypadControls {
             control(KeyEvent.KEYCODE_STAR, "*", "Punctuation and symbols"),
             digit(0),
             control(KeyEvent.KEYCODE_POUND, "#", "Case; hold for numbers"),
+            control(KeyEvent.KEYCODE_HOME, "Home", "Go to the home screen"),
             control(KeyEvent.KEYCODE_DEL, "Delete", "Delete the previous character")
         )
 
@@ -89,7 +90,9 @@ object KeypadControls {
             control(KeyEvent.KEYCODE_BUTTON_B, "B", "Back in games"),
             control(KeyEvent.KEYCODE_BUTTON_X, "X", "Options; hold for the action bar"),
             control(KeyEvent.KEYCODE_BUTTON_Y, "Y", "Jump to the action bar"),
-            control(KeyEvent.KEYCODE_BUTTON_L1, "Shoulder", "Open search"),
+            control(KeyEvent.KEYCODE_BUTTON_SELECT, "Select", "Options"),
+            control(KeyEvent.KEYCODE_BUTTON_L1, "Left shoulder", "Open search"),
+            control(KeyEvent.KEYCODE_BUTTON_R1, "Right shoulder", "Open search"),
             control(KeyEvent.KEYCODE_BUTTON_START, "Start", "Go to the home screen")
         )
     }

@@ -49,10 +49,12 @@ object NavControls {
      * - Mini QWERTY: its bottom row is the modifier keys (SUGGEST / SYM / CASE = Ctrl / Alt /
      *   Shift) and its only dedicated directional control is a single up-down rocker (code 113),
      *   so navigation uses a cross of letter keys measured on-device: **T up, D left, B down,
-     *   J right**. These are letters while a text field is focused and navigation keys when not
-     *   (the session guard in [Keypad.translateForUi] chooses which). Enter is already Confirm.
-     *   On a screen with a type-to-search field (the launcher, Apps, Phonebook, …) they stay
-     *   letters, so every letter can start a search; there the rocker still moves up and down.
+     *   J right**, with the **centre G key (the printed 5 / GH key) as Confirm**, as on a D-pad.
+     *   These are letters while a text field is focused and navigation keys when not (the
+     *   session guard in [Keypad.translateForUi] chooses which). The dedicated Enter key is
+     *   Confirm too. On a screen with a type-to-search field (the launcher, Apps, Phonebook, …)
+     *   they stay letters, so every letter can start a search; there the rocker still moves up
+     *   and down.
      */
     val defaultFor: Map<KeypadModule, Map<Int, Int>> = mapOf(
         KeypadModule.T9 to emptyMap(),
@@ -67,11 +69,13 @@ object NavControls {
             KeyEvent.KEYCODE_BUTTON_R1 to Search
         ),
         KeypadModule.Qwerty to mapOf(
-            // Measured on-device: T / D / B / J around the tablet's centre form a directional cross.
+            // Measured on-device: T / D / B / J around the printed 5 / GH key form a directional
+            // cross, so that centre key confirms like the centre of a D-pad.
             KeyEvent.KEYCODE_T to Up,
             KeyEvent.KEYCODE_D to Left,
             KeyEvent.KEYCODE_B to Down,
-            KeyEvent.KEYCODE_J to Right
+            KeyEvent.KEYCODE_J to Right,
+            KeyEvent.KEYCODE_G to Confirm
         )
     )
 

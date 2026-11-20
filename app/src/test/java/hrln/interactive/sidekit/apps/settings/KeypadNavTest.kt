@@ -63,11 +63,13 @@ class KeypadNavTest {
 
     @Test fun qwertyLetterCrossNavigatesWhenNotTyping() {
         val k = keypad(KeypadModule.Qwerty)
-        // Measured on-device: T / D / B / J are the directional cross (type only while a field is focused).
+        // Measured on-device: T / D / B / J are the directional cross, with the printed 5 / GH
+        // centre key confirming (they type only while a field is focused).
         assertEquals(KeyEvent.KEYCODE_DPAD_UP, k.translateForUi(down(KeyEvent.KEYCODE_T))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_DPAD_DOWN, k.translateForUi(down(KeyEvent.KEYCODE_B))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_DPAD_LEFT, k.translateForUi(down(KeyEvent.KEYCODE_D))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_DPAD_RIGHT, k.translateForUi(down(KeyEvent.KEYCODE_J))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_ENTER, k.translateForUi(down(KeyEvent.KEYCODE_G))?.keyCode)
         // A cross member typed by the raw path (custom mapping off) stays its printed letter pair.
         assertEquals(KeyEvent.KEYCODE_T, k.translate(down(KeyEvent.KEYCODE_T))?.keyCode)
     }

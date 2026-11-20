@@ -83,10 +83,10 @@ private class HeaderModel {
  * in the same fixed place: the title is the screen's anchor, so it never moves. Both are single
  * text layers faded in the draw phase, measured once.
  *
- * In touch mode, a screen with options also gets a small overflow button in the top-right corner.
- * It is the touch equivalent of the keypad's Options key: the keypad does not need it, so it
- * disappears as soon as a key is pressed. The title always reserves its width while the screen
- * has options, so showing and hiding the button never reflows the title.
+ * In touch mode, a screen with options also gets a small overflow button in the top-right corner,
+ * centred on the title's line. It is the touch equivalent of the keypad's Options key: the keypad
+ * does not need it, so it disappears as soon as a key is pressed. The title always reserves its
+ * width while the screen has options, so showing and hiding the button never reflows the title.
  */
 @Composable
 internal fun HeaderHost(state: ChromeState, modifier: Modifier = Modifier, touchMode: Boolean = false) {
@@ -104,8 +104,17 @@ internal fun HeaderHost(state: ChromeState, modifier: Modifier = Modifier, touch
         onDispose { state.onHeaderChange = null }
     }
 
-    val travel = with(LocalDensity.current) { TITLE_TRAVEL.toPx() }
-    val titleModifier = Modifier.padding(end = if (hasOptions) OPTIONS_BUTTON_SIZE else 0.dp)
+    val density = LocalDensity.current
+    val travel = with(density) { TITLE_TRAVEL.toPx() }
+    val titleModifier = Modifier.padding(end = if (hasOptions) OPTIONS_HIT_SIZE else 0.dp)
+    // The title is drawn from headerPaddingTop down, so its line box starts there: put the button's
+    // centre on the middle of that box, and figure and text sit on the same axis.
+    val optionsTop = with(density) {
+        (
+            SidekitTheme.spacing.headerPaddingTop + SidekitTheme.typography.title.lineHeight.toDp() / 2 -
+                OPTIONS_HIT_SIZE / 2
+            ).coerceAtLeast(0.dp)
+    }
     val current = model.current
     val previous = model.previous
     // As in the action bar: draw what is composed at rest until composition catches up with a swap
@@ -149,16 +158,17 @@ internal fun HeaderHost(state: ChromeState, modifier: Modifier = Modifier, touch
                 onClick = state::toggleOptions,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(end = SidekitTheme.spacing.itemPadding, top = SidekitTheme.spacing.headerPaddingTop)
+                    .padding(end = SidekitTheme.spacing.itemPadding, top = optionsTop)
             )
         }
     }
 }
 
 /**
- * The touch-only way into the Options bar. It is deliberately bare: a 48 dp hit target around the
- * same 40 dp icon every other control uses, with the standard SideKit press veil. It never takes
- * D-pad focus, so keypad navigation is exactly as it was without it.
+ * The touch-only way into the Options bar. It is deliberately bare: a 56 dp hit target around the
+ * same 40 dp icon every other control uses, with the standard SideKit press veil. The icon turns
+ * into a cross while the bar is open, so the same spot closes it. It never takes D-pad focus, so
+ * keypad navigation is exactly as it was without it.
  */
 @Composable
 private fun HeaderOptionsButton(
@@ -172,7 +182,7 @@ private fun HeaderOptionsButton(
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .size(OPTIONS_BUTTON_SIZE)
+            .size(OPTIONS_HIT_SIZE)
             .clip(SidekitTheme.shapes.control)
             .focusProperties { canFocus = false }
             .clickable(
@@ -185,7 +195,7 @@ private fun HeaderOptionsButton(
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center
     ) {
-        SidekitIconImage(SidekitIcon.MoreHoriz)
+        SidekitIconImage(if (expanded) SidekitIcon.Close else SidekitIcon.MoreHoriz)
     }
 }
 
@@ -195,5 +205,8 @@ private val TITLE_TRAVEL = 0.dp
 /** Fraction of the swap spent fading the old title out before the new one starts fading in. */
 private const val HANDOFF = 0.35f
 
-/** Touch target of the header's Options button; also the title space reserved while options exist. */
-private val OPTIONS_BUTTON_SIZE = 48.dp
+/**
+ * Touch target of the header's Options button; also the title space reserved while options exist.
+ * Larger than the icon it wraps, so the button is easy to hit without growing the glyph.
+ */
+private val OPTIONS_HIT_SIZE = 56.dp
