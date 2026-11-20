@@ -172,7 +172,20 @@ It runs on every `vX.Y.Z` tag:
 5. writes `SHA256SUMS.txt`, creates the release for the tag if it does not exist, and uploads
    `Sidekit-<version>.apk`, `Sidekit-<version>-release-unsigned.apk` and `SHA256SUMS.txt`.
 
+A tag push therefore stops at the signing job until the owner approves the deployment in the
+**Actions** run. That approval is the only thing standing between the secrets and a run nobody
+asked for, so treat a pending *release* environment request as a signal to read the diff before
+approving it.
+
 ### Secrets it reads
+
+The job declares `environment: release`, so all four secrets live on that **environment**, not on
+the repository. The environment has two protection rules:
+
+- **Required reviewer:** a run that reaches the signing job waits for approval from the repository
+owner, so a tag pushed by a compromised token or a modified workflow cannot sign on its own.
+- **Deployment branches and tags:** only `v*` tags may deploy into it, so a branch push or a pull
+request can never load these secrets, even if its workflow asks for the environment.
 
 | Secret | Value |
 | --- | --- |
@@ -182,11 +195,23 @@ It runs on every `vX.Y.Z` tag:
 | `SIDEKIT_KEY_PASSWORD` | key password |
 
 ```bash
-base64 -w0 ~/.android-keys/manuel-sidekit-release.jks | gh secret set SIDEKIT_KEYSTORE_BASE64
-gh secret set SIDEKIT_KEYSTORE_PASSWORD   # paste when prompted, do not pass on the command line
-gh secret set SIDEKIT_KEY_ALIAS
-gh secret set SIDEKIT_KEY_PASSWORD
+# create the environment once (owner approval + v* tags only)
+gh api --method PUT repos/<owner>/Sidekit/environments/release --input - <<'JSON'
+{"reviewers": [{"type": "User", "id": <user-id>}],
+ "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
+JSON
+gh api --method POST repos/<owner>/Sidekit/environments/release/deployment-branch-policies \
+  -f name='v*' -f type=tag
+
+base64 -w0 ~/.android-keys/manuel-sidekit-release.jks \
+  | gh secret set SIDEKIT_KEYSTORE_BASE64 --env release
+gh secret set SIDEKIT_KEYSTORE_PASSWORD --env release   # paste when prompted, never on the command line
+gh secret set SIDEKIT_KEY_ALIAS --env release
+gh secret set SIDEKIT_KEY_PASSWORD --env release
 ```
+
+Keep them environment-scoped. A repository secret is readable by every workflow in the repository,
+including one added on a branch, which defeats the point of the approval gate.
 
 If `SIDEKIT_KEYSTORE_BASE64` is missing the job fails with an explanation instead of uploading an
 unsigned or debug-signed APK. The keystore file itself never enters the repository: `gitleaks` scans

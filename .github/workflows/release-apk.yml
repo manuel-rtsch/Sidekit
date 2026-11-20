@@ -21,6 +21,12 @@ jobs:
     name: Build, sign and attach the APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # The signing secrets are scoped to this environment, not to the repository: a job only sees
+    # them after a reviewer approves the run, and only from a v* tag. A branch push, a pull request
+    # or a workflow edited on a branch cannot read them.
+    environment:
+      name: release
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}
     steps:
       # A branch run would publish a rebuild over a released versionCode.
       - name: Require a release tag
