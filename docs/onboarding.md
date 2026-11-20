@@ -10,7 +10,7 @@ First launch opens a seven-step setup using Sidekit's existing canvas, theme, ca
 6. Choose letters or numbers as the default input mode.
 7. Explore tappable, schematic keypad diagrams. The remembered/detected module comes first. Tap the Module row to cycle through all four without changing the active module, or explicitly select one with “Use”. Finish opens home.
 
-The keypad hardware exposes no distinct module identifier. Existing detection recognises distinctive key events, persists the last module and initially defaults to T9. Setup does not claim to detect a module before such a key is pressed. Controller actions depend on the app/game; the tour does not promise universal game mappings. For keypads Sidekit does not recognise, or to move keys, see [Keypad mapping](keypad-mapping.md).
+Each module names itself as its own input device (`gxa535_t9`, `gxa535_qwerty`, `gxa535_media`, `gxa535_gamepad`), so detection reads the name on the first press - the D-pad included - and falls back to the distinctive keys only for older firmware, which used one name for every module. The T9 slides report as the phone's own key device on some firmware, where their digits identify them, and the setup tour follows a keypad swapped while it is open. Controller actions depend on the app/game; the tour does not promise universal game mappings. For keypads Sidekit does not recognise, or to move keys, see [Keypad mapping](keypad-mapping.md).
 
 Progress and preferences survive process restarts. Only Finish records completion. Account connections are configured inside their respective apps.
 

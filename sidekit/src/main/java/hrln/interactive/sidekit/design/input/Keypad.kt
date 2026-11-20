@@ -58,6 +58,12 @@ class Keypad internal constructor(
 ) {
     private var detected: KeypadModule by mutableStateOf(initialModule)
 
+    /** The module the user chose in a UI, which detection defers to while the hardware is the same. */
+    private var chosen: KeypadModule? = null
+
+    /** The module detection last named. A choice is only dropped when detection names another. */
+    private var lastDetected: KeypadModule? = null
+
     /** The attached module: the custom mapping's when one is on, else the detected one. */
     val module: KeypadModule get() = mapper.customModule ?: detected
 
@@ -156,7 +162,41 @@ class Keypad internal constructor(
         if (event.action != KeyEvent.ACTION_DOWN) return
         // A custom mapping was chosen on purpose: no key may switch it away.
         if (mapper.customModule != null) return
-        KeypadDetector.moduleFor(event)?.let(::useModule)
+        val detected = KeypadDetector.moduleFor(event) ?: return
+        val sameHardware = detected == lastDetected
+        lastDetected = detected
+        // A module the user chose in a UI stands while the same hardware keeps reporting itself:
+        // the keys it overruled - the D-pad above all - must not undo the choice on the next press.
+        // A different module means a different keypad, which has the last word.
+        if (chosen != null) {
+            if (sameHardware) return
+            chosen = null
+        }
+        useModule(detected)
+    }
+
+    /**
+     * Applies the module the input devices name, for a launch where no key has been pressed yet.
+     * Returns the module found, or null when the attached keypad can only be told from its keys.
+     */
+    fun observeAttached(): KeypadModule? {
+        if (mapper.customModule != null) return null
+        val attached = KeypadDetector.attachedModule() ?: return null
+        chosen = null
+        lastDetected = attached
+        useModule(attached)
+        return attached
+    }
+
+    /**
+     * Applies a module the user chose in a UI (a settings row, the welcome page's cycle) rather
+     * than from a key. [observe] keeps detecting, but leaves this alone while it names the same
+     * module; different hardware replaces it. [useModule] stays the plain entry point for a module
+     * read from the keys or restored at launch.
+     */
+    fun chooseModule(next: KeypadModule) {
+        chosen = next
+        useModule(next)
     }
 
     /** Starts loading the dictionary early (a field gained focus) so the first key is predicted. */

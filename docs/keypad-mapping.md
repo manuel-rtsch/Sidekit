@@ -22,7 +22,7 @@ While Sidekit waits for a key, it captures every press, including the release, s
 
 The key tester shows the key code and scan code for each press, the input device that sent it, and the control it becomes. Use it to set up a new keypad or to report how a device's keys behave.
 
-Sidekit only treats the keypad modules' own input devices as keypads. A headset button or an external keyboard is ignored for module detection, even when it sends the same key code.
+Sidekit only treats the keypad modules' own input devices as keypads, and reads the module from the device name when the name carries one. A headset button or an external keyboard is ignored for module detection, even when it sends the same key code. The exception is the phone's own key device, which carries the T9 slides on some firmware: its digits identify T9, because no other module types one, while the keys it shares with the others say nothing.
 
 ## Sundial holds
 

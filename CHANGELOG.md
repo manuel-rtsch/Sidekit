@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.9.3 — 2026-11-20
+
+- **Keypad detection reads the device name.** Each module names itself as its own input device, so a press identifies the attached keypad on its first key - the D-pad included - instead of only on a button unique to one module. Older firmware, which used a single name for every module, still falls back to the keys.
+- **T9 is recognised from the phone's key device.** On firmware where the T9 slides report as `gxa535_phone`, its digits identify T9 - no other module types one - while the D-pad, call and Home keys it shares stay silent. T9 used to be the one module that could not be detected at all.
+- **`Keypad.observeAttached()`** applies the attached module at launch, so an app no longer has to wait for a key press before it knows what is plugged in.
+- **`Keypad.chooseModule()`** applies a module chosen in a UI (a settings row, an onboarding cycle). Detection keeps running but leaves it alone while the same keypad reports itself, so pressing the D-pad afterwards does not undo the choice; a different module replaces it.
+
+SDK artifacts for this tag are published to the GitHub Pages Maven repo (`sidekit-design` and `sidekit-sdk`, version `1.9.3`).
+
 ## v1.9.2 — 2026-11-20
 
 - **Sundial:** holding the Previous/Next edges no longer turns them into left/right. Their taps stay media commands, and the corner arrows already provide left/right. The keypad guide and the keypad-mapping docs match.
