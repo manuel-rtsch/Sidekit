@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.10.0 — 2026-11-21
+
+- **`SidekitTextField` takes a keyboard type, an IME action, an autofill hint and a `Next` target.**
+  A form can now open the URI or password keyboard, hand focus to the next field without leaving
+  it (the action bar and Enter both honour it), and let a password manager fill a field.
+- **`SidekitTextField(masked = true)` is a secret field.** It renders dots, marks itself as a
+  password to the platform (so Android keeps the text out of accessibility nodes), and hides T9
+  suggestions, the composing highlight and dictation. Masked fields are single-line.
+
 ## v1.9.3 — 2026-11-20
 
 - **Keypad detection reads the device name.** Each module names itself as its own input device, so a press identifies the attached keypad on its first key - the D-pad included - instead of only on a button unique to one module. Older firmware, which used a single name for every module, still falls back to the keys.

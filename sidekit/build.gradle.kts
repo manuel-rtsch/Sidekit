@@ -26,4 +26,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    // createComposeRule launches a ComponentActivity that only this manifest declares.
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

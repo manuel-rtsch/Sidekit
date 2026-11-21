@@ -8,11 +8,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Composable
@@ -27,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.contentType
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -41,6 +46,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.PublishActionOverride
@@ -71,6 +77,18 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
  *   focused starts typing here.
  * @param dictation offer the typing bar's mic. Off for fields that take numbers or a fixed format,
  *   for private text that shouldn't go to a speech service, and for screens with their own mic.
+ *   A masked field (see [masked]) never offers it.
+ * @param keyboardType the keyboard the virtual IME opens: text, URI, password and so on.
+ * @param autoCorrectEnabled ask the keyboard for autocorrect; null leaves it to the IME.
+ * @param masked renders the text as dots, e.g. a password. A masked field hides T9 suggestions and
+ *   the composing highlight, because a suggested word would be a guess about a secret that the
+ *   field is supposed to conceal, and it is always single-line. Pair it with
+ *   `KeyboardType.Password` for the password keyboard.
+ * @param imeAction the keyboard's action key. Null keeps the historical derivation: `Done` when
+ *   [onDone] is set, `Default` otherwise.
+ * @param onNext runs when the action key is `Next`; the caller moves the focus and the keyboard
+ *   stays up, so a form is filled without returning the screen's actions.
+ * @param contentType the autofill hint for this field, so a password manager can fill it.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -86,7 +104,13 @@ fun SidekitTextField(
     autoFocus: Boolean = false,
     trailingTypingAction: SideAction? = null,
     onKeypadFocus: (() -> Unit)? = null,
-    dictation: Boolean = true
+    dictation: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    autoCorrectEnabled: Boolean? = null,
+    masked: Boolean = false,
+    imeAction: ImeAction? = null,
+    onNext: (() -> Unit)? = null,
+    contentType: ContentType? = null
 ) {
     val keypad = LocalKeypad.current
     val scope = rememberCoroutineScope()
@@ -99,6 +123,31 @@ fun SidekitTextField(
     if (autoFocus) LaunchedEffect(Unit) { focusRequester.requestFocus() }
     val session = remember(keypad, state) { keypad?.let { T9Session(it, TextFieldT9Buffer(state), scope) } }
     val t9 = keypad?.typing == true
+    // Next means "hand the typing on", Done means "I am finished with this field". Asking for Next
+    // without a target leaves the ordinary action in place rather than a key that does nothing.
+    val resolvedImeAction = when (imeAction) {
+        ImeAction.Next -> when {
+            onNext != null -> ImeAction.Next
+            onDone != null -> ImeAction.Done
+            else -> ImeAction.Default
+        }
+
+        null -> if (onDone != null) ImeAction.Done else ImeAction.Default
+
+        else -> imeAction
+    }
+    // What the action key does: Next hands typing on (the caller moves the caret, the keyboard stays
+    // up), everything else wraps the field up.
+    val performAction: () -> Unit = {
+        if (resolvedImeAction == ImeAction.Next) onNext?.invoke() else onDone?.invoke()
+    }
+    // The bar's Done also leaves the field. Enter does not: a keypad keeps its mode and the screen
+    // keeps the field, which is how the search bar stays open after a submit.
+    val finishAndLeave: () -> Unit = {
+        session?.finish()
+        if (resolvedImeAction != ImeAction.Next) focusManager.clearFocus()
+        performAction()
+    }
 
     val activateOnKeypad by rememberUpdatedState(onKeypadFocus)
     if (focusOnKeypad && keypad != null) {
@@ -125,7 +174,7 @@ fun SidekitTextField(
     val context = LocalContext.current
     val speech = rememberDictation()
     // Checked up front so phones without a recogniser never show a mic that can only fail.
-    val canDictate = dictation && remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
+    val canDictate = !masked && dictation && remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
     // A word started on the keypad while listening is finished before the phrase goes in, so the
     // phrase never lands inside it.
     val dictate = {
@@ -152,6 +201,7 @@ fun SidekitTextField(
                 maxSuggestions = if (trailingTypingAction == null) MAX_SHOWN else MAX_SHOWN - 1,
                 engine = keypad.engine,
                 session = session,
+                suggestions = !masked,
                 dictation = speech.takeIf { canDictate },
                 // With a screen's own (square) trailing button there's no room for Done's label:
                 // the other three share the rest of the bar equally, like the home dock.
@@ -163,11 +213,7 @@ fun SidekitTextField(
                         else -> microphone.launch(Manifest.permission.RECORD_AUDIO)
                     }
                 },
-                onDone = {
-                    session.finish()
-                    focusManager.clearFocus()
-                    onDone?.invoke()
-                }
+                onDone = finishAndLeave
             ),
             // The Options key while typing picks the input mode directly.
             options = T9Mode.entries.map { mode ->
@@ -192,75 +238,105 @@ fun SidekitTextField(
     val layout = remember { mutableStateOf<(() -> TextLayoutResult?)?>(null) }
     val highlightColor = colors.emphasisA1.copy(alpha = 0.55f)
     // Read in the draw phase only: composing a word redraws the field, it doesn't recompose it.
-    val highlight: () -> TextRange? = { if (focused && keypad?.session === session) keypad?.engine?.highlight else null }
-    BasicTextField(
-        state = state,
-        modifier = modifier
-            .focusRequester(focusRequester)
-            .onFocusChanged { f ->
-                if (awaitingFocus && !f.isFocused) return@onFocusChanged
-                awaitingFocus = false
-                focused = f.isFocused
-                if (keypad == null || session == null) return@onFocusChanged
-                if (f.isFocused) {
-                    keypad.session = session
-                    keypad.prepare()
-                } else if (keypad.session === session) {
-                    session.finish()
-                    keypad.session = null
-                }
-            }
-            // Before the IME: on the Sidephone the virtual keyboard stays connected even when hidden,
-            // and must not see keypad presses while T9 is typing.
-            .onInterceptKeyBeforeSoftKeyboard { event ->
-                if (keypad == null || session == null) return@onInterceptKeyBeforeSoftKeyboard false
-                val native = keypad.translate(event.nativeKeyEvent) ?: return@onInterceptKeyBeforeSoftKeyboard true
-                keypad.observe(native)
-                if (!keypad.typing) return@onInterceptKeyBeforeSoftKeyboard false
-                val enter = native.keyCode == android.view.KeyEvent.KEYCODE_ENTER || native.keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER
-                if (enter && singleLine) {
-                    // OK takes a highlighted completion first; otherwise it submits.
-                    if (session.handleOk(native)) return@onInterceptKeyBeforeSoftKeyboard true
-                    // A one-line field has no newline: Enter / OK submits it.
-                    if (native.action == android.view.KeyEvent.ACTION_DOWN && native.repeatCount == 0) {
-                        session.finish()
-                        onDone?.invoke()
-                    }
-                    true
-                } else {
-                    session.onKeyEvent(native)
-                }
-            },
-        textStyle = style,
-        cursorBrush = SolidColor(colors.light),
-        keyboardOptions = KeyboardOptions(
-            showKeyboardOnFocus = !t9,
-            imeAction = if (onDone != null) ImeAction.Done else ImeAction.Default
-        ),
-        onKeyboardAction = if (onDone != null) KeyboardActionHandler { onDone() } else null,
-        lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(),
-        scrollState = scroll,
-        onTextLayout = { getResult -> layout.value = getResult },
-        decorator = { field ->
-            Box(
-                Modifier.drawBehind {
-                    // The T9 word being formed: a soft highlight behind the text, drawn from the text
-                    // layout, so the cursor stays a plain caret (no selection handles).
-                    val range = highlight() ?: return@drawBehind
-                    val result = layout.value?.invoke() ?: return@drawBehind
-                    val len = result.layoutInput.text.length
-                    if (range.collapsed || range.max > len) return@drawBehind
-                    val path = result.getPathForRange(range.min, range.max)
-                    val dx = if (singleLine) -scroll.value.toFloat() else 0f
-                    val dy = if (singleLine) 0f else -scroll.value.toFloat()
-                    translate(dx, dy) { drawPath(path, highlightColor) }
-                }
-            ) {
-                if (placeholder != null && state.text.isEmpty()) SidekitText(placeholder, style = textStyle, color = colors.surfaceA6)
-                field()
+    val highlight: () -> TextRange? = { if (!masked && focused && keypad?.session === session) keypad?.engine?.highlight else null }
+    val fieldModifier = modifier
+        .focusRequester(focusRequester)
+        .onFocusChanged { f ->
+            if (awaitingFocus && !f.isFocused) return@onFocusChanged
+            awaitingFocus = false
+            focused = f.isFocused
+            if (keypad == null || session == null) return@onFocusChanged
+            if (f.isFocused) {
+                keypad.session = session
+                keypad.prepare()
+            } else if (keypad.session === session) {
+                session.finish()
+                keypad.session = null
             }
         }
+        // Before the IME: on the Sidephone the virtual keyboard stays connected even when hidden,
+        // and must not see keypad presses while T9 is typing.
+        .onInterceptKeyBeforeSoftKeyboard { event ->
+            if (keypad == null || session == null) return@onInterceptKeyBeforeSoftKeyboard false
+            val native = keypad.translate(event.nativeKeyEvent) ?: return@onInterceptKeyBeforeSoftKeyboard true
+            keypad.observe(native)
+            if (!keypad.typing) return@onInterceptKeyBeforeSoftKeyboard false
+            val enter = native.keyCode == android.view.KeyEvent.KEYCODE_ENTER || native.keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER
+            if (enter && singleLine) {
+                // OK takes a highlighted completion first; otherwise it submits.
+                if (session.handleOk(native)) return@onInterceptKeyBeforeSoftKeyboard true
+                // A one-line field has no newline: Enter / OK is the field's action.
+                if (native.action == android.view.KeyEvent.ACTION_DOWN && native.repeatCount == 0) {
+                    session.finish()
+                    performAction()
+                }
+                true
+            } else {
+                session.onKeyEvent(native)
+            }
+        }
+        // Autofill keeps the hint on the field itself, not on the card around it.
+        .then(if (contentType != null) Modifier.contentType(contentType) else Modifier)
+    val fieldKeyboardOptions = KeyboardOptions(
+        autoCorrectEnabled = autoCorrectEnabled,
+        keyboardType = keyboardType,
+        showKeyboardOnFocus = !t9,
+        imeAction = resolvedImeAction
     )
+    val fieldKeyboardAction = when {
+        resolvedImeAction == ImeAction.Next -> onNext?.let { next -> KeyboardActionHandler { next() } }
+        onDone != null -> KeyboardActionHandler { onDone() }
+        else -> null
+    }
+    val fieldDecoration: TextFieldDecorator = { field ->
+        Box(
+            Modifier.drawBehind {
+                // The T9 word being formed: a soft highlight behind the text, drawn from the text
+                // layout, so the cursor stays a plain caret (no selection handles).
+                val range = highlight() ?: return@drawBehind
+                val result = layout.value?.invoke() ?: return@drawBehind
+                val len = result.layoutInput.text.length
+                if (range.collapsed || range.max > len) return@drawBehind
+                val path = result.getPathForRange(range.min, range.max)
+                val dx = if (singleLine) -scroll.value.toFloat() else 0f
+                val dy = if (singleLine) 0f else -scroll.value.toFloat()
+                translate(dx, dy) { drawPath(path, highlightColor) }
+            }
+        ) {
+            if (placeholder != null && state.text.isEmpty()) SidekitText(placeholder, style = textStyle, color = colors.surfaceA6)
+            field()
+        }
+    }
+    if (masked) {
+        // A secure field obfuscates the text and keeps it off the semantics tree, so an
+        // accessibility service cannot read the secret out of it. It is single-line by design:
+        // a password is never a paragraph.
+        BasicSecureTextField(
+            state = state,
+            modifier = fieldModifier,
+            textStyle = style,
+            cursorBrush = SolidColor(colors.light),
+            keyboardOptions = fieldKeyboardOptions,
+            onKeyboardAction = fieldKeyboardAction,
+            onTextLayout = { getResult -> layout.value = getResult },
+            decorator = fieldDecoration,
+            textObfuscationMode = TextObfuscationMode.RevealLastTyped,
+            scrollState = scroll
+        )
+    } else {
+        BasicTextField(
+            state = state,
+            modifier = fieldModifier,
+            textStyle = style,
+            cursorBrush = SolidColor(colors.light),
+            keyboardOptions = fieldKeyboardOptions,
+            onKeyboardAction = fieldKeyboardAction,
+            lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(),
+            scrollState = scroll,
+            onTextLayout = { getResult -> layout.value = getResult },
+            decorator = fieldDecoration
+        )
+    }
 }
 
 /**
@@ -279,7 +355,13 @@ fun SidekitTextField(
     singleLine: Boolean = false,
     onDone: (() -> Unit)? = null,
     autoFocus: Boolean = false,
-    dictation: Boolean = true
+    dictation: Boolean = true,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    autoCorrectEnabled: Boolean? = null,
+    masked: Boolean = false,
+    imeAction: ImeAction? = null,
+    onNext: (() -> Unit)? = null,
+    contentType: ContentType? = null
 ) {
     val state = rememberTextFieldState(value)
     val latest by rememberUpdatedState(onValueChange)
@@ -289,7 +371,24 @@ fun SidekitTextField(
     LaunchedEffect(value) {
         if (state.text.toString() != value) state.setTextAndPlaceCursorAtEnd(value)
     }
-    SidekitTextField(state, modifier, textStyle, placeholder, focusRequester, focusOnKeypad, singleLine, onDone, autoFocus, dictation = dictation)
+    SidekitTextField(
+        state = state,
+        modifier = modifier,
+        textStyle = textStyle,
+        placeholder = placeholder,
+        focusRequester = focusRequester,
+        focusOnKeypad = focusOnKeypad,
+        singleLine = singleLine,
+        onDone = onDone,
+        autoFocus = autoFocus,
+        dictation = dictation,
+        keyboardType = keyboardType,
+        autoCorrectEnabled = autoCorrectEnabled,
+        masked = masked,
+        imeAction = imeAction,
+        onNext = onNext,
+        contentType = contentType
+    )
 }
 
 /**
@@ -297,8 +396,8 @@ fun SidekitTextField(
  * are reused as the completions change: each key press swaps labels in place and the strip grows
  * or shrinks between one and three buttons, instead of rebuilding.
  */
-private fun t9Actions(engine: T9Engine, session: T9Session, dictation: Dictation?, compact: Boolean, maxSuggestions: Int, onDictate: () -> Unit, onDone: () -> Unit): List<SideAction> {
-    if (engine.composing) {
+private fun t9Actions(engine: T9Engine, session: T9Session, suggestions: Boolean, dictation: Dictation?, compact: Boolean, maxSuggestions: Int, onDictate: () -> Unit, onDone: () -> Unit): List<SideAction> {
+    if (engine.composing && suggestions) {
         return engine.candidates.take(maxSuggestions).mapIndexed { i, word ->
             val chosen = i == engine.selected
             SideAction(
