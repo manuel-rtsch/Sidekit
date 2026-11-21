@@ -34,6 +34,8 @@ import hrln.interactive.sidekit.design.action.ActionBarHost
 import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.action.HeaderHost
 import hrln.interactive.sidekit.design.action.LocalChrome
+import hrln.interactive.sidekit.design.action.LocalHeaderOptionsInset
+import hrln.interactive.sidekit.design.action.headerOptionsInset
 import hrln.interactive.sidekit.design.input.Keypad
 import hrln.interactive.sidekit.design.input.LocalKeypad
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -87,6 +89,10 @@ fun SidekitCanvas(
             // The header's Options button is a touch affordance: it follows the window's input
             // mode, so a keypad press hides it again in the same frame it arrives.
             val touchMode = rememberTouchMode()
+            // The button's space in the top band, published to the screens: a custom header and a
+            // body drawn in that band reserve it so neither runs under the button, and both get the
+            // width back as soon as a keypad press takes the button away.
+            val optionsInset = headerOptionsInset(touchMode.value, chrome.hasOptions, SidekitTheme.spacing)
             // Screens that publish chrome without a scaffold (camera, video) still need an Up
             // target. The scaffold registers a better one that includes its header.
             val canvasFocus = remember { FocusRequester() }
@@ -110,7 +116,9 @@ fun SidekitCanvas(
                     .clipToBounds()
                     .background(SidekitTheme.colors.surfaceA1)
             ) {
-                Box(Modifier.fillMaxSize().focusRequester(canvasFocus)) { content() }
+                CompositionLocalProvider(LocalHeaderOptionsInset provides optionsInset) {
+                    Box(Modifier.fillMaxSize().focusRequester(canvasFocus)) { content() }
+                }
                 // Back closes the options bar before it goes back a screen.
                 BackHandler(enabled = chrome.optionsOpen) { chrome.closeOptions() }
                 HeaderHost(

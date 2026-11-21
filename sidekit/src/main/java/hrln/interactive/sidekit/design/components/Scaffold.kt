@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.action.HeaderSpec
 import hrln.interactive.sidekit.design.action.LocalChrome
+import hrln.interactive.sidekit.design.action.LocalHeaderOptionsInset
 import hrln.interactive.sidekit.design.action.PublishChrome
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.motion.BodyEntrance
@@ -69,7 +70,9 @@ fun SidekitHeader(
  * the leading zone; [trailingActions] are pinned to the right edge (for example a search clear
  * button). [options] are what the keypad's Options key (top right) shows in the action bar:
  * settings and less common actions that don't earn a permanent button. Passing a [header]
- * replaces the shared title with custom content drawn in the body (e.g. a search field).
+ * replaces the shared title with custom content drawn in the body (e.g. a search field); it keeps
+ * the corner the header's touch Options button occupies clear, so a field's text never runs under
+ * it (see [LocalHeaderOptionsInset]).
  *
  * [content] receives padding that keeps its last item clear of the action bar.
  */
@@ -112,7 +115,10 @@ fun SidekitScaffold(
                 .padding(start = spacing.pagePadding, end = spacing.pagePadding, top = spacing.pagePadding)
         ) {
             when {
-                header != null -> header()
+                // The button is drawn above the screens, so the band's content has to leave its
+                // corner free. Zero on a keypad screen, where there is no button to avoid.
+                header != null -> Box(Modifier.fillMaxWidth().padding(end = LocalHeaderOptionsInset.current)) { header() }
+
                 title != null -> Spacer(Modifier.height(spacing.headerHeight))
             }
             Box(

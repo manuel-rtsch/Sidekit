@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **The touch Options button takes space in the top band instead of floating over it.** The three
+  dots are drawn above the screens, and until now only a published title reserved room for them: a
+  custom `SidekitScaffold` header (a search field, the launcher's clock) and any body that starts
+  in that band ran underneath the button, so a long query slid under the dots. `SidekitScaffold`
+  now keeps its `header` slot clear of the corner, and the reservation is published as
+  `LocalHeaderOptionsInset` so body content drawn in the band can opt in. In keypad mode the button
+  is still hidden — and now reserves nothing at all, so the band keeps its full width.
+
 ## v1.10.1 — 2026-11-21
 
 - **A one-line text field can be left with the keypad again.** D-pad Up / Down now move focus

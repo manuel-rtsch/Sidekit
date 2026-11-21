@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -29,12 +30,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.components.SidekitHeader
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.motion.SidekitMotion
 import hrln.interactive.sidekit.design.theme.SidekitIndication
+import hrln.interactive.sidekit.design.theme.SidekitSpacing
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -79,14 +82,42 @@ private class HeaderModel {
 }
 
 /**
+ * The end space the header's touch-only Options button takes up in the top band, measured inside the
+ * page-padded content area — zero whenever the button is not on screen.
+ *
+ * The button belongs to the header, which the canvas draws above the screens, so it takes space from
+ * whatever else shares that band: the shared title (see [HeaderHost]) and a custom
+ * [hrln.interactive.sidekit.design.components.SidekitScaffold] header, which reserves this value for
+ * itself. A body that starts in the band (a card drawn on Now Playing, say) opts in the same way:
+ *
+ *     Modifier.padding(end = LocalHeaderOptionsInset.current)
+ *
+ * The value is zero in keypad mode and on a screen without options, because the button is neither
+ * shown nor reserved there: content keeps the full width whenever the button would not be in the way.
+ */
+val LocalHeaderOptionsInset = compositionLocalOf { 0.dp }
+
+/**
+ * What [LocalHeaderOptionsInset] holds: the button's hit target plus its inset from the panel edge,
+ * less the page padding the content area already gave up. Zero while the button is not on screen, so
+ * entering keypad mode gives the band its full width back instead of leaving a gap.
+ */
+internal fun headerOptionsInset(touchMode: Boolean, hasOptions: Boolean, spacing: SidekitSpacing): Dp = if (touchMode && hasOptions) {
+    spacing.itemPadding + OPTIONS_BUTTON_SIZE - spacing.pagePadding
+} else {
+    0.dp
+}
+
+/**
  * The shared screen title. On navigation the old title fades out and the new one fades in, both
  * in the same fixed place: the title is the screen's anchor, so it never moves. Both are single
  * text layers faded in the draw phase, measured once.
  *
  * In touch mode, a screen with options also gets a small overflow button in the top-right corner,
  * centred on the title's line. It is the touch equivalent of the keypad's Options key: the keypad
- * does not need it, so it disappears as soon as a key is pressed. The title always reserves its
- * width while the screen has options, so showing and hiding the button never reflows the title.
+ * does not need it, so it disappears as soon as a key is pressed — and with it the space it held,
+ * so a keypad never pays for a button it cannot reach. The title keeps its own inset clear while
+ * the button is shown, and [LocalHeaderOptionsInset] carries the same reservation to the screens.
  */
 @Composable
 internal fun HeaderHost(state: ChromeState, modifier: Modifier = Modifier, touchMode: Boolean = false) {
@@ -106,13 +137,16 @@ internal fun HeaderHost(state: ChromeState, modifier: Modifier = Modifier, touch
 
     val density = LocalDensity.current
     val travel = with(density) { TITLE_TRAVEL.toPx() }
-    val titleModifier = Modifier.padding(end = if (hasOptions) OPTIONS_HIT_SIZE else 0.dp)
+    // The title's own inset is only the hit target: its text box already keeps itemPadding inside.
+    // A custom header has no such inset, which is why [LocalHeaderOptionsInset] carries that too.
+    val optionsShown = touchMode && hasOptions
+    val titleModifier = Modifier.padding(end = if (optionsShown) OPTIONS_BUTTON_SIZE else 0.dp)
     // The title is drawn from headerPaddingTop down, so its line box starts there: put the button's
     // centre on the middle of that box, and figure and text sit on the same axis.
     val optionsTop = with(density) {
         (
             SidekitTheme.spacing.headerPaddingTop + SidekitTheme.typography.title.lineHeight.toDp() / 2 -
-                OPTIONS_HIT_SIZE / 2
+                OPTIONS_BUTTON_SIZE / 2
             ).coerceAtLeast(0.dp)
     }
     val current = model.current
@@ -152,7 +186,7 @@ internal fun HeaderHost(state: ChromeState, modifier: Modifier = Modifier, touch
                 }
             )
         }
-        if (touchMode && hasOptions) {
+        if (optionsShown) {
             HeaderOptionsButton(
                 expanded = state.optionsOpen,
                 onClick = state::toggleOptions,
@@ -182,7 +216,7 @@ private fun HeaderOptionsButton(
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .size(OPTIONS_HIT_SIZE)
+            .size(OPTIONS_BUTTON_SIZE)
             .clip(SidekitTheme.shapes.control)
             .focusProperties { canFocus = false }
             .clickable(
@@ -206,7 +240,7 @@ private val TITLE_TRAVEL = 0.dp
 private const val HANDOFF = 0.35f
 
 /**
- * Touch target of the header's Options button; also the title space reserved while options exist.
+ * Touch target of the header's Options button; also the title space reserved while it is on screen.
  * Larger than the icon it wraps, so the button is easy to hit without growing the glyph.
  */
-private val OPTIONS_HIT_SIZE = 56.dp
+private val OPTIONS_BUTTON_SIZE = 56.dp
