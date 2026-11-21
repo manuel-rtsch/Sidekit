@@ -9,6 +9,9 @@
   now keeps its `header` slot clear of the corner, and the reservation is published as
   `LocalHeaderOptionsInset` so body content drawn in the band can opt in. In keypad mode the button
   is still hidden — and now reserves nothing at all, so the band keeps its full width.
+- **The keypad typing bar no longer takes over while the on-screen keyboard is up.** The ABC /
+  Done strip belongs to a keypad that types; when the IME is the input, the screen keeps its own
+  (or empty) action bar instead of publishing the keypad's strip over it.
 
 ## v1.10.1 — 2026-11-21
 

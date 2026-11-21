@@ -7,6 +7,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
@@ -28,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
@@ -109,7 +113,7 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
  *   stays up, so a form is filled without returning the screen's actions.
  * @param contentType the autofill hint for this field, so a password manager can fill it.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun SidekitTextField(
     state: TextFieldState,
@@ -222,7 +226,10 @@ fun SidekitTextField(
     // Leaving the field ends dictation; a phrase still in flight would land in the wrong place.
     LaunchedEffect(focused) { if (!focused) speech.release() }
 
-    if (focused && t9 && keypad != null && session != null) {
+    // The typing bar belongs to the keypad. A visible on-screen keyboard is the input instead, and
+    // the screen behind it has already given up its own bar to it.
+    val imeVisible = LocalImeVisible.current ?: WindowInsets.isImeVisible
+    if (focused && t9 && keypad != null && session != null && !imeVisible) {
         PublishActionOverride(
             t9Actions(
                 maxSuggestions = if (trailingTypingAction == null) MAX_SHOWN else MAX_SHOWN - 1,
@@ -500,3 +507,9 @@ private const val MAX_SHOWN = 3
 /** Whether T9 typing is active anywhere (for screens that adapt, e.g. to keep their title visible). */
 @Composable
 fun rememberT9Active(): Boolean = LocalKeypad.current?.typing == true
+
+/**
+ * The on-screen keyboard's visibility as the typing bar sees it. Null reads the window. Internal so
+ * tests can pin the state; the bar must not publish itself over a visible IME.
+ */
+internal val LocalImeVisible = staticCompositionLocalOf<Boolean?> { null }

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.Keypad
 import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.input.LocalKeypad
@@ -130,6 +131,20 @@ class SidekitTextFieldTest {
     }
 
     @Test
+    fun `the typing bar appears for a keypad without the on-screen keyboard`() {
+        showTypingBar(imeVisible = false)
+        compose.onNode(hasSetTextAction()).assertIsFocused()
+        compose.onNodeWithText("Done").assertExists()
+    }
+
+    @Test
+    fun `the typing bar stays down while the on-screen keyboard is up`() {
+        showTypingBar(imeVisible = true)
+        compose.onNode(hasSetTextAction()).assertIsFocused()
+        compose.onNodeWithText("Done").assertDoesNotExist()
+    }
+
+    @Test
     fun `up on a single line field moves focus out`() {
         showField("hello", KeypadModule.T9)
         compose.onNode(hasSetTextAction()).requestFocus()
@@ -157,6 +172,22 @@ class SidekitTextFieldTest {
         compose.onNode(hasSetTextAction()).performKeyInput { pressKey(Key.CtrlLeft) }
         compose.waitForIdle()
         compose.onNodeWithTag("below").assertIsFocused()
+    }
+
+    /** A T9 field inside the canvas, where its typing bar can publish itself. */
+    private fun showTypingBar(imeVisible: Boolean) {
+        compose.setContent {
+            val scope = rememberCoroutineScope()
+            val keypad = remember { Keypad.forTesting(scope, T9Words.parse("hello\nhelp"), KeypadModule.T9) }
+            CompositionLocalProvider(LocalImeVisible provides imeVisible) {
+                SidekitCanvas(keypad = keypad) {
+                    SidekitTheme {
+                        SidekitTextField(rememberTextFieldState(""), singleLine = true, autoFocus = true)
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
     }
 
     /** A one-line field between two focus stops, with [module] attached. */
