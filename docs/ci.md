@@ -154,6 +154,49 @@ pull requests to `main`; keep them optional if they are still being tuned.
   requests. The `release` build type stays unsigned so a PR never needs a key,
   and CI only verifies that R8 succeeds.
 
+## Tagging
+
+A release *is* a tag: `sidekit.version` derives `versionName` from `git describe --tags --long` and
+`versionCode` from the commit count, and both release workflows key off `v*`. A tag that is before
+its `CHANGELOG.md` section, or not on `main`, or lightweight where the rest are annotated, produces
+an artifact that does not trace back to a commit — which is the whole point of tagging.
+
+Fetch tags before you build. A clone, or a `git fetch upstream` that never asked for tags, leaves
+`git describe` anchored on an old release and the version lies: this repository reported
+`1.7.0-127-g8dce85c` until `git fetch --tags origin` brought `v1.7.1`–`v1.10.1` in.
+
+The convention, for every release:
+
+1. **Promote the CHANGELOG section in the tagged commit.** `## Unreleased` becomes
+   `## vX.Y.Z — <date>`. The `Release APK` workflow creates the GitHub release with placeholder
+   notes on purpose, and the notes are edited afterwards from that section.
+2. **Annotated tags only** (`git tag -a`). The history is mixed — `v1.0`, `v1.3.0`, `v1.5.0`,
+   `v1.7.2`, `v1.7.3`, `v1.9.1` and `v1.9.2` are lightweight — and that is not worth rewriting, but
+   an annotated tag carries the tagger, date and message that a bare ref does not.
+3. **Signing is supported and not yet used.** `git config tag.gpgSign true`, or `gpg.format=ssh`
+   with an SSH key, applies to all later tags; no tag so far is signed.
+4. **`vX.Y.Z` only.** `release-apk.yml` rejects anything else, and `publish-sdk.yml` publishes the
+   tag verbatim as the Maven version, so a `-rc` stamp would become a permanent library version.
+   Stage pre-releases in `## Unreleased` instead.
+5. **Tag a commit on `main`.** `v1.7.3` is the one exception and stays as it is: it points at
+   `a73addf`, a pre-rebase copy of `c57ec95` (*feat(header): add a touch-mode Options button*),
+   which is the commit on `main` that `v1.8.0` follows. Re-pointing it would contradict the APK and
+   the `sidekit-sdk:1.7.3` artifacts already published from it, and `v1.8.0` ships the same change.
+   Any other tag has to pass `git merge-base --is-ancestor <tag> main`.
+6. **Then push the tag**: `git push origin vX.Y.Z`. `Release APK` waits for the *release*
+   environment approval, `Publish SDK` pushes to `gh-pages`, and the `site/` download links and the
+   `gh-pages` *Publish vX.Y.Z* commit carry the same version.
+
+Check before pushing:
+
+```bash
+git describe --tags --long --dirty      # vX.Y.Z-0-g<sha>, with no -dirty suffix
+git rev-list --count HEAD               # versionCode: must exceed the previous tag's count
+```
+
+`git rev-list --count <tag>` gives the `versionCode` of a past release, so a release that skipped a
+number is visible without installing the APK.
+
 ## Release signing
 
 The signature on an APK is its identity to Android: only an APK signed with the same key can install

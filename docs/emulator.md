@@ -17,6 +17,24 @@ can lose the latest five seconds. Pausing, switching apps, and losing window foc
 release held buttons and stop audio. Uninstalling/clearing app data deletes the
 imported games and saves.
 
+## Where this app came from
+
+This is not fork work. Harlen Postill wrote it and released it as part of Sidekit: `09cb440`
+"Release Sidekit 1.2 with GB, GBC and GBA emulation" and `4739392`, both 2026-11-05. It shipped in
+the tags `v1.2`–`v1.2.3`, was absent from `v1.3.0` (cut from a parallel branch), and shipped again in
+`v1.4.1`–`v1.7.0`. Upstream carries it on its release branches (`upstream/release/1.2` …),
+**never on `upstream/main`** — the two lines part at `4886a94`, so no `upstream/main` merge adds or
+removes these files.
+
+The fork merged those release refs (`cf57edb`, `21bb70d`, `6853612`, then `feat/sidetracks`) and owns
+the maintenance from here. Changes made in the fork since: `5f64a86` (`NativeLibraries`, a missing
+`.so` reports itself instead of crashing), `9c0fb91` (formatting), `908b079` (a back-gesture false
+positive in the mapping dialog), the translated launcher label, and the `SubApp.Emulator` entry. The
+three Kotlin files still speak English only; moving them to `strings_*.xml` is outstanding.
+
+A build without NDK 27.1.12297006 fails rather than skipping the native task — `app/build.gradle.kts`
+wires `externalNativeBuild` unconditionally. Only the runtime degrades gracefully.
+
 ## Upstream
 
 - Repository: https://github.com/mgba-emu/mgba

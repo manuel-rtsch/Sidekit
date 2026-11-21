@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.11.0 — 2026-11-21
 
 - **The touch Options button takes space in the top band instead of floating over it.** The three
   dots are drawn above the screens, and until now only a published title reserved room for them: a
@@ -21,6 +21,9 @@
   the keypad's Home key and controller shoulders, the App names) it went into the same files in all
   four languages; fork-only screens that are still English-until-translated are the Emulator and a
   few of the newer side apps, which keep their literals for now.
+
+SDK artifacts for this tag are published to the GitHub Pages Maven repo (`sidekit-design` and
+`sidekit-sdk`, version `1.11.0`).
 
 ## v1.10.1 — 2026-11-21
 
@@ -124,6 +127,9 @@ Changes since [v1.7.2](https://github.com/manuel-rtsch/Sidekit/releases/tag/v1.7
 ### For developers
 
 - **Published artifacts:** `sidekit-design` and `sidekit-sdk` `1.7.3` are on the Maven repository at <https://manuel-rtsch.github.io/Sidekit/maven>.
+- **Tag note:** `v1.7.3` was cut from a pre-rebase branch (`a73addf`), so the tag is not an ancestor
+  of `main`; the same change landed on `main` as `c57ec95` and shipped again in v1.8.0. See
+  [Tagging](docs/ci.md#tagging) — the tag is deliberately left where it is.
 
 ## v1.7.2 — 2026-11-17
 
