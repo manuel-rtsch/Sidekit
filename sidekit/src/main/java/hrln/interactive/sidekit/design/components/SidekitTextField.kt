@@ -33,12 +33,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.autofill.contentType
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onInterceptKeyBeforeSoftKeyboard
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -53,7 +63,9 @@ import hrln.interactive.sidekit.design.action.PublishActionOverride
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.input.Dictation
+import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.input.LocalKeypad
+import hrln.interactive.sidekit.design.input.QwertyLayout
 import hrln.interactive.sidekit.design.input.T9Engine
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.design.input.T9Session
@@ -72,6 +84,13 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
  * When no word is being typed the bar shows the input mode (tap to switch letters / numbers),
  * dictation (speak a phrase; it goes in at the cursor) and Done, which ends typing and gives the
  * screen its own actions back. With the virtual keyboard, dictation is the keyboard's own mic.
+ *
+ * A single-line field hands D-pad Up / Down to focus navigation instead of the caret: there is no
+ * second line to move within, and on a keypad that types the field is the only focused thing on
+ * screen, so Up / Down are how the rest of the screen is reached again. Multi-line fields keep the
+ * caret. On the mini QWERTY, whose direction cross types letters while a field owns the keypad,
+ * tapping the suggestion rocker with nothing to complete also leaves the field, and holding it
+ * leaves while finishing the word.
  *
  * @param focusOnKeypad make this the screen's main field: typing on the keypad while nothing is
  *   focused starts typing here.
@@ -121,7 +140,15 @@ fun SidekitTextField(
     var focused by remember { mutableStateOf(autoFocus) }
     var awaitingFocus by remember { mutableStateOf(autoFocus) }
     if (autoFocus) LaunchedEffect(Unit) { focusRequester.requestFocus() }
-    val session = remember(keypad, state) { keypad?.let { T9Session(it, TextFieldT9Buffer(state), scope) } }
+    // Where the field goes when the keypad asks to get out of it: the nearest control that way, or
+    // nowhere when the screen has none, which is still better than staying in the field.
+    val leaveField: (FocusDirection) -> Unit = { direction ->
+        if (!focusManager.moveFocus(direction)) focusManager.clearFocus()
+    }
+    val leaveFromKeypad by rememberUpdatedState { leaveField(FocusDirection.Down) }
+    val session = remember(keypad, state) {
+        keypad?.let { T9Session(it, TextFieldT9Buffer(state), scope, onEscape = { leaveFromKeypad() }) }
+    }
     val t9 = keypad?.typing == true
     // Next means "hand the typing on", Done means "I am finished with this field". Asking for Next
     // without a target leaves the ordinary action in place rather than a key that does nothing.
@@ -252,6 +279,40 @@ fun SidekitTextField(
             } else if (keypad.session === session) {
                 session.finish()
                 keypad.session = null
+            }
+        }
+        // A one-line field has no vertical caret targets, so Up / Down mean "leave the field"
+        // there. Intercept before the text field: otherwise it eats Up to move the caret to the
+        // line start, and the screen never sees the navigation. Modified arrows stay the text
+        // field's (Shift+Up selects, Ctrl+arrows move by words).
+        .onPreviewKeyEvent { event ->
+            if (!singleLine) return@onPreviewKeyEvent false
+            val rocker = keypad?.module == KeypadModule.Qwerty && event.nativeKeyEvent.keyCode == QwertyLayout.SUGGEST
+            if (rocker) {
+                // The suggestion rocker's tap is left alone while a word is composing (the session
+                // cycles completions and a hold leaves). With nothing to complete, a tap leaves.
+                if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.repeatCount == 0 &&
+                    keypad?.engine?.composing != true
+                ) {
+                    session?.finish()
+                    leaveField(FocusDirection.Down)
+                    return@onPreviewKeyEvent true
+                }
+                return@onPreviewKeyEvent false
+            }
+            if (event.isShiftPressed || event.isCtrlPressed || event.isAltPressed || event.isMetaPressed) {
+                return@onPreviewKeyEvent false
+            }
+            when (event.key) {
+                Key.DirectionUp, Key.DirectionDown -> {
+                    if (event.type == KeyEventType.KeyDown && event.nativeKeyEvent.repeatCount == 0) {
+                        session?.finish()
+                        leaveField(if (event.key == Key.DirectionUp) FocusDirection.Up else FocusDirection.Down)
+                    }
+                    true
+                }
+
+                else -> false
             }
         }
         // Before the IME: on the Sidephone the virtual keyboard stays connected even when hidden,

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.10.1 — 2026-11-21
+
+- **A one-line text field can be left with the keypad again.** D-pad Up / Down now move focus
+  instead of the caret on `singleLine` fields: the text field used to eat Up to move the caret to
+  the line start, so with a T9 / mini QWERTY attached (and the field auto-focused) there was no way
+  out. Multi-line fields keep vertical caret movement, and modified arrows are untouched.
+- **The mini QWERTY's suggestion rocker is an exit.** While a word is composing a tap still cycles
+  completions; with nothing to complete it leaves the field, and holding it finishes the word and
+  leaves. The module's T / D / B / J cross has to type letters while a field owns the keypad, so
+  the rocker was the only direction key left.
+
 ## v1.10.0 — 2026-11-21
 
 - **`SidekitTextField` takes a keyboard type, an IME action, an autofill hint and a `Next` target.**

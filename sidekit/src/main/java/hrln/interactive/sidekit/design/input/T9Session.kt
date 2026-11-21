@@ -33,11 +33,16 @@ internal class TextFieldT9Buffer(private val state: TextFieldState) : T9Buffer {
  * Digits act on release so a long press can type the digit itself instead (as on a Nokia);
  * delete acts on press and repeats while held. While a word has suggestions, D-pad left / right
  * move between them and OK takes one.
+ *
+ * [onEscape] is called when the keypad has no other way out of the field: the mini QWERTY's
+ * suggestion rocker, held down. The field decides where focus goes; the session only settles the
+ * word first.
  */
 internal class T9Session(
     private val keypad: Keypad,
     val buffer: T9Buffer,
     private val scope: CoroutineScope,
+    private val onEscape: () -> Unit = {}
 ) {
     private val engine get() = keypad.engine
     private var downKey: T9Key? = null
@@ -45,6 +50,8 @@ internal class T9Session(
     private var tickJob: Job? = null
     private var acceptedOk = false
     private var downCode = -1
+    private var suggestDownAt = -1L
+    private var suggestedOut = false
 
     fun onKeyEvent(event: KeyEvent): Boolean {
         val down = event.action == KeyEvent.ACTION_DOWN
@@ -58,8 +65,9 @@ internal class T9Session(
                 if (down) engine.finish(buffer)
                 return false
             }
+
             KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_MOVE_HOME,
-            KeyEvent.KEYCODE_MOVE_END, KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_MOVE_END, KeyEvent.KEYCODE_BACK
             -> {
                 // Settle the word, then let the field move the cursor / the screen go back.
                 if (down) engine.finish(buffer)
@@ -84,6 +92,7 @@ internal class T9Session(
                 longFired = true
                 engine.key(key, buffer, now, long = true)
             }
+
             KeyEvent.ACTION_UP -> {
                 if (downKey == key && !longFired) {
                     engine.key(key, buffer, now)
@@ -116,15 +125,15 @@ internal class T9Session(
 
     /**
      * The mini QWERTY. Keys act on release, like T9 digits, so a long press can type the printed
-     * digit or symbol instead. The up / down key steps through suggestions (there is no D-pad).
+     * digit or symbol instead. The up / down rocker ([QwertyLayout.SUGGEST]) steps through
+     * suggestions (there is no D-pad), and holding it leaves the field: the rocker is the only
+     * direction key on the module, and while a field owns the keys the T / D / B / J cross types
+     * letters, so a hold is what keeps typing from becoming a cage.
      */
     private fun qwerty(event: KeyEvent): Boolean {
         val code = event.keyCode
         val now = event.eventTime
-        if (code == QwertyLayout.SUGGEST) {
-            if (event.action == KeyEvent.ACTION_DOWN) engine.moveSelection(1)
-            return true
-        }
+        if (code == QwertyLayout.SUGGEST) return suggest(event, now)
         when (event.action) {
             KeyEvent.ACTION_DOWN -> if (event.repeatCount == 0) {
                 downCode = code
@@ -136,12 +145,16 @@ internal class T9Session(
                     else -> QwertyLayout.printed[code]?.let { engine.type(it, buffer) }
                 }
             }
+
             KeyEvent.ACTION_UP -> {
                 if (downCode == code && !longFired) {
                     when (code) {
                         QwertyLayout.CASE -> engine.key(T9Key.Pound, buffer, now)
+
                         QwertyLayout.SYM -> engine.tap(SYM_ID, QwertyLayout.SYMBOLS, buffer, now)
+
                         KeyEvent.KEYCODE_SPACE -> engine.type(if (engine.mode == T9Mode.Numeric) "0" else " ", buffer)
+
                         else -> if (engine.mode == T9Mode.Numeric) {
                             QwertyLayout.printed[code]?.let { engine.type(it, buffer) }
                         } else {
@@ -154,6 +167,38 @@ internal class T9Session(
             }
         }
         return true
+    }
+
+    /**
+     * The QWERTY suggestion rocker. A tap cycles completions while a word is being composed; with
+     * nothing to complete it is left to the field, which leaves on it. A hold finishes the word and
+     * asks the field to leave. The rest of that press is swallowed so focus cannot bounce back.
+     */
+    private fun suggest(event: KeyEvent, now: Long): Boolean {
+        if (suggestedOut) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                suggestedOut = false
+                suggestDownAt = -1
+            }
+            return true
+        }
+        if (event.action == KeyEvent.ACTION_UP) {
+            suggestDownAt = -1
+            return engine.composing
+        }
+        if (event.repeatCount == 0) {
+            suggestDownAt = event.eventTime
+            if (engine.composing) engine.moveSelection(1)
+            return engine.composing
+        }
+        if (engine.composing && suggestDownAt >= 0 && now - suggestDownAt >= keypad.longPressMs) {
+            finish()
+            suggestedOut = true
+            onEscape()
+            return true
+        }
+        if (engine.composing) engine.moveSelection(1)
+        return engine.composing
     }
 
     fun pick(index: Int) = engine.pick(index, buffer)
