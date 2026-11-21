@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Photos app. Folder names come from the phone and are not strings. -->
+<resources>
+    <string name="photos_title">Fotos</string>
+    <string name="photos_albums">Alben</string>
+    <string name="photos_album">Album</string>
+    <string name="photos_recent">Neueste</string>
+    <string name="photos_favourites">Favoriten</string>
+    <string name="photos_videos">Videos</string>
+    <string name="photos_camera">Kamera</string>
+    <string name="photos_untitled">Ohne Titel</string>
+    <plurals name="photos_items">
+        <item quantity="one">%1$d Element</item>
+        <item quantity="other">%1$d Elemente</item>
+    </plurals>
+    <string name="photos_empty">Noch keine Fotos</string>
+    <string name="photos_album_empty">Dieses Album ist leer</string>
+    <string name="photos_favourites_empty">Tippe bei einem Foto auf das Herz, um es hier hinzuzufügen</string>
+    <string name="photos_permission_title">Deine Fotos ansehen</string>
+    <string name="photos_permission_reason">Fotos zeigt die Bilder und Videos auf diesem Telefon. Nichts verlässt das Gerät.</string>
+    <string name="photos_open_settings">Einstellungen öffnen</string>
+    <string name="photos_allow">Zulassen</string>
+    <string name="photos_allow_description">Zugriff auf Fotos erlauben</string>
+    <string name="photos_open_photo">Foto öffnen</string>
+    <string name="photos_open_video">Video öffnen</string>
+    <string name="photos_photo">Foto</string>
+    <string name="photos_video">Video</string>
+    <string name="photos_play_video">Video abspielen</string>
+    <string name="photos_back">Zurück</string>
+    <string name="photos_back_from_photo">Zurück vom Foto</string>
+    <string name="photos_back_from_video">Zurück vom Video</string>
+    <string name="photos_keep_photo">Foto behalten</string>
+    <string name="photos_keep_video">Video behalten</string>
+    <string name="photos_delete">Löschen</string>
+    <string name="photos_confirm_delete">Löschen bestätigen</string>
+    <string name="photos_delete_photo">Foto löschen</string>
+    <string name="photos_delete_video">Video löschen</string>
+    <string name="photos_add_favourite">Zu Favoriten hinzufügen</string>
+    <string name="photos_remove_favourite">Aus Favoriten entfernen</string>
+    <string name="photos_share">Teilen</string>
+    <string name="photos_favourite">Favorisieren</string>
+    <string name="photos_unfavourite">Kein Favorit mehr</string>
+    <string name="photos_play">Abspielen</string>
+</resources>

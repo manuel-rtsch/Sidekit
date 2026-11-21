@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vault: private notes behind the device lock. -->
+<resources>
+    <string name="vault_title">Bóveda</string>
+    <string name="vault_needs_lock">Configura un bloqueo de pantalla en los ajustes de Android antes de usar la Bóveda.</string>
+    <string name="vault_unlock_title">Desbloquear Bóveda</string>
+    <string name="vault_unlock_subtitle">Notas privadas · se bloquea a los 55 segundos</string>
+    <string name="vault_working">Procesando…</string>
+    <string name="vault_home">Inicio</string>
+    <string name="vault_unlock">Desbloquear</string>
+    <string name="vault_keep_editing">Seguir editando</string>
+    <string name="vault_discard">Descartar</string>
+    <string name="vault_notes">Notas</string>
+    <string name="vault_lock">Bloquear</string>
+    <string name="vault_new_note">Nueva nota</string>
+    <string name="vault_intro">Protegida por el bloqueo del dispositivo. Guarda antes de salir: la Bóveda se bloquea a los 55 segundos o al salir. Los cambios sin guardar se descartan. El teclado privado usa abc sin guardar palabras aprendidas.</string>
+    <string name="vault_empty">Aún no hay notas privadas</string>
+    <string name="vault_placeholder">Nota privada…</string>
+    <string name="vault_untitled">Sin título</string>
+    <string name="vault_cannot_unlock">No se puede desbloquear: %1$s. Se han conservado los datos cifrados.</string>
+    <string name="vault_type_first">Escribe una nota antes de guardar.</string>
+    <string name="vault_saved">Guardada cifrada</string>
+    <string name="vault_not_saved">No guardada: %1$s. Desbloquea de nuevo si la autenticación ha caducado.</string>
+    <string name="vault_not_saved_too_large">No guardada: la nota es demasiado grande (máximo 1 MB).</string>
+</resources>

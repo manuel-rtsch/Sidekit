@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Camera: viewfinder, capture controls and errors. -->
+<resources>
+    <string name="camera_title">Cámara</string>
+    <string name="camera_open_settings">Abrir ajustes</string>
+    <string name="camera_allow">Permitir</string>
+    <string name="camera_rationale_title">Usar la cámara</string>
+    <string name="camera_rationale">Cámara necesita acceso a la cámara para mostrar la vista previa y guardar fotos y vídeos en este teléfono.</string>
+    <string name="camera_stop_recording">Detener grabación</string>
+    <string name="camera_photos">Fotos</string>
+    <string name="camera_saving_photo">Guardando foto</string>
+    <string name="camera_take_photo">Hacer foto</string>
+    <string name="camera_record_video">Grabar vídeo</string>
+    <string name="camera_turn_flash_off">Desactivar flash</string>
+    <string name="camera_turn_flash_on">Activar flash</string>
+    <string name="camera_flash_on">Flash activado</string>
+    <string name="camera_flash_off">Flash desactivado</string>
+    <string name="camera_error_no_camera">No hay cámara disponible</string>
+    <string name="camera_error_unavailable">Cámara no disponible</string>
+    <string name="camera_error_start">No se pudo iniciar la cámara</string>
+    <string name="camera_error_photo">Error al hacer la foto</string>
+    <string name="camera_error_save_photo">No se pudo guardar la foto</string>
+    <string name="camera_error_create_video">No se pudo crear el vídeo</string>
+    <string name="camera_error_record_video">No se pudo grabar el vídeo</string>
+</resources>

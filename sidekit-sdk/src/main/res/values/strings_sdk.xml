@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidekit SDK: shared case-colour picker, keypad guide and keypad mapping. Names start with sk_ (the library's resourcePrefix). -->
+<resources>
+    <!-- Case-colour picker. -->
+    <string name="sk_sdk_case_colour_intro">Match your Sidephone case</string>
+    <string name="sk_sdk_case_colour_original">Original blue</string>
+    <!-- %1$s is the colour name. -->
+    <string name="sk_sdk_case_colour_active">Active: %1$s</string>
+    <!-- Keypad guide: key names sit on small tiles (up to five per row), so keep them short. -->
+    <string name="sk_sdk_guide_back">Back</string>
+    <string name="sk_sdk_guide_home">Home</string>
+    <string name="sk_sdk_guide_options">Options</string>
+    <string name="sk_sdk_guide_up">Up</string>
+    <string name="sk_sdk_guide_down">Down</string>
+    <string name="sk_sdk_guide_left">Left</string>
+    <string name="sk_sdk_guide_right">Right</string>
+    <string name="sk_sdk_guide_delete">Delete</string>
+    <string name="sk_sdk_guide_space">Space</string>
+    <string name="sk_sdk_guide_enter">Enter</string>
+    <string name="sk_sdk_guide_previous">Previous</string>
+    <string name="sk_sdk_guide_play_pause">Play / pause</string>
+    <string name="sk_sdk_guide_next">Next</string>
+    <string name="sk_sdk_guide_search">Search</string>
+    <string name="sk_sdk_guide_action">Action</string>
+    <string name="sk_sdk_guide_confirm">Confirm</string>
+    <!-- Keypad guide: what a key does on a tap or a long press. -->
+    <string name="sk_sdk_guide_go_back_screen">Go back a screen.</string>
+    <string name="sk_sdk_guide_open_dialer">Open the dialer.</string>
+    <string name="sk_sdk_guide_return_home">Return to your home app.</string>
+    <string name="sk_sdk_guide_extra_actions">Show this screen’s extra actions.</string>
+    <string name="sk_sdk_guide_jump_to_bar">Jump to the action bar.</string>
+    <string name="sk_sdk_guide_focus_up">Move focus up.</string>
+    <string name="sk_sdk_guide_focus_down">Move focus down.</string>
+    <string name="sk_sdk_guide_focus_left">Move focus left.</string>
+    <string name="sk_sdk_guide_focus_right">Move focus right.</string>
+    <string name="sk_sdk_guide_focus_left_text">Move focus left. In text, move the cursor or suggestion selection.</string>
+    <string name="sk_sdk_guide_focus_right_text">Move focus right. In text, move the cursor or suggestion selection.</string>
+    <string name="sk_sdk_guide_ok">Activate the focused control or confirm a suggestion.</string>
+    <string name="sk_sdk_guide_delete_previous">Delete the previous character.</string>
+    <string name="sk_sdk_guide_cycle_letters">Tap repeatedly to cycle this key’s letters.</string>
+    <string name="sk_sdk_guide_type_digit">Type %1$d.</string>
+    <string name="sk_sdk_guide_punctuation">Tap repeatedly for punctuation.</string>
+    <string name="sk_sdk_guide_cycle_symbols">Tap repeatedly to cycle symbols.</string>
+    <string name="sk_sdk_guide_space_in_letters">Insert a space in letter mode.</string>
+    <string name="sk_sdk_guide_change_case">Change letter case.</string>
+    <string name="sk_sdk_guide_letters_numbers">Switch letters and numbers.</string>
+    <!-- %1$s is the key's letter pair, e.g. QW. -->
+    <string name="sk_sdk_guide_choose_letter">Choose a letter from %1$s.</string>
+    <string name="sk_sdk_guide_type_printed">Type the printed digit or symbol.</string>
+    <string name="sk_sdk_guide_cycle_suggestions">Cycle the suggested words.</string>
+    <string name="sk_sdk_guide_insert_space">Insert a space.</string>
+    <string name="sk_sdk_guide_confirm_or_new_line">Confirm a suggestion or insert a new line.</string>
+    <string name="sk_sdk_guide_previous_track">Previous media track.</string>
+    <string name="sk_sdk_guide_play_pause_media">Play or pause media.</string>
+    <string name="sk_sdk_guide_confirm_focused">Confirm the focused control.</string>
+    <string name="sk_sdk_guide_next_track">Next media track.</string>
+    <string name="sk_sdk_guide_next_control">Move to the next control.</string>
+    <string name="sk_sdk_guide_go_back">Go back.</string>
+    <string name="sk_sdk_guide_activate_focused">Activate the focused control.</string>
+    <string name="sk_sdk_guide_open_options">Open options.</string>
+    <string name="sk_sdk_guide_open_search">Open search.</string>
+    <string name="sk_sdk_guide_focus_action_bar">Focus the action bar.</string>
+    <string name="sk_sdk_guide_go_home_screen">Go to the home screen.</string>
+    <!-- Keypad guide: the rest of the screen. -->
+    <!-- Spoken click label; %1$s is the key name. -->
+    <string name="sk_sdk_guide_show_key">Show %1$s</string>
+    <string name="sk_sdk_guide_sundial_note">Some Sundials report Enter as Play/Pause. Hold it for Confirm.</string>
+    <string name="sk_sdk_guide_onscreen_keyboard">Text fields use the on-screen keyboard with this module.</string>
+    <!-- Narrow column, about 6 characters. -->
+    <string name="sk_sdk_guide_tap">Tap</string>
+    <!-- Narrow column, about 6 characters. -->
+    <string name="sk_sdk_guide_hold">Hold</string>
+    <string name="sk_sdk_guide_no_long_press">No long press</string>
+    <!-- Keypad mapping. -->
+    <string name="sk_sdk_mapping_title">Keypad mapping</string>
+    <string name="sk_sdk_mapping_back">Settings</string>
+    <string name="sk_sdk_mapping_reset">Reset keys</string>
+    <string name="sk_sdk_mapping_use_automatic">Use automatic</string>
+    <string name="sk_sdk_mapping_item">Mapping</string>
+    <string name="sk_sdk_mapping_automatic">Automatic</string>
+    <string name="sk_sdk_mapping_custom">Custom</string>
+    <string name="sk_sdk_mapping_layout">Layout</string>
+    <string name="sk_sdk_mapping_tester">Key tester</string>
+    <string name="sk_sdk_mapping_automatic_note">Sidekit recognises Sidephone keypad modules from their keys. Turn on Custom for a keypad it doesn’t know, or to move keys around.</string>
+    <string name="sk_sdk_mapping_custom_note">Detection is paused. Choose a key to teach Sidekit which button to use for it. Keys you don’t change keep working as before.</string>
+    <string name="sk_sdk_mapping_default">Default</string>
+    <!-- Learning a key. -->
+    <string name="sk_sdk_capture_title">Press a key</string>
+    <string name="sk_sdk_capture_title_again">Press it again</string>
+    <string name="sk_sdk_capture_try_again">Try again</string>
+    <string name="sk_sdk_capture_listening">Listening…</string>
+    <string name="sk_sdk_capture_seconds" translatable="false">%1$d s</string>
+    <!-- %1$s is the control being learned. -->
+    <string name="sk_sdk_capture_prompt">Press the button on your keypad you want to use for %1$s. Tap Cancel to stop.</string>
+    <!-- %1$s is Back or Options; %2$s the control being learned. -->
+    <string name="sk_sdk_capture_guarded">This is your %1$s key. Tap Save to use it for %2$s instead.</string>
+    <string name="sk_sdk_capture_moves">Press it again to save. It moves from %1$s, which goes back to its usual key.</string>
+    <string name="sk_sdk_capture_again">Press it again to save, or tap Try again.</string>
+    <!-- Shown when a key's input device has no name. -->
+    <string name="sk_sdk_keypad">Keypad</string>
+    <!-- Key tester. -->
+    <!-- %1$s is a keypad module name, or Sidekit. -->
+    <string name="sk_sdk_tester_intro">Press keys to see what they send and what they do in %1$s. Back still goes back.</string>
+    <!-- %1$s is the input device name. -->
+    <string name="sk_sdk_tester_detail">%1$s · code %2$d</string>
+    <string name="sk_sdk_tester_detail_scan">%1$s · code %2$d · scan %3$d</string>
+</resources>

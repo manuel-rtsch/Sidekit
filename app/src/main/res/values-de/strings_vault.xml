@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vault: private notes behind the device lock. -->
+<resources>
+    <string name="vault_title">Tresor</string>
+    <string name="vault_needs_lock">Richte in den Android-Einstellungen eine Displaysperre ein, um den Tresor zu nutzen.</string>
+    <string name="vault_unlock_title">Tresor entsperren</string>
+    <string name="vault_unlock_subtitle">Private Notizen · sperrt nach 55 Sekunden</string>
+    <string name="vault_working">Wird bearbeitet…</string>
+    <string name="vault_home">Start</string>
+    <string name="vault_unlock">Entsperren</string>
+    <string name="vault_keep_editing">Weiter bearbeiten</string>
+    <string name="vault_discard">Verwerfen</string>
+    <string name="vault_notes">Notizen</string>
+    <string name="vault_lock">Sperren</string>
+    <string name="vault_new_note">Neue Notiz</string>
+    <string name="vault_intro">Geschützt durch deine Gerätesperre. Vor dem Verlassen speichern: Der Tresor sperrt nach 55 Sekunden oder wenn du ihn verlässt. Nicht gespeicherte Änderungen gehen verloren. Die private Tastatur nutzt abc und speichert keine gelernten Wörter.</string>
+    <string name="vault_empty">Noch keine privaten Notizen</string>
+    <string name="vault_placeholder">Private Notiz…</string>
+    <string name="vault_untitled">Ohne Titel</string>
+    <string name="vault_cannot_unlock">Entsperren nicht möglich: %1$s. Die verschlüsselten Daten bleiben erhalten.</string>
+    <string name="vault_type_first">Tippe eine Notiz, bevor du speicherst.</string>
+    <string name="vault_saved">Verschlüsselt gespeichert</string>
+    <string name="vault_not_saved">Nicht gespeichert: %1$s. Entsperre erneut, falls die Anmeldung abgelaufen ist.</string>
+    <string name="vault_not_saved_too_large">Nicht gespeichert: Die Notiz ist zu groß (maximal 1 MB).</string>
+</resources>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Music app and its playback notification. Track, album and artist names are data, not strings. -->
+<resources>
+    <string name="music_title">Música</string>
+    <string name="music_now_playing">Reproduciendo</string>
+    <string name="music_search">Buscar</string>
+    <string name="music_search_description">Buscar música</string>
+    <string name="music_search_placeholder">Busca aquí</string>
+    <string name="music_new_playlist">Nueva lista</string>
+    <string name="music_playlists">Listas</string>
+    <string name="music_albums">Álbumes</string>
+    <string name="music_artists">Artistas</string>
+    <string name="music_album">Álbum</string>
+    <string name="music_artist">Artista</string>
+    <string name="music_save">Guardar</string>
+    <string name="music_play">Reproducir</string>
+    <string name="music_pause">Pausa</string>
+    <string name="music_previous">Anterior</string>
+    <string name="music_next">Siguiente</string>
+    <string name="music_back_to_music">Volver a Música</string>
+    <string name="music_shuffle_on">Aleatorio: sí</string>
+    <string name="music_shuffle_off">Aleatorio: no</string>
+    <string name="music_repeat_off">Repetir: no</string>
+    <string name="music_repeat_all">Repetir: todas</string>
+    <string name="music_repeat_one">Repetir: una</string>
+    <string name="music_nothing_playing">No se reproduce nada</string>
+    <string name="music_album_art">Portada del álbum</string>
+    <string name="music_permission_title">Reproduce tu música</string>
+    <string name="music_permission_reason">Música lee las canciones guardadas en este teléfono. La reproducción y tus listas se quedan en el dispositivo.</string>
+    <string name="music_access_what">música</string>
+    <string name="music_unknown_album">Álbum desconocido</string>
+    <string name="music_unknown_artist">Artista desconocido</string>
+    <string name="music_various_artists">Varios artistas</string>
+    <string name="music_untitled">Sin título</string>
+    <string name="music_playlist_default">Lista %1$d</string>
+    <string name="music_channel">Reproducción de música</string>
+</resources>

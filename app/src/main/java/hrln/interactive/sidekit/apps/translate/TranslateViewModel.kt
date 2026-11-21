@@ -1,7 +1,9 @@
 package hrln.interactive.sidekit.apps.translate
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -15,19 +17,22 @@ import kotlinx.coroutines.launch
 
 /** The two language/text pairs on the Translate screen, top to bottom. */
 enum class TranslateSide { Source, Target }
-data class TranslatePane(val language: String, val text: String)
+data class TranslatePane(val language: TranslateLanguage, val text: String)
 enum class TranslateMode { Translate, History, Large, Language }
 data class SpeechRequest(val text: String, val language: TranslateLanguage)
 
+/** A message for the notice bar, resolved by the UI; [language] fills a `%1$s` in [message] when set. */
+data class TranslateNotice(@StringRes val message: Int, val language: TranslateLanguage? = null)
+
 data class TranslateUiState(
-    val source: TranslatePane = TranslatePane(TranslateLanguage.English.label, ""),
-    val target: TranslatePane = TranslatePane(TranslateLanguage.Chinese.label, ""),
+    val source: TranslatePane = TranslatePane(TranslateLanguage.English, ""),
+    val target: TranslatePane = TranslatePane(TranslateLanguage.Chinese, ""),
     val talking: TranslateSide? = null,
     val translating: Boolean = false,
     val mode: TranslateMode = TranslateMode.Translate,
     /** The side whose language is being chosen while [mode] is [TranslateMode.Language]. */
     val picking: TranslateSide = TranslateSide.Source,
-    val error: String? = null,
+    val error: TranslateNotice? = null,
     val microphonePermissionNeeded: Boolean = false
 ) {
     fun pane(side: TranslateSide) = if (side == TranslateSide.Source) source else target
@@ -59,7 +64,7 @@ class TranslateViewModel(
         _state.update { it.copy(microphonePermissionNeeded = false) }
         if (!granted) {
             _state.update { it.copy(talking = null) }
-            say("Microphone permission is needed to listen")
+            say(R.string.translate_error_microphone)
         }
     }
 
@@ -73,9 +78,8 @@ class TranslateViewModel(
         }
     }
 
-    fun onSpeechError(message: String) {
-        _state.update { it.copy(talking = null) }
-        say(message)
+    fun onSpeechError(notice: TranslateNotice) {
+        _state.update { it.copy(talking = null, error = notice) }
     }
 
     fun stopTalking() {
@@ -89,7 +93,7 @@ class TranslateViewModel(
     fun translate() {
         val text = _state.value.source.text.trim()
         if (text.isEmpty()) {
-            say("Type something to translate")
+            say(R.string.translate_error_empty)
             return
         }
         translate(text, sourceLanguage, targetLanguage, reverse = false)
@@ -114,7 +118,7 @@ class TranslateViewModel(
                 throw e
             } catch (e: Exception) {
                 _state.update { it.copy(translating = false) }
-                say("Translation failed. Check the connection and try again.")
+                say(R.string.translate_error_failed)
             }
         }
     }
@@ -132,8 +136,8 @@ class TranslateViewModel(
         targetLanguage = oldSource
         _state.update {
             it.copy(
-                source = TranslatePane(sourceLanguage.label, it.target.text),
-                target = TranslatePane(targetLanguage.label, it.source.text)
+                source = TranslatePane(sourceLanguage, it.target.text),
+                target = TranslatePane(targetLanguage, it.source.text)
             )
         }
     }
@@ -163,8 +167,8 @@ class TranslateViewModel(
         if (side == TranslateSide.Source) sourceLanguage = language else targetLanguage = language
         _state.update {
             it.copy(
-                source = it.source.copy(language = sourceLanguage.label),
-                target = it.target.copy(language = targetLanguage.label),
+                source = it.source.copy(language = sourceLanguage),
+                target = it.target.copy(language = targetLanguage),
                 mode = TranslateMode.Translate
             )
         }
@@ -191,8 +195,8 @@ class TranslateViewModel(
         targetLanguage = entry.target
         _state.update {
             it.copy(
-                source = TranslatePane(entry.source.label, entry.sourceText),
-                target = TranslatePane(entry.target.label, entry.translatedText),
+                source = TranslatePane(entry.source, entry.sourceText),
+                target = TranslatePane(entry.target, entry.translatedText),
                 mode = TranslateMode.Translate
             )
         }
@@ -204,8 +208,8 @@ class TranslateViewModel(
         if (text.isNotBlank()) _speech.tryEmit(SpeechRequest(text, if (side == TranslateSide.Source) sourceLanguage else targetLanguage))
     }
 
-    fun say(message: String) {
-        _state.update { it.copy(error = message) }
+    fun say(@StringRes message: Int) {
+        _state.update { it.copy(error = TranslateNotice(message)) }
     }
 
     fun dismissError() {
@@ -219,7 +223,7 @@ class TranslateViewModel(
 
 /** Sample content is used only by previews and screenshot tests, never as translation output. */
 object TranslateSampleData {
-    val base = TranslatePane("English", "Apple") to TranslatePane("Chinese", "苹果")
+    val base = TranslatePane(TranslateLanguage.English, "Apple") to TranslatePane(TranslateLanguage.Chinese, "苹果")
     val heard = "Apple Oranges and people too eating cheese and banana" to "苹果橙子和人们也吃奶酪和香蕉"
     fun state(talking: TranslateSide? = null) = TranslateUiState(base.first, base.second, talking)
 }

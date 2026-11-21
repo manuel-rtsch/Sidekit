@@ -3,7 +3,9 @@ package hrln.interactive.sidekit.apps.mail
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import kotlinx.coroutines.launch
@@ -18,14 +20,14 @@ fun MailAccountScreen(account: ImapSmtpAccount, onBack: () -> Unit, onConnected:
     var imapPort by remember { mutableStateOf(config?.imapPort?.toString() ?: "993") }
     var smtp by remember { mutableStateOf(config?.smtpHost.orEmpty()) }
     var port by remember { mutableStateOf(config?.smtpPort?.toString() ?: "465") }
-    var message by remember { mutableStateOf("IMAP over TLS (993). SMTP TLS (465) or STARTTLS (587). Use your provider's app password. OAuth-only accounts require provider registration.") }
+    var message by remember { mutableIntStateOf(R.string.mail_account_intro) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     SidekitScaffold(
-        "Mail account",
+        stringResource(R.string.mail_account_title),
         actions = listOf(
-            SideAction.back("back", "Back", onBack),
-            SideAction("connect", if (busy) "Connecting…" else "Connect") {
+            SideAction.back("back", stringResource(R.string.mail_back), onBack),
+            SideAction("connect", stringResource(if (busy) R.string.mail_account_connecting else R.string.mail_account_connect)) {
                 if (!busy) {
                     busy = true
                     scope.launch {
@@ -36,7 +38,7 @@ fun MailAccountScreen(account: ImapSmtpAccount, onBack: () -> Unit, onConnected:
                         } catch (e: kotlinx.coroutines.CancellationException) {
                             throw e
                         } catch (_: Exception) {
-                            message = "Connection failed. Check hosts, ports, username and app password; both servers must accept the account."
+                            message = R.string.mail_account_failed
                         } finally {
                             busy = false
                         }
@@ -45,21 +47,21 @@ fun MailAccountScreen(account: ImapSmtpAccount, onBack: () -> Unit, onConnected:
             }
         ),
         options = listOf(
-            SideAction("disconnect", "Disconnect") {
+            SideAction("disconnect", stringResource(R.string.mail_account_disconnect)) {
                 account.disconnect()
                 onBack()
             }
         )
     ) { padding ->
         SidekitList(padding) {
-            item { SidekitCard(Modifier.fillMaxWidth()) { SidekitText(message, maxLines = Int.MAX_VALUE) } }
-            item { SidekitTextField(email, { email = it }, Modifier.fillMaxWidth(), placeholder = "Email", singleLine = true) }
-            item { SidekitTextField(username, { username = it }, Modifier.fillMaxWidth(), placeholder = "Username (or email)", singleLine = true) }
-            item { hrln.interactive.sidekit.apps.integrations.SecretField(password, { password = it }, if (config == null) "App password" else "App password (blank keeps saved)") }
-            item { SidekitTextField(imap, { imap = it }, Modifier.fillMaxWidth(), placeholder = "IMAP host", singleLine = true) }
-            item { SidekitTextField(imapPort, { imapPort = it }, Modifier.fillMaxWidth(), placeholder = "IMAP TLS port (993)", singleLine = true, dictation = false) }
-            item { SidekitTextField(smtp, { smtp = it }, Modifier.fillMaxWidth(), placeholder = "SMTP host", singleLine = true) }
-            item { SidekitTextField(port, { port = it }, Modifier.fillMaxWidth(), placeholder = "SMTP port (465 or 587)", singleLine = true, dictation = false) }
+            item { SidekitCard(Modifier.fillMaxWidth()) { SidekitText(stringResource(message), maxLines = Int.MAX_VALUE) } }
+            item { SidekitTextField(email, { email = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.mail_account_email), singleLine = true) }
+            item { SidekitTextField(username, { username = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.mail_account_username), singleLine = true) }
+            item { hrln.interactive.sidekit.apps.integrations.SecretField(password, { password = it }, stringResource(if (config == null) R.string.mail_account_password else R.string.mail_account_password_keep)) }
+            item { SidekitTextField(imap, { imap = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.mail_account_imap_host), singleLine = true) }
+            item { SidekitTextField(imapPort, { imapPort = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.mail_account_imap_port), singleLine = true, dictation = false) }
+            item { SidekitTextField(smtp, { smtp = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.mail_account_smtp_host), singleLine = true) }
+            item { SidekitTextField(port, { port = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.mail_account_smtp_port), singleLine = true, dictation = false) }
         }
     }
 }

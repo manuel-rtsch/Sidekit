@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -25,6 +26,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.MediaPermissions
 import hrln.interactive.sidekit.apps.media.PermissionState
 import hrln.interactive.sidekit.apps.media.rememberPermissionState
@@ -37,7 +39,8 @@ private val ALBUMS = "$ROOT/albums"
 private val ALBUM = "$ROOT/album/{album}?name={name}"
 private val VIEW = "$ROOT/view/{album}/{id}"
 
-private fun albumRoute(album: PhotoAlbum) = "$ROOT/album/${album.key.route}?name=${Uri.encode(album.name)}"
+/** Smart albums carry no name: the album screen names them in the UI language. */
+private fun albumRoute(album: PhotoAlbum) = if (album.key.smartName() != null) "$ROOT/album/${album.key.route}" else "$ROOT/album/${album.key.route}?name=${Uri.encode(album.name)}"
 
 /** The viewer on [id], paging through [album]. Other apps (Camera) open captures with this. */
 fun photosViewerRoute(album: AlbumKey, id: Long) = "$ROOT/view/${album.route}/$id"
@@ -54,7 +57,7 @@ fun NavGraphBuilder.photosGraph(nav: NavHostController) {
                 onOpen = { nav.navigateFrom(entry, photosViewerRoute(AlbumKey.All, it.id)) },
                 onAlbums = { nav.navigateFrom(entry, ALBUMS) },
                 onLoadMore = { vm.loadMore(AlbumKey.All) },
-                access = access,
+                access = access
             )
         }
         composable(ALBUMS) { entry ->
@@ -65,19 +68,23 @@ fun NavGraphBuilder.photosGraph(nav: NavHostController) {
                 smartAlbums = smartAlbums,
                 folders = albums.folders,
                 onOpenAlbum = { nav.navigateFrom(entry, albumRoute(it)) },
-                onBack = { nav.popFrom(entry) },
+                onBack = { nav.popFrom(entry) }
             )
         }
         composable(
             ALBUM,
             arguments = listOf(
                 navArgument("album") { type = NavType.StringType },
-                navArgument("name") { type = NavType.StringType; nullable = true; defaultValue = null },
-            ),
+                navArgument("name") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { entry ->
             val vm = entry.photosViewModel(nav)
             val album = remember(entry) { AlbumKey.parse(entry.arguments?.getString("album")) }
-            val name = entry.arguments?.getString("name") ?: album.smartName() ?: "Album"
+            val name = album.smartName()?.let { stringResource(it) } ?: entry.arguments?.getString("name") ?: stringResource(R.string.photos_album)
             val permission = rememberPhotosPermission()
             val grid by (if (permission.granted) vm.grid(album) else NotGranted).collectAsStateWithLifecycle()
             AlbumScreen(
@@ -87,11 +94,12 @@ fun NavGraphBuilder.photosGraph(nav: NavHostController) {
                 onBack = { nav.popFrom(entry) },
                 onLoadMore = { vm.loadMore(album) },
                 access = permission.toAccess(),
+                favourites = album == AlbumKey.Favourites
             )
         }
         composable(
             VIEW,
-            arguments = listOf(navArgument("album") { type = NavType.StringType }, navArgument("id") { type = NavType.LongType }),
+            arguments = listOf(navArgument("album") { type = NavType.StringType }, navArgument("id") { type = NavType.LongType })
         ) { entry ->
             val vm = entry.photosViewModel(nav)
             val album = remember(entry) { AlbumKey.parse(entry.arguments?.getString("album")) }
@@ -125,7 +133,7 @@ fun NavGraphBuilder.photosGraph(nav: NavHostController) {
                 },
                 onShare = { share(context, it) },
                 onPlayVideo = { nav.navigateFrom(entry, VideoRoutes.player(it.id)) },
-                onLoadMore = { vm.loadMore(album) },
+                onLoadMore = { vm.loadMore(album) }
             )
         }
     }
@@ -164,7 +172,7 @@ private fun NavBackStackEntry.photosViewModel(nav: NavHostController): PhotosVie
     return viewModel(
         parent,
         factory = remember(context) {
-            viewModelFactory { initializer { PhotosViewModel(MediaStorePhotoSource(context.contentResolver), Photos.favourites(context)) } }
-        },
+            viewModelFactory { initializer { PhotosViewModel(MediaStorePhotoSource(context), Photos.favourites(context)) } }
+        }
     )
 }

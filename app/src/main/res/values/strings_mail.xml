@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mail: inbox, folders, compose and account. -->
+<resources>
+    <string name="mail_title">Mail</string>
+    <string name="mail_folders">Folders</string>
+    <string name="mail_compose">Compose</string>
+    <string name="mail_refresh_inbox">Refresh inbox</string>
+    <string name="mail_back">Back</string>
+    <string name="mail_reply">Reply</string>
+    <string name="mail_message_unavailable">Message unavailable</string>
+    <string name="mail_folders_title">Mail folders</string>
+    <string name="mail_undo_delete">Undo delete message</string>
+    <string name="mail_cache_notice">Inbox cache · refresh to check your server. Swipe deletes the cached copy only.</string>
+    <string name="mail_account">Account</string>
+    <string name="mail_empty_local">No local messages</string>
+    <string name="mail_empty_hint">Compose creates a draft on this phone</string>
+    <string name="mail_delete_message">Delete message</string>
+    <string name="mail_no_recipient">No recipient</string>
+    <string name="mail_no_subject">No subject</string>
+    <string name="mail_save">Save</string>
+    <string name="mail_to">To</string>
+    <string name="mail_subject">Subject</string>
+    <string name="mail_message">Message</string>
+    <string name="mail_send_hint">Send submits through your connected SMTP account. Server acceptance does not confirm delivery.</string>
+    <string name="mail_folder_drafts">Drafts</string>
+    <string name="mail_folder_outbox">Outbox</string>
+    <string name="mail_folder_handed_off">Handed off</string>
+    <string name="mail_folder_inbox">Inbox</string>
+    <string name="mail_folder_sent">Sent</string>
+    <string name="mail_empty_drafts">No drafts</string>
+    <string name="mail_empty_outbox">No outbox</string>
+    <string name="mail_empty_handed_off">No handed off</string>
+    <string name="mail_empty_inbox">No inbox</string>
+    <string name="mail_empty_sent">No sent</string>
+    <plurals name="mail_folder_count">
+        <item quantity="one">%1$d on this phone</item>
+        <item quantity="other">%1$d on this phone</item>
+    </plurals>
+    <string name="mail_notice_not_ready">Mail is not ready. Your draft has not been saved</string>
+    <string name="mail_notice_draft_saved">Draft saved on this phone</string>
+    <string name="mail_notice_busy">Mail is busy. Try again shortly</string>
+    <string name="mail_notice_add_recipient">Add a recipient first</string>
+    <string name="mail_notice_sent">Accepted by your SMTP server</string>
+    <string name="mail_notice_handed_off">Mail app opened; sending isn\'t confirmed</string>
+    <string name="mail_notice_no_app">No mail app. Message kept in Outbox</string>
+    <string name="mail_notice_send_failed">Send failed or confirmation lost. Check Sent before retrying; message kept in Outbox</string>
+    <string name="mail_notice_inbox_updated">Inbox updated · latest 100 messages</string>
+    <string name="mail_notice_refresh_failed">Inbox could not refresh. Check account settings and connection</string>
+    <string name="mail_error_storage_read">Mail storage cannot be read; existing data has been preserved</string>
+    <string name="mail_error_save">Mail could not be saved on this phone</string>
+    <string name="mail_account_title">Mail account</string>
+    <string name="mail_account_intro">IMAP over TLS (993). SMTP TLS (465) or STARTTLS (587). Use your provider\'s app password. OAuth-only accounts require provider registration.</string>
+    <string name="mail_account_failed">Connection failed. Check hosts, ports, username and app password; both servers must accept the account.</string>
+    <string name="mail_account_connecting">Connecting…</string>
+    <string name="mail_account_connect">Connect</string>
+    <string name="mail_account_disconnect">Disconnect</string>
+    <string name="mail_account_email">Email</string>
+    <string name="mail_account_username">Username (or email)</string>
+    <string name="mail_account_password">App password</string>
+    <string name="mail_account_password_keep">App password (blank keeps saved)</string>
+    <string name="mail_account_imap_host">IMAP host</string>
+    <string name="mail_account_imap_port">IMAP TLS port (993)</string>
+    <string name="mail_account_smtp_host">SMTP host</string>
+    <string name="mail_account_smtp_port">SMTP port (465 or 587)</string>
+</resources>

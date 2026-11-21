@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings → Language. -->
+<resources>
+    <string name="language_title">Idioma</string>
+    <string name="language_back">Ajustes</string>
+    <string name="language_system">Idioma del teléfono</string>
+    <string name="language_current">Actual</string>
+    <string name="language_intro">Sidekit puede usar un idioma distinto al del resto del teléfono.</string>
+</resources>

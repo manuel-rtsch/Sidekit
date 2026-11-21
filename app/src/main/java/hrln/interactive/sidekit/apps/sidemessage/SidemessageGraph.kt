@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LifecycleStartEffect
@@ -31,6 +33,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.phonebook.PhoneFormat
 import hrln.interactive.sidekit.apps.phonebook.Phonebook
 import hrln.interactive.sidekit.apps.phonebook.PhonebookRoutes
@@ -118,6 +121,7 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
             )
         ) { entry ->
             val context = LocalContext.current
+            val resources = LocalResources.current
             val args = entry.arguments
             val addresses = remember(entry) { args?.getString(ARG_TO).orEmpty().split(';').filter { it.isNotBlank() } }
             val threadArg = args?.getLong(ARG_THREAD) ?: -1L
@@ -151,7 +155,7 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
                 if (uri != null) {
                     attachment = uri
                     vm.startTyping()
-                    mmsNotice = "MMS attachment selected · Send submits through your carrier"
+                    mmsNotice = resources.getString(R.string.messages_mms_selected)
                 }
             }
             fun sendMms() {
@@ -163,11 +167,11 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
                         MmsTransport.send(context.applicationContext, addresses, state.draft.orEmpty(), selected)
                         attachment = null
                         vm.stopTyping()
-                        mmsNotice = "MMS submitted to carrier"
+                        mmsNotice = resources.getString(R.string.messages_mms_submitted)
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        mmsNotice = e.message ?: "MMS could not be sent"
+                        mmsNotice = e.message ?: resources.getString(R.string.messages_mms_send_failed)
                     } finally {
                         mmsSending = false
                     }
@@ -211,9 +215,9 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
                         mmsScope.launch {
                             try {
                                 MmsTransport.resend(context.applicationContext, "content://mms/${message.rowId}".toUri())
-                                mmsNotice = "MMS resubmitted to carrier"
+                                mmsNotice = resources.getString(R.string.messages_mms_resubmitted)
                             } catch (e: Exception) {
-                                mmsNotice = e.message ?: "MMS could not be retried"
+                                mmsNotice = e.message ?: resources.getString(R.string.messages_mms_retry_failed)
                             }
                         }
                     } else {
@@ -221,7 +225,7 @@ fun NavGraphBuilder.sidemessageGraph(nav: NavHostController) {
                     }
                 },
                 onAttach = { if (access.isDefault) picker.launch(arrayOf("image/*", "video/*", "audio/*")) else access.requestDefault() },
-                attachmentNotice = if (mmsSending) "Sending MMS…" else mmsNotice,
+                attachmentNotice = if (mmsSending) stringResource(R.string.messages_mms_sending) else mmsNotice,
                 onLoadOlder = vm::loadOlder,
                 onLoadLatest = vm::loadLatest,
                 onTogglePin = if (addresses.size == 1) vm::togglePin else null,

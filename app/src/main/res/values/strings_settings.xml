@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings: home, system settings, About, Keyboard, Key guide, Hide apps, Arrange apps, Case colour. -->
+<resources>
+    <string name="settings_title">Settings</string>
+    <!-- Back action to the launcher. -->
+    <string name="settings_home">Home</string>
+    <string name="settings_unavailable">This settings screen is unavailable on this device.</string>
+    <string name="settings_launcher_default">Launcher default</string>
+    <string name="settings_list">List</string>
+    <string name="settings_grid">Grid</string>
+    <string name="settings_compact_layout">Compact layout</string>
+    <string name="settings_on">On</string>
+    <string name="settings_off">Off</string>
+    <string name="settings_home_app">Home app</string>
+    <!-- Home app row value when Sidekit is not the home app. -->
+    <string name="settings_choose">Choose</string>
+    <string name="settings_arrange_apps">Arrange apps</string>
+    <string name="settings_case_colour">Case colour</string>
+    <string name="settings_original_blue">Original blue</string>
+    <string name="settings_keyboard">Keyboard</string>
+    <string name="settings_hide_apps">Hide apps</string>
+    <string name="settings_system">System settings</string>
+    <string name="settings_setup_tour">Setup &amp; keypad tour</string>
+    <string name="settings_about">About</string>
+
+    <!-- System settings rows: label, then a short value. -->
+    <string name="settings_row_wifi">Wi-Fi</string>
+    <string name="settings_row_wifi_value">Network</string>
+    <string name="settings_row_bluetooth">Bluetooth</string>
+    <string name="settings_row_bluetooth_value">Devices</string>
+    <string name="settings_row_display">Display</string>
+    <string name="settings_row_display_value">Brightness</string>
+    <string name="settings_row_sounds">Sounds</string>
+    <string name="settings_row_sounds_value">Volume</string>
+    <string name="settings_row_battery">Battery</string>
+    <string name="settings_row_battery_value">Usage</string>
+    <string name="settings_row_storage">Storage</string>
+    <string name="settings_row_storage_value">Device storage</string>
+    <string name="settings_row_date_time">Date &amp; time</string>
+    <string name="settings_row_date_time_value">Clock</string>
+    <string name="settings_row_privacy">Privacy</string>
+    <string name="settings_row_privacy_value">Permissions</string>
+
+    <!-- About -->
+    <string name="settings_about_device">Device</string>
+    <string name="settings_about_android_version">%1$s (API %2$d)</string>
+    <string name="settings_about_build">Build</string>
+    <string name="settings_about_third_party">Third-party apps</string>
+    <string name="settings_about_third_party_body">Apps built with the Sidekit SDK can read your case colour and keypad setup. They cannot read messages, credentials, hidden apps or home order.</string>
+    <string name="settings_about_dev_build">Dev build</string>
+    <string name="settings_about_dev_build_body">Installs alongside Sidekit as %1$s</string>
+    <string name="settings_about_storage">Storage</string>
+    <!-- Free space, then total space. -->
+    <string name="settings_about_storage_value">%1$s free / %2$s</string>
+    <string name="settings_about_unavailable">Unavailable</string>
+    <string name="settings_about_ram">RAM</string>
+    <!-- Available memory, then total memory. -->
+    <string name="settings_about_ram_value">%1$s available / %2$s</string>
+    <string name="settings_about_notices">Open-source notices</string>
+    <string name="settings_about_t9">T9 word list</string>
+
+    <!-- Keyboard and Key guide -->
+    <string name="settings_module">Module</string>
+    <!-- Keypad module name, e.g. "T9 · custom". -->
+    <string name="settings_module_custom">%1$s · custom</string>
+    <!-- Keypad module name, e.g. "T9 · in use". -->
+    <string name="settings_module_in_use">%1$s · in use</string>
+    <string name="settings_typing">Typing</string>
+    <string name="settings_typing_on_screen">On-screen keyboard</string>
+    <string name="settings_typing_numbers">Numbers</string>
+    <string name="settings_typing_letters">Letters</string>
+    <string name="settings_back_key">Back key</string>
+    <string name="settings_key_mapping">Key mapping</string>
+    <string name="settings_key_mapping_custom">Custom</string>
+    <string name="settings_key_mapping_auto">Auto</string>
+    <string name="settings_key_guide">Key guide</string>
+
+    <!-- Hide apps -->
+    <string name="settings_show_all">Show all</string>
+    <string name="settings_hide_apps_intro">Hide apps from home, search and the dock. Tap again to restore. Apps stay installed; Settings remains in Options.</string>
+    <string name="settings_hidden">Hidden</string>
+    <string name="settings_shown">Shown</string>
+
+    <!-- Arrange apps -->
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_discard">Discard</string>
+    <string name="settings_reset">Reset</string>
+    <string name="settings_done">Done</string>
+    <string name="settings_selected">Selected</string>
+    <string name="settings_in_dock">In dock</string>
+    <!-- Accessibility label; the argument is an app name. -->
+    <string name="settings_move_up">Move %1$s up</string>
+    <string name="settings_move_down">Move %1$s down</string>
+    <!-- Keypad key names, drawn as small key caps. -->
+    <string name="settings_key_enter">Enter</string>
+    <string name="settings_key_up">Up</string>
+    <string name="settings_key_down">Down</string>
+    <!-- Follows the Enter key cap. -->
+    <string name="settings_arrange_select">: Select App</string>
+    <!-- Follows the Up / Down key caps. -->
+    <string name="settings_arrange_move">: Move App</string>
+</resources>

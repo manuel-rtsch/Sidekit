@@ -30,7 +30,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -70,11 +72,12 @@ fun SidenotesListScreen(
     onUndoDelete: () -> Unit
 ) {
     val actions = undoBar(
-        continueWith = SideAction.forward("new", "New Sidenote", onNewNote),
-        undo = if (state.recentlyDeleted != null) SideAction.undo(contentDescription = "Undo delete note", onClick = onUndoDelete) else null
+        continueWith = SideAction.forward("new", stringResource(R.string.notes_new), onNewNote),
+        undo = if (state.recentlyDeleted != null) SideAction.undo(contentDescription = stringResource(R.string.notes_undo_delete), onClick = onUndoDelete) else null
     )
+    val untitled = stringResource(R.string.notes_untitled)
 
-    SidekitScaffold(title = "My Sidenotes", actions = actions) { padding ->
+    SidekitScaffold(title = stringResource(R.string.notes_title), actions = actions) { padding ->
         if (state.loaded && state.notes.isEmpty()) {
             EmptyNotes(Modifier.padding(padding))
             return@SidekitScaffold
@@ -87,6 +90,7 @@ fun SidenotesListScreen(
         }
         SidekitList(padding, Modifier.testTag(SidenotesTags.LIST), state = listState) {
             itemsIndexed(state.notes, key = { _, note -> note.id }, contentType = { _, _ -> 0 }) { index, note ->
+                val title = note.title ?: untitled
                 SidekitSwipeRow(
                     key = note.id,
                     group = swipe,
@@ -94,10 +98,10 @@ fun SidenotesListScreen(
                     modifier = Modifier
                         .animateItem()
                         .listFade(listState, index),
-                    deleteLabel = "Delete ${note.title}"
+                    deleteLabel = stringResource(R.string.notes_delete_named, title)
                 ) {
                     SidekitItem(
-                        title = note.title,
+                        title = title,
                         secondary = note.preview.ifEmpty { null },
                         onClick = { onOpenNote(note) }
                     )
@@ -111,9 +115,9 @@ fun SidenotesListScreen(
 private fun EmptyNotes(modifier: Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.pageGap)) {
-            SidekitText("No Sidenotes yet", style = SidekitTheme.typography.headline, textAlign = TextAlign.Center)
+            SidekitText(stringResource(R.string.notes_empty_title), style = SidekitTheme.typography.headline, textAlign = TextAlign.Center)
             SidekitText(
-                "Your notes will appear here",
+                stringResource(R.string.notes_empty_body),
                 style = SidekitTheme.typography.label,
                 color = SidekitTheme.colors.surfaceA6,
                 textAlign = TextAlign.Center
@@ -173,11 +177,12 @@ fun NoteEditorScreen(
 
     BackHandler { if (confirmingDelete) confirmingDelete = false else close() }
 
+    val deleteNote = stringResource(R.string.notes_delete)
     val actions = when (mode) {
         EditorMode.Clean -> listOfNotNull(
-            SideAction.back("back", "My Sidenotes", close),
+            SideAction.back("back", stringResource(R.string.notes_title), close),
             if (canDelete) {
-                SideAction.square("delete", SidekitIcon.DeleteForever, "Delete note", {
+                SideAction.square("delete", SidekitIcon.DeleteForever, deleteNote, {
                     focusManager.clearFocus()
                     confirmingDelete = true
                 }, tone = ActionTone.Destructive)
@@ -187,17 +192,37 @@ fun NoteEditorScreen(
         )
 
         EditorMode.Dirty -> listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Save and go back", close, motion = ActionMotion.Back),
-            SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save note", onClick = save)
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, stringResource(R.string.notes_save_and_back), close, motion = ActionMotion.Back),
+            SideAction(
+                "save",
+                stringResource(R.string.notes_save),
+                SidekitIcon.Check,
+                iconAtEnd = true,
+                tone = ActionTone.Secondary,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(R.string.notes_save_description),
+                onClick = save
+            )
         )
 
         EditorMode.ConfirmDelete -> listOf(
-            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep note") { confirmingDelete = false },
-            SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete", onClick = onDelete)
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = stringResource(R.string.notes_keep)) { confirmingDelete = false },
+            SideAction(
+                "delete",
+                stringResource(R.string.notes_delete_confirm),
+                SidekitIcon.DeleteForever,
+                tone = ActionTone.Destructive,
+                weight = 1.2f,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(R.string.notes_confirm_delete),
+                onClick = onDelete
+            )
         )
     }
 
-    val title = remember(saved, isNew) { if (saved.isBlank()) "New Sidenote" else Note(0, saved, 0).title }
+    val newNote = stringResource(R.string.notes_new)
+    val untitled = stringResource(R.string.notes_untitled)
+    val title = remember(saved, newNote, untitled) { if (saved.isBlank()) newNote else Note(0, saved, 0).title ?: untitled }
     SidekitScaffold(
         // On a 640 px panel a touch keyboard leaves little room; the title gives way to the text.
         title = if (keyboardOpen) null else title,
@@ -205,7 +230,7 @@ fun NoteEditorScreen(
         // Keypad Options key: delete without hunting for the bin button (it may be hidden while editing).
         options = if (canDelete && mode != EditorMode.ConfirmDelete) {
             listOf(
-                SideAction("delete", "Delete note", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) {
+                SideAction("delete", deleteNote, SidekitIcon.DeleteForever, tone = ActionTone.Destructive) {
                     focusManager.clearFocus()
                     confirmingDelete = true
                 }
@@ -221,7 +246,7 @@ fun NoteEditorScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .testTag(SidenotesTags.EDITOR),
-                placeholder = "Start typing…",
+                placeholder = stringResource(R.string.notes_placeholder),
                 focusRequester = focus,
                 focusOnKeypad = true,
                 autoFocus = isNew

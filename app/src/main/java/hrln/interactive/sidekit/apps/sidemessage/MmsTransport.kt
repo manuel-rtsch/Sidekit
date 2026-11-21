@@ -10,13 +10,14 @@ import android.telephony.SubscriptionManager
 import androidx.core.content.FileProvider
 import androidx.work.*
 import com.google.android.mms.pdu_alt.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import hrln.interactive.sidekit.R
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Platform MMS networking selects the carrier APN and MMSC; Sidekit owns PDUs and provider rows. */
 object MmsTransport {
@@ -27,7 +28,7 @@ object MmsTransport {
     fun manager(context: Context, subId: Int): SmsManager {
         val manager = context.getSystemService(SmsManager::class.java)
         val id = if (SubscriptionManager.isValidSubscriptionId(subId)) subId else SubscriptionManager.getDefaultSmsSubscriptionId()
-        require(SubscriptionManager.isValidSubscriptionId(id)) { "Select a default SMS SIM in Android settings" }
+        require(SubscriptionManager.isValidSubscriptionId(id)) { context.getString(R.string.messages_error_select_sim) }
         return manager.createForSubscriptionId(id)
     }
     fun directory(context: Context) = File(context.noBackupFilesDir, "mms-pdu").apply { mkdirs() }
@@ -47,56 +48,101 @@ object MmsTransport {
         WorkManager.getInstance(context).enqueueUniqueWork("mms-$key", ExistingWorkPolicy.KEEP, work)
     }
     suspend fun resend(context: Context, row: Uri) = withContext(Dispatchers.IO) {
-        check(SmsRole.isDefault(context)) { "Make Sidekit the default SMS app first" }
+        check(SmsRole.isDefault(context)) { context.getString(R.string.messages_error_make_default) }
         require(row.toString().matches(Regex("content://mms/[0-9]+")))
         val sub = context.contentResolver.query(row, arrayOf("sub_id"), null, null, null)?.use { if (it.moveToFirst()) it.getInt(0) else -1 } ?: -1
-        val request = PduPersister.getPduPersister(context).load(row) as? SendReq ?: throw IOException("Outgoing MMS is unavailable")
-        val bytes = PduComposer(context, request).make() ?: throw IOException("Cannot encode MMS")
+        val request = PduPersister.getPduPersister(context).load(row) as? SendReq ?: throw IOException(context.getString(R.string.messages_error_unavailable))
+        val bytes = PduComposer(context, request).make() ?: throw IOException(context.getString(R.string.messages_error_cannot_encode))
         val key = UUID.randomUUID().toString()
         val file = File(directory(context), "$key.send").apply { writeBytes(bytes) }
         val sms = manager(context, sub)
         mark(context, row, Telephony.Mms.MESSAGE_BOX_OUTBOX)
-        try { sms.sendMultimediaMessage(context, uri(context, file), null, null, callback(context, SENT, key, row, sub)) }
-        catch (e: Exception) { mark(context, row, Telephony.Mms.MESSAGE_BOX_FAILED); file.delete(); throw e }
+        try {
+            sms.sendMultimediaMessage(context, uri(context, file), null, null, callback(context, SENT, key, row, sub))
+        } catch (e: Exception) {
+            mark(context, row, Telephony.Mms.MESSAGE_BOX_FAILED)
+            file.delete()
+            throw e
+        }
     }
-    fun callback(context: Context, action: String, key: String, row: Uri, sub: Int): PendingIntent = PendingIntent.getBroadcast(context, 0,
+    fun callback(context: Context, action: String, key: String, row: Uri, sub: Int): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        0,
         Intent(context, MmsResultReceiver::class.java).setAction(action).setData(Uri.parse("sidekit-mms://$key"))
             .putExtra("key", key).putExtra("row", row.toString()).putExtra("sub", sub),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+    )
 
     suspend fun send(context: Context, addresses: List<String>, text: String, attachment: Uri): Uri = withContext(Dispatchers.IO) {
-        check(SmsRole.isDefault(context)) { "Make Sidekit the default SMS app first" }
-        require(addresses.isNotEmpty()) { "Choose a recipient" }
+        check(SmsRole.isDefault(context)) { context.getString(R.string.messages_error_make_default) }
+        require(addresses.isNotEmpty()) { context.getString(R.string.messages_error_choose_recipient) }
         val sub = SubscriptionManager.getDefaultSmsSubscriptionId()
         val sms = manager(context, sub)
         val mime = context.contentResolver.getType(attachment).orEmpty()
-        require(mime.startsWith("image/") || mime.startsWith("video/") || mime.startsWith("audio/")) { "Select an image, video or audio file" }
+        require(mime.startsWith("image/") || mime.startsWith("video/") || mime.startsWith("audio/")) { context.getString(R.string.messages_error_media_type) }
         val maxSize = sms.carrierConfigValues.getInt(SmsManager.MMS_CONFIG_MAX_MESSAGE_SIZE, 300_000).coerceIn(50_000, MAX_BYTES)
-        val bytes = context.contentResolver.openInputStream(attachment)?.use { readBounded(it, maxSize - 4096) } ?: throw IOException("Cannot read attachment")
+        val bytes = (
+            try {
+                context.contentResolver.openInputStream(attachment)?.use { readBounded(it, maxSize - 4096) }
+            } catch (_: SizeLimitException) {
+                throw IOException(context.getString(R.string.messages_error_exceeds_limit))
+            }
+            ) ?: throw IOException(context.getString(R.string.messages_error_read_attachment))
         val body = PduBody()
-        if (text.isNotBlank()) body.addPart(PduPart().apply {
-            contentType = "text/plain".toByteArray(); charset = 106; contentLocation = "text.txt".toByteArray(); data = text.toByteArray()
-        })
-        body.addPart(PduPart().apply { contentType = mime.toByteArray(); contentLocation = "attachment".toByteArray(); contentId = "attachment".toByteArray(); data = bytes })
-        val request = SendReq().apply {
-            setTo(addresses.map { EncodedStringValue(it) }.toTypedArray()); setFrom(EncodedStringValue("insert-address-token"))
-            date = System.currentTimeMillis() / 1000; setBody(body); messageSize = bytes.size.toLong() + text.toByteArray().size
+        if (text.isNotBlank()) {
+            body.addPart(
+                PduPart().apply {
+                    contentType = "text/plain".toByteArray()
+                    charset = 106
+                    contentLocation = "text.txt".toByteArray()
+                    data = text.toByteArray()
+                }
+            )
         }
-        val pdu = PduComposer(context, request).make() ?: throw IOException("Could not encode MMS")
-        require(pdu.size <= maxSize) { "Attachment exceeds your carrier's MMS size limit. Choose a smaller file." }
+        body.addPart(
+            PduPart().apply {
+                contentType = mime.toByteArray()
+                contentLocation = "attachment".toByteArray()
+                contentId = "attachment".toByteArray()
+                data = bytes
+            }
+        )
+        val request = SendReq().apply {
+            setTo(addresses.map { EncodedStringValue(it) }.toTypedArray())
+            setFrom(EncodedStringValue("insert-address-token"))
+            date = System.currentTimeMillis() / 1000
+            setBody(body)
+            messageSize = bytes.size.toLong() + text.toByteArray().size
+        }
+        val pdu = PduComposer(context, request).make() ?: throw IOException(context.getString(R.string.messages_error_could_not_encode))
+        require(pdu.size <= maxSize) { context.getString(R.string.messages_error_too_large) }
         val row = PduPersister.getPduPersister(context).persist(request, Telephony.Mms.Outbox.CONTENT_URI, true, true, null, sub)
         val key = UUID.randomUUID().toString()
         val file = File(directory(context), "$key.send").apply { writeBytes(pdu) }
-        try { sms.sendMultimediaMessage(context, uri(context, file), null, null, callback(context, SENT, key, row, sub)) }
-        catch (e: Exception) { mark(context, row, Telephony.Mms.MESSAGE_BOX_FAILED); file.delete(); throw e }
+        try {
+            sms.sendMultimediaMessage(context, uri(context, file), null, null, callback(context, SENT, key, row, sub))
+        } catch (e: Exception) {
+            mark(context, row, Telephony.Mms.MESSAGE_BOX_FAILED)
+            file.delete()
+            throw e
+        }
         row
     }
     fun mark(context: Context, row: Uri, box: Int) = context.contentResolver.update(row, ContentValues().apply { put(Telephony.Mms.MESSAGE_BOX, box) }, null, null)
     fun readBounded(input: java.io.InputStream, limit: Int): ByteArray {
-        val out = java.io.ByteArrayOutputStream(); val buffer = ByteArray(8192)
-        while (true) { val n = input.read(buffer); if (n < 0) break; if (out.size() + n > limit) throw IOException("MMS exceeds size limit"); out.write(buffer, 0, n) }
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        while (true) {
+            val n = input.read(buffer)
+            if (n < 0) break
+            if (out.size() + n > limit) throw SizeLimitException()
+            out.write(buffer, 0, n)
+        }
         return out.toByteArray()
     }
+
+    /** [readBounded] hit its limit. */
+    class SizeLimitException : IOException("MMS exceeds size limit")
 }
 
 class MmsDownloadWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -116,7 +162,10 @@ class MmsDownloadWorker(context: Context, params: WorkerParameters) : CoroutineW
             val existing = resolver.query(Telephony.Mms.CONTENT_URI, arrayOf("_id", "m_type"), "ct_l=?", arrayOf(location), null)?.use {
                 if (it.moveToFirst()) ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, it.getLong(0)) to it.getInt(1) else null
             }
-            if (existing != null && existing.second != PduHeaders.MESSAGE_TYPE_NOTIFICATION_IND) { file.delete(); return@withContext Result.success() }
+            if (existing != null && existing.second != PduHeaders.MESSAGE_TYPE_NOTIFICATION_IND) {
+                file.delete()
+                return@withContext Result.success()
+            }
             val row = existing?.first ?: PduPersister.getPduPersister(context).persist(notification, Telephony.Mms.Inbox.CONTENT_URI, true, true, null, sub)
             val target = File(MmsTransport.directory(context), "$key.download")
             if (target.exists() && System.currentTimeMillis() - target.lastModified() < 120_000) return@withContext Result.success()
@@ -126,7 +175,7 @@ class MmsDownloadWorker(context: Context, params: WorkerParameters) : CoroutineW
             sms.downloadMultimediaMessage(context, downloadLocation, MmsTransport.uri(context, target), null, MmsTransport.callback(context, MmsTransport.DOWNLOAD, key, row, sub))
             Result.success()
         } catch (_: Exception) {
-            SidemessageNotifications.mmsError(context, "MMS download could not start. Check your SIM and mobile data; tap the message to retry.")
+            SidemessageNotifications.mmsError(context, context.getString(R.string.messages_mms_download_start_failed))
             Result.failure()
         }
     }
@@ -140,11 +189,17 @@ class MmsResultReceiver : BroadcastReceiver() {
         repo.scope.launchOnIo {
             try {
                 val row = intent.getStringExtra("row")?.let(Uri::parse) ?: return@launchOnIo
-                if (intent.action == MmsTransport.RETRY) { MmsTransport.retry(context, row); return@launchOnIo }
+                if (intent.action == MmsTransport.RETRY) {
+                    MmsTransport.retry(context, row)
+                    return@launchOnIo
+                }
                 val key = intent.getStringExtra("key") ?: return@launchOnIo
                 // Never accept arbitrary paths from callback extras.
                 require(key.matches(Regex("[a-fA-F0-9-]{32,64}")))
-                if (intent.action == "hrln.interactive.sidekit.MMS_ACK") { File(MmsTransport.directory(context), "$key.ack").delete(); return@launchOnIo }
+                if (intent.action == "hrln.interactive.sidekit.MMS_ACK") {
+                    File(MmsTransport.directory(context), "$key.ack").delete()
+                    return@launchOnIo
+                }
                 val sent = intent.action == MmsTransport.SENT
                 val file = File(MmsTransport.directory(context), "$key.${if (sent) "send" else "download"}")
                 if (sent) {
@@ -152,33 +207,57 @@ class MmsResultReceiver : BroadcastReceiver() {
                     val ok = code == Activity.RESULT_OK && (confirmed == null || confirmed.responseStatus == PduHeaders.RESPONSE_STATUS_OK)
                     MmsTransport.mark(context, row, if (ok) Telephony.Mms.MESSAGE_BOX_SENT else Telephony.Mms.MESSAGE_BOX_FAILED)
                     if (confirmed?.messageId != null) context.contentResolver.update(row, ContentValues().apply { put("m_id", PduPersister.toIsoString(confirmed.messageId)) }, null, null)
-                    if (!ok) SidemessageNotifications.mmsError(context, "MMS was not confirmed sent. Check the conversation before retrying.")
+                    if (!ok) SidemessageNotifications.mmsError(context, context.getString(R.string.messages_mms_not_confirmed))
                     file.delete()
                 } else if (intent.action == MmsTransport.DOWNLOAD) {
-                    if (code != Activity.RESULT_OK) { SidemessageNotifications.mmsError(context, "MMS download failed. Check mobile data and tap the message to retry."); file.delete(); return@launchOnIo }
+                    if (code != Activity.RESULT_OK) {
+                        SidemessageNotifications.mmsError(context, context.getString(R.string.messages_mms_download_failed))
+                        file.delete()
+                        return@launchOnIo
+                    }
                     val pdu = file.inputStream().use { PduParser(MmsTransport.readBounded(it, MmsTransport.MAX_BYTES)).parse() } as? RetrieveConf ?: throw IOException("Invalid MMS PDU")
                     require(pdu.retrieveStatus == 0 || pdu.retrieveStatus == PduHeaders.RETRIEVE_STATUS_OK)
                     val type = context.contentResolver.query(row, arrayOf("m_type"), null, null, null)?.use { if (it.moveToFirst()) it.getInt(0) else null }
-                    if (type != PduHeaders.MESSAGE_TYPE_NOTIFICATION_IND) { file.delete(); return@launchOnIo }
+                    if (type != PduHeaders.MESSAGE_TYPE_NOTIFICATION_IND) {
+                        file.delete()
+                        return@launchOnIo
+                    }
                     val notification = PduPersister.getPduPersister(context).load(row) as? NotificationInd
                     // Replace the notification in place, so repeated callbacks cannot create duplicate messages.
                     val result = PduPersister.getPduPersister(context).persist(pdu, row, true, true, null, intent.getIntExtra("sub", -1))
                     val resolver = context.contentResolver
-                    resolver.update(result, ContentValues().apply { put("read",0); put("seen",0) }, null, null)
+                    resolver.update(
+                        result,
+                        ContentValues().apply {
+                            put("read", 0)
+                            put("seen", 0)
+                        },
+                        null,
+                        null
+                    )
                     val thread = resolver.query(result, arrayOf("thread_id"), null, null, null)?.use { if (it.moveToFirst()) it.getLong(0) else -1 } ?: -1
-                    SidemessageNotifications.incoming(context, thread, pdu.from?.string.orEmpty(), "Multimedia message")
-                    file.delete(); File(MmsTransport.directory(context), "$key.push").delete()
+                    SidemessageNotifications.incoming(context, thread, pdu.from?.string.orEmpty(), context.getString(R.string.messages_mms_title))
+                    file.delete()
+                    File(MmsTransport.directory(context), "$key.push").delete()
                     notification?.let {
                         runCatching {
                             val response = NotifyRespInd(PduHeaders.CURRENT_MMS_VERSION, it.transactionId, PduHeaders.STATUS_RETRIEVED)
                             val ack = File(MmsTransport.directory(context), "$key.ack").apply { writeBytes(PduComposer(context, response).make()) }
-                            MmsTransport.manager(context, intent.getIntExtra("sub", -1)).sendMultimediaMessage(context, MmsTransport.uri(context, ack), null, null,
-                                MmsTransport.callback(context, "hrln.interactive.sidekit.MMS_ACK", key, row, intent.getIntExtra("sub", -1)))
+                            MmsTransport.manager(context, intent.getIntExtra("sub", -1)).sendMultimediaMessage(
+                                context,
+                                MmsTransport.uri(context, ack),
+                                null,
+                                null,
+                                MmsTransport.callback(context, "hrln.interactive.sidekit.MMS_ACK", key, row, intent.getIntExtra("sub", -1))
+                            )
                         }
                     }
                 }
-            } catch (_: Exception) { SidemessageNotifications.mmsError(context, "MMS could not be processed. Tap the pending message to retry.") }
-            finally { pending.finish() }
+            } catch (_: Exception) {
+                SidemessageNotifications.mmsError(context, context.getString(R.string.messages_mms_process_failed))
+            } finally {
+                pending.finish()
+            }
         }
     }
 }

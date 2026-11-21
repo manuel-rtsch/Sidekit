@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -33,13 +35,14 @@ internal fun KeypadGuideScreen(back: () -> Unit) {
     var preview by rememberSaveable(inUse) { mutableStateOf(inUse) }
     val module = custom ?: preview
     val list = rememberLazyListState()
-    SidekitScaffold("Key guide", actions = listOf(SideAction.back("back", "Keyboard", back))) { padding ->
+    SidekitScaffold(stringResource(R.string.settings_key_guide), actions = listOf(SideAction.back("back", stringResource(R.string.settings_keyboard), back))) { padding ->
         SidekitList(padding, state = list) {
             item {
                 SidekitItem(
-                    "Module",
+                    stringResource(R.string.settings_module),
                     Modifier.height(CompactRowHeight).listFade(list, 0),
-                    secondary = custom?.let { "${it.label} · custom" } ?: if (module == inUse) "${module.label} · in use" else module.label,
+                    secondary = custom?.let { stringResource(R.string.settings_module_custom, it.label) }
+                        ?: if (module == inUse) stringResource(R.string.settings_module_in_use, module.displayLabel()) else module.displayLabel(),
                     secondaryToEnd = true,
                     onClick = if (custom == null) {
                         { preview = KeypadModule.entries[(preview.ordinal + 1) % KeypadModule.entries.size] }

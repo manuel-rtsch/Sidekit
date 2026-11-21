@@ -46,11 +46,13 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.Access
 import hrln.interactive.sidekit.apps.media.PermissionRationale
 import hrln.interactive.sidekit.apps.media.formatDuration
@@ -92,30 +94,31 @@ fun VideoListScreen(
 ) {
     if (access != Access.Granted) {
         SidekitScaffold(
-            title = "Video",
+            title = stringResource(R.string.video_title),
             actions = listOf(
-                SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Home", onBack, motion = ActionMotion.Back),
+                SideAction.square("back", SidekitIcon.ArrowLeftAlt, stringResource(R.string.video_home), onBack, motion = ActionMotion.Back),
                 if (access == Access.Blocked) {
-                    SideAction.forward("allow", "Open settings", onAllow, icon = SidekitIcon.Settings)
+                    SideAction.forward("allow", stringResource(R.string.video_open_settings), onAllow, icon = SidekitIcon.Settings)
                 } else {
-                    SideAction("allow", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, contentDescription = "Allow access to videos", onClick = onAllow)
+                    SideAction("allow", stringResource(R.string.video_allow), SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, contentDescription = stringResource(R.string.video_allow_description), onClick = onAllow)
                 }
             )
         ) { padding ->
-            PermissionRationale("See your videos", "Video plays the clips saved on this phone, including ones you film with Camera.", access, padding)
+            PermissionRationale(stringResource(R.string.video_rationale_title), stringResource(R.string.video_rationale_body), access, padding)
         }
         return
     }
-    SidekitScaffold(title = "Video", actions = listOf(SideAction.back("back", "Home", onBack))) { padding ->
+    SidekitScaffold(title = stringResource(R.string.video_title), actions = listOf(SideAction.back("back", stringResource(R.string.video_home), onBack))) { padding ->
         if (state.loaded && state.videos.isEmpty()) {
-            Empty("No videos yet. Clips you record with Camera appear here.", padding)
+            Empty(stringResource(R.string.video_empty), padding)
             return@SidekitScaffold
         }
         val listState = rememberLazyListState()
+        val untitled = stringResource(R.string.video_untitled)
         SidekitList(padding, Modifier.testTag(VideoTags.LIST), state = listState) {
             itemsIndexed(state.videos, key = { _, v -> v.id }, contentType = { _, _ -> 0 }) { index, video ->
                 SidekitItem(
-                    title = video.title,
+                    title = video.title.ifBlank { untitled },
                     secondary = formatDuration(video.durationMs),
                     modifier = Modifier.listFade(listState, index),
                     onClick = { onPlay(video) },
@@ -233,7 +236,7 @@ fun VideoPlayerScreen(player: VideoPlayer, onBack: () -> Unit) {
     ) {
         VideoSurface(player, Modifier.then(if (player.aspect > 0f) Modifier.aspectRatio(player.aspect) else Modifier.fillMaxSize()))
         if (player.failed) {
-            SidekitText("This video can't be played", style = SidekitTheme.typography.label, color = SidekitTheme.colors.surfaceA6)
+            SidekitText(stringResource(R.string.video_cant_play), style = SidekitTheme.typography.label, color = SidekitTheme.colors.surfaceA6)
         }
         SeekLine(
             player = player,
@@ -252,22 +255,28 @@ fun VideoPlayerScreen(player: VideoPlayer, onBack: () -> Unit) {
     }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
+    val backToVideos = stringResource(R.string.video_back_to_videos)
+    val playLabel = stringResource(if (playing) R.string.video_pause else R.string.video_play)
+    val playDescription = stringResource(if (playing) R.string.video_pause_description else R.string.video_play_description)
+    val forward10 = stringResource(R.string.video_forward_10)
+    val back10 = stringResource(R.string.video_back_10)
+    val restart = stringResource(R.string.video_restart)
     val actions = if (!showControls) {
         emptyList()
     } else {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to videos", onBack, motion = ActionMotion.Back),
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, backToVideos, onBack, motion = ActionMotion.Back),
             SideAction(
                 "play",
-                if (playing) "Pause" else "Play",
+                playLabel,
                 if (playing) SidekitIcon.Pause else SidekitIcon.PlayArrow,
                 motion = ActionMotion.Up,
-                contentDescription = if (playing) "Pause video" else "Play video"
+                contentDescription = playDescription
             ) {
                 poke()
                 player.togglePlay()
             },
-            SideAction.square("skip", SidekitIcon.SkipNext, "Forward 10 seconds", {
+            SideAction.square("skip", SidekitIcon.SkipNext, forward10, {
                 poke()
                 player.seekBy(SEEK_STEP_MS)
                 tick++
@@ -275,12 +284,12 @@ fun VideoPlayerScreen(player: VideoPlayer, onBack: () -> Unit) {
         )
     }
     val options = listOf(
-        SideAction("back10", "Back 10 s", SidekitIcon.SkipPrevious) {
+        SideAction("back10", back10, SidekitIcon.SkipPrevious) {
             poke()
             player.seekBy(-SEEK_STEP_MS)
             tick++
         },
-        SideAction("restart", "Restart", SidekitIcon.Undo) {
+        SideAction("restart", restart, SidekitIcon.Undo) {
             poke()
             player.seekTo(0)
             player.play()
@@ -318,6 +327,7 @@ private fun SeekLine(player: VideoPlayer, tick: Long, visible: Boolean, onSeek: 
     val duration = player.durationMs
     val position = if (dragging) (dragFraction * duration).toLong() else player.positionMs()
     val fraction = if (duration > 0) position / duration.toFloat() else 0f
+    val seek = stringResource(R.string.video_seek)
     Row(
         modifier
             .fillMaxWidth()
@@ -333,7 +343,7 @@ private fun SeekLine(player: VideoPlayer, tick: Long, visible: Boolean, onSeek: 
             Modifier
                 .weight(1f)
                 .height(36.dp)
-                .semantics { contentDescription = "Seek" }
+                .semantics { contentDescription = seek }
                 .then(
                     if (!visible || duration <= 0) {
                         Modifier

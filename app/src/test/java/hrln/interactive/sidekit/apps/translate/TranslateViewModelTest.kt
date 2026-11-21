@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.translate
 
+import hrln.interactive.sidekit.R
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,7 +64,7 @@ class TranslateViewModelTest {
         scope.testScheduler.runCurrent()
         assertEquals("Hello", vm.state.value.source.text)
         assertEquals("", vm.state.value.target.text)
-        assertEquals("Translation failed. Check the connection and try again.", vm.state.value.error)
+        assertEquals(TranslateNotice(R.string.translate_error_failed), vm.state.value.error)
         assertEquals(false, vm.state.value.translating)
     }
 
@@ -82,10 +83,10 @@ class TranslateViewModelTest {
         vm.translate()
         scope.testScheduler.runCurrent()
         vm.swapLanguages()
-        assertEquals("Chinese", vm.state.value.source.language)
-        assertEquals("English", vm.state.value.target.language)
+        assertEquals(TranslateLanguage.Chinese, vm.state.value.source.language)
+        assertEquals(TranslateLanguage.English, vm.state.value.target.language)
         vm.open(repository.history.value!!.first())
-        assertEquals("English", vm.state.value.source.language)
+        assertEquals(TranslateLanguage.English, vm.state.value.source.language)
         assertEquals("One", vm.state.value.source.text)
     }
 
@@ -96,8 +97,8 @@ class TranslateViewModelTest {
         assertEquals(TranslateSide.Target, vm.state.value.picking)
         vm.chooseLanguage(TranslateLanguage.Spanish)
         assertEquals(TranslateMode.Translate, vm.state.value.mode)
-        assertEquals("English", vm.state.value.source.language)
-        assertEquals("Spanish", vm.state.value.target.language)
+        assertEquals(TranslateLanguage.English, vm.state.value.source.language)
+        assertEquals(TranslateLanguage.Spanish, vm.state.value.target.language)
         vm.setText("Hello")
         vm.translate()
         scope.testScheduler.runCurrent()
@@ -109,8 +110,8 @@ class TranslateViewModelTest {
         TranslateLanguage.entries.filter { it != TranslateLanguage.English }.forEach { language ->
             vm.pickLanguage(TranslateSide.Target)
             vm.chooseLanguage(language)
-            assertEquals(language.label, vm.state.value.target.language)
-            assertEquals("English", vm.state.value.source.language)
+            assertEquals(language, vm.state.value.target.language)
+            assertEquals(TranslateLanguage.English, vm.state.value.source.language)
         }
     }
 
@@ -118,8 +119,8 @@ class TranslateViewModelTest {
         val vm = TranslateViewModel(repository, FakeTranslator())
         vm.pickLanguage(TranslateSide.Source)
         vm.chooseLanguage(TranslateLanguage.Chinese)
-        assertEquals("Chinese", vm.state.value.source.language)
-        assertEquals("English", vm.state.value.target.language)
+        assertEquals(TranslateLanguage.Chinese, vm.state.value.source.language)
+        assertEquals(TranslateLanguage.English, vm.state.value.target.language)
     }
 
     @Test fun `changing the target redoes an existing translation`() {
@@ -141,8 +142,8 @@ class TranslateViewModelTest {
         vm.pickLanguage(TranslateSide.Target)
         vm.chooseLanguage(TranslateLanguage.English)
         scope.testScheduler.runCurrent()
-        assertEquals(TranslatePane("Chinese", "Hello [en->zh-CN]"), vm.state.value.source)
-        assertEquals(TranslatePane("English", "Hello"), vm.state.value.target)
+        assertEquals(TranslatePane(TranslateLanguage.Chinese, "Hello [en->zh-CN]"), vm.state.value.source)
+        assertEquals(TranslatePane(TranslateLanguage.English, "Hello"), vm.state.value.target)
         assertEquals(TranslateMode.Translate, vm.state.value.mode)
     }
 
@@ -164,8 +165,8 @@ class TranslateViewModelTest {
         vm.pickLanguage(TranslateSide.Source)
         vm.chooseLanguage(TranslateLanguage.Chinese)
         scope.testScheduler.runCurrent()
-        assertEquals(TranslatePane("Chinese", ""), vm.state.value.source)
-        assertEquals(TranslatePane("English", "Hi"), vm.state.value.target)
+        assertEquals(TranslatePane(TranslateLanguage.Chinese, ""), vm.state.value.source)
+        assertEquals(TranslatePane(TranslateLanguage.English, "Hi"), vm.state.value.target)
         assertEquals(false, vm.state.value.translating)
     }
 

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Translate app. Language names come from java.util.Locale in the UI language. -->
+<resources>
+    <string name="translate_title">Übersetzer</string>
+    <string name="translate_action">Übersetzen</string>
+    <string name="translate_history">Verlauf</string>
+    <string name="translate_allow">Zulassen</string>
+    <string name="translate_from_language">Von: %1$s</string>
+    <string name="translate_to_language">Nach: %1$s</string>
+    <string name="translate_swap">Sprachen tauschen</string>
+    <string name="translate_large_text">Große Schrift</string>
+    <string name="translate_clear">Leeren</string>
+    <string name="translate_clear_history">Verlauf löschen</string>
+    <string name="translate_translations">Übersetzungen</string>
+    <string name="translate_from_title">Übersetzen aus</string>
+    <string name="translate_to_title">Übersetzen in</string>
+    <string name="translate_placeholder">Tippen oder sprechen</string>
+    <string name="translate_translating">Wird übersetzt…</string>
+    <string name="translate_translation">Übersetzung</string>
+    <string name="translate_microphone_rationale">Erlaube das Mikrofon, damit Übersetzer diese Sprache hören kann.</string>
+    <plurals name="translate_service">
+        <item quantity="one">Online · MyMemory · %1$d Zeichen</item>
+        <item quantity="other">Online · MyMemory · %1$d Zeichen</item>
+    </plurals>
+    <string name="translate_change_language">Sprache ändern</string>
+    <string name="translate_stop_listening">Zuhören beenden (%1$s)</string>
+    <string name="translate_speak">Auf %1$s sprechen</string>
+    <string name="translate_large_empty">Noch nichts anzuzeigen</string>
+    <string name="translate_history_empty">Deine Übersetzungen erscheinen hier.</string>
+    <string name="translate_delete">Übersetzung löschen</string>
+    <string name="translate_error_microphone">Zum Zuhören ist die Mikrofonberechtigung nötig</string>
+    <string name="translate_error_empty">Gib etwas zum Übersetzen ein</string>
+    <string name="translate_error_failed">Übersetzung fehlgeschlagen. Prüfe die Verbindung und versuch es erneut.</string>
+    <string name="translate_error_no_recognizer">Auf diesem Telefon ist keine Spracherkennung installiert</string>
+    <string name="translate_error_recognizer">Spracherkennung konnte nicht starten</string>
+    <string name="translate_error_no_tts">Auf diesem Telefon ist keine Sprachausgabe installiert</string>
+    <string name="translate_error_no_voice">Keine Stimme für %1$s</string>
+    <string name="translate_error_not_heard">Nicht verstanden. Versuch es noch mal.</string>
+    <string name="translate_error_silence">Nichts gehört</string>
+</resources>

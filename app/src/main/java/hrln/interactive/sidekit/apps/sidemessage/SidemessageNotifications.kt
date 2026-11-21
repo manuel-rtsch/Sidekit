@@ -8,6 +8,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import hrln.interactive.sidekit.MainActivity
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 
 /** Notifications for incoming texts. Tapping one opens its conversation. */
@@ -53,7 +54,7 @@ object SidemessageNotifications {
         ensureChannel(context)
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(SidekitIcon.Chat.drawable)
-            .setContentTitle("Multimedia message")
+            .setContentTitle(context.getString(R.string.messages_mms_title))
             .setContentText(message)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
@@ -71,12 +72,11 @@ object SidemessageNotifications {
         addresses.forEach { manager.cancel(idFor(-1, it)) }
     }
 
-    private fun idFor(threadId: Long, address: String): Int =
-        if (threadId > 0) threadId.toInt() else Addresses.key(address).hashCode()
+    private fun idFor(threadId: Long, address: String): Int = if (threadId > 0) threadId.toInt() else Addresses.key(address).hashCode()
 
     private fun ensureChannel(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        if (manager.getNotificationChannel(CHANNEL) != null) return
-        manager.createNotificationChannel(NotificationChannel(CHANNEL, "Messages", NotificationManager.IMPORTANCE_HIGH))
+        // Re-creating an existing channel only updates its name, so it follows the app language.
+        manager.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.messages_channel), NotificationManager.IMPORTANCE_HIGH))
     }
 }

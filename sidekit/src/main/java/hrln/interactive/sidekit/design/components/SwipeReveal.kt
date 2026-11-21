@@ -39,6 +39,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -46,6 +47,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import hrln.interactive.sidekit.design.R
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.motion.SidekitMotion
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -102,7 +104,7 @@ fun SidekitSwipeRow(
     group: SwipeRevealGroup,
     onDelete: () -> Unit = {},
     modifier: Modifier = Modifier,
-    deleteLabel: String = "Delete",
+    deleteLabel: String = stringResource(R.string.sk_sidekit_action_delete),
     action: SwipeAction? = null,
     content: @Composable () -> Unit
 ) {

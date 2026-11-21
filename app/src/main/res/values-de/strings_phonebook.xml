@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phonebook_title">Telefonbuch</string>
+    <string name="phonebook_clear">Löschen</string>
+    <string name="phonebook_clear_cd">Nummer löschen</string>
+    <string name="phonebook_call">Anrufen</string>
+    <string name="phonebook_call_cd">%1$s anrufen</string>
+    <string name="phonebook_allow">Erlauben</string>
+    <string name="phonebook_allow_contacts_cd">Kontakte erlauben</string>
+    <string name="phonebook_dial">Wählen</string>
+    <string name="phonebook_dial_pad">Wähltasten</string>
+    <string name="phonebook_calls">Anrufe</string>
+    <string name="phonebook_recent_calls_cd">Letzte Anrufe</string>
+    <string name="phonebook_recents">Verlauf</string>
+    <string name="phonebook_info_permission">Das Telefonbuch braucht deine Kontakte, um sie aufzulisten und über die Tastatur zu suchen. Du kannst trotzdem eine Nummer wählen.</string>
+    <string name="phonebook_no_match">Keine passenden Kontakte</string>
+    <string name="phonebook_empty">Noch keine Kontakte mit Telefonnummer</string>
+    <string name="phonebook_back">Zurück</string>
+    <string name="phonebook_text">SMS</string>
+    <string name="phonebook_message_cd">SMS an %1$s</string>
+    <string name="phonebook_allow_call_log_cd">Anrufliste erlauben</string>
+    <string name="phonebook_info_call_log">Der Verlauf braucht deine Anrufliste, um getätigte und verpasste Anrufe zu zeigen.</string>
+    <string name="phonebook_no_calls">Noch keine Anrufe</string>
+    <string name="phonebook_unknown">Unbekannt</string>
+    <string name="phonebook_delete_digit">Ziffer löschen</string>
+    <string name="phonebook_text_number">SMS an diese Nummer</string>
+    <string name="phonebook_enter_number">Nummer eingeben</string>
+    <string name="phonebook_key_cd">Taste %1$s</string>
+    <string name="phonebook_call_incoming">Eingehend</string>
+    <string name="phonebook_call_outgoing">Ausgehend</string>
+    <string name="phonebook_call_missed">Verpasst</string>
+    <string name="phonebook_call_declined">Abgelehnt</string>
+    <string name="phonebook_call_blocked">Blockiert</string>
+    <string name="phonebook_label_mobile">Mobil</string>
+    <string name="phonebook_label_home">Privat</string>
+    <string name="phonebook_label_work">Arbeit</string>
+    <string name="phonebook_label_main">Haupt</string>
+    <string name="phonebook_label_phone">Telefon</string>
+    <string name="phonebook_system_dialer">System-Telefon-App</string>
+    <string name="phonebook_call_permission">Erlaube den Telefonzugriff, um %1$s anzurufen. Du kannst auch die System-Telefon-App in den Optionen nutzen.</string>
+</resources>

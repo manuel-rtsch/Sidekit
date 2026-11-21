@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calendar. -->
+<resources>
+    <string name="calendar_title">Calendrier</string>
+    <string name="calendar_day">Jour</string>
+    <string name="calendar_month">Mois</string>
+    <string name="calendar_new">Nouveau</string>
+    <string name="calendar_agenda">Agenda</string>
+    <string name="calendar_today">Aujourd\'hui</string>
+    <string name="calendar_previous">Précédent</string>
+    <string name="calendar_next">Suivant</string>
+    <string name="calendar_all_day">Toute la journée</string>
+    <string name="calendar_untitled">Sans titre</string>
+    <string name="calendar_loading_events">Chargement des événements…</string>
+    <string name="calendar_no_events">Aucun événement</string>
+    <string name="calendar_error_denied">L\'accès au calendrier a été refusé. Autorisez-le pour continuer.</string>
+    <string name="calendar_error_read">Impossible de lire les calendriers. Réessayez.</string>
+    <string name="calendar_allow">Autoriser</string>
+    <string name="calendar_settings">Paramètres</string>
+    <string name="calendar_permission_write">Autorisez l\'accès au calendrier pour enregistrer et supprimer des événements.</string>
+    <string name="calendar_permission_read">Autorisez l\'accès au calendrier pour voir vos événements.</string>
+    <string name="calendar_error_missing">Cet événement n\'existe plus.</string>
+    <string name="calendar_error_open">Impossible d\'ouvrir les calendriers. Vérifiez l\'accès au calendrier et réessayez.</string>
+    <string name="calendar_error_choose">Choisissez un calendrier modifiable de l\'appareil.</string>
+    <string name="calendar_error_invalid">Saisissez un titre et des heures au format YYYY-MM-DD HH:mm. La fin doit suivre le début.</string>
+    <string name="calendar_error_save">Impossible d\'enregistrer. Vérifiez l\'accès au calendrier et réessayez.</string>
+    <string name="calendar_error_delete">Impossible de supprimer. Vérifiez l\'accès au calendrier et réessayez.</string>
+    <string name="calendar_choose_calendar">Choisir un calendrier</string>
+    <string name="calendar_new_event">Nouvel événement</string>
+    <string name="calendar_edit_event">Modifier l\'événement</string>
+    <string name="calendar_saving">Enregistrement…</string>
+    <string name="calendar_back">Retour</string>
+    <string name="calendar_delete">Supprimer</string>
+    <string name="calendar_delete_series">Supprimer la série</string>
+    <string name="calendar_loading">Chargement…</string>
+    <string name="calendar_series_notice">Les modifications et la suppression s\'appliquent à toute la série.</string>
+    <string name="calendar_event_title">Titre</string>
+    <string name="calendar_start_format">Début · YYYY-MM-DD HH:mm</string>
+    <string name="calendar_end_format">Fin · YYYY-MM-DD HH:mm</string>
+    <string name="calendar_all_day_exclusive">Toute la journée · Date de fin exclue</string>
+    <string name="calendar_timed">Événement horaire</string>
+    <string name="calendar_no_writable">Aucun calendrier modifiable</string>
+    <string name="calendar_add_account">Ajoutez d\'abord un compte de calendrier dans les paramètres Android. Sidekit enregistre les événements dans les calendriers de l\'appareil.</string>
+</resources>

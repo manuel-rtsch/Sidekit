@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -15,6 +16,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.MediaPermissions
 import hrln.interactive.sidekit.apps.media.allowAction
 import hrln.interactive.sidekit.apps.media.rememberPermissionState
@@ -41,7 +43,7 @@ fun NavGraphBuilder.musicGraph(nav: NavHostController) {
             val permission = rememberPermissionState(MediaPermissions.audio)
             if (!permission.granted) {
                 MusicPermissionScreen(permission.access, backToMusic)
-                val allow = allowAction(permission, "music")
+                val allow = allowAction(permission, stringResource(R.string.music_access_what))
                 MusicPermissionBar(allow)
                 return@composable
             }
@@ -54,17 +56,17 @@ fun NavGraphBuilder.musicGraph(nav: NavHostController) {
         composable(PLAYLISTS) { entry ->
             val vm = entry.musicViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            MusicLibraryListScreen("Playlists", state.library.playlists.map(LibraryItem::PlaylistItem), vm.actions(nav), backToMusic, vm::createPlaylist)
+            MusicLibraryListScreen(stringResource(R.string.music_playlists), state.library.playlists.map(LibraryItem::PlaylistItem), vm.actions(nav), backToMusic, vm::createPlaylist)
         }
         composable(ALBUMS) { entry ->
             val vm = entry.musicViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            MusicLibraryListScreen("Albums", state.library.albums.map(LibraryItem::AlbumItem), vm.actions(nav), backToMusic)
+            MusicLibraryListScreen(stringResource(R.string.music_albums), state.library.albums.map(LibraryItem::AlbumItem), vm.actions(nav), backToMusic)
         }
         composable(ARTISTS) { entry ->
             val vm = entry.musicViewModel(nav)
             val state by vm.state.collectAsStateWithLifecycle()
-            MusicLibraryListScreen("Artists", state.library.artists.map(LibraryItem::ArtistItem), vm.actions(nav), backToMusic)
+            MusicLibraryListScreen(stringResource(R.string.music_artists), state.library.artists.map(LibraryItem::ArtistItem), vm.actions(nav), backToMusic)
         }
         composable(ALBUM, arguments = idArg) { entry ->
             val vm = entry.musicViewModel(nav)
@@ -105,7 +107,7 @@ fun NavGraphBuilder.musicGraph(nav: NavHostController) {
 
 @Composable
 private fun MusicPermissionBar(action: hrln.interactive.sidekit.design.action.SideAction) {
-    hrln.interactive.sidekit.design.action.PublishChrome(hrln.interactive.sidekit.design.action.HeaderSpec("Music"), listOf(action))
+    hrln.interactive.sidekit.design.action.PublishChrome(hrln.interactive.sidekit.design.action.HeaderSpec(stringResource(R.string.music_title)), listOf(action))
 }
 
 private fun MusicViewModel.actions(nav: NavHostController) = MusicActions(
@@ -128,7 +130,7 @@ private fun NavBackStackEntry.musicViewModel(nav: NavHostController): MusicViewM
     return viewModel(
         parent,
         factory = remember(context) {
-            viewModelFactory { initializer { MusicViewModel(MediaStoreMusicSource(context.contentResolver), Playlists.repository(context), MusicPlayback.get(context)) } }
+            viewModelFactory { initializer { MusicViewModel(MediaStoreMusicSource(context), Playlists.repository(context), MusicPlayback.get(context)) } }
         }
     )
 }

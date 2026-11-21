@@ -7,10 +7,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.maps.*
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -46,11 +49,12 @@ private object Bookmarks {
 @Composable
 fun LiveCompass(onBookmarks: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val sensor = remember { HeadingSensor(context) }
     val store = remember { Bookmarks.get(context) }
     val loaded by store.state.collectAsStateWithLifecycle()
-    val error by store.error.collectAsStateWithLifecycle()
-    var status by remember { mutableStateOf(if (sensor.available) "Hold flat · magnetic north" else "No compass sensor on this device") }
+    val error by store.errorRes.collectAsStateWithLifecycle()
+    var status by remember { mutableStateOf(resources.getString(if (sensor.available) R.string.compass_hold_flat else R.string.compass_no_sensor)) }
     var lowAccuracy by remember { mutableStateOf(false) }
     var place by remember { mutableStateOf<Place?>(null) }
     val location = locationAction({ place = it }) { status = it }
@@ -59,18 +63,18 @@ fun LiveCompass(onBookmarks: () -> Unit) {
     val measurer = rememberTextMeasurer()
     val bearingStyle = SidekitTheme.typography.title.copy(color = SidekitTheme.colors.light)
     SidekitScaffold(
-        "Compass",
+        stringResource(R.string.compass_title),
         actions = listOf(
-            SideAction("calibrate", "Calibrate") { status = "Move phone in a figure eight, away from metal; then hold flat" },
-            SideAction.save("save") {
+            SideAction("calibrate", stringResource(R.string.compass_calibrate)) { status = resources.getString(R.string.compass_calibrate_hint) },
+            SideAction.save("save", stringResource(R.string.compass_save)) {
                 val heading = sensor.latest
                 if (heading == null) {
-                    status = "Waiting for a heading"
+                    status = resources.getString(R.string.compass_waiting_heading)
                 } else if (loaded == null) {
-                    status = "Loading bookmarks…"
+                    status = resources.getString(R.string.compass_loading_bookmarks)
                 } else {
                     store.edit { (listOf(HeadingBookmark(System.currentTimeMillis(), heading, place)) + it).take(100) }
-                    status = "Heading saved${if (place == null) " without location" else " with location"}"
+                    status = resources.getString(if (place == null) R.string.compass_saved_without_location else R.string.compass_saved_with_location)
                 }
             }
         ),
@@ -81,16 +85,16 @@ fun LiveCompass(onBookmarks: () -> Unit) {
             item {
                 SidekitTile(Modifier.fillMaxWidth().listFade(list, 1)) {
                     Canvas(Modifier.fillMaxSize()) {
-                        val text = if (sensor.latest == null) "Waiting…" else "${sensor.angle.floatValue.toInt()}° magnetic"
+                        val text = if (sensor.latest == null) resources.getString(R.string.compass_waiting) else resources.getString(R.string.compass_degrees_magnetic, sensor.angle.floatValue.toInt())
                         val layout = measurer.measure(text, bearingStyle)
                         drawText(layout, topLeft = Offset(30.dp.toPx(), (size.height - layout.size.height) / 2))
                     }
                 }
             }
-            item { OutdoorInfo(error ?: if (lowAccuracy) "Low accuracy: move phone in a figure eight, away from metal" else status, modifier = Modifier.listFade(list, 2)) }
-            item { OutdoorInfo("Location is optional", secondary = "Options → Allow attaches an approximate location to saved headings", modifier = Modifier.listFade(list, 3)) }
+            item { OutdoorInfo(error?.let { stringResource(it) } ?: if (lowAccuracy) stringResource(R.string.compass_low_accuracy) else status, modifier = Modifier.listFade(list, 2)) }
+            item { OutdoorInfo(stringResource(R.string.compass_location_optional), secondary = stringResource(R.string.compass_location_optional_detail), modifier = Modifier.listFade(list, 3)) }
             item(key = "bookmarks") {
-                SidekitItem("Bookmarks", Modifier.listFade(list, 4), showLinkArrow = true, onClick = onBookmarks)
+                SidekitItem(stringResource(R.string.compass_bookmarks), Modifier.listFade(list, 4), showLinkArrow = true, onClick = onBookmarks)
             }
         }
     }
@@ -106,11 +110,11 @@ fun CompassBookmarks(onBack: () -> Unit) {
     val undoWindow = rememberUndoWindow { deleted = null }
     UndoWindowLifecycle(undoWindow) { deleted = null }
     SidekitScaffold(
-        "Saved headings",
+        stringResource(R.string.compass_saved_headings),
         actions = undoBar(
-            continueWith = SideAction.back("back", "Back", onBack),
+            continueWith = SideAction.back("back", stringResource(R.string.compass_back), onBack),
             undo = deleted?.let { p ->
-                SideAction.undo(contentDescription = "Undo delete heading") {
+                SideAction.undo(label = stringResource(R.string.compass_undo), contentDescription = stringResource(R.string.compass_undo_delete)) {
                     undoWindow.cancel()
                     store.edit { (it + p).sortedByDescending { b -> b.time } }
                     deleted = null
@@ -119,7 +123,7 @@ fun CompassBookmarks(onBack: () -> Unit) {
         )
     ) { padding ->
         SidekitList(padding, state = list) {
-            if (rows.isNullOrEmpty()) item { OutdoorInfo("No saved headings", modifier = Modifier.listFade(list, 0)) }
+            if (rows.isNullOrEmpty()) item { OutdoorInfo(stringResource(R.string.compass_no_saved), modifier = Modifier.listFade(list, 0)) }
             items(rows.orEmpty().size) { i ->
                 val b = rows!![i]
                 SidekitSwipeRow(b.time, group, {
@@ -127,7 +131,7 @@ fun CompassBookmarks(onBack: () -> Unit) {
                     deleted = b
                     undoWindow.start()
                 }, Modifier.listFade(list, i)) {
-                    OutdoorInfo("${b.heading.toInt()}° magnetic", secondary = b.place?.let { "${it.latitude}, ${it.longitude}" } ?: "No location")
+                    OutdoorInfo(stringResource(R.string.compass_degrees_magnetic, b.heading.toInt()), secondary = b.place?.let { "${it.latitude}, ${it.longitude}" } ?: stringResource(R.string.compass_no_location))
                 }
             }
         }

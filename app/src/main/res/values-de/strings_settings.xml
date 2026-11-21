@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings: home, system settings, About, Keyboard, Key guide, Hide apps, Arrange apps, Case colour. -->
+<resources>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_home">Start</string>
+    <string name="settings_unavailable">Diese Einstellungsseite ist auf diesem Gerät nicht verfügbar.</string>
+    <string name="settings_launcher_default">Launcher-Ansicht</string>
+    <string name="settings_list">Liste</string>
+    <string name="settings_grid">Raster</string>
+    <string name="settings_compact_layout">Kompaktes Layout</string>
+    <string name="settings_on">An</string>
+    <string name="settings_off">Aus</string>
+    <string name="settings_home_app">Start-App</string>
+    <string name="settings_choose">Wählen</string>
+    <string name="settings_arrange_apps">Apps anordnen</string>
+    <string name="settings_case_colour">Hüllenfarbe</string>
+    <string name="settings_original_blue">Original-Blau</string>
+    <string name="settings_keyboard">Tastatur</string>
+    <string name="settings_hide_apps">Apps ausblenden</string>
+    <string name="settings_system">Systemeinstellungen</string>
+    <string name="settings_setup_tour">Einrichtung &amp; Tastentour</string>
+    <string name="settings_about">Info</string>
+
+    <string name="settings_row_wifi">WLAN</string>
+    <string name="settings_row_wifi_value">Netzwerk</string>
+    <string name="settings_row_bluetooth">Bluetooth</string>
+    <string name="settings_row_bluetooth_value">Geräte</string>
+    <string name="settings_row_display">Display</string>
+    <string name="settings_row_display_value">Helligkeit</string>
+    <string name="settings_row_sounds">Töne</string>
+    <string name="settings_row_sounds_value">Lautstärke</string>
+    <string name="settings_row_battery">Akku</string>
+    <string name="settings_row_battery_value">Nutzung</string>
+    <string name="settings_row_storage">Speicher</string>
+    <string name="settings_row_storage_value">Gerätespeicher</string>
+    <string name="settings_row_date_time">Datum &amp; Uhrzeit</string>
+    <string name="settings_row_date_time_value">Uhr</string>
+    <string name="settings_row_privacy">Datenschutz</string>
+    <string name="settings_row_privacy_value">Berechtigungen</string>
+
+    <string name="settings_about_device">Gerät</string>
+    <string name="settings_about_android_version">%1$s (API %2$d)</string>
+    <string name="settings_about_build">Build</string>
+    <string name="settings_about_third_party">Drittanbieter-Apps</string>
+    <string name="settings_about_third_party_body">Apps, die mit dem Sidekit SDK gebaut sind, können deine Hüllenfarbe und Tastenbelegung lesen. Nachrichten, Zugangsdaten, ausgeblendete Apps und die Startreihenfolge können sie nicht lesen.</string>
+    <string name="settings_about_dev_build">Entwickler-Build</string>
+    <string name="settings_about_dev_build_body">Wird neben Sidekit als %1$s installiert</string>
+    <string name="settings_about_storage">Speicher</string>
+    <string name="settings_about_storage_value">%1$s frei / %2$s</string>
+    <string name="settings_about_unavailable">Nicht verfügbar</string>
+    <string name="settings_about_ram">RAM</string>
+    <string name="settings_about_ram_value">%1$s verfügbar / %2$s</string>
+    <string name="settings_about_notices">Open-Source-Hinweise</string>
+    <string name="settings_about_t9">T9-Wortliste</string>
+
+    <string name="settings_module">Modul</string>
+    <string name="settings_module_custom">%1$s · eigene</string>
+    <string name="settings_module_in_use">%1$s · aktiv</string>
+    <string name="settings_typing">Eingabe</string>
+    <string name="settings_typing_on_screen">Bildschirmtastatur</string>
+    <string name="settings_typing_numbers">Zahlen</string>
+    <string name="settings_typing_letters">Buchstaben</string>
+    <string name="settings_back_key">Zurück-Taste</string>
+    <string name="settings_key_mapping">Tastenbelegung</string>
+    <string name="settings_key_mapping_custom">Eigene</string>
+    <string name="settings_key_mapping_auto">Auto</string>
+    <string name="settings_key_guide">Tastenübersicht</string>
+
+    <string name="settings_show_all">Alle zeigen</string>
+    <string name="settings_hide_apps_intro">Blende Apps auf dem Startbildschirm, in der Suche und im Dock aus. Tippe erneut, um sie zurückzuholen. Apps bleiben installiert; Einstellungen bleibt unter Optionen.</string>
+    <string name="settings_hidden">Ausgeblendet</string>
+    <string name="settings_shown">Sichtbar</string>
+
+    <string name="settings_cancel">Abbrechen</string>
+    <string name="settings_discard">Verwerfen</string>
+    <string name="settings_reset">Zurücksetzen</string>
+    <string name="settings_done">Fertig</string>
+    <string name="settings_selected">Ausgewählt</string>
+    <string name="settings_in_dock">Im Dock</string>
+    <string name="settings_move_up">%1$s nach oben</string>
+    <string name="settings_move_down">%1$s nach unten</string>
+    <string name="settings_key_enter">Enter</string>
+    <string name="settings_key_up">Auf</string>
+    <string name="settings_key_down">Ab</string>
+    <string name="settings_arrange_select">: App auswählen</string>
+    <string name="settings_arrange_move">: App verschieben</string>
+
+    <!-- Keypad accessibility service (English in values/strings.xml). -->
+    <string name="keypad_service_label">SideKit-Tastenfeld</string>
+    <string name="keypad_service_summary">Macht die Taste oben links zur Zurück-Taste (gedrückt halten für Telefon)</string>
+    <string name="keypad_service_description">Macht die Taste oben links auf dem Sidephone-Tastenfeld in jeder App zur Zurück-Taste. Gedrückt halten öffnet die Telefon-App. SideKit beobachtet nur diese eine Taste; es liest weder den Bildschirm noch das, was du tippst.</string>
+</resources>

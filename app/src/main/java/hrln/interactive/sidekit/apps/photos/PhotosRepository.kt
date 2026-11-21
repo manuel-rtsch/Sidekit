@@ -6,9 +6,17 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.core.util.AtomicFile
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.changes
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,12 +29,6 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.IOException
 
 /** A photo or video in MediaStore. Only what a tile and the viewer need; pixels load lazily. */
 @Immutable
@@ -34,12 +36,12 @@ data class MediaItem(
     val id: Long,
     val isVideo: Boolean = false,
     val durationMs: Long = 0,
-    val mimeType: String = if (isVideo) "video/*" else "image/*",
+    val mimeType: String = if (isVideo) "video/*" else "image/*"
 ) {
     val uri: Uri
         get() = ContentUris.withAppendedId(
             if (isVideo) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            id,
+            id
         )
 }
 
@@ -72,16 +74,20 @@ sealed class AlbumKey(val route: String) {
     }
 }
 
-/** @property itemCount shown on folder rows ("50 items"); null for the smart albums. */
+/**
+ * @property name the folder's name; blank for the smart albums, which are named by [smartName] in the UI language.
+ * @property itemCount shown on folder rows ("50 items"); null for the smart albums.
+ */
 @Immutable
 data class PhotoAlbum(val key: AlbumKey, val name: String, val itemCount: Int? = null)
 
-fun AlbumKey.smartName(): String? = when (this) {
-    AlbumKey.All -> "Photos"
-    AlbumKey.Recent -> "Recent"
-    AlbumKey.Favourites -> "Favourites"
-    AlbumKey.Videos -> "Videos"
-    AlbumKey.Camera -> "Camera"
+@StringRes
+fun AlbumKey.smartName(): Int? = when (this) {
+    AlbumKey.All -> R.string.photos_title
+    AlbumKey.Recent -> R.string.photos_recent
+    AlbumKey.Favourites -> R.string.photos_favourites
+    AlbumKey.Videos -> R.string.photos_videos
+    AlbumKey.Camera -> R.string.photos_camera
     is AlbumKey.Bucket -> null
 }
 
@@ -104,10 +110,15 @@ fun AlbumKey.selection(favourites: Set<Long>, nowSeconds: Long): Selection? {
     val both = "$type IN ($IMAGE,$VIDEO)"
     return when (this) {
         AlbumKey.All -> Selection(both, emptyArray())
+
         AlbumKey.Recent -> Selection("$both AND ${MediaStore.MediaColumns.DATE_ADDED} >= ?", arrayOf((nowSeconds - RECENT_SECONDS).toString()))
+
         AlbumKey.Videos -> Selection("$type = $VIDEO", emptyArray())
+
         AlbumKey.Camera -> Selection("$both AND ${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?", arrayOf("DCIM/Camera/%"))
+
         is AlbumKey.Bucket -> Selection("$both AND ${MediaStore.MediaColumns.BUCKET_ID} = ?", arrayOf(id.toString()))
+
         // Ids are numbers we wrote ourselves, so inlining them is safe; capped to stay well under
         // SQLite's expression limits.
         AlbumKey.Favourites -> if (favourites.isEmpty()) null else Selection("$both AND ${MediaStore.MediaColumns._ID} IN (${favourites.take(MAX_FAVOURITES).joinToString(",")})", emptyArray())
@@ -116,8 +127,8 @@ fun AlbumKey.selection(favourites: Set<Long>, nowSeconds: Long): Selection? {
 
 const val MAX_FAVOURITES = 900
 
-/** Groups (bucket id, name) rows into folder albums, biggest first. */
-fun groupBuckets(rows: Sequence<Pair<Long, String?>>): List<PhotoAlbum> {
+/** Groups (bucket id, name) rows into folder albums, biggest first; unnamed folders get [untitled]. */
+fun groupBuckets(rows: Sequence<Pair<Long, String?>>, untitled: String): List<PhotoAlbum> {
     val counts = LinkedHashMap<Long, Int>()
     val names = HashMap<Long, String>()
     for ((id, name) in rows) {
@@ -126,7 +137,7 @@ fun groupBuckets(rows: Sequence<Pair<Long, String?>>): List<PhotoAlbum> {
     }
     return counts.entries
         .sortedWith(compareByDescending<Map.Entry<Long, Int>> { it.value }.thenBy { names[it.key].orEmpty().lowercase() })
-        .map { PhotoAlbum(AlbumKey.Bucket(it.key), names[it.key] ?: "Untitled", it.value) }
+        .map { PhotoAlbum(AlbumKey.Bucket(it.key), names[it.key] ?: untitled, it.value) }
 }
 
 /** Reads the photo library. Called off the main thread only. */
@@ -136,7 +147,9 @@ interface PhotoSource {
     fun changes(): Flow<Unit>
 }
 
-class MediaStorePhotoSource(private val resolver: ContentResolver, private val clock: () -> Long = System::currentTimeMillis) : PhotoSource {
+class MediaStorePhotoSource(context: Context, private val clock: () -> Long = System::currentTimeMillis) : PhotoSource {
+    private val context = context.applicationContext
+    private val resolver: ContentResolver = this.context.contentResolver
     private val files: Uri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
 
     override fun page(album: AlbumKey, favourites: Set<Long>, offset: Int, limit: Int): List<MediaItem> {
@@ -152,7 +165,7 @@ class MediaStorePhotoSource(private val resolver: ContentResolver, private val c
             MediaStore.MediaColumns._ID,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.MediaColumns.DURATION,
-            MediaStore.MediaColumns.MIME_TYPE,
+            MediaStore.MediaColumns.MIME_TYPE
         )
         return resolver.query(files, projection, args, null)?.use { c ->
             val out = ArrayList<MediaItem>(c.count)
@@ -169,7 +182,7 @@ class MediaStorePhotoSource(private val resolver: ContentResolver, private val c
         val projection = arrayOf(MediaStore.MediaColumns.BUCKET_ID, MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
         // Two narrow columns per row; grouping in memory because MediaStore has no GROUP BY for apps.
         return resolver.query(files, projection, selection.sql, selection.args, null)?.use { c ->
-            groupBuckets(generateSequence { if (c.moveToNext()) c.getLong(0) to c.getString(1) else null })
+            groupBuckets(generateSequence { if (c.moveToNext()) c.getLong(0) to c.getString(1) else null }, context.getString(R.string.photos_untitled))
         }.orEmpty()
     }
 
@@ -230,7 +243,7 @@ class FileIdSetStore(file: File) : IdSetStore {
 class FavouritesRepository(
     private val store: IdSetStore,
     scope: CoroutineScope,
-    io: CoroutineDispatcher = Dispatchers.IO,
+    io: CoroutineDispatcher = Dispatchers.IO
 ) {
     private val _ids = MutableStateFlow<Set<Long>?>(null)
 
@@ -263,7 +276,13 @@ class FavouritesRepository(
 
     fun toggle(id: Long) = _ids.update { current ->
         val set = current.orEmpty()
-        if (id in set) set - id else if (set.size >= MAX_FAVOURITES) set else set + id
+        if (id in set) {
+            set - id
+        } else if (set.size >= MAX_FAVOURITES) {
+            set
+        } else {
+            set + id
+        }
     }
 
     fun remove(id: Long) = _ids.update { current -> current?.let { if (id in it) it - id else it } }
@@ -276,7 +295,7 @@ object Photos {
     fun favourites(context: Context): FavouritesRepository = favourites ?: synchronized(this) {
         favourites ?: FavouritesRepository(
             FileIdSetStore(File(context.applicationContext.filesDir, "photos_favourites.bin")),
-            CoroutineScope(SupervisorJob()),
+            CoroutineScope(SupervisorJob())
         ).also { favourites = it }
     }
 }

@@ -13,11 +13,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
@@ -33,6 +36,7 @@ import hrln.interactive.sidekit.sdk.theme.caseColourChoices
 @Composable
 internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val prefs = remember { SidekitPreferences(context) }
     var step by rememberSaveable { mutableIntStateOf(if (replay) 0 else prefs.setupStep) }
     var revision by remember { mutableIntStateOf(0) }
@@ -48,11 +52,11 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
     val modules = remember(keypad?.module) { orderedModules(keypad?.module ?: KeypadModule.T9) }
     LaunchedEffect(keypad?.module) { tourIndex = 0 }
     val access = remember { setupAccess() }
-    val requested = remember { mutableStateListOf<String>() }
+    val requested = remember { mutableStateListOf<Int>() }
     val result = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { revision++ }
     val permissionResult = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         revision++
-        if (it.values.any { granted -> !granted }) message = "Some access was not granted. You can continue, or manage it in App settings."
+        if (it.values.any { granted -> !granted }) message = resources.getString(R.string.onboarding_not_granted)
     }
     LifecycleResumeEffect(Unit) {
         revision++
@@ -72,9 +76,9 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
         try {
             result.launch(intent)
         } catch (_: android.content.ActivityNotFoundException) {
-            message = "This settings screen is unavailable on this device."
+            message = resources.getString(R.string.onboarding_unavailable)
         } catch (_: SecurityException) {
-            message = "Android could not open this setting. You can continue and change it in Settings."
+            message = resources.getString(R.string.onboarding_cannot_open)
         }
     }
     fun request(entry: SetupAccess) {
@@ -88,7 +92,18 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
             permissionResult.launch(entry.permissions.toTypedArray())
         }
     }
-    val titles = listOf("Hello, Sidekit", "Make it yours", "Your home screen", "Choose your apps", "Make it work", "Your typing style", "Meet your keypad")
+    val titles = listOf(
+        R.string.onboarding_title_hello,
+        R.string.onboarding_title_yours,
+        R.string.onboarding_title_home,
+        R.string.onboarding_title_apps,
+        R.string.onboarding_title_access,
+        R.string.onboarding_title_typing,
+        R.string.onboarding_title_keypad
+    )
+    val backLabel = stringResource(R.string.onboarding_back)
+    val showAllLabel = stringResource(R.string.onboarding_show_all)
+    val nextLabel = stringResource(if (step == 6) R.string.onboarding_finish else R.string.onboarding_next)
     BackHandler {
         if (step > 0) {
             move(step - 1)
@@ -97,33 +112,33 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
         }
     }
     SidekitScaffold(
-        titles[step],
+        stringResource(titles[step]),
         actions = buildList {
-            if (step > 0 || replay) add(SideAction.back("back", "Back") { if (step > 0) move(step - 1) else onFinish() })
+            if (step > 0 || replay) add(SideAction.back("back", backLabel) { if (step > 0) move(step - 1) else onFinish() })
             // The hide-apps step shares its list with Settings, so it shares the bar's Show all too.
-            if (step == 3 && hidden.isNotEmpty()) add(SideAction("showAll", "Show all", tone = ActionTone.Secondary) { prefs.hiddenApps = emptySet() })
-            add(SideAction.forward("next", if (step == 6) "Finish" else "Next", { if (step == 6) finish() else move(step + 1) }))
+            if (step == 3 && hidden.isNotEmpty()) add(SideAction("showAll", showAllLabel, tone = ActionTone.Secondary) { prefs.hiddenApps = emptySet() })
+            add(SideAction.forward("next", nextLabel, { if (step == 6) finish() else move(step + 1) }))
         }
     ) { padding ->
         key(step) {
             val listState = rememberLazyListState()
             LaunchedEffect(tourIndex) { if (step == 6) listState.scrollToItem(0) }
             SidekitList(padding, state = listState) {
-                if (step != 6) item { SidekitText("${step + 1} / 7 · SIDEPHONE SETUP", style = SidekitTheme.typography.label) }
+                if (step != 6) item { SidekitText(stringResource(R.string.onboarding_progress, step + 1, titles.size), style = SidekitTheme.typography.label) }
                 when (step) {
                     0 -> {
-                        item { Copy("A home that feels like you", "Choose your colours, layout and controls. Your choices save as you go.") }
+                        item { Copy(stringResource(R.string.onboarding_hello_title), stringResource(R.string.onboarding_hello_body)) }
                         item {
                             val enabled = remember(revision) { homeAccess.enabled(context) }
-                            SidekitLineButton(if (enabled) "Sidekit is your home app ✓" else "Set as home app", { request(homeAccess) })
+                            SidekitLineButton(stringResource(if (enabled) R.string.onboarding_is_home else R.string.onboarding_set_home), { request(homeAccess) })
                         }
-                        item { Copy("Always one press away", "Choose Sidekit in Android’s home app prompt. You can also tap Next and do this later in Settings.") }
+                        item { Copy(stringResource(R.string.onboarding_home_title), stringResource(R.string.onboarding_home_body)) }
                     }
 
                     1 -> caseColourChoices(selectedColour) { prefs.caseColour = it }
 
                     2 -> {
-                        item { Copy("Grid or list?", "Change this any time in Settings.") }
+                        item { Copy(stringResource(R.string.onboarding_layout_title), stringResource(R.string.onboarding_layout_body)) }
                         item {
                             LayoutChoice(false, listLayout) {
                                 listLayout = false
@@ -138,27 +153,29 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
                         }
                     }
 
-                    3 -> hiddenAppChoices(hidden, ported, native = native) { prefs.hiddenApps = it }
+                    3 -> hiddenAppChoices(context, hidden, ported, native = native) { prefs.hiddenApps = it }
 
                     4 -> {
-                        item { Copy("You’re in control", "Enable access for the features you want, or continue without it. Status updates when you return.") }
+                        item { Copy(stringResource(R.string.onboarding_access_title), stringResource(R.string.onboarding_access_body)) }
                         access.forEach { entry ->
                             item {
                                 val enabled = remember(revision) { entry.enabled(context) }
+                                val title = stringResource(entry.title)
+                                val reason = stringResource(entry.reason)
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    SidekitLineButton("${if (enabled) "✓ " else ""}${entry.title}", { request(entry) }, variant = if (enabled) LineButtonVariant.Secondary else LineButtonVariant.Primary)
-                                    SidekitText(if (enabled) "Enabled · ${entry.reason}" else entry.reason, style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp), maxLines = Int.MAX_VALUE)
+                                    SidekitLineButton("${if (enabled) "✓ " else ""}$title", { request(entry) }, variant = if (enabled) LineButtonVariant.Secondary else LineButtonVariant.Primary)
+                                    SidekitText(if (enabled) stringResource(R.string.onboarding_enabled, reason) else reason, style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp), maxLines = Int.MAX_VALUE)
                                 }
                             }
                         }
-                        item { Copy("Accounts come later", "Connect mail and other accounts inside their apps. Screen lock and network access use Android’s existing settings; there is no extra permission prompt here.") }
+                        item { Copy(stringResource(R.string.onboarding_accounts_title), stringResource(R.string.onboarding_accounts_body)) }
                     }
 
                     5 -> {
-                        item { Copy("Letters or numbers?", "Choose how text fields start. Hold # (T9) or aA (Mini QWERTY) to switch while typing.") }
+                        item { Copy(stringResource(R.string.onboarding_typing_title), stringResource(R.string.onboarding_typing_body)) }
                         T9Mode.entries.forEach { mode ->
                             item {
-                                val label = if (mode == T9Mode.Numeric) "Numbers" else "Letters · multi-tap"
+                                val label = stringResource(if (mode == T9Mode.Numeric) R.string.onboarding_numbers else R.string.onboarding_letters)
                                 SidekitLineButton("${if (inputMode == mode) "✓ " else ""}$label", {
                                     inputMode = mode
                                     prefs.inputMode = mode
@@ -166,25 +183,25 @@ internal fun OnboardingScreen(onFinish: () -> Unit, replay: Boolean = false) {
                                 }, variant = if (inputMode == mode) LineButtonVariant.Primary else LineButtonVariant.Secondary)
                             }
                         }
-                        item { Copy("Words as you type", "Suggestions appear in the action bar. Select a suggestion to complete a word. Your typing preference can be changed in Settings.") }
+                        item { Copy(stringResource(R.string.onboarding_words_title), stringResource(R.string.onboarding_words_body)) }
                     }
 
                     6 -> {
                         item {
                             SidekitItem(
-                                "Module",
+                                stringResource(R.string.onboarding_module),
                                 Modifier.height(CompactRowHeight).listFade(listState, 0),
-                                secondary = "${tourIndex + 1} / ${modules.size} · ${tourLabel(modules[tourIndex])}",
+                                secondary = stringResource(R.string.onboarding_module_position, tourIndex + 1, modules.size, tourLabel(modules[tourIndex])),
                                 secondaryToEnd = true,
                                 onClick = { tourIndex = (tourIndex + 1) % modules.size }
                             )
                         }
-                        item { SidekitLineButton("Use ${modules[tourIndex].label}", { keypad?.useModule(modules[tourIndex]) }, variant = LineButtonVariant.Secondary) }
+                        item { SidekitLineButton(stringResource(R.string.onboarding_use_module, modules[tourIndex].displayLabel()), { keypad?.useModule(modules[tourIndex]) }, variant = LineButtonVariant.Secondary) }
                         item { KeypadGuide(modules[tourIndex]) }
-                        item { SidekitText("${keypad?.module?.label ?: "T9"} is your current selection. Press a letter, digit or media key to detect yours.", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) }
+                        item { SidekitText(stringResource(R.string.onboarding_current_module, keypad?.module?.displayLabel() ?: "T9"), style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) }
                     }
                 }
-                message?.let { item { Copy("Access update", it) } }
+                message?.let { item { Copy(stringResource(R.string.onboarding_access_update), it) } }
             }
         }
     }
@@ -202,7 +219,7 @@ private fun Copy(title: String, body: String) {
 private fun LayoutChoice(list: Boolean, selected: Boolean, choose: () -> Unit) {
     SidekitTile(Modifier.fillMaxWidth().height(112.dp), color = if (list == selected) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3, onClick = choose) {
         Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SidekitText("${if (list == selected) "✓ " else ""}${if (list) "List" else "Grid"}", style = SidekitTheme.typography.headline.copy(fontSize = 30.sp, lineHeight = 36.sp))
+            SidekitText("${if (list == selected) "✓ " else ""}${stringResource(if (list) R.string.onboarding_list else R.string.onboarding_grid)}", style = SidekitTheme.typography.headline.copy(fontSize = 30.sp, lineHeight = 36.sp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(Modifier.width(90.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     repeat(if (list) 3 else 2) {
@@ -213,7 +230,7 @@ private fun LayoutChoice(list: Boolean, selected: Boolean, choose: () -> Unit) {
                         }
                     }
                 }
-                SidekitText(if (list) "App names in a simple list" else "Large tiles, easy to spot", style = SidekitTheme.typography.label.copy(fontSize = 22.sp, lineHeight = 26.sp), maxLines = 2)
+                SidekitText(stringResource(if (list) R.string.onboarding_list_body else R.string.onboarding_grid_body), style = SidekitTheme.typography.label.copy(fontSize = 22.sp, lineHeight = 26.sp), maxLines = 2)
             }
         }
     }
@@ -221,8 +238,9 @@ private fun LayoutChoice(list: Boolean, selected: Boolean, choose: () -> Unit) {
 
 internal fun orderedModules(current: KeypadModule) = listOf(current) + KeypadModule.entries.filter { it != current }
 
+@Composable
 private fun tourLabel(module: KeypadModule) = when (module) {
     KeypadModule.Qwerty -> "QWERTY"
-    KeypadModule.GamePad -> "Controller"
-    else -> module.label
+    KeypadModule.GamePad -> stringResource(R.string.onboarding_controller)
+    else -> module.displayLabel()
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Maps, and the place search, location and saved-data messages Trips, Compass and Sideweather share. -->
+<resources>
+    <string name="maps_title">Plans</string>
+    <string name="maps_search">Rechercher</string>
+    <string name="maps_go">Aller</string>
+    <string name="maps_back">Retour</string>
+    <string name="maps_location_prompt">Autorisez la position approximative pour voir où vous êtes, ou recherchez un lieu.</string>
+    <string name="maps_choose_destination_first">Recherchez et choisissez d\'abord une destination</string>
+    <string name="maps_no_navigation_app">Aucune app de navigation. Guidage à vol d\'oiseau uniquement ; chemins et obstacles non pris en compte.</string>
+    <string name="maps_zoom_in">Zoom +</string>
+    <string name="maps_zoom_out">Zoom −</string>
+    <string name="maps_centre">Centrer</string>
+    <string name="maps_choose_destination">Choisissez une destination</string>
+    <string name="maps_you_at">Vous : %1$.4f, %2$.4f</string>
+    <string name="maps_location_not_available">Votre position n\'est pas disponible</string>
+    <string name="maps_distance_bearing">%1$d m · %2$d° géographique</string>
+    <string name="maps_no_compass">Pas de capteur de boussole</string>
+    <string name="maps_calibrate">Calibrer : décrivez un huit</string>
+    <string name="maps_hold_flat">Tenez le téléphone à plat</string>
+    <string name="maps_store_read_failed">Impossible de lire les données enregistrées</string>
+    <string name="maps_store_save_failed">Échec de l\'enregistrement ; veuillez réessayer</string>
+    <string name="maps_current_location">Position actuelle</string>
+    <string name="maps_current_location_in">Position actuelle · %1$s</string>
+    <string name="maps_search_hint">Rechercher villes et communes · Open-Meteo / GeoNames</string>
+    <string name="maps_searching">Recherche…</string>
+    <string name="maps_no_places">Aucun lieu trouvé</string>
+    <string name="maps_select_place">Choisissez un lieu</string>
+    <string name="maps_search_unavailable">Recherche indisponible. Vérifiez votre connexion et réessayez.</string>
+    <string name="maps_find_place">Trouver un lieu</string>
+    <string name="maps_town_or_city">Ville ou commune</string>
+    <string name="maps_location_denied">Position refusée. Vous pouvez toujours rechercher un lieu.</string>
+    <string name="maps_finding_location">Localisation…</string>
+    <string name="maps_precise_location">Position précise</string>
+    <string name="maps_approximate_location">Position approximative</string>
+    <string name="maps_location_unavailable">Position indisponible. Activez la position précise ou recherchez un lieu.</string>
+    <string name="maps_locate">Localiser</string>
+    <string name="maps_enable_precise">Activer précise</string>
+    <string name="maps_allow">Autoriser</string>
+    <string name="maps_tiles_missing">Certaines tuiles indisponibles · position et recherche fonctionnent</string>
+    <string name="maps_panning">Déplacement · le pavé directionnel bouge la carte ; OK ou Retour pour arrêter</string>
+    <string name="maps_map_ready">Carte prête · faites glisser, ou OK pour déplacer au pavé directionnel ; Options pour zoomer</string>
+    <string name="maps_osm_attribution">© contributeurs d\'OpenStreetMap</string>
+    <string name="maps_preview_description">Carte : itinéraire à pied de votre position à Central Station</string>
+    <string name="maps_you">Vous</string>
+</resources>

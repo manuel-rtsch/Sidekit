@@ -48,6 +48,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -59,6 +60,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.Access
 import hrln.interactive.sidekit.apps.media.PermissionRationale
 import hrln.interactive.sidekit.apps.media.formatDuration
@@ -108,20 +110,20 @@ fun MusicHomeScreen(
     onNewPlaylist: () -> Unit = {}
 ) {
     SidekitScaffold(
-        title = "Music",
+        title = stringResource(R.string.music_title),
         actions = listOf(
-            SideAction("nowPlaying", square = true, contentDescription = "Now Playing", artKey = artId, art = { AlbumArt(SMALL_ART, artUri) }, onClick = onNowPlaying),
-            SideAction("search", "Search", SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
+            SideAction("nowPlaying", square = true, contentDescription = stringResource(R.string.music_now_playing), artKey = artId, art = { AlbumArt(SMALL_ART, artUri) }, onClick = onNowPlaying),
+            SideAction("search", stringResource(R.string.music_search), SidekitIcon.Search, motion = ActionMotion.Forward, onClick = onSearch)
         ),
-        options = listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = onNewPlaylist))
+        options = listOf(SideAction("new", stringResource(R.string.music_new_playlist), SidekitIcon.Add, onClick = onNewPlaylist))
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item(key = "tiles") {
                 SidekitItemRow(Modifier.listFade(listState, 0)) {
-                    IconTile(SidekitIcon.QueueMusic, "Playlists", onPlaylists)
-                    IconTile(SidekitIcon.Album, "Albums", onAlbums)
-                    IconTile(SidekitIcon.Artist, "Artists", onArtists)
+                    IconTile(SidekitIcon.QueueMusic, stringResource(R.string.music_playlists), onPlaylists)
+                    IconTile(SidekitIcon.Album, stringResource(R.string.music_albums), onAlbums)
+                    IconTile(SidekitIcon.Artist, stringResource(R.string.music_artists), onArtists)
                 }
             }
             libraryRows(items, listState, 1, actions)
@@ -137,10 +139,11 @@ fun MusicLibraryListScreen(
     onBack: () -> Unit,
     onNewPlaylist: (() -> Unit)? = null
 ) {
+    val newPlaylist = stringResource(R.string.music_new_playlist)
     SidekitScaffold(
         title = title,
         actions = backToMusic(onBack),
-        options = onNewPlaylist?.let { listOf(SideAction("new", "New playlist", SidekitIcon.Add, onClick = it)) }.orEmpty()
+        options = onNewPlaylist?.let { listOf(SideAction("new", newPlaylist, SidekitIcon.Add, onClick = it)) }.orEmpty()
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) { libraryRows(items, listState, 0, actions) }
@@ -155,9 +158,9 @@ fun AlbumScreen(album: Album, tracks: List<Track>, onArtist: () -> Unit, onPlay:
             item(key = "tiles") {
                 SidekitItemRow(Modifier.listFade(listState, 0)) {
                     SidekitTile(Modifier.weight(1f)) { AlbumArt(SMALL_ART, album.artUri) }
-                    IconTile(SidekitIcon.Artist, "Artist", onArtist)
-                    IconTile(SidekitIcon.Bookmark, "Save", onBookmark)
-                    IconTile(SidekitIcon.PlayArrow, "Play", onPlay, PlayTileColour.Light)
+                    IconTile(SidekitIcon.Artist, stringResource(R.string.music_artist), onArtist)
+                    IconTile(SidekitIcon.Bookmark, stringResource(R.string.music_save), onBookmark)
+                    IconTile(SidekitIcon.PlayArrow, stringResource(R.string.music_play), onPlay, PlayTileColour.Light)
                 }
             }
             itemsIndexed(tracks, key = { _, t -> t.id }) { index, track ->
@@ -173,7 +176,7 @@ fun ArtistScreen(artist: Artist, albums: List<Album>, onPlay: () -> Unit, onAlbu
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item(key = "tiles") {
-                SidekitItemRow(Modifier.listFade(listState, 0)) { IconTile(SidekitIcon.PlayArrow, "Play", onPlay, PlayTileColour.Light) }
+                SidekitItemRow(Modifier.listFade(listState, 0)) { IconTile(SidekitIcon.PlayArrow, stringResource(R.string.music_play), onPlay, PlayTileColour.Light) }
             }
             libraryRows(albums.map(LibraryItem::AlbumItem), listState, 1, MusicActions(openAlbum = onAlbum))
         }
@@ -206,41 +209,45 @@ fun NowPlayingScreen(
     val gap = SidekitTheme.spacing.itemOuterGap
     // Back plus the track's destinations live in the action bar, so the body has room for the art
     // and one row of full-size playback controls.
+    val backLabel = stringResource(R.string.music_back_to_music)
+    val albumLabel = stringResource(R.string.music_album)
+    val artistLabel = stringResource(R.string.music_artist)
+    val saveLabel = stringResource(R.string.music_save)
     // An empty queue keeps Back only: Album, Artist and Save would be dead buttons without a track.
-    val actions = remember(track, onBack, onAlbum, onArtist, onBookmark) {
+    val actions = remember(track, onBack, onAlbum, onArtist, onBookmark, backLabel, albumLabel, artistLabel, saveLabel) {
         buildList {
-            add(SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back to Music", onBack, motion = ActionMotion.Back))
+            add(SideAction.square("back", SidekitIcon.ArrowLeftAlt, backLabel, onBack, motion = ActionMotion.Back))
             if (track != null) {
-                add(SideAction("album", icon = SidekitIcon.Album, contentDescription = "Album", onClick = onAlbum))
-                add(SideAction("artist", icon = SidekitIcon.Artist, contentDescription = "Artist", onClick = onArtist))
-                add(SideAction("save", icon = SidekitIcon.Bookmark, contentDescription = "Save", onClick = onBookmark))
+                add(SideAction("album", icon = SidekitIcon.Album, contentDescription = albumLabel, onClick = onAlbum))
+                add(SideAction("artist", icon = SidekitIcon.Artist, contentDescription = artistLabel, onClick = onArtist))
+                add(SideAction("save", icon = SidekitIcon.Bookmark, contentDescription = saveLabel, onClick = onBookmark))
             }
         }
     }
-    val shuffle = playback.queue.shuffle
-    val repeat = playback.queue.repeat
-    val options = remember(shuffle, repeat, onShuffle, onRepeat) {
+    val shuffleLabel = stringResource(if (playback.queue.shuffle) R.string.music_shuffle_on else R.string.music_shuffle_off)
+    val repeatLabel = stringResource(playback.queue.repeat.label)
+    val options = remember(shuffleLabel, repeatLabel, onShuffle, onRepeat) {
         listOf(
-            SideAction("shuffle", if (shuffle) "Shuffle: on" else "Shuffle: off", SidekitIcon.Shuffle, onClick = onShuffle),
-            SideAction("repeat", "Repeat: ${repeat.name.lowercase()}", SidekitIcon.Undo, onClick = onRepeat)
+            SideAction("shuffle", shuffleLabel, SidekitIcon.Shuffle, onClick = onShuffle),
+            SideAction("repeat", repeatLabel, SidekitIcon.Undo, onClick = onRepeat)
         )
     }
     val artUri = remember(track?.albumId) { track?.let { albumArtUri(it.albumId) } }
-    SidekitScaffold(title = "Now Playing", actions = actions, options = options) { padding ->
+    SidekitScaffold(title = stringResource(R.string.music_now_playing), actions = actions, options = options) { padding ->
         Column(Modifier.fillMaxSize().padding(padding), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(gap)) {
             // The art takes whatever height the text, seek row and controls leave, as a square.
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 AlbumArt(minOf(maxWidth, maxHeight), artUri, SidekitTheme.shapes.item, false)
             }
-            SidekitText(track?.title ?: "Nothing playing", Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2)
+            SidekitText(track?.title ?: stringResource(R.string.music_nothing_playing), Modifier.fillMaxWidth(), textAlign = TextAlign.Center, maxLines = 2)
             SidekitText(track?.artist.orEmpty(), style = SidekitTheme.typography.label, color = SidekitTheme.colors.surfaceA6, maxLines = 1)
             MusicSeek(position, playback.durationMs.takeIf { it > 0 } ?: track?.durationMs ?: 0L, onSeek)
             // Nothing playing shows no transport: the three tiles would only be dead buttons.
             if (track != null) {
                 SidekitItemRow {
-                    IconTile(SidekitIcon.SkipPrevious, "Previous", onPrevious)
-                    IconTile(if (playback.isPlaying) SidekitIcon.Pause else SidekitIcon.PlayArrow, if (playback.isPlaying) "Pause" else "Play", onPlayPause, PlayTileColour.Strong)
-                    IconTile(SidekitIcon.SkipNext, "Next", onNext)
+                    IconTile(SidekitIcon.SkipPrevious, stringResource(R.string.music_previous), onPrevious)
+                    IconTile(if (playback.isPlaying) SidekitIcon.Pause else SidekitIcon.PlayArrow, stringResource(if (playback.isPlaying) R.string.music_pause else R.string.music_play), onPlayPause, PlayTileColour.Strong)
+                    IconTile(SidekitIcon.SkipNext, stringResource(R.string.music_next), onNext)
                 }
             }
         }
@@ -337,8 +344,8 @@ fun MusicSearchScreen(query: String, results: List<LibraryItem>, onQueryChange: 
 
 @Composable
 fun MusicPermissionScreen(access: Access, onBack: () -> Unit) {
-    SidekitScaffold(title = "Music", actions = backToMusic(onBack)) { padding ->
-        PermissionRationale("Play your music", "Music reads the songs saved on this phone. Playback and your playlists stay on the device.", access, padding)
+    SidekitScaffold(title = stringResource(R.string.music_title), actions = backToMusic(onBack)) { padding ->
+        PermissionRationale(stringResource(R.string.music_permission_title), stringResource(R.string.music_permission_reason), access, padding)
     }
 }
 
@@ -389,9 +396,10 @@ private fun LibraryItem.icon() = when (this) {
 
 @Composable
 private fun AlbumArt(size: Dp, uri: Uri? = null, shape: RoundedCornerShape = SidekitTheme.shapes.control, bordered: Boolean = true) {
+    val description = stringResource(R.string.music_album_art)
     Box(
         Modifier.size(size).clip(shape).background(SidekitTheme.colors.surfaceA2).then(if (bordered) Modifier.border(1.dp, SidekitTheme.colors.light, shape) else Modifier).semantics {
-            contentDescription = "Album art"
+            contentDescription = description
             role = Role.Image
         }
     ) {
@@ -399,13 +407,15 @@ private fun AlbumArt(size: Dp, uri: Uri? = null, shape: RoundedCornerShape = Sid
     }
 }
 
-private fun backToMusic(onBack: () -> Unit) = listOf(SideAction.back("back", "Music", onBack))
+@Composable
+private fun backToMusic(onBack: () -> Unit) = listOf(SideAction.back("back", stringResource(R.string.music_title), onBack))
 
 @Composable
 private fun SearchHeader(query: String, onQueryChange: (String) -> Unit, focusRequester: FocusRequester) {
     val spacing = SidekitTheme.spacing
+    val description = stringResource(R.string.music_search_description)
     Box(Modifier.fillMaxWidth().height(spacing.headerHeight).padding(horizontal = spacing.itemPadding).padding(top = spacing.headerPaddingTop)) {
-        SidekitTextField(query, onQueryChange, Modifier.fillMaxWidth().semantics { contentDescription = "Search music" }, textStyle = SidekitTheme.typography.title, placeholder = "Search here", focusRequester = focusRequester, focusOnKeypad = true, singleLine = true, autoFocus = true)
+        SidekitTextField(query, onQueryChange, Modifier.fillMaxWidth().semantics { contentDescription = description }, textStyle = SidekitTheme.typography.title, placeholder = stringResource(R.string.music_search_placeholder), focusRequester = focusRequester, focusOnKeypad = true, singleLine = true, autoFocus = true)
     }
 }
 

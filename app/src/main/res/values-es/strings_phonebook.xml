@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phonebook_title">Agenda</string>
+    <string name="phonebook_clear">Borrar</string>
+    <string name="phonebook_clear_cd">Borrar número</string>
+    <string name="phonebook_call">Llamar</string>
+    <string name="phonebook_call_cd">Llamar a %1$s</string>
+    <string name="phonebook_allow">Permitir</string>
+    <string name="phonebook_allow_contacts_cd">Permitir contactos</string>
+    <string name="phonebook_dial">Marcar</string>
+    <string name="phonebook_dial_pad">Teclado</string>
+    <string name="phonebook_calls">Llamadas</string>
+    <string name="phonebook_recent_calls_cd">Llamadas recientes</string>
+    <string name="phonebook_recents">Recientes</string>
+    <string name="phonebook_info_permission">La agenda necesita tus contactos para mostrarlos y buscarlos con el teclado. Aún puedes marcar un número.</string>
+    <string name="phonebook_no_match">Ningún contacto coincide</string>
+    <string name="phonebook_empty">Aún no hay contactos con número</string>
+    <string name="phonebook_back">Atrás</string>
+    <string name="phonebook_text">SMS</string>
+    <string name="phonebook_message_cd">Enviar mensaje a %1$s</string>
+    <string name="phonebook_allow_call_log_cd">Permitir registro de llamadas</string>
+    <string name="phonebook_info_call_log">Recientes necesita tu registro de llamadas para mostrar las llamadas hechas y perdidas.</string>
+    <string name="phonebook_no_calls">Aún no hay llamadas</string>
+    <string name="phonebook_unknown">Desconocido</string>
+    <string name="phonebook_delete_digit">Borrar dígito</string>
+    <string name="phonebook_text_number">Enviar SMS a este número</string>
+    <string name="phonebook_enter_number">Introduce un número</string>
+    <string name="phonebook_key_cd">Tecla %1$s</string>
+    <string name="phonebook_call_incoming">Entrante</string>
+    <string name="phonebook_call_outgoing">Saliente</string>
+    <string name="phonebook_call_missed">Perdida</string>
+    <string name="phonebook_call_declined">Rechazada</string>
+    <string name="phonebook_call_blocked">Bloqueada</string>
+    <string name="phonebook_label_mobile">Móvil</string>
+    <string name="phonebook_label_home">Casa</string>
+    <string name="phonebook_label_work">Trabajo</string>
+    <string name="phonebook_label_main">Principal</string>
+    <string name="phonebook_label_phone">Teléfono</string>
+    <string name="phonebook_system_dialer">Marcador del sistema</string>
+    <string name="phonebook_call_permission">Permite el acceso al teléfono para llamar a %1$s. También puedes usar el marcador del sistema desde Opciones.</string>
+</resources>

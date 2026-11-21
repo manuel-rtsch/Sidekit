@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vault: private notes behind the device lock. -->
+<resources>
+    <string name="vault_title">Coffre</string>
+    <string name="vault_needs_lock">Définissez un verrouillage de l’écran dans les paramètres Android avant d’utiliser le Coffre.</string>
+    <string name="vault_unlock_title">Déverrouiller le Coffre</string>
+    <string name="vault_unlock_subtitle">Notes privées · se verrouille après 55 secondes</string>
+    <string name="vault_working">En cours…</string>
+    <string name="vault_home">Accueil</string>
+    <string name="vault_unlock">Déverrouiller</string>
+    <string name="vault_keep_editing">Continuer</string>
+    <string name="vault_discard">Abandonner</string>
+    <string name="vault_notes">Notes</string>
+    <string name="vault_lock">Verrouiller</string>
+    <string name="vault_new_note">Nouvelle note</string>
+    <string name="vault_intro">Protégé par le verrouillage de l’appareil. Enregistrez avant de quitter : le Coffre se verrouille après 55 secondes ou dès que vous le quittez. Les modifications non enregistrées sont perdues. Le clavier privé utilise abc sans enregistrer les mots appris.</string>
+    <string name="vault_empty">Aucune note privée pour l’instant</string>
+    <string name="vault_placeholder">Note privée…</string>
+    <string name="vault_untitled">Sans titre</string>
+    <string name="vault_cannot_unlock">Déverrouillage impossible : %1$s. Les données chiffrées ont été conservées.</string>
+    <string name="vault_type_first">Saisissez une note avant d’enregistrer.</string>
+    <string name="vault_saved">Enregistrée chiffrée</string>
+    <string name="vault_not_saved">Non enregistrée : %1$s. Déverrouillez à nouveau si l’authentification a expiré.</string>
+    <string name="vault_not_saved_too_large">Non enregistrée : la note est trop volumineuse (1 Mo maximum).</string>
+</resources>

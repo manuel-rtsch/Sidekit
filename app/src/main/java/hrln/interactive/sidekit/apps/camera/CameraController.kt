@@ -21,11 +21,13 @@ import android.provider.MediaStore
 import android.view.Surface
 import android.view.TextureView
 import androidx.annotation.RequiresPermission
+import androidx.annotation.StringRes
+import hrln.interactive.sidekit.R
+import java.io.IOException
+import java.util.concurrent.Executors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.io.IOException
-import java.util.concurrent.Executors
 
 /**
  * Platform Camera2 keeps Camera dependency-free: CameraX would add camera-core, camera-camera2,
@@ -65,12 +67,18 @@ class CameraController(private val context: Context) {
     /** Camera and recorder are closed synchronously on STOP; no preview survives in the background. */
     fun stop() {
         if (_state.value.recording) stopRecording()
-        session?.close(); session = null
-        device?.close(); device = null
-        reader?.close(); reader = null
-        recorder?.release(); recorder = null
+        session?.close()
+        session = null
+        device?.close()
+        device = null
+        reader?.close()
+        reader = null
+        recorder?.release()
+        recorder = null
         texture = null
-        thread?.quitSafely(); thread = null; handler = null
+        thread?.quitSafely()
+        thread = null
+        handler = null
     }
 
     @SuppressLint("MissingPermission")
@@ -78,7 +86,10 @@ class CameraController(private val context: Context) {
         if (device != null) return
         val id = manager.cameraIdList.firstOrNull {
             manager.getCameraCharacteristics(it).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
-        } ?: manager.cameraIdList.firstOrNull() ?: run { fail("No camera available"); return }
+        } ?: manager.cameraIdList.firstOrNull() ?: run {
+            fail(R.string.camera_error_no_camera)
+            return
+        }
         cameraId = id
         sensorOrientation = manager.getCameraCharacteristics(id).get(CameraCharacteristics.SENSOR_ORIENTATION) ?: 90
         surfaceTexture.setDefaultBufferSize(1280, 720)
@@ -94,12 +105,28 @@ class CameraController(private val context: Context) {
             }, handler)
         }
         try {
-            manager.openCamera(id, executor, object : CameraDevice.StateCallback() {
-                override fun onOpened(camera: CameraDevice) { device = camera; preview() }
-                override fun onDisconnected(camera: CameraDevice) { camera.close(); device = null }
-                override fun onError(camera: CameraDevice, error: Int) { camera.close(); device = null; fail("Camera unavailable") }
-            })
-        } catch (e: Exception) { fail(e.message ?: "Camera unavailable") }
+            manager.openCamera(
+                id,
+                executor,
+                object : CameraDevice.StateCallback() {
+                    override fun onOpened(camera: CameraDevice) {
+                        device = camera
+                        preview()
+                    }
+                    override fun onDisconnected(camera: CameraDevice) {
+                        camera.close()
+                        device = null
+                    }
+                    override fun onError(camera: CameraDevice, error: Int) {
+                        camera.close()
+                        device = null
+                        fail(R.string.camera_error_unavailable)
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            fail(e.message ?: context.getString(R.string.camera_error_unavailable))
+        }
     }
 
     private fun preview() {
@@ -115,19 +142,25 @@ class CameraController(private val context: Context) {
     private fun createSession(surfaces: List<Surface>, configure: (CaptureRequest.Builder) -> Unit) {
         val camera = device ?: return
         session?.close()
-        camera.createCaptureSession(surfaces, object : CameraCaptureSession.StateCallback() {
-            override fun onConfigured(capture: CameraCaptureSession) {
-                session = capture
-                try {
-                    val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
-                        set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-                        configure(this)
-                    }.build()
-                    capture.setRepeatingRequest(request, null, handler)
-                } catch (e: Exception) { fail(e.message ?: "Camera unavailable") }
-            }
-            override fun onConfigureFailed(session: CameraCaptureSession) = fail("Couldn't start camera")
-        }, handler)
+        camera.createCaptureSession(
+            surfaces,
+            object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(capture: CameraCaptureSession) {
+                    session = capture
+                    try {
+                        val request = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
+                            set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+                            configure(this)
+                        }.build()
+                        capture.setRepeatingRequest(request, null, handler)
+                    } catch (e: Exception) {
+                        fail(e.message ?: context.getString(R.string.camera_error_unavailable))
+                    }
+                }
+                override fun onConfigureFailed(session: CameraCaptureSession) = fail(R.string.camera_error_start)
+            },
+            handler
+        )
     }
 
     fun toggleFlash() {
@@ -150,12 +183,20 @@ class CameraController(private val context: Context) {
                 set(CaptureRequest.JPEG_ORIENTATION, sensorOrientation)
                 applyFlash(this)
             }.build()
-            capture.capture(request, object : CameraCaptureSession.CaptureCallback() {
-                override fun onCaptureFailed(session: CameraCaptureSession, request: CaptureRequest, failure: android.hardware.camera2.CaptureFailure) {
-                    _state.value = _state.value.copy(busy = false); fail("Photo failed")
-                }
-            }, handler)
-        } catch (e: Exception) { _state.value = _state.value.copy(busy = false); fail("Photo failed") }
+            capture.capture(
+                request,
+                object : CameraCaptureSession.CaptureCallback() {
+                    override fun onCaptureFailed(session: CameraCaptureSession, request: CaptureRequest, failure: android.hardware.camera2.CaptureFailure) {
+                        _state.value = _state.value.copy(busy = false)
+                        fail(R.string.camera_error_photo)
+                    }
+                },
+                handler
+            )
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(busy = false)
+            fail(R.string.camera_error_photo)
+        }
     }
 
     private fun savePhoto(bytes: ByteArray) {
@@ -170,18 +211,21 @@ class CameraController(private val context: Context) {
         try {
             if (uri == null) throw IOException("Insert failed")
             resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: throw IOException("Write failed")
-            values.clear(); values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
             _state.value = _state.value.copy(busy = false, lastCapture = uri, error = null)
         } catch (e: Exception) {
             uri?.let { resolver.delete(it, null, null) }
             _state.value = _state.value.copy(busy = false)
-            fail("Couldn't save photo")
+            fail(R.string.camera_error_save_photo)
         }
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    fun toggleRecording() { if (_state.value.recording) stopRecording() else startRecording() }
+    fun toggleRecording() {
+        if (_state.value.recording) stopRecording() else startRecording()
+    }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startRecording() {
@@ -193,7 +237,7 @@ class CameraController(private val context: Context) {
             put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/SideKit")
             put(MediaStore.Video.Media.IS_PENDING, 1)
         }
-        val uri = context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values) ?: return fail("Couldn't create video")
+        val uri = context.contentResolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values) ?: return fail(R.string.camera_error_create_video)
         val mediaRecorder = MediaRecorder()
         try {
             val fd = context.contentResolver.openFileDescriptor(uri, "rw") ?: throw IOException("Open failed")
@@ -211,10 +255,13 @@ class CameraController(private val context: Context) {
                 prepare()
             }
             fd.close()
-            recorder = mediaRecorder; recordingUri = uri; recordingValues = values
+            recorder = mediaRecorder
+            recordingUri = uri
+            recordingValues = values
             val previewSurface = Surface(view.surfaceTexture)
             createSession(listOf(previewSurface, mediaRecorder.surface)) { request ->
-                request.addTarget(previewSurface); request.addTarget(mediaRecorder.surface)
+                request.addTarget(previewSurface)
+                request.addTarget(mediaRecorder.surface)
             }
             // Start after the recorder's surface is part of an active session.
             handler?.postDelayed({
@@ -222,45 +269,70 @@ class CameraController(private val context: Context) {
                     mediaRecorder.start()
                     _state.value = _state.value.copy(recording = true, elapsedSeconds = 0, error = null)
                     startTimer()
-                } catch (e: Exception) { abortRecording(uri) }
+                } catch (e: Exception) {
+                    abortRecording(uri)
+                }
             }, 150)
         } catch (e: Exception) {
-            mediaRecorder.release(); recorder = null
+            mediaRecorder.release()
+            recorder = null
             context.contentResolver.delete(uri, null, null)
-            fail("Couldn't record video")
+            fail(R.string.camera_error_record_video)
         }
     }
 
     private fun stopRecording() {
-        timer?.cancel(); timer = null
-        try { recorder?.stop() } catch (_: Exception) { }
-        recorder?.reset(); recorder?.release(); recorder = null
+        timer?.cancel()
+        timer = null
+        try {
+            recorder?.stop()
+        } catch (_: Exception) { }
+        recorder?.reset()
+        recorder?.release()
+        recorder = null
         val uri = recordingUri
         if (uri != null) {
             val values = recordingValues ?: ContentValues()
-            values.clear(); values.put(MediaStore.Video.Media.IS_PENDING, 0)
+            values.clear()
+            values.put(MediaStore.Video.Media.IS_PENDING, 0)
             context.contentResolver.update(uri, values, null, null)
             _state.value = _state.value.copy(recording = false, elapsedSeconds = 0, lastCapture = uri)
-        } else _state.value = _state.value.copy(recording = false, elapsedSeconds = 0)
-        recordingUri = null; recordingValues = null
+        } else {
+            _state.value = _state.value.copy(recording = false, elapsedSeconds = 0)
+        }
+        recordingUri = null
+        recordingValues = null
         preview()
     }
 
     private fun abortRecording(uri: Uri) {
-        recorder?.release(); recorder = null
+        recorder?.release()
+        recorder = null
         context.contentResolver.delete(uri, null, null)
-        recordingUri = null; recordingValues = null
+        recordingUri = null
+        recordingValues = null
         _state.value = _state.value.copy(recording = false)
-        fail("Couldn't record video"); preview()
+        fail(R.string.camera_error_record_video)
+        preview()
     }
 
     private fun startTimer() {
         timer = java.util.Timer("CameraTimer", true).apply {
-            scheduleAtFixedRate(object : java.util.TimerTask() {
-                override fun run() { if (_state.value.recording) _state.value = _state.value.tick() }
-            }, 1000, 1000)
+            scheduleAtFixedRate(
+                object : java.util.TimerTask() {
+                    override fun run() {
+                        if (_state.value.recording) _state.value = _state.value.tick()
+                    }
+                },
+                1000,
+                1000
+            )
         }
     }
 
-    private fun fail(message: String) { _state.value = _state.value.copy(busy = false, error = message) }
+    private fun fail(message: String) {
+        _state.value = _state.value.copy(busy = false, error = message)
+    }
+
+    private fun fail(@StringRes message: Int) = fail(context.getString(message))
 }

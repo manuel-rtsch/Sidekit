@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidekit design library: action bar defaults, case colours, keypad modules and keys, typing. Names start with sk_ (the library's resourcePrefix). -->
+<resources>
+    <!-- Default action-bar labels (SideAction.save/send/cancel/undo/delete) and the Options bar. -->
+    <string name="sk_sidekit_action_save">Guardar</string>
+    <string name="sk_sidekit_action_send">Enviar</string>
+    <string name="sk_sidekit_action_cancel">Cancelar</string>
+    <string name="sk_sidekit_action_undo">Deshacer</string>
+    <string name="sk_sidekit_action_delete">Eliminar</string>
+    <string name="sk_sidekit_options_none">No hay opciones</string>
+    <string name="sk_sidekit_options_close">Cerrar opciones</string>
+    <!-- Sidephone case colours. -->
+    <string name="sk_sidekit_colour_cloud">Nube</string>
+    <string name="sk_sidekit_colour_lime">Lima</string>
+    <string name="sk_sidekit_colour_orange">Naranja</string>
+    <string name="sk_sidekit_colour_blue">Azul</string>
+    <string name="sk_sidekit_colour_pink">Rosa</string>
+    <string name="sk_sidekit_colour_sage">Salvia</string>
+    <string name="sk_sidekit_colour_lavender">Lavanda</string>
+    <!-- Keypad modules. T9 and Sundial are product names. -->
+    <string name="sk_sidekit_keypad_qwerty">Mini QWERTY</string>
+    <string name="sk_sidekit_keypad_gamepad">Mando</string>
+    <!-- Keys, as listed in keypad mapping. Short: they sit in a list row. -->
+    <string name="sk_sidekit_key_scan_code">Código de escaneo %1$d</string>
+    <string name="sk_sidekit_key_code">Tecla %1$d</string>
+    <string name="sk_sidekit_key_back">Atrás</string>
+    <string name="sk_sidekit_key_options">Opciones</string>
+    <string name="sk_sidekit_key_up">Arriba</string>
+    <string name="sk_sidekit_key_down">Abajo</string>
+    <string name="sk_sidekit_key_left">Izquierda</string>
+    <string name="sk_sidekit_key_right">Derecha</string>
+    <string name="sk_sidekit_key_delete">Borrar</string>
+    <string name="sk_sidekit_key_space">Espacio</string>
+    <string name="sk_sidekit_key_enter">Intro</string>
+    <string name="sk_sidekit_key_top">Arriba</string>
+    <string name="sk_sidekit_key_right_edge">Borde derecho</string>
+    <string name="sk_sidekit_key_bottom">Abajo</string>
+    <string name="sk_sidekit_key_left_edge">Borde izquierdo</string>
+    <string name="sk_sidekit_key_centre">Centro</string>
+    <string name="sk_sidekit_key_corner_left">Esquina ←</string>
+    <string name="sk_sidekit_key_corner_right">Esquina →</string>
+    <string name="sk_sidekit_key_home">Inicio</string>
+    <string name="sk_sidekit_key_shoulder_left">Gatillo izquierdo</string>
+    <string name="sk_sidekit_key_shoulder_right">Gatillo derecho</string>
+    <string name="sk_sidekit_key_shoulder">Gatillo</string>
+    <!-- What each key does, shown under the key's name. -->
+    <string name="sk_sidekit_hint_back">Volver a la pantalla anterior</string>
+    <string name="sk_sidekit_hint_options">Mostrar más acciones</string>
+    <string name="sk_sidekit_hint_move_up">Mover arriba</string>
+    <string name="sk_sidekit_hint_move_down">Mover abajo</string>
+    <string name="sk_sidekit_hint_move_right">Mover a la derecha</string>
+    <string name="sk_sidekit_hint_move_left_cursor">Mover a la izquierda; cursor</string>
+    <string name="sk_sidekit_hint_move_right_cursor">Mover a la derecha; cursor</string>
+    <string name="sk_sidekit_hint_select_or_suggestion">Seleccionar o aceptar una sugerencia</string>
+    <string name="sk_sidekit_hint_punctuation_symbols">Puntuación y símbolos</string>
+    <string name="sk_sidekit_hint_case_numbers">Mayúsculas; mantén para números</string>
+    <string name="sk_sidekit_hint_delete">Borrar el carácter anterior</string>
+    <string name="sk_sidekit_hint_hold_for">Mantén para %1$s</string>
+    <string name="sk_sidekit_hint_new_line">Nueva línea o aceptar una sugerencia</string>
+    <string name="sk_sidekit_hint_next_suggestion">Siguiente sugerencia</string>
+    <string name="sk_sidekit_hint_symbols">Símbolos</string>
+    <string name="sk_sidekit_hint_next_track">Pista siguiente</string>
+    <string name="sk_sidekit_hint_previous_track">Pista anterior</string>
+    <string name="sk_sidekit_hint_play_pause">Reproducir o pausar; mantén para Confirmar</string>
+    <string name="sk_sidekit_hint_corner_left">Mover a la izquierda; mantén para Opciones</string>
+    <string name="sk_sidekit_hint_tab">Siguiente control; mantén para Atrás</string>
+    <string name="sk_sidekit_hint_enter_sundial">Seleccionar; mantén para Opciones (algunas versiones envían Play/Pausa)</string>
+    <string name="sk_sidekit_hint_confirm">Confirmar</string>
+    <string name="sk_sidekit_hint_back_in_games">Atrás en juegos</string>
+    <string name="sk_sidekit_hint_button_x">Opciones; mantén para la barra de acciones</string>
+    <string name="sk_sidekit_hint_button_y">Ir a la barra de acciones</string>
+    <string name="sk_sidekit_hint_open_search">Abrir búsqueda</string>
+    <string name="sk_sidekit_hint_go_home">Ir a la pantalla de inicio</string>
+    <string name="sk_sidekit_hint_digit_0">Espacio; mantén para 0</string>
+    <string name="sk_sidekit_hint_digit_1">Puntuación; mantén para 1</string>
+    <string name="sk_sidekit_hint_digit">Letras; mantén para %1$d</string>
+    <!-- Dictation, shown as a toast. -->
+    <string name="sk_sidekit_dictation_not_installed">El reconocimiento de voz no está instalado en este teléfono</string>
+    <string name="sk_sidekit_dictation_start_failed">No se pudo iniciar el dictado</string>
+    <string name="sk_sidekit_dictation_busy">El dictado está ocupado. Inténtalo de nuevo.</string>
+    <string name="sk_sidekit_dictation_language">El dictado no está disponible en este idioma</string>
+    <string name="sk_sidekit_dictation_silence">No se ha oído nada</string>
+    <string name="sk_sidekit_dictation_microphone">Permite el micrófono para dictar</string>
+    <string name="sk_sidekit_dictation_offline">El dictado necesita conexión</string>
+    <string name="sk_sidekit_dictation_retry">No se ha entendido. Inténtalo de nuevo.</string>
+    <!-- Keypad typing bar. -->
+    <string name="sk_sidekit_input_mode">Modo de entrada %1$s</string>
+    <string name="sk_sidekit_suggestion">Sugerencia %1$s</string>
+    <string name="sk_sidekit_dictate">Dictar</string>
+    <string name="sk_sidekit_dictate_stop">Dejar de dictar</string>
+    <string name="sk_sidekit_done">Listo</string>
+    <string name="sk_sidekit_done_typing">Terminar de escribir</string>
+</resources>

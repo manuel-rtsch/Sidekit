@@ -13,6 +13,7 @@ import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.sideport.SideportLinks
 import hrln.interactive.sidekit.apps.sideport.interpret.Block
 import hrln.interactive.sidekit.apps.sideport.interpret.ButtonBlock
@@ -47,7 +48,7 @@ class ProjectionController(
     app: PortedApp,
     private val recipes: RecipeBook,
     private val homePackages: Set<String>,
-    private val onEnded: (ProjectionController) -> Unit,
+    private val onEnded: (ProjectionController) -> Unit
 ) : ProjectionActions {
     val state = ProjectionState(app)
     private val main = Handler(Looper.getMainLooper())
@@ -75,7 +76,9 @@ class ProjectionController(
 
     // Written on main, read on the worker.
     @Volatile private var screenName: String? = null
+
     @Volatile private var screenPackage: String? = null
+
     @Volatile private var projecting = app.mode == PortMode.Projected
 
     private val launchTimeout = Runnable {
@@ -103,7 +106,9 @@ class ProjectionController(
                 }
                 requestRead(STATE_READ_DELAY_MS)
             }
+
             AccessibilityEvent.TYPE_WINDOWS_CHANGED -> requestRead(STATE_READ_DELAY_MS)
+
             else -> if (pkg != service.packageName) requestRead(CONTENT_READ_DELAY_MS)
         }
     }
@@ -129,6 +134,7 @@ class ProjectionController(
                 if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) back()
                 return true
             }
+
             SystemKeys.isOptions(event) -> {
                 if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
                     overlay.keypad.finishTyping()
@@ -159,7 +165,11 @@ class ProjectionController(
     /** Reads the top app window and publishes the interpreted screen. Returns the model, if any. */
     private fun read(): ScreenModel? {
         if (ended) return null
-        val windows = try { service.windows } catch (e: RuntimeException) { return null }
+        val windows = try {
+            service.windows
+        } catch (e: RuntimeException) {
+            return null
+        }
         var imeHeight = 0
         var target: AccessibilityWindowInfo? = null
         for (window in windows.sortedByDescending { it.layer }) {
@@ -168,6 +178,7 @@ class ProjectionController(
                     val r = android.graphics.Rect().also(window::getBoundsInScreen)
                     imeHeight = r.height()
                 }
+
                 AccessibilityWindowInfo.TYPE_APPLICATION -> if (target == null) target = window
             }
         }
@@ -179,7 +190,12 @@ class ProjectionController(
         }
         // Showing the original: only watch for Sidekit coming back to the front.
         if (!projecting) {
-            main.post { if (!active) { active = true; main.removeCallbacks(launchTimeout) } }
+            main.post {
+                if (!active) {
+                    active = true
+                    main.removeCallbacks(launchTimeout)
+                }
+            }
             return null
         }
         val tree = reader.read(root) ?: return null.also { Log.d(TAG, "$pkg has nothing visible") }
@@ -242,7 +258,7 @@ class ProjectionController(
         val direct = liveHandle(block.key, long)
         val handle = direct ?: seek(block.key)?.let { liveHandle(block.key, long) }
         if (handle == null) {
-            main.post { state.notice = "That row has gone from the app." }
+            main.post { state.notice = service.getString(R.string.sideport_row_gone) }
             return@onWorker
         }
         perform(handle, if (long) AccessibilityNodeInfo.ACTION_LONG_CLICK else AccessibilityNodeInfo.ACTION_CLICK)
@@ -293,7 +309,7 @@ class ProjectionController(
         val action = if (forward) AccessibilityNodeInfo.ACTION_SCROLL_FORWARD else AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
         for (attempt in 0 until MAX_LOAD_SCROLLS) {
             val list = latest?.list ?: break
-            if (forward && !list.canScrollForward || !forward && !list.canScrollBackward) break
+            if ((forward && !list.canScrollForward) || (!forward && !list.canScrollBackward)) break
             if (reader.node(list.handle)?.performAction(action) != true) break
             SystemClock.sleep(SEEK_SETTLE_MS)
             read()
@@ -305,7 +321,7 @@ class ProjectionController(
 
     private fun perform(handle: Int, action: Int) {
         val ok = reader.node(handle)?.performAction(action) == true
-        if (!ok) main.post { state.notice = "The app didn't respond to that." }
+        if (!ok) main.post { state.notice = service.getString(R.string.sideport_no_response) }
         main.post { requestRead(ACTION_READ_DELAY_MS) }
     }
 
@@ -315,7 +331,10 @@ class ProjectionController(
 
     override fun back() {
         if (overlay.consumeBack()) return
-        if (state.inspector) { toggleInspector(); return }
+        if (state.inspector) {
+            toggleInspector()
+            return
+        }
         if (overlay.focusable) {
             // Back from a global action goes to the focused window, which is ours while a form is
             // showing: hand focus back to the app first.
@@ -349,8 +368,14 @@ class ProjectionController(
 
     override fun toggleInspector() {
         state.inspector = !state.inspector
-        if (state.inspector) worker.post { val t = latestTree; main.post { state.tree = t } }
-        else state.tree = null
+        if (state.inspector) {
+            worker.post {
+                val t = latestTree
+                main.post { state.tree = t }
+            }
+        } else {
+            state.tree = null
+        }
     }
 
     override fun exportTree() = onWorker {
@@ -364,9 +389,9 @@ class ProjectionController(
         val dir = File(service.getExternalFilesDir(null) ?: service.filesDir, "sideport/dumps").apply { mkdirs() }
         val file = File(dir, "$pkg-${System.currentTimeMillis()}.json")
         file.writeText(TreeJson.write(tree, pkg, screen).toString(1))
-        "Saved ${file.name}"
+        service.getString(R.string.sideport_saved_file, file.name)
     } catch (e: Exception) {
-        "Couldn't save: ${e.localizedMessage}"
+        service.getString(R.string.sideport_save_failed, e.localizedMessage.toString())
     }
 
     override fun openHub() {
@@ -400,7 +425,7 @@ class ProjectionController(
         val SYSTEM_KEYS = setOf(
             KeyEvent.KEYCODE_HOME, KeyEvent.KEYCODE_POWER, KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_MUTE, KeyEvent.KEYCODE_APP_SWITCH, KeyEvent.KEYCODE_CALL, KeyEvent.KEYCODE_CAMERA,
-            KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
         )
     }
 }

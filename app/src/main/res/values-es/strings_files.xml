@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files: media collections, picked folders and search. -->
+<resources>
+    <string name="files_title">Archivos</string>
+    <string name="files_browse">Explorar</string>
+    <string name="files_search">Buscar</string>
+    <string name="files_allow">Permitir</string>
+    <string name="files_allow_media">Permitir acceso a multimedia</string>
+    <string name="files_back">Atrás</string>
+    <string name="files_remove">Quitar</string>
+    <string name="files_delete">Eliminar</string>
+    <string name="files_keep">Conservar %1$s</string>
+    <string name="files_confirm_remove">Confirmar quitar %1$s</string>
+    <string name="files_confirm_delete">Confirmar eliminar %1$s</string>
+    <string name="files_remove_item">Quitar %1$s</string>
+    <string name="files_delete_item">Eliminar %1$s</string>
+    <string name="files_permission">Archivos muestra tus fotos, vídeos, música y descargas. Android pregunta una vez antes de que una app pueda verlos. Las carpetas que añadas con Explorar funcionan sin ello.</string>
+    <string name="files_needs_access">Requiere acceso</string>
+    <string name="files_folder">Carpeta</string>
+    <string name="files_on_sidephone">En el Sidephone</string>
+    <string name="files_free">%1$s libres</string>
+    <string name="files_add_folder">Añade una carpeta</string>
+    <string name="files_nothing_here">No hay nada aquí</string>
+    <string name="files_loading">Cargando…</string>
+    <string name="files_no_match">Ningún archivo coincide</string>
+    <string name="files_file_name">Nombre de archivo</string>
+    <string name="files_sort_name">Nombre</string>
+    <string name="files_sort_newest">Más recientes</string>
+    <string name="files_sort_largest">Más grandes</string>
+    <string name="files_sort_by">Ordenar por %1$s</string>
+    <string name="files_media_recent">Recientes</string>
+    <string name="files_media_documents">Documentos</string>
+    <string name="files_media_downloads">Descargas</string>
+    <string name="files_media_photos">Fotos</string>
+    <string name="files_media_videos">Vídeos</string>
+    <string name="files_media_music">Música</string>
+    <plurals name="files_count">
+        <item quantity="one">%1$d archivo</item>
+        <item quantity="many">%1$d archivos</item>
+        <item quantity="other">%1$d archivos</item>
+    </plurals>
+    <string name="files_size_bytes">%1$s B</string>
+    <string name="files_size_kb">%1$s KB</string>
+    <string name="files_size_mb">%1$s MB</string>
+    <string name="files_size_gb">%1$s GB</string>
+    <string name="files_no_picker">No hay selector de carpetas en este teléfono</string>
+    <string name="files_allow_first">Permite el acceso primero</string>
+    <string name="files_cant_delete">Este archivo no se puede eliminar aquí</string>
+    <string name="files_couldnt_delete">No se pudo eliminar %1$s</string>
+    <string name="files_deleted">%1$s eliminado</string>
+    <string name="files_no_app">Ninguna app de este teléfono abre este archivo</string>
+    <string name="files_couldnt_open">No se pudo abrir %1$s</string>
+</resources>

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -45,7 +47,7 @@ data class HealthMetric(val label: String, val value: String)
 
 data class HealthSummary(val steps: StepsToday, val metrics: List<HealthMetric>)
 
-private fun formatCount(n: Int): String = NumberFormat.getIntegerInstance(Locale.US).format(n)
+private fun formatCount(n: Int): String = NumberFormat.getIntegerInstance(Locale.getDefault()).format(n)
 
 object HealthSampleData {
     // Placeholder content from "Health / Home" (96:764).
@@ -67,8 +69,8 @@ fun NavGraphBuilder.healthGraph(nav: NavHostController) {
 @Composable
 fun HealthScreen(summary: HealthSummary, onHistory: () -> Unit = {}, onGoals: () -> Unit = {}) {
     SidekitScaffold(
-        title = "Health",
-        actions = dualArrowActions("History", "Goals", onHistory, onGoals)
+        title = stringResource(R.string.health_title),
+        actions = dualArrowActions(stringResource(R.string.health_history), stringResource(R.string.health_goals), onHistory, onGoals)
     ) { padding ->
         EverydayContent(padding) {
             StepsCard(summary.steps)
@@ -86,7 +88,7 @@ internal fun StepsCard(steps: StepsToday) {
             Modifier.padding(start = SidekitTheme.spacing.itemPadding, end = SidekitTheme.spacing.itemPadding, top = 18.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            SidekitText("Steps today", style = SidekitTheme.typography.caption)
+            SidekitText(stringResource(R.string.health_steps_today), style = SidekitTheme.typography.caption)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SidekitText(steps.stepsText, style = SidekitTheme.typography.numeric)
                 SidekitText(steps.goalText, style = SidekitTheme.typography.caption, color = colors.surfaceA6)

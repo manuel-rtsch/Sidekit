@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Web browser: page, tabs, bookmarks and history. -->
+<resources>
+    <string name="browser_title">Web browser</string>
+    <string name="browser_tabs">Tabs</string>
+    <string name="browser_search">Search</string>
+    <string name="browser_address">Address</string>
+    <string name="browser_search_or_address">Search or address</string>
+    <string name="browser_start_heading">A quieter web.</string>
+    <string name="browser_start_body">Type an address or a search with the keypad, then Done.</string>
+    <string name="browser_start_link">Search →</string>
+    <string name="browser_undo">Undo</string>
+    <string name="browser_go">Go</string>
+    <string name="browser_back_page">Back a page</string>
+    <string name="browser_forward_page">Forward a page</string>
+    <string name="browser_stop">Stop</string>
+    <string name="browser_reload">Reload</string>
+    <string name="browser_reload_page">Reload page</string>
+    <string name="browser_saved">Saved</string>
+    <string name="browser_save">Save</string>
+    <string name="browser_remove_bookmark">Remove bookmark</string>
+    <string name="browser_bookmark_page">Bookmark page</string>
+    <string name="browser_text_zoom" translatable="false">Aa %1$d%%</string>
+    <string name="browser_text_size">Text size %1$d percent</string>
+    <string name="browser_new_tab">New tab</string>
+    <string name="browser_page">Page</string>
+    <plurals name="browser_tab_count">
+        <item quantity="one">%1$d tab</item>
+        <item quantity="other">%1$d tabs</item>
+    </plurals>
+    <string name="browser_close_tab">Close %1$s</string>
+    <string name="browser_remove_item">Remove %1$s</string>
+    <string name="browser_bookmarks">Bookmarks</string>
+    <string name="browser_history">History</string>
+    <string name="browser_downloads">Downloads</string>
+    <string name="browser_no_bookmarks">No bookmarks yet. On a page, the Options key has Save.</string>
+    <string name="browser_keep_history">Keep history</string>
+    <string name="browser_clear">Clear</string>
+    <string name="browser_confirm_clear">Confirm clear history</string>
+    <string name="browser_clear_history">Clear history</string>
+    <string name="browser_history_empty">Pages you visit appear here.</string>
+    <string name="browser_bookmarked">Bookmarked</string>
+    <string name="browser_bookmark_removed">Bookmark removed</string>
+    <string name="browser_history_cleared">History cleared</string>
+    <string name="browser_page_stopped">The page stopped; reloading</string>
+    <string name="browser_no_downloads_app">No downloads app on this phone</string>
+    <string name="browser_cant_open_link">Can\'t open that link</string>
+    <string name="browser_no_app_for_link">No app for this link</string>
+    <string name="browser_download_unsupported">This download isn\'t supported</string>
+    <string name="browser_downloading">Downloading %1$s</string>
+    <string name="browser_download_failed">Couldn\'t download %1$s</string>
+</resources>

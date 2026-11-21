@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calculator. -->
+<resources>
+    <!-- Shown in the display after dividing by zero. -->
+    <string name="calculator_error">Error</string>
+    <string name="calculator_history_unreadable">History could not be read.</string>
+    <string name="calculator_history_unsaved">History could not be saved.</string>
+    <string name="calculator_history">History</string>
+    <string name="calculator_keypad_help">Keypad help</string>
+    <!-- Action bar: clears the calculation. -->
+    <string name="calculator_clear">Clear</string>
+    <string name="calculator_clear_history">Clear history</string>
+    <string name="calculator_back">Back</string>
+    <!-- Options: opens the keypad help. -->
+    <string name="calculator_keypad">Keypad</string>
+    <string name="calculator_no_calculations">No calculations yet</string>
+    <string name="calculator_help_digits">0–9 type numbers</string>
+    <string name="calculator_help_star">* multiplies · # equals</string>
+    <string name="calculator_help_delete">Delete backspaces</string>
+    <string name="calculator_help_operators">Use the operator tiles for +, −, ÷ and decimal.</string>
+    <string name="calculator_help_order">Calculations run left to right.</string>
+</resources>

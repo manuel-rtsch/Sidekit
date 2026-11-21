@@ -2,9 +2,11 @@ package hrln.interactive.sidekit.apps.music
 
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.compose.runtime.Immutable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.changes
 import kotlinx.coroutines.flow.Flow
 
@@ -34,6 +36,17 @@ data class Track(
 
 @Immutable
 data class Playlist(val id: Long, val name: String, val trackIds: List<Long>)
+
+/** Names for albums and artists the files don't name, in the UI language. */
+data class MusicLabels(val unknownAlbum: String, val unknownArtist: String, val variousArtists: String) {
+    companion object {
+        fun from(context: Context) = MusicLabels(
+            context.getString(R.string.music_unknown_album),
+            context.getString(R.string.music_unknown_artist),
+            context.getString(R.string.music_various_artists)
+        )
+    }
+}
 
 fun albumArtUri(albumId: Long): Uri = ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, albumId)
 
@@ -102,18 +115,18 @@ class MusicLibrary(
          * Builds albums and artists from track rows. Albums keep disc order (track number, then
          * title); albums and artists are sorted by name, ignoring case and a leading "The".
          */
-        fun from(tracks: List<Track>, playlists: List<Playlist> = emptyList()): MusicLibrary {
+        fun from(tracks: List<Track>, labels: MusicLabels, playlists: List<Playlist> = emptyList()): MusicLibrary {
             val byAlbum = tracks.groupBy { it.albumId }
             val albums = byAlbum.map { (id, list) ->
                 val sorted = list.sortedWith(compareBy<Track> { it.trackNumber }.thenBy { it.title.lowercase() })
                 // An album's artist is the one on most of its tracks (compilations get "Various").
                 val artists = sorted.groupingBy { it.artistId }.eachCount()
                 val main = artists.maxByOrNull { it.value }?.key ?: 0L
-                val name = if (artists.size > 1 && artists.values.max() * 2 <= sorted.size) "Various Artists" else sorted.first { it.artistId == main }.artist
-                Album(id, sorted.first().album.ifBlank { "Unknown album" }, main, sorted.map { it.id }, name)
+                val name = if (artists.size > 1 && artists.values.max() * 2 <= sorted.size) labels.variousArtists else sorted.first { it.artistId == main }.artist
+                Album(id, sorted.first().album.ifBlank { labels.unknownAlbum }, main, sorted.map { it.id }, name)
             }.sortedBy { sortKey(it.title) }
             val artists = tracks.distinctBy { it.artistId }
-                .map { Artist(it.artistId, it.artist.ifBlank { "Unknown artist" }) }
+                .map { Artist(it.artistId, it.artist.ifBlank { labels.unknownArtist }) }
                 .sortedBy { sortKey(it.name) }
             val sortedTracks = tracks.sortedBy { sortKey(it.title) }
             return MusicLibrary(artists, albums, sortedTracks, playlists)
@@ -127,9 +140,17 @@ class MusicLibrary(
 interface MusicSource {
     fun tracks(): List<Track>
     fun changes(): Flow<Unit>
+
+    /** Names for untagged albums and artists. */
+    fun labels(): MusicLabels
 }
 
-class MediaStoreMusicSource(private val resolver: ContentResolver) : MusicSource {
+class MediaStoreMusicSource(context: Context) : MusicSource {
+    private val context = context.applicationContext
+    private val resolver: ContentResolver = this.context.contentResolver
+
+    override fun labels() = MusicLabels.from(context)
+
     override fun tracks(): List<Track> {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
@@ -149,11 +170,12 @@ class MediaStoreMusicSource(private val resolver: ContentResolver) : MusicSource
             null,
             null
         )?.use { c ->
+            val untitled = context.getString(R.string.music_untitled)
             val out = ArrayList<Track>(c.count)
             while (c.moveToNext()) {
                 out += Track(
                     id = c.getLong(0),
-                    title = c.getString(1).orEmpty().ifBlank { "Untitled" },
+                    title = c.getString(1).orEmpty().ifBlank { untitled },
                     albumId = c.getLong(2),
                     artistId = c.getLong(3),
                     artist = c.getString(4).takeUnless { it == MediaStore.UNKNOWN_STRING }.orEmpty(),

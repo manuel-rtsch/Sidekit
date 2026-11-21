@@ -1,6 +1,7 @@
 package hrln.interactive.sidekit.apps.phonebook
 
 import android.content.ContentResolver
+import android.content.Context
 import android.database.ContentObserver
 import android.net.Uri
 import android.provider.CallLog
@@ -8,12 +9,13 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.util.LruCache
 import androidx.compose.runtime.Immutable
+import hrln.interactive.sidekit.R
+import java.text.Normalizer
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.channels.BufferOverflow
-import java.text.Normalizer
 
 /** One phone number of a contact. [digits] are the number's digits only (for keypad search). */
 @Immutable
@@ -21,7 +23,7 @@ data class PhoneNumber(
     val number: String,
     val label: String,
     val normalized: String? = null,
-    val primary: Boolean = false,
+    val primary: Boolean = false
 ) {
     val digits: String = number.filter(Char::isDigit)
     private val normalizedDigits: String = normalized?.filter(Char::isDigit).orEmpty()
@@ -38,7 +40,7 @@ class Contact(
     val id: Long,
     val name: String,
     val numbers: List<PhoneNumber>,
-    val starred: Boolean = false,
+    val starred: Boolean = false
 ) {
     /** T9 digits of each word of the name ("Ann Lee" -> ["266", "533"]). */
     val wordKeys: List<String> = T9Search.words(name)
@@ -49,8 +51,7 @@ class Contact(
     /** The number to call or text by default: the super-primary one, else the first. */
     val primaryNumber: PhoneNumber get() = numbers.firstOrNull { it.primary } ?: numbers.first()
 
-    override fun equals(other: Any?) =
-        other is Contact && other.id == id && other.name == name && other.numbers == numbers && other.starred == starred
+    override fun equals(other: Any?) = other is Contact && other.id == id && other.name == name && other.numbers == numbers && other.starred == starred
 
     override fun hashCode() = id.hashCode()
     override fun toString() = "Contact($id, $name)"
@@ -65,7 +66,7 @@ data class CallEntry(
     val cachedName: String?,
     val type: CallType,
     val date: Long,
-    val durationSec: Long,
+    val durationSec: Long
 )
 
 /** How a contact matched a keypad search. Lower sorts first. */
@@ -90,13 +91,11 @@ object T9Search {
     }
 
     /** Strips accents ("Zoë" -> "Zoe") so they map to their base letter's key. */
-    private fun fold(s: String): String =
-        Normalizer.normalize(s, Normalizer.Form.NFD).filter { Character.getType(it) != Character.NON_SPACING_MARK.toInt() }
+    private fun fold(s: String): String = Normalizer.normalize(s, Normalizer.Form.NFD).filter { Character.getType(it) != Character.NON_SPACING_MARK.toInt() }
 
-    fun words(name: String): List<String> =
-        fold(name).split(' ', '-', '.', ',', '\'', '(', ')').mapNotNull { w ->
-            w.mapNotNull(::key).joinToString("").ifEmpty { null }
-        }
+    fun words(name: String): List<String> = fold(name).split(' ', '-', '.', ',', '\'', '(', ')').mapNotNull { w ->
+        w.mapNotNull(::key).joinToString("").ifEmpty { null }
+    }
 
     fun match(contact: Contact, query: String): ContactMatch? {
         if (query.isEmpty()) return ContactMatch(contact, MatchKind.NamePrefix, null)
@@ -147,17 +146,24 @@ interface PhonebookSource {
 }
 
 /** [ContactsContract] and [CallLog] through the [ContentResolver]. */
-class AndroidPhonebookSource(private val resolver: ContentResolver) : PhonebookSource {
+class AndroidPhonebookSource(private val resolver: ContentResolver, private val labels: () -> PhoneLabels = { PhoneLabels() }) : PhonebookSource {
     override fun contacts(): List<Contact> {
         val projection = arrayOf(
-            Phone.CONTACT_ID, Phone.DISPLAY_NAME_PRIMARY, Phone.NUMBER, Phone.NORMALIZED_NUMBER,
-            Phone.TYPE, Phone.LABEL, Phone.STARRED, Phone.IS_SUPER_PRIMARY,
+            Phone.CONTACT_ID,
+            Phone.DISPLAY_NAME_PRIMARY,
+            Phone.NUMBER,
+            Phone.NORMALIZED_NUMBER,
+            Phone.TYPE,
+            Phone.LABEL,
+            Phone.STARRED,
+            Phone.IS_SUPER_PRIMARY
         )
         val cursor = try {
             resolver.query(Phone.CONTENT_URI, projection, null, null, "${Phone.DISPLAY_NAME_PRIMARY} COLLATE LOCALIZED ASC")
         } catch (_: SecurityException) {
             null
         } ?: return emptyList()
+        val phoneLabels = labels()
         // One row per number; fold them into contacts, keeping the provider's alphabetical order.
         val byId = LinkedHashMap<Long, Triple<String, Boolean, MutableList<PhoneNumber>>>()
         cursor.use { c ->
@@ -165,7 +171,7 @@ class AndroidPhonebookSource(private val resolver: ContentResolver) : PhonebookS
                 val id = c.getLong(0)
                 val name = c.getString(1)?.takeIf { it.isNotBlank() } ?: continue
                 val number = c.getString(2)?.takeIf { it.isNotBlank() } ?: continue
-                val label = typeLabel(c.getInt(4), c.getString(5))
+                val label = phoneLabels.forType(c.getInt(4), c.getString(5))
                 val entry = byId.getOrPut(id) { Triple(name, c.getInt(6) != 0, ArrayList()) }
                 val phone = PhoneNumber(number, label, c.getString(3), primary = c.getInt(7) != 0)
                 // The same number is often stored twice (SIM import, account sync): show it once.
@@ -200,7 +206,7 @@ class AndroidPhonebookSource(private val resolver: ContentResolver) : PhonebookS
                         else -> CallType.Other
                     },
                     date = c.getLong(4),
-                    durationSec = c.getLong(5),
+                    durationSec = c.getLong(5)
                 )
             }
         }
@@ -209,14 +215,33 @@ class AndroidPhonebookSource(private val resolver: ContentResolver) : PhonebookS
 
     override fun contactChanges(): Flow<Unit> = resolver.changes(ContactsContract.Contacts.CONTENT_URI)
     override fun callChanges(): Flow<Unit> = resolver.changes(CallLog.Calls.CONTENT_URI)
+}
 
-    private fun typeLabel(type: Int, custom: String?): String = when (type) {
-        Phone.TYPE_MOBILE -> "Mobile"
-        Phone.TYPE_HOME -> "Home"
-        Phone.TYPE_WORK, Phone.TYPE_WORK_MOBILE -> "Work"
-        Phone.TYPE_MAIN -> "Main"
-        Phone.TYPE_CUSTOM -> custom?.takeIf { it.isNotBlank() } ?: "Phone"
-        else -> "Phone"
+/** Names for a number's type. English defaults keep tests context-free. */
+data class PhoneLabels(
+    val mobile: String = "Mobile",
+    val home: String = "Home",
+    val work: String = "Work",
+    val main: String = "Main",
+    val phone: String = "Phone"
+) {
+    fun forType(type: Int, custom: String?): String = when (type) {
+        Phone.TYPE_MOBILE -> mobile
+        Phone.TYPE_HOME -> home
+        Phone.TYPE_WORK, Phone.TYPE_WORK_MOBILE -> work
+        Phone.TYPE_MAIN -> main
+        Phone.TYPE_CUSTOM -> custom?.takeIf { it.isNotBlank() } ?: phone
+        else -> phone
+    }
+
+    companion object {
+        fun from(context: Context) = PhoneLabels(
+            mobile = context.getString(R.string.phonebook_label_mobile),
+            home = context.getString(R.string.phonebook_label_home),
+            work = context.getString(R.string.phonebook_label_work),
+            main = context.getString(R.string.phonebook_label_main),
+            phone = context.getString(R.string.phonebook_label_phone)
+        )
     }
 }
 

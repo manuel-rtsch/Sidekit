@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Web browser: page, tabs, bookmarks and history. -->
+<resources>
+    <string name="browser_title">Navigateur web</string>
+    <string name="browser_tabs">Onglets</string>
+    <string name="browser_search">Rechercher</string>
+    <string name="browser_address">Adresse</string>
+    <string name="browser_search_or_address">Recherche ou adresse</string>
+    <string name="browser_start_heading">Un web plus calme.</string>
+    <string name="browser_start_body">Saisissez une adresse ou une recherche au clavier, puis OK.</string>
+    <string name="browser_start_link">Rechercher →</string>
+    <string name="browser_undo">Annuler</string>
+    <string name="browser_go">OK</string>
+    <string name="browser_back_page">Page précédente</string>
+    <string name="browser_forward_page">Page suivante</string>
+    <string name="browser_stop">Arrêter</string>
+    <string name="browser_reload">Recharger</string>
+    <string name="browser_reload_page">Recharger la page</string>
+    <string name="browser_saved">Enregistré</string>
+    <string name="browser_save">Enregistrer</string>
+    <string name="browser_remove_bookmark">Retirer le favori</string>
+    <string name="browser_bookmark_page">Ajouter aux favoris</string>
+    <string name="browser_text_size">Taille du texte %1$d pour cent</string>
+    <string name="browser_new_tab">Nouvel onglet</string>
+    <string name="browser_page">Page</string>
+    <plurals name="browser_tab_count">
+        <item quantity="one">%1$d onglet</item>
+        <item quantity="many">%1$d onglets</item>
+        <item quantity="other">%1$d onglets</item>
+    </plurals>
+    <string name="browser_close_tab">Fermer %1$s</string>
+    <string name="browser_remove_item">Retirer %1$s</string>
+    <string name="browser_bookmarks">Favoris</string>
+    <string name="browser_history">Historique</string>
+    <string name="browser_downloads">Téléchargements</string>
+    <string name="browser_no_bookmarks">Aucun favori. Sur une page, la touche Options propose Enregistrer.</string>
+    <string name="browser_keep_history">Garder l\'historique</string>
+    <string name="browser_clear">Effacer</string>
+    <string name="browser_confirm_clear">Confirmer l\'effacement de l\'historique</string>
+    <string name="browser_clear_history">Effacer l\'historique</string>
+    <string name="browser_history_empty">Les pages visitées apparaissent ici.</string>
+    <string name="browser_bookmarked">Ajouté aux favoris</string>
+    <string name="browser_bookmark_removed">Favori retiré</string>
+    <string name="browser_history_cleared">Historique effacé</string>
+    <string name="browser_page_stopped">La page s\'est arrêtée ; rechargement</string>
+    <string name="browser_no_downloads_app">Aucune app de téléchargements sur ce téléphone</string>
+    <string name="browser_cant_open_link">Impossible d\'ouvrir ce lien</string>
+    <string name="browser_no_app_for_link">Aucune app pour ce lien</string>
+    <string name="browser_download_unsupported">Ce téléchargement n\'est pas pris en charge</string>
+    <string name="browser_downloading">Téléchargement de %1$s</string>
+    <string name="browser_download_failed">Impossible de télécharger %1$s</string>
+</resources>

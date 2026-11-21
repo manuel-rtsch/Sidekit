@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Maps, and the place search, location and saved-data messages Trips, Compass and Sideweather share. -->
+<resources>
+    <string name="maps_title">Maps</string>
+    <string name="maps_search">Search</string>
+    <string name="maps_go">Go</string>
+    <string name="maps_back">Back</string>
+    <string name="maps_location_prompt">Allow approximate location to show where you are, or search for a place.</string>
+    <string name="maps_choose_destination_first">Search and select a destination first</string>
+    <string name="maps_no_navigation_app">No navigation app. Straight-line guidance only; paths and obstacles are not considered.</string>
+    <string name="maps_zoom_in">Zoom +</string>
+    <string name="maps_zoom_out">Zoom −</string>
+    <string name="maps_centre">Centre</string>
+    <string name="maps_choose_destination">Choose a destination</string>
+    <string name="maps_you_at">You: %1$.4f, %2$.4f</string>
+    <string name="maps_location_not_available">Your location is not available</string>
+    <!-- Distance in metres, then the bearing in degrees from true (geographic) north. -->
+    <string name="maps_distance_bearing">%1$d m · %2$d° true</string>
+    <string name="maps_no_compass">No compass sensor</string>
+    <string name="maps_calibrate">Calibrate: move in a figure eight</string>
+    <string name="maps_hold_flat">Hold phone flat</string>
+    <string name="maps_store_read_failed">Could not read saved data</string>
+    <string name="maps_store_save_failed">Could not save; please retry</string>
+    <string name="maps_current_location">Current location</string>
+    <string name="maps_current_location_in">Current location · %1$s</string>
+    <string name="maps_search_hint">Search towns and cities · Open-Meteo / GeoNames</string>
+    <string name="maps_searching">Searching…</string>
+    <string name="maps_no_places">No places found</string>
+    <string name="maps_select_place">Select a place</string>
+    <string name="maps_search_unavailable">Search unavailable. Check your connection and try again.</string>
+    <string name="maps_find_place">Find a place</string>
+    <string name="maps_town_or_city">Town or city</string>
+    <string name="maps_location_denied">Location denied. You can still search for a place.</string>
+    <string name="maps_finding_location">Finding location…</string>
+    <string name="maps_precise_location">Precise location</string>
+    <string name="maps_approximate_location">Approximate location</string>
+    <string name="maps_location_unavailable">Location unavailable. Enable precise location or search for a place.</string>
+    <string name="maps_locate">Locate</string>
+    <string name="maps_enable_precise">Enable precise</string>
+    <string name="maps_allow">Allow</string>
+    <string name="maps_tiles_missing">Some tiles unavailable · location and search still work</string>
+    <!-- OK and Back are the phone's keys. -->
+    <string name="maps_panning">Panning · d-pad moves the map; OK or Back to stop</string>
+    <string name="maps_map_ready">Map ready · drag, or OK to pan with the d-pad; Options to zoom</string>
+    <string name="maps_osm_attribution">© OpenStreetMap contributors</string>
+    <string name="maps_preview_description">Map: walking route from your location to Central Station</string>
+    <string name="maps_you">You</string>
+</resources>

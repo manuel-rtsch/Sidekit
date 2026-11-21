@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidekit design library: action bar defaults, case colours, keypad modules and keys, typing. Names start with sk_ (the library's resourcePrefix). -->
+<resources>
+    <!-- Default action-bar labels (SideAction.save/send/cancel/undo/delete) and the Options bar. -->
+    <string name="sk_sidekit_action_save">Enregistrer</string>
+    <string name="sk_sidekit_action_send">Envoyer</string>
+    <string name="sk_sidekit_action_cancel">Annuler</string>
+    <string name="sk_sidekit_action_undo">Annuler</string>
+    <string name="sk_sidekit_action_delete">Supprimer</string>
+    <string name="sk_sidekit_options_none">Aucune option ici</string>
+    <string name="sk_sidekit_options_close">Fermer les options</string>
+    <!-- Sidephone case colours. -->
+    <string name="sk_sidekit_colour_cloud">Nuage</string>
+    <string name="sk_sidekit_colour_lime">Citron vert</string>
+    <string name="sk_sidekit_colour_orange">Orange</string>
+    <string name="sk_sidekit_colour_blue">Bleu</string>
+    <string name="sk_sidekit_colour_pink">Rose</string>
+    <string name="sk_sidekit_colour_sage">Sauge</string>
+    <string name="sk_sidekit_colour_lavender">Lavande</string>
+    <!-- Keypad modules. T9 and Sundial are product names. -->
+    <string name="sk_sidekit_keypad_qwerty">Mini QWERTY</string>
+    <string name="sk_sidekit_keypad_gamepad">Manette</string>
+    <!-- Keys, as listed in keypad mapping. Short: they sit in a list row. -->
+    <string name="sk_sidekit_key_scan_code">Code de scan %1$d</string>
+    <string name="sk_sidekit_key_code">Touche %1$d</string>
+    <string name="sk_sidekit_key_back">Retour</string>
+    <string name="sk_sidekit_key_options">Options</string>
+    <string name="sk_sidekit_key_up">Haut</string>
+    <string name="sk_sidekit_key_down">Bas</string>
+    <string name="sk_sidekit_key_left">Gauche</string>
+    <string name="sk_sidekit_key_right">Droite</string>
+    <string name="sk_sidekit_key_delete">Effacer</string>
+    <string name="sk_sidekit_key_space">Espace</string>
+    <string name="sk_sidekit_key_enter">Entrée</string>
+    <string name="sk_sidekit_key_top">Haut</string>
+    <string name="sk_sidekit_key_right_edge">Bord droit</string>
+    <string name="sk_sidekit_key_bottom">Bas</string>
+    <string name="sk_sidekit_key_left_edge">Bord gauche</string>
+    <string name="sk_sidekit_key_centre">Centre</string>
+    <string name="sk_sidekit_key_corner_left">Coin ←</string>
+    <string name="sk_sidekit_key_corner_right">Coin →</string>
+    <string name="sk_sidekit_key_home">Accueil</string>
+    <string name="sk_sidekit_key_shoulder_left">Gâchette gauche</string>
+    <string name="sk_sidekit_key_shoulder_right">Gâchette droite</string>
+    <string name="sk_sidekit_key_shoulder">Gâchette</string>
+    <!-- What each key does, shown under the key's name. -->
+    <string name="sk_sidekit_hint_back">Revenir à l\'écran précédent</string>
+    <string name="sk_sidekit_hint_options">Afficher les autres actions</string>
+    <string name="sk_sidekit_hint_move_up">Monter</string>
+    <string name="sk_sidekit_hint_move_down">Descendre</string>
+    <string name="sk_sidekit_hint_move_right">Aller à droite</string>
+    <string name="sk_sidekit_hint_move_left_cursor">Aller à gauche ; curseur</string>
+    <string name="sk_sidekit_hint_move_right_cursor">Aller à droite ; curseur</string>
+    <string name="sk_sidekit_hint_select_or_suggestion">Sélectionner ou accepter une suggestion</string>
+    <string name="sk_sidekit_hint_punctuation_symbols">Ponctuation et symboles</string>
+    <string name="sk_sidekit_hint_case_numbers">Majuscules ; maintenir pour les chiffres</string>
+    <string name="sk_sidekit_hint_delete">Effacer le caractère précédent</string>
+    <string name="sk_sidekit_hint_hold_for">Maintenir pour %1$s</string>
+    <string name="sk_sidekit_hint_new_line">Nouvelle ligne ou accepter une suggestion</string>
+    <string name="sk_sidekit_hint_next_suggestion">Suggestion suivante</string>
+    <string name="sk_sidekit_hint_symbols">Symboles</string>
+    <string name="sk_sidekit_hint_next_track">Piste suivante</string>
+    <string name="sk_sidekit_hint_previous_track">Piste précédente</string>
+    <string name="sk_sidekit_hint_play_pause">Lecture ou pause ; maintenir pour Confirmer</string>
+    <string name="sk_sidekit_hint_corner_left">Aller à gauche ; maintenir pour Options</string>
+    <string name="sk_sidekit_hint_tab">Élément suivant ; maintenir pour Retour</string>
+    <string name="sk_sidekit_hint_enter_sundial">Sélectionner ; maintenir pour Options (certaines versions envoient Lecture/Pause)</string>
+    <string name="sk_sidekit_hint_confirm">Confirmer</string>
+    <string name="sk_sidekit_hint_back_in_games">Retour dans les jeux</string>
+    <string name="sk_sidekit_hint_button_x">Options ; maintenir pour la barre d\'actions</string>
+    <string name="sk_sidekit_hint_button_y">Aller à la barre d\'actions</string>
+    <string name="sk_sidekit_hint_open_search">Ouvrir la recherche</string>
+    <string name="sk_sidekit_hint_go_home">Aller à l\'écran d\'accueil</string>
+    <string name="sk_sidekit_hint_digit_0">Espace ; maintenir pour 0</string>
+    <string name="sk_sidekit_hint_digit_1">Ponctuation ; maintenir pour 1</string>
+    <string name="sk_sidekit_hint_digit">Lettres ; maintenir pour %1$d</string>
+    <!-- Dictation, shown as a toast. -->
+    <string name="sk_sidekit_dictation_not_installed">La reconnaissance vocale n\'est pas installée sur ce téléphone</string>
+    <string name="sk_sidekit_dictation_start_failed">Impossible de lancer la dictée</string>
+    <string name="sk_sidekit_dictation_busy">La dictée est occupée. Réessayez.</string>
+    <string name="sk_sidekit_dictation_language">La dictée n\'est pas disponible dans cette langue</string>
+    <string name="sk_sidekit_dictation_silence">Rien entendu</string>
+    <string name="sk_sidekit_dictation_microphone">Autorisez le micro pour dicter</string>
+    <string name="sk_sidekit_dictation_offline">La dictée nécessite une connexion</string>
+    <string name="sk_sidekit_dictation_retry">Pas compris. Réessayez.</string>
+    <!-- Keypad typing bar. -->
+    <string name="sk_sidekit_input_mode">Mode de saisie %1$s</string>
+    <string name="sk_sidekit_suggestion">Suggestion %1$s</string>
+    <string name="sk_sidekit_dictate">Dicter</string>
+    <string name="sk_sidekit_dictate_stop">Arrêter la dictée</string>
+    <string name="sk_sidekit_done">OK</string>
+    <string name="sk_sidekit_done_typing">Terminer la saisie</string>
+</resources>

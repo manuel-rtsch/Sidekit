@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Music app and its playback notification. Track, album and artist names are data, not strings. -->
+<resources>
+    <string name="music_title">Musik</string>
+    <string name="music_now_playing">Läuft gerade</string>
+    <string name="music_search">Suchen</string>
+    <string name="music_search_description">Musik suchen</string>
+    <string name="music_search_placeholder">Hier suchen</string>
+    <string name="music_new_playlist">Neue Playlist</string>
+    <string name="music_playlists">Playlists</string>
+    <string name="music_albums">Alben</string>
+    <string name="music_artists">Künstler</string>
+    <string name="music_album">Album</string>
+    <string name="music_artist">Künstler</string>
+    <string name="music_save">Speichern</string>
+    <string name="music_play">Abspielen</string>
+    <string name="music_pause">Pause</string>
+    <string name="music_previous">Vorheriger</string>
+    <string name="music_next">Nächster</string>
+    <string name="music_back_to_music">Zurück zu Musik</string>
+    <string name="music_shuffle_on">Zufällig: an</string>
+    <string name="music_shuffle_off">Zufällig: aus</string>
+    <string name="music_repeat_off">Wiederholen: aus</string>
+    <string name="music_repeat_all">Wiederholen: alle</string>
+    <string name="music_repeat_one">Wiederholen: einen</string>
+    <string name="music_nothing_playing">Keine Wiedergabe</string>
+    <string name="music_album_art">Albumcover</string>
+    <string name="music_permission_title">Deine Musik abspielen</string>
+    <string name="music_permission_reason">Musik liest die auf diesem Telefon gespeicherten Songs. Wiedergabe und Playlists bleiben auf dem Gerät.</string>
+    <string name="music_access_what">Musik</string>
+    <string name="music_unknown_album">Unbekanntes Album</string>
+    <string name="music_unknown_artist">Unbekannter Künstler</string>
+    <string name="music_various_artists">Verschiedene Künstler</string>
+    <string name="music_untitled">Ohne Titel</string>
+    <string name="music_playlist_default">Playlist %1$d</string>
+    <string name="music_channel">Musikwiedergabe</string>
+</resources>

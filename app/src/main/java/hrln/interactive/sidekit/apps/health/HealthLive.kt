@@ -11,11 +11,15 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.maps.OutdoorInfo
 import hrln.interactive.sidekit.apps.maps.WhileVisible
 import hrln.interactive.sidekit.design.action.SideAction
@@ -36,14 +40,15 @@ class HealthViewModel(val repository: HealthRepository) : ViewModel() {
 @Composable
 fun LiveHealth(page: String, onHistory: () -> Unit, onGoals: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val vm: HealthViewModel = viewModel(factory = viewModelFactory { initializer { HealthViewModel(HealthRepository.get(context)) } })
     val ledger by vm.repository.store.state.collectAsStateWithLifecycle()
     val error by vm.repository.store.error.collectAsStateWithLifecycle()
     var allowed by remember { mutableStateOf(canCount(context)) }
-    var message by remember { mutableStateOf("Allow activity recognition to count steps. No always-on service.") }
+    var message by remember { mutableStateOf(resources.getString(R.string.health_permission_prompt)) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         allowed = it
-        if (!it) message = "Activity access denied. Saved history and goals still work."
+        if (!it) message = resources.getString(R.string.health_permission_denied)
     }
     val available = remember { context.getSystemService(SensorManager::class.java).getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null }
     WhileVisible(allowed) {
@@ -57,32 +62,43 @@ fun LiveHealth(page: String, onHistory: () -> Unit, onGoals: () -> Unit, onBack:
     val list = rememberLazyListState()
     var goal by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(ledger?.goal) { if (goal.isEmpty()) goal = ledger?.goal?.toString().orEmpty() }
+    val goalInvalid = stringResource(R.string.health_goal_invalid)
     val actions = when (page) {
-        "goals" -> listOf(SideAction.cancel("back", onClick = onBack), SideAction.save("save") { if (ledger != null && vm.saveGoal(goal)) onBack() else message = "Enter a goal from 1 to 100000" })
-        "history" -> listOf(SideAction.back("back", "Back", onBack))
-        else -> listOfNotNull(SideAction.back("history", "History", onHistory), SideAction.forward("goals", "Goals", onGoals), if (!allowed && available) SideAction("allow", "Allow") { launcher.launch(Manifest.permission.ACTIVITY_RECOGNITION) } else null)
+        "goals" -> listOf(SideAction.cancel("back", onClick = onBack), SideAction.save("save") { if (ledger != null && vm.saveGoal(goal)) onBack() else message = goalInvalid })
+
+        "history" -> listOf(SideAction.back("back", stringResource(R.string.health_back), onBack))
+
+        else -> listOfNotNull(
+            SideAction.back("history", stringResource(R.string.health_history), onHistory),
+            SideAction.forward("goals", stringResource(R.string.health_goals), onGoals),
+            if (!allowed && available) SideAction("allow", stringResource(R.string.health_allow)) { launcher.launch(Manifest.permission.ACTIVITY_RECOGNITION) } else null
+        )
     }
     SidekitScaffold(
         if (page == "home") {
-            "Health"
+            stringResource(R.string.health_title)
         } else if (page == "goals") {
-            "Daily goal"
+            stringResource(R.string.health_daily_goal)
         } else {
-            "Step history"
+            stringResource(R.string.health_step_history)
         },
         actions = actions
     ) { padding ->
         SidekitList(padding, state = list) {
             when (page) {
                 "goals" -> {
-                    item { SidekitTile(Modifier.listFade(list, 0)) { SidekitTextField(goal, { goal = it }, Modifier.fillMaxWidth().padding(SidekitTheme.spacing.itemPadding), placeholder = "Steps per day", singleLine = true, dictation = false, focusOnKeypad = true, autoFocus = true, onDone = { if (vm.saveGoal(goal)) onBack() else message = "Enter a goal from 1 to 100000" }) } }
+                    item { SidekitTile(Modifier.listFade(list, 0)) { SidekitTextField(goal, { goal = it }, Modifier.fillMaxWidth().padding(SidekitTheme.spacing.itemPadding), placeholder = stringResource(R.string.health_steps_per_day), singleLine = true, dictation = false, focusOnKeypad = true, autoFocus = true, onDone = { if (vm.saveGoal(goal)) onBack() else message = goalInvalid }) } }
                     item { OutdoorInfo(message, modifier = Modifier.listFade(list, 1)) }
                 }
 
                 "history" -> {
                     val days = ledger?.let { (it.history + if (it.day.isNotEmpty()) listOf(StepDay(it.day, it.today, it.approximate)) else emptyList()).sortedByDescending { d -> d.date } }.orEmpty()
-                    if (days.isEmpty()) item { OutdoorInfo("No samples yet", modifier = Modifier.listFade(list, 0)) }
-                    items(days.size) { i -> OutdoorInfo(days[i].date, secondary = "${days[i].steps} steps${if (days[i].approximate) " · approx." else ""}", modifier = Modifier.listFade(list, i)) }
+                    if (days.isEmpty()) item { OutdoorInfo(stringResource(R.string.health_no_samples), modifier = Modifier.listFade(list, 0)) }
+                    items(days.size) { i ->
+                        val steps = days[i].steps.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                        val label = pluralStringResource(if (days[i].approximate) R.plurals.health_day_steps_approx else R.plurals.health_day_steps, steps, steps)
+                        OutdoorInfo(days[i].date, secondary = label, modifier = Modifier.listFade(list, i))
+                    }
                 }
 
                 else -> {
@@ -90,17 +106,17 @@ fun LiveHealth(page: String, onHistory: () -> Unit, onGoals: () -> Unit, onBack:
                     item {
                         OutdoorInfo(
                             if (!available) {
-                                "No step counter on this device"
+                                stringResource(R.string.health_no_step_counter)
                             } else if (!allowed) {
                                 message
                             } else {
-                                "Steps are approximate"
+                                stringResource(R.string.health_steps_approximate)
                             },
-                            secondary = if (allowed && available) "Sampled while open and near midnight. Missed rollovers and reboots can lose or shift steps." else null,
+                            secondary = if (allowed && available) stringResource(R.string.health_sampling_note) else null,
                             modifier = Modifier.listFade(list, 1)
                         )
                     }
-                    item { OutdoorInfo("Heart rate and sleep", secondary = "No connected source", modifier = Modifier.listFade(list, 2)) }
+                    item { OutdoorInfo(stringResource(R.string.health_heart_sleep), secondary = stringResource(R.string.health_no_source), modifier = Modifier.listFade(list, 2)) }
                 }
             }
             error?.let { item { OutdoorInfo(it) } }

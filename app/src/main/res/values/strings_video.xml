@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Video: the phone's videos and the player. -->
+<resources>
+    <string name="video_title">Video</string>
+    <!-- Title of a video file that has no name. -->
+    <string name="video_untitled">Video</string>
+    <string name="video_home">Home</string>
+    <string name="video_open_settings">Open settings</string>
+    <string name="video_allow">Allow</string>
+    <string name="video_allow_description">Allow access to videos</string>
+    <string name="video_rationale_title">See your videos</string>
+    <string name="video_rationale_body">Video plays the clips saved on this phone, including ones you film with Camera.</string>
+    <string name="video_empty">No videos yet. Clips you record with Camera appear here.</string>
+    <string name="video_cant_play">This video can\'t be played</string>
+    <string name="video_back_to_videos">Back to videos</string>
+    <string name="video_play">Play</string>
+    <string name="video_pause">Pause</string>
+    <string name="video_play_description">Play video</string>
+    <string name="video_pause_description">Pause video</string>
+    <string name="video_forward_10">Forward 10 seconds</string>
+    <string name="video_back_10">Back 10 s</string>
+    <string name="video_restart">Restart</string>
+    <!-- Accessibility label of the progress line you drag to move through the video. -->
+    <string name="video_seek">Seek</string>
+</resources>

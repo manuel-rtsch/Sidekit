@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,6 +23,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -39,6 +42,7 @@ fun NavGraphBuilder.vaultGraph(nav: NavHostController) {
 @Composable
 internal fun VaultScreen(vm: VaultViewModel, back: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val activity = remember(context) { generateSequence(context) { (it as? ContextWrapper)?.baseContext }.filterIsInstance<Activity>().first() }
     val state by vm.state.collectAsStateWithLifecycle()
     var prompt by remember { mutableStateOf<CancellationSignal?>(null) }
@@ -65,14 +69,14 @@ internal fun VaultScreen(vm: VaultViewModel, back: () -> Unit) {
     }
     fun unlock() {
         if (!context.getSystemService(KeyguardManager::class.java).isDeviceSecure) {
-            vm.error("Set a screen lock in Android Settings before using Vault.")
+            vm.error(R.string.vault_needs_lock)
             return
         }
         if (prompt != null) return
         val signal = CancellationSignal()
         prompt = signal
-        BiometricPrompt.Builder(context).setTitle("Unlock Vault")
-            .setSubtitle("Private notes · locks after 55 seconds")
+        BiometricPrompt.Builder(context).setTitle(resources.getString(R.string.vault_unlock_title))
+            .setSubtitle(resources.getString(R.string.vault_unlock_subtitle))
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
             .build().authenticate(
                 signal,
@@ -107,10 +111,11 @@ internal fun VaultScreen(vm: VaultViewModel, back: () -> Unit) {
             back()
         }
     }
+    val working = stringResource(R.string.vault_working)
     val actions = when {
-        state.busy -> listOf(SideAction("save", "Working…") {})
+        state.busy -> listOf(SideAction("save", working) {})
 
-        !state.unlocked -> listOf(SideAction.back("back", "Home", back), SideAction("unlock", "Unlock", onClick = ::unlock))
+        !state.unlocked -> listOf(SideAction.back("back", stringResource(R.string.vault_home), back), SideAction("unlock", stringResource(R.string.vault_unlock), onClick = ::unlock))
 
         confirmDelete != null -> listOf(
             SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmDelete = null },
@@ -121,36 +126,36 @@ internal fun VaultScreen(vm: VaultViewModel, back: () -> Unit) {
         )
 
         confirmDiscard -> listOf(
-            SideAction("back", "Keep editing") { confirmDiscard = false },
-            SideAction("discard", "Discard", tone = ActionTone.Destructive) {
+            SideAction("back", stringResource(R.string.vault_keep_editing)) { confirmDiscard = false },
+            SideAction("discard", stringResource(R.string.vault_discard), tone = ActionTone.Destructive) {
                 vm.closeEditor()
                 confirmDiscard = false
             }
         )
 
-        state.editing != null -> listOf(SideAction.back("back", "Notes", ::leaveEditor), SideAction.save("save", onClick = vm::save))
+        state.editing != null -> listOf(SideAction.back("back", stringResource(R.string.vault_notes), ::leaveEditor), SideAction.save("save", onClick = vm::save))
 
-        else -> listOf(SideAction("lock", "Lock", onClick = vm::lock), SideAction.forward("new", "New note", { vm.edit() }))
+        else -> listOf(SideAction("lock", stringResource(R.string.vault_lock), onClick = vm::lock), SideAction.forward("new", stringResource(R.string.vault_new_note), { vm.edit() }))
     }
     val list = rememberLazyListState()
     val swipe = rememberSwipeRevealGroup()
-    SidekitScaffold("Vault", actions = actions, options = if (state.editing != null) listOf(SideAction.delete("delete") { confirmDelete = state.editing }) else emptyList()) { padding ->
+    SidekitScaffold(stringResource(R.string.vault_title), actions = actions, options = if (state.editing != null) listOf(SideAction.delete("delete") { confirmDelete = state.editing }) else emptyList()) { padding ->
         SidekitList(padding, state = list) {
-            state.message?.let { item { SidekitCard(Modifier.listFade(list, 0)) { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
+            state.message?.let { message -> item { SidekitCard(Modifier.listFade(list, 0)) { SidekitText(message.text(), style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
             when {
-                state.busy -> item { SidekitItem("Working…") }
+                state.busy -> item { SidekitItem(working) }
 
-                !state.unlocked -> item { SidekitCard(Modifier.listFade(list, 1)) { SidekitText("Protected by your device lock. Save before leaving: Vault locks after 55 seconds or when you leave. Unsaved edits are discarded. Private keypad uses abc without saving learned words.", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } }
+                !state.unlocked -> item { SidekitCard(Modifier.listFade(list, 1)) { SidekitText(stringResource(R.string.vault_intro), style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } }
 
                 state.editing != null -> item {
                     VaultEditor(state.editing!!, vm::text)
                 }
 
                 else -> {
-                    if (state.notes.isEmpty()) item { SidekitItem("No private notes yet", Modifier.listFade(list, 1)) }
+                    if (state.notes.isEmpty()) item { SidekitItem(stringResource(R.string.vault_empty), Modifier.listFade(list, 1)) }
                     itemsIndexed(state.notes, key = { _, note -> note.id }) { index, note ->
                         SidekitSwipeRow(note.id, swipe, onDelete = { confirmDelete = note }, modifier = Modifier.listFade(list, index)) {
-                            SidekitItem(note.title, onClick = { vm.edit(note) })
+                            SidekitItem(note.title ?: stringResource(R.string.vault_untitled), onClick = { vm.edit(note) })
                         }
                     }
                 }
@@ -188,6 +193,12 @@ private fun VaultEditor(note: PrivateNote, onText: (String) -> Unit) {
     val latest by rememberUpdatedState(onText)
     LaunchedEffect(text) { snapshotFlow { text.text.toString() }.collect { latest(it) } }
     CompositionLocalProvider(hrln.interactive.sidekit.design.input.LocalKeypad provides privateKeypad) {
-        SidekitCard { SidekitTextField(text, placeholder = "Private note…", focusOnKeypad = true, autoFocus = true, dictation = false) }
+        SidekitCard { SidekitTextField(text, placeholder = stringResource(R.string.vault_placeholder), focusOnKeypad = true, autoFocus = true, dictation = false) }
     }
+}
+
+@Composable
+private fun VaultMessage.text(): String = when (this) {
+    is VaultMessage.Res -> if (detail == null) stringResource(id) else stringResource(id, detail)
+    is VaultMessage.Text -> text
 }

@@ -16,6 +16,7 @@ import android.telephony.SmsManager
 import android.telephony.SmsMessage
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import hrln.interactive.sidekit.R
 import kotlinx.coroutines.launch
 
 /** Sends SMS and owns the provider rows the default SMS app must write itself. */
@@ -85,12 +86,16 @@ class AndroidSmsTransport(private val context: Context) : SmsTransport {
         val values = ContentValues()
         when (delivery) {
             Delivery.Sending -> values.put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_OUTBOX)
+
             Delivery.Sent -> values.put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
+
             Delivery.Failed -> values.put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_FAILED)
+
             Delivery.Delivered -> {
                 values.put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
                 values.put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_COMPLETE)
             }
+
             Delivery.None -> return
         }
         try {
@@ -109,8 +114,10 @@ class AndroidSmsTransport(private val context: Context) : SmsTransport {
     override fun delete(message: Message): Boolean = try {
         when {
             message.key.startsWith("s") -> resolver.delete(ContentUris.withAppendedId(Telephony.Sms.CONTENT_URI, message.rowId), null, null) > 0
+
             // The provider owns part/file cleanup when deleting the parent MMS.
             message.key.startsWith("m") -> resolver.delete(ContentUris.withAppendedId(Telephony.Mms.CONTENT_URI, message.rowId), null, null) > 0
+
             else -> false
         }
     } catch (_: RuntimeException) {
@@ -183,8 +190,13 @@ class SmsStatusReceiver : BroadcastReceiver() {
                     else -> null
                 }
                 if (ok != null) {
-                    val status = SmsReports(context).record(token, parts,
-                        intent.getIntExtra(AndroidSmsTransport.EXTRA_PART, 0), delivered, ok)
+                    val status = SmsReports(context).record(
+                        token,
+                        parts,
+                        intent.getIntExtra(AndroidSmsTransport.EXTRA_PART, 0),
+                        delivered,
+                        ok
+                    )
                     repo.report(token, row, status)
                 }
             } finally {
@@ -272,10 +284,14 @@ class MmsDeliverReceiver : BroadcastReceiver() {
         if (intent.action != Telephony.Sms.Intents.WAP_PUSH_DELIVER_ACTION || intent.type != "application/vnd.wap.mms-message" || !SmsRole.isDefault(context)) return
         val data = intent.getByteArrayExtra("data") ?: return
         val pending = goAsync()
-        Sidemessage.repository(context).scope.launch( kotlinx.coroutines.Dispatchers.IO) {
-            try { MmsTransport.enqueue(context.applicationContext, data, intent.getIntExtra("subscription", SubscriptionManager.getDefaultSmsSubscriptionId())) }
-            catch (_: Exception) { SidemessageNotifications.mmsError(context, "MMS notification could not be queued") }
-            finally { pending.finish() }
+        Sidemessage.repository(context).scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                MmsTransport.enqueue(context.applicationContext, data, intent.getIntExtra("subscription", SubscriptionManager.getDefaultSmsSubscriptionId()))
+            } catch (_: Exception) {
+                SidemessageNotifications.mmsError(context, context.getString(R.string.messages_mms_queue_failed))
+            } finally {
+                pending.finish()
+            }
         }
     }
 }
@@ -288,10 +304,15 @@ class RespondViaMessageService : Service() {
         if (intent?.action == TelephonyManager.ACTION_RESPOND_VIA_MESSAGE && text.isNotEmpty() && addresses.isNotEmpty()) {
             val repo = Sidemessage.repository(applicationContext)
             repo.scope.launch(repo.io) {
-                try { repo.send(addresses, text, threadId = -1L)?.join() }
-                finally { stopSelf(startId) }
+                try {
+                    repo.send(addresses, text, threadId = -1L)?.join()
+                } finally {
+                    stopSelf(startId)
+                }
             }
-        } else stopSelf(startId)
+        } else {
+            stopSelf(startId)
+        }
         return START_NOT_STICKY
     }
 

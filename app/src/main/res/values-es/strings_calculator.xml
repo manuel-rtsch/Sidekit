@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calculator. -->
+<resources>
+    <string name="calculator_error">Error</string>
+    <string name="calculator_history_unreadable">No se pudo leer el historial.</string>
+    <string name="calculator_history_unsaved">No se pudo guardar el historial.</string>
+    <string name="calculator_history">Historial</string>
+    <string name="calculator_keypad_help">Ayuda del teclado</string>
+    <string name="calculator_clear">Borrar</string>
+    <string name="calculator_clear_history">Borrar historial</string>
+    <string name="calculator_back">Atrás</string>
+    <string name="calculator_keypad">Teclado</string>
+    <string name="calculator_no_calculations">Aún no hay cálculos</string>
+    <string name="calculator_help_digits">0–9 escriben números</string>
+    <string name="calculator_help_star">* multiplica · # es igual</string>
+    <string name="calculator_help_delete">Borrar elimina hacia atrás</string>
+    <string name="calculator_help_operators">Usa las teclas de operación para +, −, ÷ y decimales.</string>
+    <string name="calculator_help_order">Los cálculos van de izquierda a derecha.</string>
+</resources>

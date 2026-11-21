@@ -29,6 +29,7 @@ class MusicViewModelTest {
     private val source = object : MusicSource {
         override fun tracks() = tracks
         override fun changes(): Flow<Unit> = flowOf(Unit)
+        override fun labels() = MusicLabels("Unknown album", "Unknown artist", "Various Artists")
     }
     private val store = object : PlaylistStore {
         override fun read() = listOf(Playlist(8, "Favourites", listOf(2)))
@@ -40,7 +41,7 @@ class MusicViewModelTest {
     @After fun tearDown() = Dispatchers.resetMain()
 
     @Test fun playTrackQueuesItsAlbumFromThatTrack() = runTest {
-        val vm = MusicViewModel(source, PlaylistRepository(store, backgroundScope, UnconfinedTestDispatcher()), player, UnconfinedTestDispatcher())
+        val vm = MusicViewModel(source, PlaylistRepository(store, backgroundScope, UnconfinedTestDispatcher()) { "Playlist $it" }, player, UnconfinedTestDispatcher())
         vm.state.first { it.loaded }
         vm.playTrack(2)
         assertEquals(tracks.sortedBy { it.title }, player.tracks)
@@ -52,7 +53,7 @@ class MusicViewModelTest {
     }
 
     @Test fun persistentPlaylistPlaysFromFirstTrack() = runTest {
-        val vm = MusicViewModel(source, PlaylistRepository(store, backgroundScope, UnconfinedTestDispatcher()), player, UnconfinedTestDispatcher())
+        val vm = MusicViewModel(source, PlaylistRepository(store, backgroundScope, UnconfinedTestDispatcher()) { "Playlist $it" }, player, UnconfinedTestDispatcher())
         vm.state.first { it.loaded }
         vm.playPlaylist(8)
         assertEquals(listOf(tracks[1]), player.tracks)

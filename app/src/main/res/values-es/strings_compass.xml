@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compass: the live dial, its saved headings and the design mock. N/E/S/W are the dial's one-letter cardinal points. -->
+<resources>
+    <string name="compass_title">Brújula</string>
+    <string name="compass_calibrate">Calibrar</string>
+    <string name="compass_save">Guardar</string>
+    <string name="compass_hold_flat">Mantén en plano · norte magnético</string>
+    <string name="compass_no_sensor">Este dispositivo no tiene brújula</string>
+    <string name="compass_calibrate_hint">Mueve el teléfono en forma de ocho, lejos del metal; luego mantenlo en plano</string>
+    <string name="compass_waiting_heading">Esperando una orientación</string>
+    <string name="compass_loading_bookmarks">Cargando marcadores…</string>
+    <string name="compass_saved_with_location">Orientación guardada con ubicación</string>
+    <string name="compass_saved_without_location">Orientación guardada sin ubicación</string>
+    <string name="compass_waiting">Esperando…</string>
+    <string name="compass_degrees_magnetic">%1$d° magnético</string>
+    <string name="compass_low_accuracy">Precisión baja: mueve el teléfono en forma de ocho, lejos del metal</string>
+    <string name="compass_location_optional">La ubicación es opcional</string>
+    <string name="compass_location_optional_detail">Opciones → Permitir añade una ubicación aproximada a las orientaciones guardadas</string>
+    <string name="compass_bookmarks">Marcadores</string>
+    <string name="compass_saved_headings">Orientaciones guardadas</string>
+    <string name="compass_back">Atrás</string>
+    <string name="compass_undo">Deshacer</string>
+    <string name="compass_undo_delete">Deshacer eliminar orientación</string>
+    <string name="compass_no_saved">No hay orientaciones guardadas</string>
+    <string name="compass_no_location">Sin ubicación</string>
+    <string name="compass_dial">Esfera de la brújula</string>
+    <string name="compass_north">N</string>
+    <string name="compass_east">E</string>
+    <string name="compass_south">S</string>
+    <string name="compass_west">O</string>
+</resources>

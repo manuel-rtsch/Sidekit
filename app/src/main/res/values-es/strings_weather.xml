@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideweather. -->
+<resources>
+    <string name="weather_feels">Sensación %1$s</string>
+    <string name="weather_high">Máx. %1$s</string>
+    <string name="weather_low">Mín. %1$s</string>
+    <string name="weather_rain">Lluvia %1$d%%</string>
+    <string name="weather_wind_kmh">Viento %1$d km/h</string>
+    <string name="weather_wind_mph">Viento %1$d mph</string>
+    <string name="weather_today">Hoy</string>
+    <string name="weather_sky_clear">Despejado</string>
+    <string name="weather_sky_partly_cloudy">Parcialmente nublado</string>
+    <string name="weather_sky_cloudy">Nublado</string>
+    <string name="weather_sky_fog">Niebla</string>
+    <string name="weather_sky_rain">Lluvia</string>
+    <string name="weather_sky_snow">Nieve</string>
+    <string name="weather_sky_showers">Chubascos</string>
+    <string name="weather_sky_snow_showers">Chubascos de nieve</string>
+    <string name="weather_sky_thunderstorm">Tormenta</string>
+    <string name="weather_sky_unknown">Desconocido</string>
+    <string name="weather_status_select">Elige una ubicación</string>
+    <string name="weather_status_loading">Cargando previsión…</string>
+    <string name="weather_status_cached">Previsión guardada</string>
+    <string name="weather_status_unavailable">Previsión no disponible. Inténtalo con conexión.</string>
+    <string name="weather_status_offline">Sin conexión · previsión guardada</string>
+    <string name="weather_status_updated">Open-Meteo · actualizado %1$s</string>
+    <string name="weather_use_celsius">Usar °C</string>
+    <string name="weather_use_fahrenheit">Usar °F</string>
+    <string name="weather_locations_hint">Permite la ubicación aproximada para ver el tiempo cercano o añade una ciudad.</string>
+    <string name="weather_add">Añadir</string>
+    <string name="weather_undo_delete">Deshacer eliminar %1$s</string>
+    <string name="weather_locations">Ubicaciones</string>
+    <string name="weather_back">Atrás</string>
+    <string name="weather_selected">Seleccionado</string>
+    <string name="weather_choose_location">Elige una ubicación</string>
+    <string name="weather_hourly_title">Por horas</string>
+    <string name="weather_five_day_title">Previsión 5 días</string>
+    <string name="weather_hourly">Por horas</string>
+    <string name="weather_five_days">5 días</string>
+</resources>

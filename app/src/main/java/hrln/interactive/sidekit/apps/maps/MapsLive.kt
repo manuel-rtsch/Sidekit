@@ -10,12 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.compass.HeadingSensor
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
@@ -48,7 +51,8 @@ fun NavGraphBuilder.liveMapsGraph(nav: NavHostController) {
 @Composable
 private fun LiveMaps(vm: MapsViewModel, onSearch: () -> Unit) {
     val context = LocalContext.current
-    var message by remember { mutableStateOf("Allow approximate location to show where you are, or search for a place.") }
+    val resources = LocalResources.current
+    var message by remember { mutableStateOf(resources.getString(R.string.maps_location_prompt)) }
     var fallback by remember { mutableStateOf(false) }
     var zoom by remember { mutableIntStateOf(0) }
     var recenter by remember { mutableStateOf(false) }
@@ -58,26 +62,30 @@ private fun LiveMaps(vm: MapsViewModel, onSearch: () -> Unit) {
     }) { message = it }
     val list = rememberLazyListState()
     SidekitScaffold(
-        "Maps",
+        stringResource(R.string.maps_title),
         actions = listOf(
-            SideAction.back("search", "Search", onSearch),
-            SideAction("go", "Go") {
+            SideAction.back("search", stringResource(R.string.maps_search), onSearch),
+            SideAction("go", stringResource(R.string.maps_go)) {
                 val to = vm.destination
                 if (to == null) {
-                    message = "Search and select a destination first"
+                    message = resources.getString(R.string.maps_choose_destination_first)
                 } else if (!openDirections(context, to)) {
                     fallback = true
-                    message = "No navigation app. Straight-line guidance only; paths and obstacles are not considered."
+                    message = resources.getString(R.string.maps_no_navigation_app)
                 }
             },
             location
         ),
-        options = listOf(SideAction("zoomIn", "Zoom +") { zoom = kotlin.math.abs(zoom) + 1 }, SideAction("zoomOut", "Zoom −") { zoom = -kotlin.math.abs(zoom) - 1 }, SideAction("center", "Centre") { recenter = !recenter })
+        options = listOf(
+            SideAction("zoomIn", stringResource(R.string.maps_zoom_in)) { zoom = kotlin.math.abs(zoom) + 1 },
+            SideAction("zoomOut", stringResource(R.string.maps_zoom_out)) { zoom = -kotlin.math.abs(zoom) - 1 },
+            SideAction("center", stringResource(R.string.maps_centre)) { recenter = !recenter }
+        )
     ) { padding ->
         SidekitList(padding, state = list) {
             val center = if (recenter) vm.current ?: vm.destination else vm.destination ?: vm.current
             if (center != null) item { Box(Modifier.listFade(list, 0)) { RasterMap(center, vm.current, vm.destination, zoom) { if (!fallback) message = it } } }
-            item { OutdoorInfo(vm.destination?.name ?: "Choose a destination", secondary = vm.current?.let { "You: %.4f, %.4f".format(it.latitude, it.longitude) } ?: "Your location is not available", modifier = Modifier.listFade(list, if (center == null) 0 else 1)) }
+            item { OutdoorInfo(vm.destination?.displayName ?: stringResource(R.string.maps_choose_destination), secondary = vm.current?.let { stringResource(R.string.maps_you_at, it.latitude, it.longitude) } ?: stringResource(R.string.maps_location_not_available), modifier = Modifier.listFade(list, if (center == null) 0 else 1)) }
             if (fallback && vm.current != null && vm.destination != null) item { StraightLine(vm.current!!, vm.destination!!) }
             item { OutdoorInfo(message, modifier = Modifier.listFade(list, 2)) }
         }
@@ -95,7 +103,7 @@ private fun StraightLine(from: Place, to: Place) {
     val color = SidekitTheme.colors.emphasisA1
     SidekitTile(Modifier.fillMaxWidth().height(230.dp)) {
         Column {
-            SidekitText("${result[0].toInt()} m · ${((result[1] + 360) % 360).toInt()}° true", Modifier.padding(SidekitTheme.spacing.itemPadding))
+            SidekitText(stringResource(R.string.maps_distance_bearing, result[0].toInt(), ((result[1] + 360) % 360).toInt()), Modifier.padding(SidekitTheme.spacing.itemPadding))
             if (sensor.available) {
                 Canvas(Modifier.fillMaxWidth().height(100.dp)) {
                     rotate(result[1] - (sensor.angle.floatValue + declination)) {
@@ -107,11 +115,11 @@ private fun StraightLine(from: Place, to: Place) {
             }
             SidekitText(
                 if (!sensor.available) {
-                    "No compass sensor"
+                    stringResource(R.string.maps_no_compass)
                 } else if (accuracy <= 1) {
-                    "Calibrate: move in a figure eight"
+                    stringResource(R.string.maps_calibrate)
                 } else {
-                    "Hold phone flat"
+                    stringResource(R.string.maps_hold_flat)
                 },
                 style = SidekitTheme.typography.small
             )

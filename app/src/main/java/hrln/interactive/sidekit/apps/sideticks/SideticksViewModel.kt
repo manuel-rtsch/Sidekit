@@ -1,7 +1,9 @@
 package hrln.interactive.sidekit.apps.sideticks
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -18,7 +20,7 @@ data class SideticksUiState(
     val draft: String? = null,
     val dueText: String? = null,
     val recentlyDeleted: List<Tick> = emptyList(),
-    val error: String? = null,
+    @StringRes val error: Int? = null,
     val byDue: Boolean = false
 ) {
     val open: List<Tick> get() = ticks.filterNot { it.ticked }.let { if (byDue) it.sortedBy { t -> t.dueAt ?: Long.MAX_VALUE } else it }
@@ -76,11 +78,11 @@ class SideticksViewModel(private val repository: TicksRepository) : ViewModel() 
         val due = try {
             draft.dueText?.let { LocalDateTime.parse(it, ReminderDateFormat).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }
         } catch (_: Exception) {
-            ui.update { it.copy(error = "Use YYYY-MM-DD HH:mm for the due date.") }
+            ui.update { it.copy(error = R.string.ticks_error_due_format) }
             return
         }
         if (due != null && due <= System.currentTimeMillis()) {
-            ui.update { it.copy(error = "Choose a future due time.") }
+            ui.update { it.copy(error = R.string.ticks_error_due_past) }
             return
         }
         if (repository.add(draft.draft.orEmpty(), due)) cancelAdding()

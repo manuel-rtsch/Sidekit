@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mail: inbox, folders, compose and account. -->
+<resources>
+    <string name="mail_title">Correo</string>
+    <string name="mail_folders">Carpetas</string>
+    <string name="mail_compose">Redactar</string>
+    <string name="mail_refresh_inbox">Actualizar bandeja</string>
+    <string name="mail_back">Atrás</string>
+    <string name="mail_reply">Responder</string>
+    <string name="mail_message_unavailable">Mensaje no disponible</string>
+    <string name="mail_folders_title">Carpetas de correo</string>
+    <string name="mail_undo_delete">Deshacer eliminar mensaje</string>
+    <string name="mail_cache_notice">Caché de la bandeja · actualiza para consultar tu servidor. Deslizar solo elimina la copia local.</string>
+    <string name="mail_account">Cuenta</string>
+    <string name="mail_empty_local">No hay mensajes locales</string>
+    <string name="mail_empty_hint">Redactar crea un borrador en este teléfono</string>
+    <string name="mail_delete_message">Eliminar mensaje</string>
+    <string name="mail_no_recipient">Sin destinatario</string>
+    <string name="mail_no_subject">Sin asunto</string>
+    <string name="mail_save">Guardar</string>
+    <string name="mail_to">Para</string>
+    <string name="mail_subject">Asunto</string>
+    <string name="mail_message">Mensaje</string>
+    <string name="mail_send_hint">Enviar lo entrega a través de tu cuenta SMTP conectada. Que el servidor lo acepte no confirma la entrega.</string>
+    <string name="mail_folder_drafts">Borradores</string>
+    <string name="mail_folder_outbox">Bandeja de salida</string>
+    <string name="mail_folder_handed_off">Entregados</string>
+    <string name="mail_folder_inbox">Bandeja de entrada</string>
+    <string name="mail_folder_sent">Enviados</string>
+    <string name="mail_empty_drafts">No hay borradores</string>
+    <string name="mail_empty_outbox">Bandeja de salida vacía</string>
+    <string name="mail_empty_handed_off">Nada entregado</string>
+    <string name="mail_empty_inbox">Bandeja de entrada vacía</string>
+    <string name="mail_empty_sent">Nada enviado</string>
+    <plurals name="mail_folder_count">
+        <item quantity="one">%1$d en este teléfono</item>
+        <item quantity="many">%1$d en este teléfono</item>
+        <item quantity="other">%1$d en este teléfono</item>
+    </plurals>
+    <string name="mail_notice_not_ready">Correo no está listo. Tu borrador no se ha guardado</string>
+    <string name="mail_notice_draft_saved">Borrador guardado en este teléfono</string>
+    <string name="mail_notice_busy">Correo está ocupado. Inténtalo en un momento</string>
+    <string name="mail_notice_add_recipient">Añade primero un destinatario</string>
+    <string name="mail_notice_sent">Aceptado por tu servidor SMTP</string>
+    <string name="mail_notice_handed_off">App de correo abierta; el envío no está confirmado</string>
+    <string name="mail_notice_no_app">No hay app de correo. Mensaje guardado en Bandeja de salida</string>
+    <string name="mail_notice_send_failed">Error al enviar o confirmación perdida. Revisa Enviados antes de reintentar; mensaje guardado en Bandeja de salida</string>
+    <string name="mail_notice_inbox_updated">Bandeja actualizada · últimos 100 mensajes</string>
+    <string name="mail_notice_refresh_failed">No se pudo actualizar la bandeja. Revisa la cuenta y la conexión</string>
+    <string name="mail_error_storage_read">No se puede leer el almacenamiento de correo; los datos existentes se han conservado</string>
+    <string name="mail_error_save">No se pudo guardar el correo en este teléfono</string>
+    <string name="mail_account_title">Cuenta de correo</string>
+    <string name="mail_account_intro">IMAP sobre TLS (993). SMTP TLS (465) o STARTTLS (587). Usa la contraseña de aplicación de tu proveedor. Las cuentas solo OAuth requieren registro con el proveedor.</string>
+    <string name="mail_account_failed">Error de conexión. Revisa hosts, puertos, usuario y contraseña de aplicación; ambos servidores deben aceptar la cuenta.</string>
+    <string name="mail_account_connecting">Conectando…</string>
+    <string name="mail_account_connect">Conectar</string>
+    <string name="mail_account_disconnect">Desconectar</string>
+    <string name="mail_account_email">Correo electrónico</string>
+    <string name="mail_account_username">Usuario (o correo)</string>
+    <string name="mail_account_password">Contraseña de aplicación</string>
+    <string name="mail_account_password_keep">Contraseña de app (vacía mantiene la guardada)</string>
+    <string name="mail_account_imap_host">Host IMAP</string>
+    <string name="mail_account_imap_port">Puerto TLS IMAP (993)</string>
+    <string name="mail_account_smtp_host">Host SMTP</string>
+    <string name="mail_account_smtp_port">Puerto SMTP (465 o 587)</string>
+</resources>

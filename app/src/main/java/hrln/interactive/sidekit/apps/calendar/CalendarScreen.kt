@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.Lifecycle
@@ -26,6 +27,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -45,17 +47,17 @@ fun CalendarScreen(
     onRefresh: () -> Unit = {}
 ) {
     SidekitScaffold(
-        title = "Calendar",
-        actions = listOf(SideAction("view", if (state.mode == CalendarMode.Month) "Day" else "Month", onClick = onMonth), SideAction("new", "New", onClick = onNew)),
-        options = listOf(SideAction("agenda", "Agenda", onClick = onAgenda), SideAction("today", "Today") { onDate(LocalDate.now()) })
+        title = stringResource(R.string.calendar_title),
+        actions = listOf(SideAction("view", stringResource(if (state.mode == CalendarMode.Month) R.string.calendar_day else R.string.calendar_month), onClick = onMonth), SideAction("new", stringResource(R.string.calendar_new), onClick = onNew)),
+        options = listOf(SideAction("agenda", stringResource(R.string.calendar_agenda), onClick = onAgenda), SideAction("today", stringResource(R.string.calendar_today)) { onDate(LocalDate.now()) })
     ) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
             item {
                 SidekitItemRow(Modifier.listFade(list, 0)) {
-                    SidekitTile(Modifier.weight(1f), onClick = { onMove(-1) }, onClickLabel = "Previous") { SidekitText("‹") }
+                    SidekitTile(Modifier.weight(1f), onClick = { onMove(-1) }, onClickLabel = stringResource(R.string.calendar_previous)) { SidekitText("‹") }
                     SidekitTile(Modifier.weight(4f)) { SidekitText(state.month, style = SidekitTheme.typography.caption) }
-                    SidekitTile(Modifier.weight(1f), onClick = { onMove(1) }, onClickLabel = "Next") { SidekitText("›") }
+                    SidekitTile(Modifier.weight(1f), onClick = { onMove(1) }, onClickLabel = stringResource(R.string.calendar_next)) { SidekitText("›") }
                 }
             }
             if (state.mode == CalendarMode.Month) {
@@ -87,17 +89,18 @@ fun CalendarScreen(
                 item { WeekStrip(state.week, state.selectedIndex, onSelectDay, Modifier.listFade(list, 1)) }
                 state.events.forEachIndexed { index, event ->
                     item("${event.id}:${event.start}") {
-                        val label = if (state.mode == CalendarMode.Agenda) "${Instant.ofEpochMilli(event.start).atZone(if (event.allDay) ZoneOffset.UTC else ZoneId.systemDefault()).toLocalDate()} ${event.time}" else event.time
-                        SidekitItem(label, Modifier.listFade(list, index + 2), secondary = event.title, onClick = { onEvent(event) })
+                        val time = event.time ?: stringResource(R.string.calendar_all_day)
+                        val label = if (state.mode == CalendarMode.Agenda) "${Instant.ofEpochMilli(event.start).atZone(if (event.allDay) ZoneOffset.UTC else ZoneId.systemDefault()).toLocalDate()} $time" else time
+                        SidekitItem(label, Modifier.listFade(list, index + 2), secondary = event.title.ifBlank { stringResource(R.string.calendar_untitled) }, onClick = { onEvent(event) })
                     }
                 }
             }
             if (state.loading) {
-                item { SidekitItem("Loading events…") }
+                item { SidekitItem(stringResource(R.string.calendar_loading_events)) }
             } else if (state.error != null) {
-                item { SidekitItem(state.error, onClick = onRefresh) }
+                item { SidekitItem(stringResource(state.error), onClick = onRefresh) }
             } else if (state.events.isEmpty()) {
-                item { SidekitItem("No events", Modifier.listFade(list, 2)) }
+                item { SidekitItem(stringResource(R.string.calendar_no_events), Modifier.listFade(list, 2)) }
             }
         }
     }

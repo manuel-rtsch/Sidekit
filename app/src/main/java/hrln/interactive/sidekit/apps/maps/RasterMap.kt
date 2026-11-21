@@ -20,8 +20,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.*
 import androidx.core.net.toUri
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.drawFocusRing
@@ -61,13 +63,16 @@ fun RasterMap(center: Place, current: Place?, destination: Place?, zoomChange: I
     var panning by remember { mutableStateOf(false) }
     BackHandler(enabled = panning) { panning = false }
     var tilesMissing by remember { mutableStateOf<Boolean?>(null) }
+    val tilesMissingText = stringResource(R.string.maps_tiles_missing)
+    val panningText = stringResource(R.string.maps_panning)
+    val readyText = stringResource(R.string.maps_map_ready)
     LaunchedEffect(tilesMissing, panning) {
         onStatus(
             when {
                 tilesMissing == null -> return@LaunchedEffect
-                tilesMissing == true -> "Some tiles unavailable · location and search still work"
-                panning -> "Panning · d-pad moves the map; OK or Back to stop"
-                else -> "Map ready · drag, or OK to pan with the d-pad; Options to zoom"
+                tilesMissing == true -> tilesMissingText
+                panning -> panningText
+                else -> readyText
             }
         )
     }
@@ -171,7 +176,7 @@ fun RasterMap(center: Place, current: Place?, destination: Place?, zoomChange: I
                 } catch (_: android.content.ActivityNotFoundException) { }
             }
         ) {
-            SidekitText("© OpenStreetMap contributors", style = SidekitTheme.typography.tiny, modifier = Modifier.padding(SidekitTheme.spacing.itemOuterGap))
+            SidekitText(stringResource(R.string.maps_osm_attribution), style = SidekitTheme.typography.tiny, modifier = Modifier.padding(SidekitTheme.spacing.itemOuterGap))
         }
     }
 }

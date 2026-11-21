@@ -20,9 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
 import hrln.interactive.sidekit.design.action.ActionMotion
@@ -56,6 +59,7 @@ internal fun AppDetailScreen(
     onUnpin: () -> Unit
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var message by remember(app.key) { mutableStateOf<String?>(null) }
     var version by remember(app.key) { mutableStateOf(appVersion(context, app.component.packageName)) }
     // Coming back from the system uninstaller, the header says whether the app is still there.
@@ -67,16 +71,16 @@ internal fun AppDetailScreen(
         try {
             action()
         } catch (e: Exception) {
-            message = "Couldn't open app: ${e.localizedMessage}"
+            message = resources.getString(R.string.apps_open_failed, e.localizedMessage.orEmpty())
         }
     }
     val list = rememberLazyListState()
     val actions = listOf(
-        SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back", onBack, tone = ActionTone.Muted, motion = ActionMotion.Back),
-        SideAction.forward("open", "Open", onClick = { perform { source.launch(app) } })
+        SideAction.square("back", SidekitIcon.ArrowLeftAlt, stringResource(R.string.apps_back), onBack, tone = ActionTone.Muted, motion = ActionMotion.Back),
+        SideAction.forward("open", stringResource(R.string.apps_open), onClick = { perform { source.launch(app) } })
     )
     // Like Sideport's hub, the system app page is the one rare action kept in Options.
-    val options = if (version != null) listOf(SideAction("info", "App info", SidekitIcon.Settings) { perform { source.info(app) } }) else emptyList()
+    val options = if (version != null) listOf(SideAction("info", stringResource(R.string.apps_info), SidekitIcon.Settings) { perform { source.info(app) } }) else emptyList()
     SidekitScaffold(app.label, actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             message?.let { text ->
@@ -93,9 +97,9 @@ internal fun AppDetailScreen(
                 val sideport = index++
                 item(key = "sideport") {
                     SidekitItem(
-                        "In Sideport",
+                        stringResource(R.string.apps_in_sideport),
                         Modifier.height(CompactRowHeight).listFade(list, sideport),
-                        secondary = "Can't also be added to home",
+                        secondary = stringResource(R.string.apps_in_sideport_note),
                         icon = SidekitIcon.DeployedCode,
                         colour = ItemColour.Muted
                     )
@@ -104,7 +108,7 @@ internal fun AppDetailScreen(
                 val pin = index++
                 item(key = "pin") {
                     SidekitLineButton(
-                        if (pinned) "Remove from home" else "Add to home",
+                        stringResource(if (pinned) R.string.apps_remove_from_home else R.string.apps_add_to_home),
                         { if (pinned) onUnpin() else onPin() },
                         Modifier.height(CompactRowHeight).listFade(list, pin),
                         variant = LineButtonVariant.Secondary
@@ -115,7 +119,7 @@ internal fun AppDetailScreen(
                 val uninstall = index++
                 item(key = "uninstall") {
                     SidekitLineButton(
-                        "Uninstall app",
+                        stringResource(R.string.apps_uninstall_app),
                         {
                             perform {
                                 context.startActivity(
@@ -147,9 +151,9 @@ private fun AppHeader(app: LaunchableApp, version: String?, source: AppsSource, 
             }
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (version != null) {
-                    SidekitText("Version $version", style = SidekitTheme.typography.body)
+                    SidekitText(stringResource(R.string.apps_version, version), style = SidekitTheme.typography.body)
                 } else {
-                    SidekitText("Not installed", style = SidekitTheme.typography.body, color = SidekitTheme.colors.dangerA2)
+                    SidekitText(stringResource(R.string.apps_not_installed), style = SidekitTheme.typography.body, color = SidekitTheme.colors.dangerA2)
                 }
                 SidekitText(
                     app.component.packageName,
@@ -157,7 +161,7 @@ private fun AppHeader(app: LaunchableApp, version: String?, source: AppsSource, 
                     color = SidekitTheme.colors.surfaceA5
                 )
                 if (app.user != Process.myUserHandle()) {
-                    SidekitText("Work profile", style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
+                    SidekitText(stringResource(R.string.apps_work_profile), style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
                 }
             }
         }

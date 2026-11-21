@@ -29,6 +29,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -39,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.Access
 import hrln.interactive.sidekit.apps.media.MediaPermissions
 import hrln.interactive.sidekit.apps.media.PermissionRationale
@@ -75,14 +77,17 @@ fun NavGraphBuilder.cameraGraph(nav: NavHostController) {
             onToggleFlash = controller::toggleFlash,
             onPhotos = {
                 val capture = state.lastCapture
-                if (capture != null) nav.navigate(photosViewerRoute(AlbumKey.Camera, capture.lastPathSegment?.toLongOrNull() ?: -1))
-                else nav.navigate(SubApp.Photos.route)
+                if (capture != null) {
+                    nav.navigate(photosViewerRoute(AlbumKey.Camera, capture.lastPathSegment?.toLongOrNull() ?: -1))
+                } else {
+                    nav.navigate(SubApp.Photos.route)
+                }
             },
             onShutter = controller::takePhoto,
             onToggleRecording = { if (microphone.granted) controller.toggleRecording() else microphone.request() },
             onStart = controller::start,
             onSurface = controller::surfaceReady,
-            onStop = controller::stop,
+            onStop = controller::stop
         )
     }
 }
@@ -100,32 +105,44 @@ fun CameraScreen(
     onAllowMicrophone: () -> Unit = {},
     onStart: (TextureView) -> Unit = {},
     onSurface: (TextureView, Int, Int) -> Unit = { _, _, _ -> },
-    onStop: () -> Unit = {},
+    onStop: () -> Unit = {}
 ) {
     if (access != Access.Granted) {
-        SidekitScaffold(title = "Camera", actions = listOf(SideAction("allow", if (access == Access.Blocked) "Open settings" else "Allow", SidekitIcon.Check, onClick = onAllowCamera))) { padding ->
-            PermissionRationale("Use the camera", "Camera needs camera access to show a preview and save photos and videos to this phone.", access, padding)
+        val allow = stringResource(if (access == Access.Blocked) R.string.camera_open_settings else R.string.camera_allow)
+        SidekitScaffold(title = stringResource(R.string.camera_title), actions = listOf(SideAction("allow", allow, SidekitIcon.Check, onClick = onAllowCamera))) { padding ->
+            PermissionRationale(stringResource(R.string.camera_rationale_title), stringResource(R.string.camera_rationale), access, padding)
         }
         return
     }
     val focus = remember { FocusRequester() }
-    Column(Modifier.fillMaxSize().padding(SidekitTheme.spacing.pagePadding).focusRequester(focus).onKeyEvent {
-        if (it.type == KeyEventType.KeyDown && it.nativeKeyEvent.keyCode in listOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_5)) { onShutter(); true } else false
-    }.focusable()) {
+    Column(
+        Modifier.fillMaxSize().padding(SidekitTheme.spacing.pagePadding).focusRequester(focus).onKeyEvent {
+            if (it.type == KeyEventType.KeyDown && it.nativeKeyEvent.keyCode in listOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_5)) {
+                onShutter()
+                true
+            } else {
+                false
+            }
+        }.focusable()
+    ) {
         Viewfinder(state.flashOn, onToggleFlash, onStart, onSurface, onStop, Modifier.weight(1f).fillMaxWidth())
         Spacer(Modifier.height(SidekitTheme.spacing.pageGap))
         Spacer(Modifier.height(SidekitTheme.spacing.actionBarHeight))
     }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-    PublishChrome(header = null, actions = if (state.recording) {
-        listOf(SideAction("record", state.elapsedLabel, SidekitIcon.Videocam, tone = ActionTone.Destructive, contentDescription = "Stop recording", onClick = onToggleRecording))
-    } else {
-        listOf(
-            SideAction("photos", icon = SidekitIcon.PhotoLibrary, tone = ActionTone.Muted, contentDescription = "Photos", onClick = onPhotos),
-            SideAction("shutter", icon = SidekitIcon.PhotoCamera, contentDescription = if (state.busy) "Saving photo" else "Take photo", onClick = onShutter),
-            SideAction("record", icon = SidekitIcon.Videocam, contentDescription = "Record video", onClick = onToggleRecording),
-        )
-    }, options = state.error?.let { listOf(SideAction("error", it, SidekitIcon.Close, onClick = {})) }.orEmpty())
+    PublishChrome(
+        header = null,
+        actions = if (state.recording) {
+            listOf(SideAction("record", state.elapsedLabel, SidekitIcon.Videocam, tone = ActionTone.Destructive, contentDescription = stringResource(R.string.camera_stop_recording), onClick = onToggleRecording))
+        } else {
+            listOf(
+                SideAction("photos", icon = SidekitIcon.PhotoLibrary, tone = ActionTone.Muted, contentDescription = stringResource(R.string.camera_photos), onClick = onPhotos),
+                SideAction("shutter", icon = SidekitIcon.PhotoCamera, contentDescription = stringResource(if (state.busy) R.string.camera_saving_photo else R.string.camera_take_photo), onClick = onShutter),
+                SideAction("record", icon = SidekitIcon.Videocam, contentDescription = stringResource(R.string.camera_record_video), onClick = onToggleRecording)
+            )
+        },
+        options = state.error?.let { listOf(SideAction("error", it, SidekitIcon.Close, onClick = {})) }.orEmpty()
+    )
 }
 
 @Composable
@@ -145,10 +162,13 @@ private fun Viewfinder(flashOn: Boolean, onToggleFlash: () -> Unit, onStart: (Te
         DisposableEffect(lifecycle) {
             val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) onStop() }
             lifecycle.addObserver(observer)
-            onDispose { lifecycle.removeObserver(observer); onStop() }
+            onDispose {
+                lifecycle.removeObserver(observer)
+                onStop()
+            }
         }
-        Box(Modifier.align(Alignment.TopEnd).padding(12.dp).size(48.dp).clip(SidekitTheme.shapes.control).clickable(onClickLabel = if (flashOn) "Turn flash off" else "Turn flash on", role = Role.Switch, onClick = onToggleFlash), contentAlignment = Alignment.Center) {
-            SidekitIconImage(if (flashOn) SidekitIcon.FlashOn else SidekitIcon.FlashOff, contentDescription = if (flashOn) "Flash on" else "Flash off")
+        Box(Modifier.align(Alignment.TopEnd).padding(12.dp).size(48.dp).clip(SidekitTheme.shapes.control).clickable(onClickLabel = stringResource(if (flashOn) R.string.camera_turn_flash_off else R.string.camera_turn_flash_on), role = Role.Switch, onClick = onToggleFlash), contentAlignment = Alignment.Center) {
+            SidekitIconImage(if (flashOn) SidekitIcon.FlashOn else SidekitIcon.FlashOff, contentDescription = stringResource(if (flashOn) R.string.camera_flash_on else R.string.camera_flash_off))
         }
     }
 }

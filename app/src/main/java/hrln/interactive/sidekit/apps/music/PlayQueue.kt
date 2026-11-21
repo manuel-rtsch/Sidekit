@@ -1,12 +1,15 @@
 package hrln.interactive.sidekit.apps.music
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+import hrln.interactive.sidekit.R
 import kotlin.random.Random
 
-enum class RepeatMode(val label: String) {
-    Off("Repeat off"),
-    All("Repeat all"),
-    One("Repeat one");
+/** [label] is the Now Playing option that shows and cycles the mode ("Repeat: off"). */
+enum class RepeatMode(@StringRes val label: Int) {
+    Off(R.string.music_repeat_off),
+    All(R.string.music_repeat_all),
+    One(R.string.music_repeat_one);
 
     fun next(): RepeatMode = entries[(ordinal + 1) % entries.size]
 }

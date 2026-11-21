@@ -50,9 +50,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.media.Access
 import hrln.interactive.sidekit.apps.media.PermissionRationale
 import hrln.interactive.sidekit.apps.media.formatDuration
@@ -106,17 +109,20 @@ fun PhotosMainScreen(
     access: PhotosAccess = PhotosAccess()
 ) {
     PhotoGridScreen(
-        title = "Photos",
+        title = stringResource(R.string.photos_title),
         grid = grid,
         onOpen = onOpen,
         onLoadMore = onLoadMore,
         access = access,
-        actions = listOf(SideAction.forward("albums", "Albums", onAlbums)),
-        empty = "No photos yet"
+        actions = listOf(SideAction.forward("albums", stringResource(R.string.photos_albums), onAlbums)),
+        empty = stringResource(R.string.photos_empty)
     )
 }
 
-/** "Recent Albums" (36:220) and "Album 1 selected" (36:286): the same grid titled with the album. */
+/**
+ * "Recent Albums" (36:220) and "Album 1 selected" (36:286): the same grid titled with the album.
+ * [favourites] explains how to fill the Favourites album when it is empty.
+ */
 @Composable
 fun AlbumScreen(
     title: String,
@@ -124,7 +130,8 @@ fun AlbumScreen(
     onOpen: (MediaItem) -> Unit,
     onBack: () -> Unit,
     onLoadMore: () -> Unit = {},
-    access: PhotosAccess = PhotosAccess()
+    access: PhotosAccess = PhotosAccess(),
+    favourites: Boolean = false
 ) {
     PhotoGridScreen(
         title = title,
@@ -132,8 +139,8 @@ fun AlbumScreen(
         onOpen = onOpen,
         onLoadMore = onLoadMore,
         access = access,
-        actions = listOf(SideAction.back("back", "Albums", onBack)),
-        empty = if (title == "Favourites") "Tap the heart on a photo to add it here" else "Nothing in this album"
+        actions = listOf(SideAction.back("back", stringResource(R.string.photos_albums), onBack)),
+        empty = stringResource(if (favourites) R.string.photos_favourites_empty else R.string.photos_album_empty)
     )
 }
 
@@ -150,7 +157,7 @@ private fun PhotoGridScreen(
 ) {
     if (!access.granted) {
         SidekitScaffold(title = title, actions = listOf(allowPhotos(access))) { padding ->
-            PermissionRationale("See your photos", "Photos shows the pictures and videos on this phone. Nothing leaves the device.", access.access, padding)
+            PermissionRationale(stringResource(R.string.photos_permission_title), stringResource(R.string.photos_permission_reason), access.access, padding)
         }
         return
     }
@@ -188,7 +195,7 @@ private fun PhotoTile(item: MediaItem, modifier: Modifier, onClick: () -> Unit) 
         modifier = modifier,
         color = SidekitTheme.colors.surfaceA3,
         onClick = onClick,
-        onClickLabel = if (item.isVideo) "Open video" else "Open photo"
+        onClickLabel = stringResource(if (item.isVideo) R.string.photos_open_video else R.string.photos_open_photo)
     ) {
         Thumbnail(item.uri, TILE_WIDTH, height, Modifier.fillMaxSize())
         if (item.isVideo) {
@@ -208,10 +215,19 @@ private fun EmptyBody(text: String, padding: PaddingValues) {
     }
 }
 
+@Composable
 private fun allowPhotos(access: PhotosAccess) = if (access.access == Access.Blocked) {
-    SideAction.forward("allow", "Open settings", access.onAllow, icon = SidekitIcon.Settings)
+    SideAction.forward("allow", stringResource(R.string.photos_open_settings), access.onAllow, icon = SidekitIcon.Settings)
 } else {
-    SideAction("allow", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, contentDescription = "Allow access to photos", onClick = access.onAllow)
+    SideAction(
+        "allow",
+        stringResource(R.string.photos_allow),
+        SidekitIcon.Check,
+        iconAtEnd = true,
+        tone = ActionTone.Secondary,
+        contentDescription = stringResource(R.string.photos_allow_description),
+        onClick = access.onAllow
+    )
 }
 
 /**
@@ -226,14 +242,14 @@ fun AlbumsScreen(
     onOpenAlbum: (PhotoAlbum) -> Unit,
     onBack: () -> Unit
 ) {
-    SidekitScaffold(title = "Albums", actions = listOf(SideAction.back("back", "Photos", onBack))) { padding ->
+    SidekitScaffold(title = stringResource(R.string.photos_albums), actions = listOf(SideAction.back("back", stringResource(R.string.photos_title), onBack))) { padding ->
         val listState = rememberLazyListState()
         val pairs = smartAlbums.chunked(2)
         SidekitList(padding, state = listState) {
             itemsIndexed(pairs, key = { _, pair -> "smart:" + pair.first().key.route }) { index, pair ->
                 SidekitItemRow(Modifier.listFade(listState, index)) {
                     pair.forEach { album ->
-                        SidekitTile(Modifier.weight(1f), onClick = { onOpenAlbum(album) }) { SidekitText(album.name) }
+                        SidekitTile(Modifier.weight(1f), onClick = { onOpenAlbum(album) }) { SidekitText(album.title()) }
                     }
                 }
             }
@@ -252,11 +268,15 @@ private fun AlbumRow(album: PhotoAlbum, modifier: Modifier, onClick: () -> Unit)
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap)
         ) {
-            SidekitText(album.name, Modifier.weight(1f))
-            album.itemCount?.let { SidekitText(if (it == 1) "1 item" else "$it items") }
+            SidekitText(album.title(), Modifier.weight(1f))
+            album.itemCount?.let { SidekitText(pluralStringResource(R.plurals.photos_items, it, it)) }
         }
     }
 }
+
+/** A smart album's name in the UI language, or the folder's own name. */
+@Composable
+private fun PhotoAlbum.title(): String = key.smartName()?.let { stringResource(it) } ?: name
 
 private enum class ViewerMode { Normal, ConfirmDelete }
 
@@ -341,54 +361,73 @@ fun PhotoViewScreen(
 
     val favourite = current != null && current.id in favourites
     val actions = when {
-        current == null -> listOf(SideAction.back("back", "Back", onBack))
+        current == null -> listOf(SideAction.back("back", stringResource(R.string.photos_back), onBack))
 
         mode == ViewerMode.ConfirmDelete -> listOf(
-            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep ${kind(current)}") { mode = ViewerMode.Normal },
-            SideAction("delete", "Delete", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm delete") {
+            SideAction.cancel(
+                icon = null,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(if (current.isVideo) R.string.photos_keep_video else R.string.photos_keep_photo)
+            ) { mode = ViewerMode.Normal },
+            SideAction(
+                "delete",
+                stringResource(R.string.photos_delete),
+                SidekitIcon.DeleteForever,
+                tone = ActionTone.Destructive,
+                weight = 1.2f,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(R.string.photos_confirm_delete)
+            ) {
                 mode = ViewerMode.Normal
                 onDelete(current)
             }
         )
 
         else -> listOf(
-            SideAction("back", "Back", SidekitIcon.ArrowLeftAlt, motion = ActionMotion.Back, contentDescription = "Back from ${kind(current)}", onClick = onBack),
+            SideAction(
+                "back",
+                stringResource(R.string.photos_back),
+                SidekitIcon.ArrowLeftAlt,
+                motion = ActionMotion.Back,
+                contentDescription = stringResource(if (current.isVideo) R.string.photos_back_from_video else R.string.photos_back_from_photo),
+                onClick = onBack
+            ),
             SideAction.square(
                 "favourite",
                 SidekitIcon.Favorite,
-                if (favourite) "Remove from Favourites" else "Add to Favourites",
+                stringResource(if (favourite) R.string.photos_remove_favourite else R.string.photos_add_favourite),
                 { onToggleFavourite(current) },
                 tone = if (favourite) ActionTone.Primary else ActionTone.Muted
             ),
-            SideAction.square("delete", SidekitIcon.DeleteForever, "Delete ${kind(current)}", { mode = ViewerMode.ConfirmDelete }, tone = ActionTone.Destructive)
+            SideAction.square("delete", SidekitIcon.DeleteForever, stringResource(if (current.isVideo) R.string.photos_delete_video else R.string.photos_delete_photo), { mode = ViewerMode.ConfirmDelete }, tone = ActionTone.Destructive)
         )
     }
     val options = if (current == null || mode == ViewerMode.ConfirmDelete) {
         emptyList()
     } else {
         listOfNotNull(
-            SideAction("share", "Share", SidekitIcon.ArrowUpward) { onShare(current) },
-            SideAction("favourite", if (favourite) "Unfavourite" else "Favourite", SidekitIcon.Favorite) { onToggleFavourite(current) },
-            if (current.isVideo) SideAction("play", "Play", SidekitIcon.PlayArrow) { onPlayVideo(current) } else null
+            SideAction("share", stringResource(R.string.photos_share), SidekitIcon.ArrowUpward) { onShare(current) },
+            SideAction("favourite", stringResource(if (favourite) R.string.photos_unfavourite else R.string.photos_favourite), SidekitIcon.Favorite) { onToggleFavourite(current) },
+            if (current.isVideo) SideAction("play", stringResource(R.string.photos_play), SidekitIcon.PlayArrow) { onPlayVideo(current) } else null
         )
     }
     PublishChrome(header = null, actions = actions, options = options)
 }
 
-private fun kind(item: MediaItem) = if (item.isVideo) "video" else "photo"
-
 /** One page of the viewer: the photo decoded to fit the slot, or a video's poster with a play button. */
 @Composable
 private fun FullPhoto(item: MediaItem, onPlayVideo: () -> Unit) {
+    val playLabel = stringResource(R.string.photos_play_video)
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .clip(SidekitTheme.shapes.item)
             .background(SidekitTheme.colors.surfaceA2)
-            .then(if (item.isVideo) Modifier.clickable(onClickLabel = "Play video", role = Role.Button, onClick = onPlayVideo) else Modifier),
+            .then(if (item.isVideo) Modifier.clickable(onClickLabel = playLabel, role = Role.Button, onClick = onPlayVideo) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         val context = LocalContext.current.applicationContext
+        val description = stringResource(if (item.isVideo) R.string.photos_video else R.string.photos_photo)
         val density = LocalDensity.current
         val w = with(density) { maxWidth.roundToPx() }
         val h = with(density) { maxHeight.roundToPx() }
@@ -400,7 +439,7 @@ private fun FullPhoto(item: MediaItem, onPlayVideo: () -> Unit) {
             }
         }
         image?.let {
-            Image(it, contentDescription = if (item.isVideo) "Video" else "Photo", Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            Image(it, contentDescription = description, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         }
         if (item.isVideo) {
             Box(

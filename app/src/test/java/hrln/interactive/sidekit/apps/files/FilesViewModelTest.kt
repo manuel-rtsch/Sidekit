@@ -3,6 +3,7 @@ package hrln.interactive.sidekit.apps.files
 import android.content.IntentSender
 import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import hrln.interactive.sidekit.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -22,7 +23,7 @@ import org.junit.runner.RunWith
 private class FakeFilesSource : FilesSource {
     val entries = mutableListOf(
         FileEntry(Uri.parse("content://media/1"), "z.txt", "text/plain", 10, 1),
-        FileEntry(Uri.parse("content://media/2"), "a.txt", "text/plain", 20, 2),
+        FileEntry(Uri.parse("content://media/2"), "a.txt", "text/plain", 20, 2)
     )
     var deleteResult: DeleteResult = DeleteResult.Deleted
     override suspend fun list(location: FilePlace) = entries
@@ -86,13 +87,13 @@ class FilesViewModelTest {
         scope.testScheduler.runCurrent()
         assertTrue(vm.results.value!!.isEmpty())
         assertNull(vm.pendingDelete.value)
-        assertEquals("Deleted a.txt", vm.notice.value)
+        assertEquals(FilesNotice(R.string.files_deleted, listOf("a.txt")), vm.notice.value)
     }
 
     @Test fun `non deletable entry only shows explanation`() {
         val entry = source.entries.first().copy(canDelete = false)
         vm.askDelete(entry)
         assertNull(vm.pendingDelete.value)
-        assertEquals("This file can't be deleted here", vm.notice.value)
+        assertEquals(FilesNotice(R.string.files_cant_delete), vm.notice.value)
     }
 }

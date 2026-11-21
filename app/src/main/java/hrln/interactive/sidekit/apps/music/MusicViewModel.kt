@@ -44,7 +44,7 @@ class MusicViewModel(
     private fun sourceLibrary() = combine(source.changes(), playlists.playlists) { _, saved ->
         val tracks = withContext(io) { runCatching { source.tracks() }.getOrDefault(emptyList()) }
         loaded.value = true
-        MusicLibrary.from(tracks, saved.orEmpty())
+        MusicLibrary.from(tracks, source.labels(), saved.orEmpty())
     }
 
     fun togglePlayPause() = player.togglePlayPause()

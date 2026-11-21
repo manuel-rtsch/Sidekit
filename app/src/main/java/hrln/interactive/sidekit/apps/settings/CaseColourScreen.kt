@@ -3,6 +3,8 @@ package hrln.interactive.sidekit.apps.settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitList
 import hrln.interactive.sidekit.design.components.SidekitScaffold
@@ -18,7 +20,7 @@ internal fun CaseColourScreen(back: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember(context) { SidekitPreferences(context) }
     val selected = rememberCaseColour(prefs)
-    SidekitScaffold("Case colour", actions = listOf(SideAction.back("back", "Settings", back))) { padding ->
+    SidekitScaffold(stringResource(R.string.settings_case_colour), actions = listOf(SideAction.back("back", stringResource(R.string.settings_title), back))) { padding ->
         SidekitList(padding) {
             caseColourChoices(selected) { prefs.caseColour = it }
         }

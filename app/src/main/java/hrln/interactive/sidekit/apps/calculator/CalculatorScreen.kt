@@ -1,6 +1,7 @@
 package hrln.interactive.sidekit.apps.calculator
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -14,6 +15,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,6 +24,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitItem
@@ -71,7 +74,7 @@ fun CalculatorScreen(
     history: List<Calculation> = emptyList(),
     onClearHistory: () -> Unit = {},
     onRecall: (String) -> Unit = {},
-    historyError: String? = null
+    @StringRes historyError: Int? = null
 ) {
     var page by rememberSaveable { mutableStateOf("keys") }
     var confirmClear by remember { mutableStateOf(false) }
@@ -81,13 +84,18 @@ fun CalculatorScreen(
         page = "keys"
         confirmClear = false
     }
+    val clear = stringResource(R.string.calculator_clear)
+    val clearHistory = stringResource(R.string.calculator_clear_history)
+    val back = stringResource(R.string.calculator_back)
+    val historyLabel = stringResource(R.string.calculator_history)
+    val keypadLabel = stringResource(R.string.calculator_keypad)
     SidekitScaffold(
         title = if (page == "keys") {
-            display
+            displayText(display)
         } else if (page == "history") {
-            "History"
+            stringResource(R.string.calculator_history)
         } else {
-            "Keypad help"
+            stringResource(R.string.calculator_keypad_help)
         },
         titleAlign = if (page == "keys") TextAlign.End else TextAlign.Start,
         modifier = Modifier.focusRequester(focus).onPreviewKeyEvent { event ->
@@ -101,21 +109,21 @@ fun CalculatorScreen(
             }
         }.focusable(),
         actions = if (page == "keys") {
-            listOf(SideAction("clear", "Clear") { onKey(CalcKey.Clear) }, SideAction("main", "=") { onKey(CalcKey.Equals) })
+            listOf(SideAction("clear", clear) { onKey(CalcKey.Clear) }, SideAction("main", "=") { onKey(CalcKey.Equals) })
         } else if (confirmClear) {
             listOf(
                 SideAction.cancel(icon = null, motion = ActionMotion.Up) { confirmClear = false },
-                SideAction.delete("main", "Clear history") {
+                SideAction.delete("main", clearHistory) {
                     onClearHistory()
                     confirmClear = false
                 }
             )
         } else {
-            listOf(SideAction("main", "Back") { page = "keys" })
+            listOf(SideAction("main", back) { page = "keys" })
         },
         options = when (page) {
-            "keys" -> listOf(SideAction("history", "History") { page = "history" }, SideAction("help", "Keypad") { page = "help" })
-            "history" -> listOf(SideAction.delete("clear", "Clear history") { confirmClear = true })
+            "keys" -> listOf(SideAction("history", historyLabel) { page = "history" }, SideAction("help", keypadLabel) { page = "help" })
+            "history" -> listOf(SideAction.delete("clear", clearHistory) { confirmClear = true })
             else -> emptyList()
         }
     ) { padding ->
@@ -133,11 +141,11 @@ fun CalculatorScreen(
                 }
 
                 "history" -> {
-                    historyError?.let { item { SidekitItem(it) } }
-                    if (history.isEmpty()) item { SidekitItem("No calculations yet", Modifier.listFade(list, 0)) }
+                    historyError?.let { item { SidekitItem(stringResource(it)) } }
+                    if (history.isEmpty()) item { SidekitItem(stringResource(R.string.calculator_no_calculations), Modifier.listFade(list, 0)) }
                     history.forEachIndexed { index, entry ->
                         item {
-                            SidekitItem(entry.result, Modifier.listFade(list, index), secondary = entry.expression, onClick = {
+                            SidekitItem(displayText(entry.result), Modifier.listFade(list, index), secondary = entry.expression, onClick = {
                                 onRecall(entry.result)
                                 page = "keys"
                             })
@@ -145,11 +153,23 @@ fun CalculatorScreen(
                     }
                 }
 
-                else -> listOf("0–9 type numbers", "* multiplies · # equals", "Delete backspaces", "Use the operator tiles for +, −, ÷ and decimal.", "Calculations run left to right.").forEachIndexed { index, text -> item { SidekitItem(text, Modifier.listFade(list, index)) } }
+                else -> HELP.forEachIndexed { index, text -> item { SidekitItem(stringResource(text), Modifier.listFade(list, index)) } }
             }
         }
     }
 }
+
+private val HELP = listOf(
+    R.string.calculator_help_digits,
+    R.string.calculator_help_star,
+    R.string.calculator_help_delete,
+    R.string.calculator_help_operators,
+    R.string.calculator_help_order
+)
+
+/** The display, with the engine's [CalculatorEngine.ERROR] shown in the user's language. */
+@Composable
+private fun displayText(display: String) = if (display == CalculatorEngine.ERROR) stringResource(R.string.calculator_error) else display
 
 @Composable
 private fun CalcKey.color(): Color {

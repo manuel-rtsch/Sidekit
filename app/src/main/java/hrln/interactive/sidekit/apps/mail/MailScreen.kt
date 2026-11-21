@@ -1,7 +1,9 @@
 package hrln.interactive.sidekit.apps.mail
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.InfoStrip
 import hrln.interactive.sidekit.apps.everyday.TopAlignedRow
@@ -19,18 +21,18 @@ data class MailMessage(
     val id: Long = 0,
     val folder: MailFolder = MailFolder.Inbox,
     val updatedAt: Long = 0,
-    val remoteKey: String = "",
+    val remoteKey: String = ""
 )
 
 object MailSampleData {
-    const val summary = "Inbox · 2 unread"
+    val summary = "Inbox · 2 unread"
     val inbox = listOf(MailMessage("Alex", "Coffee tomorrow?"), MailMessage("Studio", "Design feedback"), MailMessage("Railway", "Your e-ticket"))
 }
 
 /** The original Figma frame, retained only for previews and screenshot tests. */
 @Composable
 fun MailScreen(summary: String, messages: List<MailMessage>, onFolders: () -> Unit = {}, onCompose: () -> Unit = {}) {
-    SidekitScaffold(title = "Mail", actions = dualArrowActions("Folders", "Compose", onFolders, onCompose)) { padding ->
+    SidekitScaffold(title = stringResource(R.string.mail_title), actions = dualArrowActions(stringResource(R.string.mail_folders), stringResource(R.string.mail_compose), onFolders, onCompose)) { padding ->
         EverydayContent(padding) {
             InfoStrip(summary, height = 62.dp, top = 13.dp, style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
             messages.forEach {

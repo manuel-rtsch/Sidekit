@@ -16,6 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +29,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.design.action.SideAction
@@ -65,7 +68,7 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val storedNotice by vm.notice.collectAsStateWithLifecycle()
             val storedNoticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val storageError by vm.storageError.collectAsStateWithLifecycle()
-            val notice = storageError ?: storedNotice
+            val notice = (storageError ?: storedNotice)?.let { stringResource(it) }
             val noticeKind = if (storageError != null) NoticeKind.Other else storedNoticeKind
             val undo by vm.undo.collectAsStateWithLifecycle()
             UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
@@ -75,13 +78,14 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
                 vm::dismissNotice,
                 undo != null,
                 vm::undo,
-                SideAction.back("folders", "Folders") { nav.navigate(FOLDERS) },
-                SideAction.forward("compose", "Compose", onClick = { nav.navigate("$ROOT/compose") })
+                SideAction.back("folders", stringResource(R.string.mail_folders)) { nav.navigate(FOLDERS) },
+                SideAction.forward("compose", stringResource(R.string.mail_compose), onClick = { nav.navigate("$ROOT/compose") }),
+                stringResource(R.string.mail_undo_delete)
             )
             SidekitScaffold(
-                title = "Mail",
+                title = stringResource(R.string.mail_title),
                 actions = actions,
-                options = listOf(SideAction("refresh", "Refresh inbox") { vm.refresh() })
+                options = listOf(SideAction("refresh", stringResource(R.string.mail_refresh_inbox)) { vm.refresh() })
             ) { padding ->
                 MessageList(padding, messages, null, vm::delete, onAccount = { nav.navigate("$ROOT/account") }) { nav.navigate(if (it.folder == MailFolder.Inbox || it.folder == MailFolder.Sent) "$ROOT/read/${it.id}" else "$ROOT/compose?id=${it.id}") }
             }
@@ -98,10 +102,10 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val messages by vm.messages.collectAsStateWithLifecycle()
             val message = messages?.firstOrNull { it.id == entry.arguments?.getString("id")?.toLongOrNull() }
             SidekitScaffold(
-                "Mail",
+                stringResource(R.string.mail_title),
                 actions = listOf(
-                    SideAction.back("back", "Back") { nav.popBackStack() },
-                    SideAction("reply", "Reply") {
+                    SideAction.back("back", stringResource(R.string.mail_back)) { nav.popBackStack() },
+                    SideAction("reply", stringResource(R.string.mail_reply)) {
                         message?.let {
                             vm.saveDraft(null, runCatching { javax.mail.internet.InternetAddress.parse(it.sender).firstOrNull()?.address.orEmpty() }.getOrDefault(""), "Re: ${it.subject}", "")
                             nav.navigate("$ROOT/compose?id=${vm.messages.value?.firstOrNull()?.id}")
@@ -113,7 +117,7 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
                     item {
                         SidekitCard(Modifier.fillMaxWidth()) {
                             Column {
-                                SidekitText(message?.sender ?: "Message unavailable", maxLines = Int.MAX_VALUE)
+                                SidekitText(message?.sender ?: stringResource(R.string.mail_message_unavailable), maxLines = Int.MAX_VALUE)
                                 SidekitText(message?.subject.orEmpty(), maxLines = Int.MAX_VALUE)
                             }
                         }
@@ -125,13 +129,13 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
         composable(FOLDERS) {
             val vm = mailViewModel()
             val messages by vm.messages.collectAsStateWithLifecycle()
-            SidekitScaffold(title = "Mail folders", actions = listOf(SideAction.back("back", "Mail") { nav.popBackStack() })) { padding ->
+            SidekitScaffold(title = stringResource(R.string.mail_folders_title), actions = listOf(SideAction.back("back", stringResource(R.string.mail_title)) { nav.popBackStack() })) { padding ->
                 val state = rememberLazyListState()
                 SidekitList(padding, state = state) {
                     val folders = listOf(MailFolder.Inbox, MailFolder.Draft, MailFolder.Outbox, MailFolder.Sent, MailFolder.HandedOff)
                     itemsIndexed(folders, key = { _, it -> it.name }) { index, folder ->
                         val count = messages.orEmpty().count { it.folder == folder }
-                        SidekitItem(folder.label, Modifier.listFade(state, index), secondary = "$count on this phone", icon = SidekitIcon.FolderCopy, showLinkArrow = true) {
+                        SidekitItem(stringResource(folder.label), Modifier.listFade(state, index), secondary = pluralStringResource(R.plurals.mail_folder_count, count, count), icon = SidekitIcon.FolderCopy, showLinkArrow = true) {
                             nav.navigate("$ROOT/folder/${folder.name}")
                         }
                     }
@@ -144,7 +148,7 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
             val storedNotice by vm.notice.collectAsStateWithLifecycle()
             val storedNoticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val storageError by vm.storageError.collectAsStateWithLifecycle()
-            val notice = storageError ?: storedNotice
+            val notice = (storageError ?: storedNotice)?.let { stringResource(it) }
             val noticeKind = if (storageError != null) NoticeKind.Other else storedNoticeKind
             val undo by vm.undo.collectAsStateWithLifecycle()
             UndoWindowLifecycle(vm.undoWindow, vm::commitUndo)
@@ -155,10 +159,11 @@ fun NavGraphBuilder.mailGraph(nav: NavHostController) {
                 vm::dismissNotice,
                 undo != null,
                 vm::undo,
-                SideAction.back("back", "Folders") { nav.popBackStack() },
-                SideAction.forward("compose", "Compose", onClick = { nav.navigate("$ROOT/compose") })
+                SideAction.back("back", stringResource(R.string.mail_folders)) { nav.popBackStack() },
+                SideAction.forward("compose", stringResource(R.string.mail_compose), onClick = { nav.navigate("$ROOT/compose") }),
+                stringResource(R.string.mail_undo_delete)
             )
-            SidekitScaffold(title = folder.label, actions = actions) { padding ->
+            SidekitScaffold(title = stringResource(folder.label), actions = actions) { padding ->
                 MessageList(padding, messages, folder, vm::delete) { nav.navigate(if (it.folder == MailFolder.Inbox || it.folder == MailFolder.Sent) "$ROOT/read/${it.id}" else "$ROOT/compose?id=${it.id}") }
             }
         }
@@ -202,10 +207,11 @@ private fun mailActions(
     hasUndo: Boolean,
     undo: () -> Unit,
     first: SideAction,
-    second: SideAction
+    second: SideAction,
+    undoDescription: String
 ): List<SideAction> = when {
     notice != null -> withNotice(notice, dismiss, emptyList(), noticeKind)
-    hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = "Undo delete message", onClick = undo))
+    hasUndo -> undoBar(continueWith = second, undo = SideAction.undo(contentDescription = undoDescription, onClick = undo))
     else -> listOf(first, second)
 }
 
@@ -224,22 +230,22 @@ private fun MessageList(
     SidekitList(padding, state = state) {
         item(key = "notice") {
             SidekitCard(Modifier.fillMaxWidth().listFade(state, 0), color = SidekitTheme.colors.surfaceA2) {
-                SidekitText("Inbox cache · refresh to check your server. Swipe deletes the cached copy only.", style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
+                SidekitText(stringResource(R.string.mail_cache_notice), style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
             }
         }
         if (onAccount != null) {
             item(key = "account") {
-                SidekitItem("Account", Modifier.listFade(state, 1), showLinkArrow = true, onClick = onAccount)
+                SidekitItem(stringResource(R.string.mail_account), Modifier.listFade(state, 1), showLinkArrow = true, onClick = onAccount)
             }
         }
         if (messages != null && shown.isEmpty()) {
             item(key = "empty") {
-                SidekitItem(if (folder == null) "No local messages" else "No ${folder.label.lowercase()}", Modifier.listFade(state, 2), secondary = "Compose creates a draft on this phone")
+                SidekitItem(stringResource(folder?.empty ?: R.string.mail_empty_local), Modifier.listFade(state, 2), secondary = stringResource(R.string.mail_empty_hint))
             }
         }
         itemsIndexed(shown, key = { _, it -> it.id }) { index, message ->
-            SidekitSwipeRow(key = message.id, group = swipe, onDelete = { onDelete(message.id) }, modifier = Modifier.animateItem().listFade(state, index + 2), deleteLabel = "Delete message") {
-                SidekitItem((if (message.folder == MailFolder.Inbox) message.sender else message.to).ifEmpty { "No recipient" }, secondary = "${message.folder.label} · ${message.subject.ifEmpty { "No subject" }}", onClick = { onOpen(message) })
+            SidekitSwipeRow(key = message.id, group = swipe, onDelete = { onDelete(message.id) }, modifier = Modifier.animateItem().listFade(state, index + 2), deleteLabel = stringResource(R.string.mail_delete_message)) {
+                SidekitItem((if (message.folder == MailFolder.Inbox) message.sender else message.to).ifEmpty { stringResource(R.string.mail_no_recipient) }, secondary = "${stringResource(message.folder.label)} · ${message.subject.ifEmpty { stringResource(R.string.mail_no_subject) }}", onClick = { onOpen(message) })
             }
         }
     }
@@ -257,20 +263,20 @@ private fun ComposeScreen(
     var body by remember(existing?.id) { mutableStateOf(existing?.body.orEmpty()) }
     BackHandler(onBack = onCancel)
     SidekitScaffold(
-        title = if (existing == null) "Compose" else existing.folder.label,
+        title = stringResource(existing?.folder?.label ?: R.string.mail_compose),
         actions = listOf(
             SideAction.cancel("cancel", onClick = onCancel),
-            SideAction("save", "Save", tone = ActionTone.Muted) { onSave(to, subject, body) },
+            SideAction("save", stringResource(R.string.mail_save), tone = ActionTone.Muted) { onSave(to, subject, body) },
             SideAction.send("send") { onSend(to, subject, body) }
         )
     ) { padding ->
         val state = rememberLazyListState()
         SidekitList(padding, state = state) {
-            item(key = "to") { MailField("To", to, { to = it }, Modifier.listFade(state, 0).testTag(MailTags.TO), true, true) }
-            item(key = "subject") { MailField("Subject", subject, { subject = it }, Modifier.listFade(state, 1).testTag(MailTags.SUBJECT), true, false) }
-            item(key = "body") { MailField("Message", body, { body = it }, Modifier.listFade(state, 2).testTag(MailTags.BODY), false, false) }
+            item(key = "to") { MailField(stringResource(R.string.mail_to), to, { to = it }, Modifier.listFade(state, 0).testTag(MailTags.TO), true, true) }
+            item(key = "subject") { MailField(stringResource(R.string.mail_subject), subject, { subject = it }, Modifier.listFade(state, 1).testTag(MailTags.SUBJECT), true, false) }
+            item(key = "body") { MailField(stringResource(R.string.mail_message), body, { body = it }, Modifier.listFade(state, 2).testTag(MailTags.BODY), false, false) }
             item(key = "handoff") {
-                SidekitText("Send submits through your connected SMTP account. Server acceptance does not confirm delivery.", Modifier.listFade(state, 3), style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
+                SidekitText(stringResource(R.string.mail_send_hint), Modifier.listFade(state, 3), style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6, maxLines = Int.MAX_VALUE)
             }
         }
     }

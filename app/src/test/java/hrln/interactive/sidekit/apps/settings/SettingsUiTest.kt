@@ -110,7 +110,8 @@ class SettingsUiTest {
         compose.setContent { SidekitPreviewFrame { SettingsHome({}, {}, onSystem = { opened++ }) } }
         compose.mainClock.advanceTimeBy(1000)
         // Device rows are gone from the settings home; one entry leads to them instead.
-        SettingsUiState().rows.forEach { compose.onNodeWithText(it.label).assertDoesNotExist() }
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        SettingsUiState().rows.forEach { compose.onNodeWithText(context.getString(it.label)).assertDoesNotExist() }
         scrollTo("System settings")
         compose.onRoot().captureRoboImage("screenshots/settings_system_home.png")
         compose.onNodeWithText("System settings").performClick()
@@ -122,6 +123,7 @@ class SettingsUiTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("screenshots/settings_system_page.png")
-        SettingsUiState().rows.forEach { scrollTo(it.label) }
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        SettingsUiState().rows.forEach { scrollTo(context.getString(it.label)) }
     }
 }

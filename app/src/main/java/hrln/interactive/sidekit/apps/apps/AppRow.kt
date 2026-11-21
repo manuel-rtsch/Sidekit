@@ -11,6 +11,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitTextField
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -31,7 +34,7 @@ internal fun rememberAppIcon(source: AppsSource, app: LaunchableApp): Bitmap? {
 /** The search field both app lists start with, so the two match down to the placeholder. */
 @Composable
 internal fun AppSearchField(query: String, onQuery: (String) -> Unit) {
-    SidekitTextField(query, onQuery, placeholder = "Search apps", singleLine = true, focusOnKeypad = true)
+    SidekitTextField(query, onQuery, placeholder = stringResource(R.string.launcher_search_hint), singleLine = true, onDone = {}, focusOnKeypad = true)
 }
 
 /**

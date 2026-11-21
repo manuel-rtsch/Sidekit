@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -22,6 +23,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.navigation.SubApp
@@ -44,7 +46,7 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
         composable(HOME) { entry ->
             Unlocked(entry, nav) { vm, state, book ->
                 BankingScreen(
-                    account = homeAccount(book),
+                    account = homeAccount(book, stringResource(R.string.banking_tracker_caption)),
                     transactions = homeTransactions(book),
                     onAccounts = { nav.navigateFrom(entry, if (book.accounts.isEmpty()) accountRoute(-1) else ACCOUNTS) },
                     onPay = { nav.navigateFrom(entry, payRoute(false)) },
@@ -52,9 +54,9 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
                     undo = state.undo,
                     onUndo = vm::undo,
                     options = listOfNotNull(
-                        SideAction("up", "Up · read-only") { nav.navigateFrom(entry, "$ROOT/up") },
-                        if (book.accounts.isNotEmpty()) SideAction("income", "Add income", SidekitIcon.Add) { nav.navigateFrom(entry, payRoute(true)) } else null,
-                        SideAction("lock", "Lock", SidekitIcon.Encrypted) { vm.lock() }
+                        SideAction("up", stringResource(R.string.banking_up_option)) { nav.navigateFrom(entry, "$ROOT/up") },
+                        if (book.accounts.isNotEmpty()) SideAction("income", stringResource(R.string.banking_add_income), SidekitIcon.Add) { nav.navigateFrom(entry, payRoute(true)) } else null,
+                        SideAction("lock", stringResource(R.string.banking_lock), SidekitIcon.Encrypted) { vm.lock() }
                     )
                 )
             }
@@ -109,12 +111,14 @@ fun NavGraphBuilder.bankingGraph(nav: NavHostController) {
         ) { entry ->
             val income = entry.arguments?.getBoolean(ARG_INCOME) ?: false
             Unlocked(entry, nav) { vm, _, book ->
+                // A payment with no payee is stored under this name, in the language used when recorded.
+                val unnamed = stringResource(if (income) R.string.banking_income else R.string.banking_payment)
                 BankingPayScreen(
                     book = book,
                     incoming = income,
                     onCancel = { nav.popFrom(entry) },
                     onRecord = { account, payee, cents, note ->
-                        vm.record(account, payee, cents, note, income)
+                        vm.record(account, payee.ifBlank { unnamed }, cents, note, income)
                         nav.popFrom(entry)
                     }
                 )

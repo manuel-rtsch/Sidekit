@@ -13,6 +13,7 @@ import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +31,7 @@ data class Conversation(
     /** The notification's inline reply, while the notification is still showing. */
     val reply: Notification.Action? = null,
     val open: PendingIntent? = null,
-    val updated: Long = 0L,
+    val updated: Long = 0L
 )
 
 /**
@@ -50,8 +51,7 @@ object Bridge {
     private val _connected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = _connected.asStateFlow()
 
-    fun conversationsFor(packageName: String) =
-        _conversations.value.values.filter { it.packageName == packageName }.sortedByDescending { it.updated }
+    fun conversationsFor(packageName: String) = _conversations.value.values.filter { it.packageName == packageName }.sortedByDescending { it.updated }
 
     fun isEnabled(context: Context): Boolean {
         val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners").orEmpty()
@@ -72,7 +72,7 @@ object Bridge {
             m.text?.toString()?.let { BridgeMessage(m.person?.name?.toString(), it, m.timestamp) }
         } ?: listOfNotNull(
             (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))
-                ?.toString()?.let { BridgeMessage(null, it, sbn.postTime) },
+                ?.toString()?.let { BridgeMessage(null, it, sbn.postTime) }
         )
         val reply = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
         val key = "${sbn.packageName}|${sbn.tag}|${sbn.id}|$title"
@@ -104,7 +104,7 @@ object Bridge {
         return try {
             action.actionIntent.send(context, 0, intent)
             _conversations.update { all ->
-                all + (c.key to c.copy(messages = c.messages + BridgeMessage("You", text, System.currentTimeMillis(), mine = true), updated = System.currentTimeMillis()))
+                all + (c.key to c.copy(messages = c.messages + BridgeMessage(context.getString(R.string.sideport_you), text, System.currentTimeMillis(), mine = true), updated = System.currentTimeMillis()))
             }
             true
         } catch (_: PendingIntent.CanceledException) {

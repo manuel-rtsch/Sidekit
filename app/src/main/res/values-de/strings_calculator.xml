@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Calculator. -->
+<resources>
+    <string name="calculator_error">Fehler</string>
+    <string name="calculator_history_unreadable">Verlauf konnte nicht gelesen werden.</string>
+    <string name="calculator_history_unsaved">Verlauf konnte nicht gespeichert werden.</string>
+    <string name="calculator_history">Verlauf</string>
+    <string name="calculator_keypad_help">Tastenhilfe</string>
+    <string name="calculator_clear">Löschen</string>
+    <string name="calculator_clear_history">Verlauf löschen</string>
+    <string name="calculator_back">Zurück</string>
+    <string name="calculator_keypad">Tasten</string>
+    <string name="calculator_no_calculations">Noch keine Rechnungen</string>
+    <string name="calculator_help_digits">0–9 tippen Ziffern</string>
+    <string name="calculator_help_star">* multipliziert · # ist gleich</string>
+    <string name="calculator_help_delete">Entfernen löscht rückwärts</string>
+    <string name="calculator_help_operators">Für +, −, ÷ und Komma die Rechenfelder nutzen.</string>
+    <string name="calculator_help_order">Gerechnet wird von links nach rechts.</string>
+</resources>

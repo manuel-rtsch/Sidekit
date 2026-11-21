@@ -23,11 +23,13 @@ import kotlinx.coroutines.flow.update
 
 /** Loads contacts while collected, and again whenever they change. Null until the first load. */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun PhonebookSource.liveContacts(allowed: Flow<Boolean>, io: CoroutineDispatcher = Dispatchers.IO): Flow<List<Contact>?> =
-    allowed.flatMapLatest { ok ->
-        if (!ok) flowOf(emptyList())
-        else contactChanges().onStart { emit(Unit) }.conflate().map { contacts() }.flowOn(io)
+fun PhonebookSource.liveContacts(allowed: Flow<Boolean>, io: CoroutineDispatcher = Dispatchers.IO): Flow<List<Contact>?> = allowed.flatMapLatest { ok ->
+    if (!ok) {
+        flowOf(emptyList())
+    } else {
+        contactChanges().onStart { emit(Unit) }.conflate().map { contacts() }.flowOn(io)
     }
+}
 
 data class ContactsUiState(
     val allowed: Boolean = true,
@@ -37,7 +39,7 @@ data class ContactsUiState(
     /** All contacts, or those matching [query]. */
     val matches: List<ContactMatch> = emptyList(),
     /** Starred contacts, shown as tiles while not searching. */
-    val starred: List<Contact> = emptyList(),
+    val starred: List<Contact> = emptyList()
 )
 
 data class RecentsUiState(val allowed: Boolean = true, val loaded: Boolean = false, val calls: List<CallRow> = emptyList())
@@ -48,7 +50,7 @@ data class CallRow(val call: CallEntry, val name: String?, val contactId: Long?)
 class PhonebookViewModel(
     private val source: PhonebookSource,
     io: CoroutineDispatcher = Dispatchers.IO,
-    compute: CoroutineDispatcher = Dispatchers.Default,
+    compute: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
     private val contactsAllowed = MutableStateFlow(false)
     private val callsAllowed = MutableStateFlow(false)
@@ -69,21 +71,28 @@ class PhonebookViewModel(
             loaded = list != null,
             query = q,
             matches = T9Search.filter(all, q),
-            starred = if (q.isEmpty()) all.filter { it.starred }.take(MAX_STARRED) else emptyList(),
+            starred = if (q.isEmpty()) all.filter { it.starred }.take(MAX_STARRED) else emptyList()
         )
     }.flowOn(compute).stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ContactsUiState(allowed = false))
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val recentsState: StateFlow<RecentsUiState> = callsAllowed.flatMapLatest { ok ->
-        if (!ok) flowOf(RecentsUiState(allowed = false, loaded = true))
-        else combine(
-            source.callChanges().onStart { emit(Unit) }.conflate().map { source.calls(MAX_CALLS) }.flowOn(io),
-            contacts,
-        ) { calls, list -> RecentsUiState(true, true, calls.map { row(it, list.orEmpty()) }) }.flowOn(compute)
+        if (!ok) {
+            flowOf(RecentsUiState(allowed = false, loaded = true))
+        } else {
+            combine(
+                source.callChanges().onStart { emit(Unit) }.conflate().map { source.calls(MAX_CALLS) }.flowOn(io),
+                contacts
+            ) { calls, list -> RecentsUiState(true, true, calls.map { row(it, list.orEmpty()) }) }.flowOn(compute)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), RecentsUiState(loaded = false))
 
-    fun setContactsAccess(granted: Boolean) { contactsAllowed.value = granted }
-    fun setCallLogAccess(granted: Boolean) { callsAllowed.value = granted }
+    fun setContactsAccess(granted: Boolean) {
+        contactsAllowed.value = granted
+    }
+    fun setCallLogAccess(granted: Boolean) {
+        callsAllowed.value = granted
+    }
 
     fun contact(id: Long): Contact? = contacts.value?.firstOrNull { it.id == id }
 
@@ -93,10 +102,14 @@ class PhonebookViewModel(
     // Contacts search (hardware keypad digits).
     fun typeDigit(d: Char) = query.update { if (it.length >= MAX_DIGITS) it else it + d }
     fun deleteDigit() = query.update { it.dropLast(1) }
-    fun clearQuery() { query.value = "" }
+    fun clearQuery() {
+        query.value = ""
+    }
 
     // Dial pad.
-    fun setDial(number: String) { _dial.value = number.take(MAX_DIGITS) }
+    fun setDial(number: String) {
+        _dial.value = number.take(MAX_DIGITS)
+    }
     fun dialKey(c: Char) = _dial.update { if (it.length >= MAX_DIGITS) it else it + c }
     fun dialDelete() = _dial.update { it.dropLast(1) }
 
@@ -126,9 +139,10 @@ class PhonebookViewModel(
 /** Process-wide Phonebook data access (the providers are the store; nothing is copied to disk). */
 object Phonebook {
     @Volatile private var names: ContactNames? = null
+
     @Volatile var sourceOverride: PhonebookSource? = null
 
-    fun source(context: Context): PhonebookSource = sourceOverride ?: AndroidPhonebookSource(context.applicationContext.contentResolver)
+    fun source(context: Context): PhonebookSource = sourceOverride ?: context.applicationContext.let { app -> AndroidPhonebookSource(app.contentResolver) { PhoneLabels.from(app) } }
 
     /** Shared number -> name cache (Sidemessage threads, notifications). */
     fun names(context: Context): ContactNames = names ?: synchronized(this) {

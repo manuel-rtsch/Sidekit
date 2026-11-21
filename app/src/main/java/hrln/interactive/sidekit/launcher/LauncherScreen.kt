@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.launcher
 
+import android.content.Context
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -26,6 +27,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -73,13 +75,19 @@ const val GRID_COLUMNS = 4
  */
 sealed interface LauncherEntry {
     val id: String
+
+    /** A stable name: English for built-ins, the app's own label otherwise. */
     val label: String
+
+    /** The name the launcher shows and searches, in the app language. */
+    fun label(context: Context): String = label
 }
 
 /** A built-in Sidekit app entry. */
 class BuiltinEntry(val app: SubApp) : LauncherEntry {
     override val id: String get() = app.visibilityId()
     override val label: String get() = app.label
+    override fun label(context: Context): String = app.label(context)
 }
 
 /** A ported (Sideport) app entry. */
@@ -209,6 +217,7 @@ fun LauncherScreen(
     dock: List<LauncherEntry> = emptyList(),
     appsSource: AppsSource? = null
 ) {
+    val context = LocalContext.current
     val query = rememberTextFieldState()
     val searchFocus = remember { FocusRequester() }
     val keypad = LocalKeypad.current
@@ -242,10 +251,11 @@ fun LauncherScreen(
     // The field is only focusable while searching (`canFocus` below), so focus it once the frame
     // that made it focusable has been composed, not from the key event that started the search.
     LaunchedEffect(searching) { if (searching) runCatching { searchFocus.requestFocus() } }
-    val clear = SideAction.square("search.clear", SidekitIcon.Close, "Clear app search", ::clearSearch)
+    val clear = SideAction.square("search.clear", SidekitIcon.Close, stringResource(R.string.launcher_search_clear), ::clearSearch)
+    val searchHint = stringResource(R.string.launcher_search_hint)
     val entries = home.ifEmpty { defaultHome() }
     // Same matcher as the Apps list, so a T9 query finds the same apps in both places.
-    val visible = entries.filter { it.id !in hiddenApps && matchesApp(it.label, text) }
+    val visible = entries.filter { it.id !in hiddenApps && matchesApp(it.label(context), text) }
     BackHandler { clearSearch() }
 
     SidekitScaffold(
@@ -278,7 +288,7 @@ fun LauncherScreen(
                         focusRequester = searchFocus,
                         modifier = Modifier.fillMaxWidth().testTag(LauncherTags.SEARCH).focusProperties { canFocus = searching },
                         textStyle = SidekitTheme.typography.title,
-                        placeholder = if (searching) "Search apps" else null,
+                        placeholder = if (searching) searchHint else null,
                         focusOnKeypad = true,
                         onKeypadFocus = { searching = true },
                         singleLine = true,
@@ -309,20 +319,25 @@ fun LauncherScreen(
         // into the app's first action.
         actions = if (searching || text.isNotEmpty()) {
             listOf(
-                SideAction("search.query", text.ifEmpty { "Search apps" }, dense = true, onClick = { searchFocus.requestFocus() })
+                SideAction("search.query", text.ifEmpty { searchHint }, dense = true, onClick = { searchFocus.requestFocus() })
             )
         } else {
-            dockActions(dock.ifEmpty { defaultDock() }, hiddenApps, onOpenApp, onOpenPorted, onOpenInstalled, onOpenNative, appsSource)
+            dockActions(context, dock.ifEmpty { defaultDock() }, hiddenApps, onOpenApp, onOpenPorted, onOpenInstalled, onOpenNative, appsSource)
         },
         trailingActions = if (searching || text.isNotEmpty()) listOf(clear) else emptyList(),
         // Keypad Options key: the long-press gesture, as a button.
         options = listOf(
-            SideAction("layout", if (state.layout == LauncherLayout.Grid) "List" else "Grid", contentDescription = "Switch grid or list", onClick = onToggleLayout),
-            SideAction("settings", icon = SubApp.Settings.icon, contentDescription = "Settings") { onOpenApp(SubApp.Settings) }
+            SideAction(
+                "layout",
+                stringResource(if (state.layout == LauncherLayout.Grid) R.string.launcher_layout_list else R.string.launcher_layout_grid),
+                contentDescription = stringResource(R.string.launcher_layout_switch),
+                onClick = onToggleLayout
+            ),
+            SideAction("settings", icon = SubApp.Settings.icon, contentDescription = SubApp.Settings.displayLabel()) { onOpenApp(SubApp.Settings) }
         )
     ) { padding ->
         if (visible.isEmpty()) {
-            SidekitText(if (text.isNotEmpty()) "No matching apps" else "No apps shown. Use Options → Settings to show apps.", maxLines = Int.MAX_VALUE)
+            SidekitText(stringResource(if (text.isNotEmpty()) R.string.launcher_no_matches else R.string.launcher_none_shown), maxLines = Int.MAX_VALUE)
         } else {
             when (state.layout) {
                 LauncherLayout.Grid -> AppGrid(visible, padding, onOpenApp, onOpenPorted, onOpenInstalled, onOpenNative, appsSource) { focusedRow = it }
@@ -389,10 +404,11 @@ private fun AppList(
     onFocusedRow: (Int) -> Unit
 ) {
     val listState = rememberLazyListState()
+    val context = LocalContext.current
     SidekitList(padding, Modifier.testTag(LauncherTags.LIST), state = listState) {
         itemsIndexed(entries, key = { _, entry -> entry.id }) { index, entry ->
             SidekitItem(
-                title = entry.label,
+                title = entry.label(context),
                 modifier = Modifier.listFade(listState, index).onFocusChanged { onFocusedRow(if (it.isFocused) index else -1) },
                 onClick = {
                     when (entry) {
@@ -434,7 +450,7 @@ private fun InstalledAppIcon(app: LaunchableApp, source: AppsSource?, size: andr
 private fun AppTile(app: SubApp, onOpenApp: (SubApp) -> Unit, modifier: Modifier) {
     SidekitIconItem(
         icon = app.icon,
-        contentDescription = app.label,
+        contentDescription = app.displayLabel(),
         modifier = modifier,
         iconSize = SidekitTheme.spacing.tileIconSize,
         onClick = { onOpenApp(app) }
@@ -443,6 +459,7 @@ private fun AppTile(app: SubApp, onOpenApp: (SubApp) -> Unit, modifier: Modifier
 
 /** The blue dock (53:1256), as action-bar buttons, in the configured home order. */
 private fun dockActions(
+    context: Context,
     dock: List<LauncherEntry>,
     hidden: Set<String>,
     onOpenApp: (SubApp) -> Unit,
@@ -452,7 +469,7 @@ private fun dockActions(
     appsSource: AppsSource?
 ): List<SideAction> = dock.filter { it.id !in hidden }.map { entry ->
     when (entry) {
-        is BuiltinEntry -> SideAction("dock.${entry.app.name}", icon = entry.app.icon, contentDescription = entry.app.label) { onOpenApp(entry.app) }
+        is BuiltinEntry -> SideAction("dock.${entry.app.name}", icon = entry.app.icon, contentDescription = entry.app.label(context)) { onOpenApp(entry.app) }
 
         is PortedEntry -> SideAction(
             "dock.${entry.app.packageName}",

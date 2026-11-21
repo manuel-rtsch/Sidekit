@@ -2,7 +2,9 @@ package hrln.interactive.sidekit.apps.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.input.T9Mode
 import hrln.interactive.sidekit.design.theme.CaseColour
 import hrln.interactive.sidekit.sdk.input.applyInputMode
@@ -96,17 +98,17 @@ class SidekitPreferences(context: Context) {
 }
 
 enum class SettingKey { WiFi, Bluetooth, Display, Sounds, Battery, Storage, DateTime, Privacy }
-data class SettingRow(val key: SettingKey, val label: String, val value: String)
+data class SettingRow(val key: SettingKey, @StringRes val label: Int, @StringRes val value: Int)
 data class SettingsUiState(
     val rows: List<SettingRow> = listOf(
-        SettingRow(SettingKey.WiFi, "Wi-Fi", "Network"),
-        SettingRow(SettingKey.Bluetooth, "Bluetooth", "Devices"),
-        SettingRow(SettingKey.Display, "Display", "Brightness"),
-        SettingRow(SettingKey.Sounds, "Sounds", "Volume"),
-        SettingRow(SettingKey.Battery, "Battery", "Usage"),
-        SettingRow(SettingKey.Storage, "Storage", "Device storage"),
-        SettingRow(SettingKey.DateTime, "Date & time", "Clock"),
-        SettingRow(SettingKey.Privacy, "Privacy", "Permissions")
+        SettingRow(SettingKey.WiFi, R.string.settings_row_wifi, R.string.settings_row_wifi_value),
+        SettingRow(SettingKey.Bluetooth, R.string.settings_row_bluetooth, R.string.settings_row_bluetooth_value),
+        SettingRow(SettingKey.Display, R.string.settings_row_display, R.string.settings_row_display_value),
+        SettingRow(SettingKey.Sounds, R.string.settings_row_sounds, R.string.settings_row_sounds_value),
+        SettingRow(SettingKey.Battery, R.string.settings_row_battery, R.string.settings_row_battery_value),
+        SettingRow(SettingKey.Storage, R.string.settings_row_storage, R.string.settings_row_storage_value),
+        SettingRow(SettingKey.DateTime, R.string.settings_row_date_time, R.string.settings_row_date_time_value),
+        SettingRow(SettingKey.Privacy, R.string.settings_row_privacy, R.string.settings_row_privacy_value)
     )
 )
 class SettingsViewModel : ViewModel() {

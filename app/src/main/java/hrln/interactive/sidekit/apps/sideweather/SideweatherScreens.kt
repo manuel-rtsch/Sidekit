@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitItem
 import hrln.interactive.sidekit.design.components.SidekitList
@@ -50,14 +52,14 @@ fun SideweatherHomeScreen(
     SidekitScaffold(
         title = "Sideweather",
         options = options,
-        actions = listOf(SideAction.back("back", "Hourly", onHourly), SideAction.forward("forward", "5 days", onFiveDay))
+        actions = listOf(SideAction.back("back", stringResource(R.string.weather_hourly), onHourly), SideAction.forward("forward", stringResource(R.string.weather_five_days), onFiveDay))
     ) { padding ->
         val list = rememberLazyListState()
         SidekitList(padding, state = list) {
             item { Box(Modifier.listFade(list, 0)) { ConditionsCard(current) } }
             itemsIndexed(summary) { i, row -> SidekitItem(title = row.label, secondary = row.detail, modifier = Modifier.listFade(list, i + 1)) }
             item(key = "locations") {
-                SidekitItem("Locations", Modifier.listFade(list, summary.size + 1), showLinkArrow = true, onClick = onLocations)
+                SidekitItem(stringResource(R.string.weather_locations), Modifier.listFade(list, summary.size + 1), showLinkArrow = true, onClick = onLocations)
             }
         }
     }
@@ -95,7 +97,7 @@ private fun ConditionsCard(current: CurrentConditions) {
 fun ForecastScreen(title: String, rows: List<WeatherRow>, onBack: () -> Unit, onLocations: () -> Unit, place: String? = null) {
     SidekitScaffold(
         title = title,
-        actions = listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Locations", onLocations))
+        actions = listOf(SideAction.back("back", stringResource(R.string.weather_back), onBack), SideAction.forward("forward", stringResource(R.string.weather_locations), onLocations))
     ) { padding ->
         val list = rememberLazyListState()
         val offset = if (place != null) 1 else 0
@@ -117,8 +119,8 @@ fun ForecastScreen(title: String, rows: List<WeatherRow>, onBack: () -> Unit, on
 @Composable
 fun LocationsScreen(locations: List<WeatherRow>, hint: String, onBack: () -> Unit, onAdd: () -> Unit) {
     SidekitScaffold(
-        title = "Locations",
-        actions = listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Add", onAdd))
+        title = stringResource(R.string.weather_locations),
+        actions = listOf(SideAction.back("back", stringResource(R.string.weather_back), onBack), SideAction.forward("forward", stringResource(R.string.weather_add), onAdd))
     ) { padding ->
         SidekitList(padding) {
             items(locations) { SidekitItem(title = it.label, secondary = it.detail) }
@@ -141,13 +143,13 @@ private fun SideweatherHomePreview() = SidekitPreviewFrame {
 @SidephonePreview
 @Composable
 private fun HourlyPreview() = SidekitPreviewFrame {
-    ForecastScreen("Hourly forecast", SideweatherSampleData.hourly, {}, {})
+    ForecastScreen(stringResource(R.string.weather_hourly_title), SideweatherSampleData.hourly, {}, {})
 }
 
 @SidephonePreview
 @Composable
 private fun FiveDayPreview() = SidekitPreviewFrame {
-    ForecastScreen("5-day forecast", SideweatherSampleData.fiveDay, {}, {})
+    ForecastScreen(stringResource(R.string.weather_five_day_title), SideweatherSampleData.fiveDay, {}, {})
 }
 
 @SidephonePreview

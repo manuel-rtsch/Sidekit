@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,6 +18,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.action.withNotice
@@ -36,6 +39,7 @@ fun NavGraphBuilder.appsGraph(nav: NavHostController) {
 @Composable
 internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val state by vm.state.collectAsStateWithLifecycle()
     val query by vm.query.collectAsStateWithLifecycle()
     val ported by remember { PortedApps.get(context).apps }.collectAsStateWithLifecycle()
@@ -50,7 +54,7 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
         try {
             action()
         } catch (e: Exception) {
-            message = "Couldn't open app: ${e.localizedMessage}"
+            message = resources.getString(R.string.apps_open_failed, e.localizedMessage.orEmpty())
         }
     }
 
@@ -80,8 +84,8 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
 
     val options = selected?.let { app ->
         listOf(
-            SideAction("info", "App info") { perform { vm.repository.info(app) } },
-            SideAction.delete("uninstall", "Uninstall") {
+            SideAction("info", stringResource(R.string.apps_info)) { perform { vm.repository.info(app) } },
+            SideAction.delete("uninstall", stringResource(R.string.apps_uninstall)) {
                 perform {
                     context.startActivity(
                         Intent(Intent.ACTION_DELETE, "package:${app.component.packageName}".toUri())
@@ -91,14 +95,24 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
             }
         )
     }.orEmpty()
-    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Home", back)))
-    SidekitScaffold("Apps", actions = actions, options = options) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", stringResource(R.string.shell_home), back)))
+    val workProfile = stringResource(R.string.apps_work_profile)
+    val appPage = stringResource(R.string.apps_page)
+    SidekitScaffold(SubApp.Apps.displayLabel(), actions = actions, options = options) { padding ->
         SidekitList(padding, state = list) {
             item { AppSearchField(query) { vm.query.value = it } }
-            item { SidekitCard { SidekitText(selected?.let { "${it.label} selected. Press Options for app info or uninstall." } ?: "Tap to open · hold an app for its page", style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } }
-            state.error?.let { item { SidekitCard { SidekitText(it, style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
-            if (!state.loaded && state.error == null) item { SidekitItem("Loading apps…") }
-            if (state.loaded && state.apps.isEmpty()) item { SidekitItem("No matching apps") }
+            item {
+                SidekitCard {
+                    SidekitText(
+                        selected?.let { stringResource(R.string.apps_selected, it.label) } ?: stringResource(R.string.apps_hint),
+                        style = SidekitTheme.typography.label,
+                        maxLines = Int.MAX_VALUE
+                    )
+                }
+            }
+            state.error?.let { item { SidekitCard { SidekitText(stringResource(R.string.apps_list_failed, it), style = SidekitTheme.typography.label, maxLines = Int.MAX_VALUE) } } }
+            if (!state.loaded && state.error == null) item { SidekitItem(stringResource(R.string.apps_loading)) }
+            if (state.loaded && state.apps.isEmpty()) item { SidekitItem(stringResource(R.string.launcher_no_matches)) }
             // listFade needs the row's real list index: search field and hint, plus the banner if shown.
             val rowsStart = 2 + if (state.error != null) 1 else 0
             itemsIndexed(state.apps, key = { _, it -> it.key }) { index, target ->
@@ -106,13 +120,13 @@ internal fun AppsScreen(vm: AppsViewModel, back: () -> Unit) {
                     target,
                     vm.repository,
                     Modifier.listFade(list, index + rowsStart),
-                    secondary = if (target.user != Process.myUserHandle()) "Work profile" else null,
+                    secondary = if (target.user != Process.myUserHandle()) workProfile else null,
                     onClick = {
                         selected = target
                         perform { vm.repository.launch(target) }
                     },
                     onLongClick = { opened = target },
-                    onLongClickLabel = "App page"
+                    onLongClickLabel = appPage
                 )
             }
         }

@@ -19,12 +19,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.backAndGoActions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
@@ -51,8 +53,8 @@ fun NavGraphBuilder.mapsGraph(nav: NavHostController) {
 @Composable
 fun MapsScreen(destination: MapsDestination, onSearch: () -> Unit = {}, onGo: () -> Unit = {}) {
     SidekitScaffold(
-        title = "Maps",
-        actions = backAndGoActions("Search", "Go", onSearch, onGo)
+        title = stringResource(R.string.maps_title),
+        actions = backAndGoActions(stringResource(R.string.maps_search), stringResource(R.string.maps_go), onSearch, onGo)
     ) { padding ->
         EverydayContent(padding) {
             NeighbourhoodMap(Modifier.fillMaxWidth().height(263.dp))
@@ -77,10 +79,11 @@ fun MapsScreen(destination: MapsDestination, onSearch: () -> Unit = {}, onGo: ()
 @Composable
 private fun NeighbourhoodMap(modifier: Modifier = Modifier) {
     val colors = SidekitTheme.colors
+    val description = stringResource(R.string.maps_preview_description)
     Box(
         modifier
             .clip(SidekitTheme.shapes.item)
-            .semantics { contentDescription = "Map: walking route from your location to Central Station" }
+            .semantics { contentDescription = description }
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val u = 1.dp.toPx()
@@ -106,7 +109,7 @@ private fun NeighbourhoodMap(modifier: Modifier = Modifier) {
         }
         SidekitText("Central", Modifier.offset(30.dp, 25.dp), style = SidekitTheme.typography.small)
         SidekitText("Belmore Park", Modifier.offset(28.dp, 85.dp), style = SidekitTheme.typography.tiny, color = colors.surfaceA6)
-        SidekitText("You", Modifier.offset(250.dp, 210.dp), style = SidekitTheme.typography.tiny)
+        SidekitText(stringResource(R.string.maps_you), Modifier.offset(250.dp, 210.dp), style = SidekitTheme.typography.tiny)
     }
 }
 

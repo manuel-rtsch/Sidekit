@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clock: alarms, timer and stopwatch. -->
+<resources>
+    <string name="clock_title">Uhr</string>
+    <string name="clock_tab_alarms">Wecker</string>
+    <string name="clock_tab_timer">Timer</string>
+    <string name="clock_tab_stopwatch">Stoppuhr</string>
+    <string name="clock_timer_finished">Timer abgelaufen</string>
+    <string name="clock_alarm_title">Wecker %1$s</string>
+    <string name="clock_error_load">Uhr-Daten konnten nicht geladen werden.</string>
+    <string name="clock_error_save">Speichern oder Planen fehlgeschlagen. Versuch es erneut.</string>
+    <string name="clock_channel">Wecker</string>
+    <string name="clock_notification_text">5 Minuten schlummern oder beenden</string>
+    <string name="clock_snooze">Schlummern</string>
+    <string name="clock_dismiss">Beenden</string>
+    <string name="clock_close">Schließen</string>
+    <string name="clock_no_ringing">Kein Wecker aktiv</string>
+    <string name="clock_snooze_hint">5 Minuten schlummern</string>
+    <string name="clock_allow">Erlauben</string>
+    <string name="clock_back">Zurück</string>
+    <string name="clock_new_alarm">Neuer Wecker</string>
+    <string name="clock_edit_alarm">Wecker bearbeiten</string>
+    <string name="clock_pause">Pause</string>
+    <string name="clock_resume">Fortsetzen</string>
+    <string name="clock_start">Start</string>
+    <string name="clock_reset">Zurücksetzen</string>
+    <string name="clock_lap">Runde</string>
+    <string name="clock_lap_number">Runde %1$d</string>
+    <string name="clock_error_minutes">Gib 1–10080 Minuten ein.</string>
+    <string name="clock_undo_delete">Löschen des Weckers rückgängig machen</string>
+    <string name="clock_access_title">Uhr-Zugriff</string>
+    <string name="clock_alarm_access">Weckerzugriff</string>
+    <string name="clock_access_notifications">Erlaube Benachrichtigungen, um Wecker zu hören.</string>
+    <string name="clock_access_exact">Erlaube exakte Wecker, damit sie pünktlich klingeln. Bis dahin können sie sich verzögern.</string>
+    <string name="clock_access_fullscreen">Erlaube Vollbild-Wecker, um sie über dem Sperrbildschirm zu zeigen.</string>
+    <string name="clock_access_ready">Weckerzugriff ist bereit</string>
+    <string name="clock_review_access">Weckerzugriff prüfen</string>
+    <string name="clock_loading">Wird geladen…</string>
+    <string name="clock_no_alarms">Noch keine Wecker</string>
+    <string name="clock_alarm_summary">%1$s · %2$s</string>
+    <string name="clock_on">An</string>
+    <string name="clock_off">Aus</string>
+    <string name="clock_once">Einmalig</string>
+    <string name="clock_minutes">Minuten</string>
+    <string name="clock_error_time">Nutze HH:mm, von 00:00 bis 23:59.</string>
+    <string name="clock_alarm_on">Wecker an</string>
+    <string name="clock_alarm_off">Wecker aus</string>
+    <string name="clock_repeat">Wiederholen</string>
+</resources>

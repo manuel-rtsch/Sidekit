@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Camera: viewfinder, capture controls and errors. -->
+<resources>
+    <string name="camera_title">Camera</string>
+    <string name="camera_open_settings">Open settings</string>
+    <string name="camera_allow">Allow</string>
+    <string name="camera_rationale_title">Use the camera</string>
+    <string name="camera_rationale">Camera needs camera access to show a preview and save photos and videos to this phone.</string>
+    <string name="camera_stop_recording">Stop recording</string>
+    <string name="camera_photos">Photos</string>
+    <string name="camera_saving_photo">Saving photo</string>
+    <string name="camera_take_photo">Take photo</string>
+    <string name="camera_record_video">Record video</string>
+    <string name="camera_turn_flash_off">Turn flash off</string>
+    <string name="camera_turn_flash_on">Turn flash on</string>
+    <string name="camera_flash_on">Flash on</string>
+    <string name="camera_flash_off">Flash off</string>
+    <string name="camera_error_no_camera">No camera available</string>
+    <string name="camera_error_unavailable">Camera unavailable</string>
+    <string name="camera_error_start">Couldn\'t start camera</string>
+    <string name="camera_error_photo">Photo failed</string>
+    <string name="camera_error_save_photo">Couldn\'t save photo</string>
+    <string name="camera_error_create_video">Couldn\'t create video</string>
+    <string name="camera_error_record_video">Couldn\'t record video</string>
+</resources>

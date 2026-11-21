@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="messages_allow">Allow</string>
+    <string name="messages_allow_sms_cd">Allow SMS</string>
+    <!-- Action-bar label next to an arrow: start a new message. Keep short. -->
+    <string name="messages_new">New</string>
+    <string name="messages_new_message">New Message</string>
+    <!-- Action-bar label: make Sidekit the default SMS app. Keep short. -->
+    <string name="messages_make_default">Make default</string>
+    <string name="messages_allow_contacts">Allow contacts</string>
+    <string name="messages_info_permission">Allow text access to read conversations. To receive texts here, choose Make default in Options.</string>
+    <string name="messages_info_not_default">Sidemessage isn\'t your default SMS app, so new texts go to your other app first and can\'t be marked read here. Reading and sending still work.</string>
+    <string name="messages_info_contacts">Allow contacts from Options to show names beside your texts.</string>
+    <string name="messages_empty">No conversations yet</string>
+    <string name="messages_back">Back</string>
+    <string name="messages_send">Send</string>
+    <string name="messages_send_cd">Send message</string>
+    <!-- Action label: start writing a text message (SMS). Keep short. -->
+    <string name="messages_text">Text</string>
+    <string name="messages_undo_delete_cd">Undo delete message</string>
+    <string name="messages_attach">Attach MMS</string>
+    <string name="messages_pin">Pin</string>
+    <string name="messages_unpin">Unpin</string>
+    <string name="messages_call">Call</string>
+    <string name="messages_info_conversation_permission">Allow SMS access to see this conversation. You can still send a text.</string>
+    <string name="messages_back_to_latest">Back to latest messages</string>
+    <string name="messages_delete_message">Delete message</string>
+    <string name="messages_older">Older messages</string>
+    <string name="messages_download_requested">Download requested</string>
+    <string name="messages_retry_failed">Could not retry MMS</string>
+    <string name="messages_status_sending">Sending…</string>
+    <string name="messages_status_sent">Sent</string>
+    <string name="messages_status_delivered">Delivered</string>
+    <string name="messages_status_failed">Not sent · tap to retry</string>
+    <string name="messages_text_number_cd">Text %1$s</string>
+    <string name="messages_contacts">Contacts</string>
+    <string name="messages_to_hint">To: name or number</string>
+    <string name="messages_info_pick_contacts">Allow contacts to pick who to text by name.</string>
+    <string name="messages_attachment_no_app">No app can open this attachment</string>
+    <string name="messages_attachment_failed">Attachment could not be opened</string>
+    <string name="messages_attachment_picture_cd">MMS picture</string>
+    <string name="messages_attachment_tap">%1$s · tap to open</string>
+    <string name="messages_mms_selected">MMS attachment selected · Send submits through your carrier</string>
+    <string name="messages_mms_submitted">MMS submitted to carrier</string>
+    <string name="messages_mms_send_failed">MMS could not be sent</string>
+    <string name="messages_mms_resubmitted">MMS resubmitted to carrier</string>
+    <string name="messages_mms_retry_failed">MMS could not be retried</string>
+    <string name="messages_mms_sending">Sending MMS…</string>
+    <string name="messages_channel">Messages</string>
+    <string name="messages_mms_title">Multimedia message</string>
+    <string name="messages_mms_download_start_failed">MMS download could not start. Check your SIM and mobile data; tap the message to retry.</string>
+    <string name="messages_mms_not_confirmed">MMS was not confirmed sent. Check the conversation before retrying.</string>
+    <string name="messages_mms_download_failed">MMS download failed. Check mobile data and tap the message to retry.</string>
+    <string name="messages_mms_process_failed">MMS could not be processed. Tap the pending message to retry.</string>
+    <string name="messages_mms_queue_failed">MMS notification could not be queued</string>
+    <string name="messages_error_select_sim">Select a default SMS SIM in Android settings</string>
+    <string name="messages_error_make_default">Make Sidekit the default SMS app first</string>
+    <string name="messages_error_unavailable">Outgoing MMS is unavailable</string>
+    <string name="messages_error_cannot_encode">Cannot encode MMS</string>
+    <string name="messages_error_could_not_encode">Could not encode MMS</string>
+    <string name="messages_error_choose_recipient">Choose a recipient</string>
+    <string name="messages_error_media_type">Select an image, video or audio file</string>
+    <string name="messages_error_read_attachment">Cannot read attachment</string>
+    <string name="messages_error_too_large">Attachment exceeds your carrier\'s MMS size limit. Choose a smaller file.</string>
+    <string name="messages_error_exceeds_limit">MMS exceeds size limit</string>
+    <string name="messages_mms_picture">[Picture]</string>
+    <string name="messages_mms_picture_with_text">[Picture] %1$s</string>
+    <string name="messages_mms_message">[Message]</string>
+    <string name="messages_mms_pending">MMS pending · tap to download or retry</string>
+    <string name="messages_mms_attachment">Attachment</string>
+</resources>

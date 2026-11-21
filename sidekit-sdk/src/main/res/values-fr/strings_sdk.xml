@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidekit SDK: shared case-colour picker, keypad guide and keypad mapping. Names start with sk_ (the library's resourcePrefix). -->
+<resources>
+    <!-- Case-colour picker. -->
+    <string name="sk_sdk_case_colour_intro">Assortie à votre coque Sidephone</string>
+    <string name="sk_sdk_case_colour_original">Bleu d\'origine</string>
+    <string name="sk_sdk_case_colour_active">Actif : %1$s</string>
+    <!-- Keypad guide: key names sit on small tiles (up to five per row), so keep them short. -->
+    <string name="sk_sdk_guide_back">Retour</string>
+    <string name="sk_sdk_guide_home">Accueil</string>
+    <string name="sk_sdk_guide_options">Options</string>
+    <string name="sk_sdk_guide_up">Haut</string>
+    <string name="sk_sdk_guide_down">Bas</string>
+    <string name="sk_sdk_guide_left">Gauche</string>
+    <string name="sk_sdk_guide_right">Droite</string>
+    <string name="sk_sdk_guide_delete">Effacer</string>
+    <string name="sk_sdk_guide_space">Espace</string>
+    <string name="sk_sdk_guide_enter">Entrée</string>
+    <string name="sk_sdk_guide_previous">Préc.</string>
+    <string name="sk_sdk_guide_play_pause">Lecture</string>
+    <string name="sk_sdk_guide_next">Suivant</string>
+    <string name="sk_sdk_guide_search">Rech.</string>
+    <string name="sk_sdk_guide_action">Action</string>
+    <string name="sk_sdk_guide_confirm">Valider</string>
+    <!-- Keypad guide: what a key does on a tap or a long press. -->
+    <string name="sk_sdk_guide_go_back_screen">Revenir à l\'écran précédent.</string>
+    <string name="sk_sdk_guide_open_dialer">Ouvrir le clavier téléphonique.</string>
+    <string name="sk_sdk_guide_return_home">Revenir à l\'écran d\'accueil.</string>
+    <string name="sk_sdk_guide_extra_actions">Afficher les autres actions de cet écran.</string>
+    <string name="sk_sdk_guide_jump_to_bar">Aller à la barre d\'actions.</string>
+    <string name="sk_sdk_guide_focus_up">Déplacer le focus vers le haut.</string>
+    <string name="sk_sdk_guide_focus_down">Déplacer le focus vers le bas.</string>
+    <string name="sk_sdk_guide_focus_left">Déplacer le focus à gauche.</string>
+    <string name="sk_sdk_guide_focus_right">Déplacer le focus à droite.</string>
+    <string name="sk_sdk_guide_focus_left_text">Déplacer le focus à gauche. Dans un texte, déplace le curseur ou la suggestion.</string>
+    <string name="sk_sdk_guide_focus_right_text">Déplacer le focus à droite. Dans un texte, déplace le curseur ou la suggestion.</string>
+    <string name="sk_sdk_guide_ok">Activer l\'élément sélectionné ou valider une suggestion.</string>
+    <string name="sk_sdk_guide_delete_previous">Effacer le caractère précédent.</string>
+    <string name="sk_sdk_guide_cycle_letters">Touchez plusieurs fois pour parcourir les lettres de cette touche.</string>
+    <string name="sk_sdk_guide_type_digit">Saisir %1$d.</string>
+    <string name="sk_sdk_guide_punctuation">Touchez plusieurs fois pour la ponctuation.</string>
+    <string name="sk_sdk_guide_cycle_symbols">Touchez plusieurs fois pour parcourir les symboles.</string>
+    <string name="sk_sdk_guide_space_in_letters">Insérer une espace en mode lettres.</string>
+    <string name="sk_sdk_guide_change_case">Changer la casse.</string>
+    <string name="sk_sdk_guide_letters_numbers">Basculer entre lettres et chiffres.</string>
+    <string name="sk_sdk_guide_choose_letter">Choisir une lettre parmi %1$s.</string>
+    <string name="sk_sdk_guide_type_printed">Saisir le chiffre ou symbole imprimé.</string>
+    <string name="sk_sdk_guide_cycle_suggestions">Parcourir les mots suggérés.</string>
+    <string name="sk_sdk_guide_insert_space">Insérer une espace.</string>
+    <string name="sk_sdk_guide_confirm_or_new_line">Valider une suggestion ou insérer une ligne.</string>
+    <string name="sk_sdk_guide_previous_track">Piste précédente.</string>
+    <string name="sk_sdk_guide_play_pause_media">Lire ou mettre en pause.</string>
+    <string name="sk_sdk_guide_confirm_focused">Valider l\'élément sélectionné.</string>
+    <string name="sk_sdk_guide_next_track">Piste suivante.</string>
+    <string name="sk_sdk_guide_next_control">Aller à l\'élément suivant.</string>
+    <string name="sk_sdk_guide_go_back">Revenir.</string>
+    <string name="sk_sdk_guide_activate_focused">Activer l\'élément sélectionné.</string>
+    <string name="sk_sdk_guide_open_options">Ouvrir les options.</string>
+    <string name="sk_sdk_guide_open_search">Ouvrir la recherche.</string>
+    <string name="sk_sdk_guide_focus_action_bar">Sélectionner la barre d\'actions.</string>
+    <string name="sk_sdk_guide_go_home_screen">Aller à l\'écran d\'accueil.</string>
+    <!-- Keypad guide: the rest of the screen. -->
+    <string name="sk_sdk_guide_show_key">Afficher %1$s</string>
+    <string name="sk_sdk_guide_sundial_note">Certains Sundial envoient Entrée comme Lecture/Pause. Maintenez-la pour Valider.</string>
+    <string name="sk_sdk_guide_onscreen_keyboard">Avec ce module, les champs de texte utilisent le clavier à l\'écran.</string>
+    <string name="sk_sdk_guide_tap">Appui</string>
+    <string name="sk_sdk_guide_hold">Maintien</string>
+    <string name="sk_sdk_guide_no_long_press">Pas d\'appui long</string>
+    <!-- Keypad mapping. -->
+    <string name="sk_sdk_mapping_title">Touches du clavier</string>
+    <string name="sk_sdk_mapping_back">Paramètres</string>
+    <string name="sk_sdk_mapping_reset">Réinitialiser</string>
+    <string name="sk_sdk_mapping_use_automatic">Mode automatique</string>
+    <string name="sk_sdk_mapping_item">Attribution</string>
+    <string name="sk_sdk_mapping_automatic">Automatique</string>
+    <string name="sk_sdk_mapping_custom">Personnalisée</string>
+    <string name="sk_sdk_mapping_layout">Disposition</string>
+    <string name="sk_sdk_mapping_tester">Test des touches</string>
+    <string name="sk_sdk_mapping_automatic_note">Sidekit reconnaît les modules de clavier Sidephone à leurs touches. Activez Personnalisée pour un clavier inconnu ou pour déplacer des touches.</string>
+    <string name="sk_sdk_mapping_custom_note">La détection est en pause. Choisissez une touche pour indiquer à Sidekit quel bouton utiliser. Les touches inchangées fonctionnent comme avant.</string>
+    <string name="sk_sdk_mapping_default">Par défaut</string>
+    <!-- Learning a key. -->
+    <string name="sk_sdk_capture_title">Appuyez sur une touche</string>
+    <string name="sk_sdk_capture_title_again">Appuyez à nouveau</string>
+    <string name="sk_sdk_capture_try_again">Réessayer</string>
+    <string name="sk_sdk_capture_listening">En attente…</string>
+    <string name="sk_sdk_capture_prompt">Appuyez sur le bouton du clavier à utiliser pour %1$s. Touchez Annuler pour arrêter.</string>
+    <string name="sk_sdk_capture_guarded">C\'est votre touche %1$s. Touchez Enregistrer pour l\'utiliser pour %2$s.</string>
+    <string name="sk_sdk_capture_moves">Appuyez à nouveau pour enregistrer. Elle quitte %1$s, qui retrouve sa touche habituelle.</string>
+    <string name="sk_sdk_capture_again">Appuyez à nouveau pour enregistrer, ou touchez Réessayer.</string>
+    <string name="sk_sdk_keypad">Clavier</string>
+    <!-- Key tester. -->
+    <string name="sk_sdk_tester_intro">Appuyez sur des touches pour voir ce qu\'elles envoient et font dans %1$s. Retour fonctionne toujours.</string>
+    <string name="sk_sdk_tester_detail">%1$s · code %2$d</string>
+    <string name="sk_sdk_tester_detail_scan">%1$s · code %2$d · scan %3$d</string>
+</resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Music app and its playback notification. Track, album and artist names are data, not strings. -->
+<resources>
+    <string name="music_title">Music</string>
+    <string name="music_now_playing">Now Playing</string>
+    <string name="music_search">Search</string>
+    <string name="music_search_description">Search music</string>
+    <string name="music_search_placeholder">Search here</string>
+    <string name="music_new_playlist">New playlist</string>
+    <string name="music_playlists">Playlists</string>
+    <string name="music_albums">Albums</string>
+    <string name="music_artists">Artists</string>
+    <string name="music_album">Album</string>
+    <string name="music_artist">Artist</string>
+    <string name="music_save">Save</string>
+    <string name="music_play">Play</string>
+    <string name="music_pause">Pause</string>
+    <string name="music_previous">Previous</string>
+    <string name="music_next">Next</string>
+    <string name="music_back_to_music">Back to Music</string>
+    <string name="music_shuffle_on">Shuffle: on</string>
+    <string name="music_shuffle_off">Shuffle: off</string>
+    <string name="music_repeat_off">Repeat: off</string>
+    <string name="music_repeat_all">Repeat: all</string>
+    <string name="music_repeat_one">Repeat: one</string>
+    <string name="music_nothing_playing">Nothing playing</string>
+    <string name="music_album_art">Album art</string>
+    <string name="music_permission_title">Play your music</string>
+    <string name="music_permission_reason">Music reads the songs saved on this phone. Playback and your playlists stay on the device.</string>
+    <!-- Fills "Allow access to %1$s". -->
+    <string name="music_access_what">music</string>
+    <string name="music_unknown_album">Unknown album</string>
+    <string name="music_unknown_artist">Unknown artist</string>
+    <string name="music_various_artists">Various Artists</string>
+    <string name="music_untitled">Untitled</string>
+    <string name="music_playlist_default">Playlist %1$d</string>
+    <string name="music_channel">Music playback</string>
+</resources>

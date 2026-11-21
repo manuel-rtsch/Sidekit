@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.graphics.drawable.Icon
 import android.os.IBinder
 import hrln.interactive.sidekit.MainActivity
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 
 /**
@@ -31,7 +32,7 @@ class MusicService : Service() {
         val manager = getSystemService(NotificationManager::class.java)
         if (manager.getNotificationChannel(CHANNEL) == null) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Music playback", NotificationManager.IMPORTANCE_LOW).apply {
+                NotificationChannel(CHANNEL, getString(R.string.music_channel), NotificationManager.IMPORTANCE_LOW).apply {
                     setShowBadge(false)
                 }
             )
@@ -93,15 +94,15 @@ class MusicService : Service() {
             .setOngoing(state.isPlaying)
             .setShowWhen(false)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .addAction(Notification.Action.Builder(Icon.createWithResource(this, SidekitIcon.SkipPrevious.drawable), "Previous", action(ACTION_PREVIOUS)).build())
+            .addAction(Notification.Action.Builder(Icon.createWithResource(this, SidekitIcon.SkipPrevious.drawable), getString(R.string.music_previous), action(ACTION_PREVIOUS)).build())
             .addAction(
                 Notification.Action.Builder(
                     Icon.createWithResource(this, if (state.isPlaying) SidekitIcon.Pause.drawable else SidekitIcon.PlayArrow.drawable),
-                    if (state.isPlaying) "Pause" else "Play",
+                    getString(if (state.isPlaying) R.string.music_pause else R.string.music_play),
                     action(ACTION_PLAY_PAUSE)
                 ).build()
             )
-            .addAction(Notification.Action.Builder(Icon.createWithResource(this, SidekitIcon.SkipNext.drawable), "Next", action(ACTION_NEXT)).build())
+            .addAction(Notification.Action.Builder(Icon.createWithResource(this, SidekitIcon.SkipNext.drawable), getString(R.string.music_next), action(ACTION_NEXT)).build())
             .setStyle(Notification.MediaStyle().setMediaSession(playback.sessionToken).setShowActionsInCompactView(0, 1, 2))
             .build()
     }

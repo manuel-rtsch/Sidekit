@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import hrln.interactive.sidekit.R
 
 /**
  * Asks for the phone's screen lock (fingerprint/face if enrolled, else PIN/pattern/password)
@@ -26,8 +27,8 @@ class BankingGate(private val context: Context) {
     fun authenticate(onSuccess: () -> Unit, onFailure: (String?) -> Unit): CancellationSignal {
         val cancel = CancellationSignal()
         val prompt = BiometricPrompt.Builder(context)
-            .setTitle("Unlock Banking")
-            .setSubtitle("Your banking data is encrypted on this phone")
+            .setTitle(context.getString(R.string.banking_unlock_banking))
+            .setSubtitle(context.getString(R.string.banking_prompt_subtitle))
             .setAllowedAuthenticators(Authenticators.BIOMETRIC_WEAK or Authenticators.DEVICE_CREDENTIAL)
             .build()
         prompt.authenticate(
@@ -41,7 +42,7 @@ class BankingGate(private val context: Context) {
                         errorCode == BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED
                     onFailure(if (cancelled) null else errString.toString())
                 }
-            },
+            }
         )
         return cancel
     }

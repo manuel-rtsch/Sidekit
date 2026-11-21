@@ -4,6 +4,7 @@ import android.app.*
 import android.content.*
 import android.net.Uri
 import hrln.interactive.sidekit.MainActivity
+import hrln.interactive.sidekit.R
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -50,7 +51,7 @@ class ReminderReceiver : BroadcastReceiver() {
                             val tick = ticks.firstOrNull { it.id == intent.getIntExtra("id", -1) } ?: return@withTimeout
                             if (tick.ticked || tick.notified || tick.dueAt == null || tick.dueAt > System.currentTimeMillis()) return@withTimeout
                             val manager = context.getSystemService(NotificationManager::class.java)
-                            manager.createNotificationChannel(NotificationChannel("reminders", "Sidetick reminders", NotificationManager.IMPORTANCE_HIGH))
+                            manager.createNotificationChannel(NotificationChannel("reminders", context.getString(R.string.ticks_channel), NotificationManager.IMPORTANCE_HIGH))
                             val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
                             try {
                                 manager.notify(
@@ -58,7 +59,7 @@ class ReminderReceiver : BroadcastReceiver() {
                                     tick.id,
                                     Notification.Builder(context, "reminders")
                                         .setSmallIcon(android.R.drawable.ic_popup_reminder).setContentTitle(tick.title)
-                                        .setContentText("Sidetick due now").setContentIntent(open).setAutoCancel(true).build()
+                                        .setContentText(context.getString(R.string.ticks_due_now)).setContentIntent(open).setAutoCancel(true).build()
                                 )
                             } catch (_: SecurityException) { /* Notification permission can be revoked after scheduling. */ }
                             repo.markNotified(tick.id)

@@ -1,6 +1,7 @@
 package hrln.interactive.sidekit.design.components
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.speech.SpeechRecognizer
 import android.widget.Toast
@@ -55,12 +56,14 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import hrln.interactive.sidekit.design.R
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.PublishActionOverride
@@ -203,6 +206,7 @@ fun SidekitTextField(
     }
 
     val context = LocalContext.current
+    val resources = LocalResources.current
     val speech = rememberDictation()
     // Checked up front so phones without a recogniser never show a mic that can only fail.
     val canDictate = !masked && dictation && remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
@@ -220,7 +224,7 @@ fun SidekitTextField(
         if (granted) {
             if (focused) dictate()
         } else {
-            Toast.makeText(context, "Allow the microphone to dictate", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, R.string.sk_sidekit_dictation_microphone, Toast.LENGTH_SHORT).show()
         }
     }
     // Leaving the field ends dictation; a phrase still in flight would land in the wrong place.
@@ -232,6 +236,7 @@ fun SidekitTextField(
     if (focused && t9 && keypad != null && session != null && !imeVisible) {
         PublishActionOverride(
             t9Actions(
+                context = context,
                 maxSuggestions = if (trailingTypingAction == null) MAX_SHOWN else MAX_SHOWN - 1,
                 engine = keypad.engine,
                 session = session,
@@ -259,7 +264,7 @@ fun SidekitTextField(
                     "mode.${mode.name}",
                     label,
                     tone = if (keypad.engine.mode == mode) ActionTone.Primary else ActionTone.Muted,
-                    contentDescription = "Input mode $label"
+                    contentDescription = resources.getString(R.string.sk_sidekit_input_mode, label)
                 ) { session.setMode(mode) }
             },
             trailingActions = listOfNotNull(trailingTypingAction)
@@ -464,7 +469,7 @@ fun SidekitTextField(
  * are reused as the completions change: each key press swaps labels in place and the strip grows
  * or shrinks between one and three buttons, instead of rebuilding.
  */
-private fun t9Actions(engine: T9Engine, session: T9Session, suggestions: Boolean, dictation: Dictation?, compact: Boolean, maxSuggestions: Int, onDictate: () -> Unit, onDone: () -> Unit): List<SideAction> {
+private fun t9Actions(context: Context, engine: T9Engine, session: T9Session, suggestions: Boolean, dictation: Dictation?, compact: Boolean, maxSuggestions: Int, onDictate: () -> Unit, onDone: () -> Unit): List<SideAction> {
     if (engine.composing && suggestions) {
         return engine.candidates.take(maxSuggestions).mapIndexed { i, word ->
             val chosen = i == engine.selected
@@ -475,12 +480,12 @@ private fun t9Actions(engine: T9Engine, session: T9Session, suggestions: Boolean
                 // Longer words get more room so suggestions rarely truncate.
                 weight = 1f + 0.12f * word.length + if (chosen) 0.4f else 0f,
                 dense = true,
-                contentDescription = "Suggestion $word"
+                contentDescription = context.getString(R.string.sk_sidekit_suggestion, word)
             ) { session.pick(i) }
         }
     }
     return listOfNotNull(
-        SideAction("t9.0", engine.modeLabel, tone = ActionTone.Muted, weight = if (compact) 1f else 0.8f, dense = true, motion = ActionMotion.Up, contentDescription = "Input mode ${engine.modeLabel}") {
+        SideAction("t9.0", engine.modeLabel, tone = ActionTone.Muted, weight = if (compact) 1f else 0.8f, dense = true, motion = ActionMotion.Up, contentDescription = context.getString(R.string.sk_sidekit_input_mode, engine.modeLabel)) {
             session.setMode(if (engine.mode == T9Mode.MultiTap) T9Mode.Numeric else T9Mode.MultiTap)
         },
         // No mic for digits: a number is quicker to key than to say.
@@ -492,13 +497,22 @@ private fun t9Actions(engine: T9Engine, session: T9Session, suggestions: Boolean
                 // Crowded, the bar's buttons take equal shares, like the home dock.
                 square = !compact,
                 motion = ActionMotion.Up,
-                contentDescription = if (dictation.listening) "Stop dictating" else "Dictate",
+                contentDescription = context.getString(if (dictation.listening) R.string.sk_sidekit_dictate_stop else R.string.sk_sidekit_dictate),
                 onClick = onDictate
             )
         } else {
             null
         },
-        SideAction("t9.2", if (compact) null else "Done", SidekitIcon.Check, iconAtEnd = !compact, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Done typing", onClick = onDone)
+        SideAction(
+            "t9.2",
+            if (compact) null else context.getString(R.string.sk_sidekit_done),
+            SidekitIcon.Check,
+            iconAtEnd = !compact,
+            tone = ActionTone.Secondary,
+            motion = ActionMotion.Up,
+            contentDescription = context.getString(R.string.sk_sidekit_done_typing),
+            onClick = onDone
+        )
     )
 }
 

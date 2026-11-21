@@ -1,8 +1,14 @@
 package hrln.interactive.sidekit.apps.sidenotes
 
 import android.content.Context
-import androidx.core.util.AtomicFile
 import androidx.compose.runtime.Immutable
+import androidx.core.util.AtomicFile
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,20 +20,15 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.IOException
 
 /**
  * A note. [title] and [preview] are derived once here, when the note is loaded or saved, rather
- * than on every recomposition of its list row.
+ * than on every recomposition of its list row. [title] is null for a note with no text; the UI
+ * shows "Untitled" in the UI language.
  */
 @Immutable
 data class Note(val id: Long, val body: String, val updatedAt: Long) {
-    val title: String
+    val title: String?
     val preview: String
 
     init {
@@ -36,9 +37,14 @@ data class Note(val id: Long, val body: String, val updatedAt: Long) {
         for (line in body.lineSequence()) {
             val t = line.trim()
             if (t.isEmpty()) continue
-            if (first == null) first = t else { second = t; break }
+            if (first == null) {
+                first = t
+            } else {
+                second = t
+                break
+            }
         }
-        title = first?.take(TITLE_MAX) ?: "Untitled"
+        title = first?.take(TITLE_MAX)
         preview = second?.take(PREVIEW_MAX).orEmpty()
     }
 
@@ -124,7 +130,7 @@ class NotesRepository(
     private val store: NoteStore,
     scope: CoroutineScope,
     io: CoroutineDispatcher = Dispatchers.IO,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     private val _notes = MutableStateFlow<List<Note>?>(null)
 
@@ -195,8 +201,7 @@ class NotesRepository(
         if (list.any { it.id == note.id }) list else (list + note).sortedWith(NEWEST_FIRST)
     }
 
-    private inline fun mutate(crossinline change: (List<Note>) -> List<Note>) =
-        _notes.update { change(it.orEmpty()) }
+    private inline fun mutate(crossinline change: (List<Note>) -> List<Note>) = _notes.update { change(it.orEmpty()) }
 
     @Synchronized
     private fun nextId(): Long {
@@ -216,7 +221,7 @@ object Sidenotes {
     fun repository(context: Context): NotesRepository = repository ?: synchronized(this) {
         repository ?: NotesRepository(
             FileNoteStore(File(context.applicationContext.filesDir, "sidenotes.bin")),
-            CoroutineScope(SupervisorJob()),
+            CoroutineScope(SupervisorJob())
         ).also { repository = it }
     }
 }

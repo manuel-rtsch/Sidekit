@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- First-run setup (also Settings → Setup & keypad tour). -->
+<resources>
+    <string name="onboarding_title_hello">Bonjour, Sidekit</string>
+    <string name="onboarding_title_yours">À votre image</string>
+    <string name="onboarding_title_home">Votre écran d’accueil</string>
+    <string name="onboarding_title_apps">Choisissez vos apps</string>
+    <string name="onboarding_title_access">Tout activer</string>
+    <string name="onboarding_title_typing">Votre saisie</string>
+    <string name="onboarding_title_keypad">Votre clavier</string>
+
+    <string name="onboarding_back">Retour</string>
+    <string name="onboarding_show_all">Tout afficher</string>
+    <string name="onboarding_next">Suivant</string>
+    <string name="onboarding_finish">Terminer</string>
+    <string name="onboarding_progress">%1$d / %2$d · CONFIGURATION SIDEPHONE</string>
+
+    <string name="onboarding_unavailable">Cet écran de paramètres n’est pas disponible sur cet appareil.</string>
+    <string name="onboarding_cannot_open">Android n’a pas pu ouvrir ce paramètre. Vous pouvez continuer et le modifier dans Paramètres.</string>
+    <string name="onboarding_not_granted">Certains accès n’ont pas été accordés. Vous pouvez continuer ou les gérer dans les paramètres de l’app.</string>
+    <string name="onboarding_access_update">Accès mis à jour</string>
+
+    <string name="onboarding_hello_title">Un accueil qui vous ressemble</string>
+    <string name="onboarding_hello_body">Choisissez vos couleurs, la disposition et les commandes. Vos choix sont enregistrés au fur et à mesure.</string>
+    <string name="onboarding_is_home">Sidekit est votre écran d’accueil ✓</string>
+    <string name="onboarding_set_home">Définir comme accueil</string>
+    <string name="onboarding_set_home_reason">Appuyez sur Accueil pour revenir à Sidekit.</string>
+    <string name="onboarding_home_title">Toujours à portée de touche</string>
+    <string name="onboarding_home_body">Choisissez Sidekit quand Android demande l’app d’accueil. Vous pouvez aussi toucher Suivant et le faire plus tard dans Paramètres.</string>
+
+    <string name="onboarding_layout_title">Grille ou liste ?</string>
+    <string name="onboarding_layout_body">Modifiable à tout moment dans Paramètres.</string>
+    <string name="onboarding_grid">Grille</string>
+    <string name="onboarding_list">Liste</string>
+    <string name="onboarding_grid_body">Grandes tuiles, faciles à repérer</string>
+    <string name="onboarding_list_body">Noms des apps dans une liste</string>
+
+    <string name="onboarding_access_title">Vous décidez</string>
+    <string name="onboarding_access_body">Activez l’accès pour les fonctions qui vous intéressent, ou continuez sans. L’état se met à jour à votre retour.</string>
+    <string name="onboarding_enabled">Activé · %1$s</string>
+    <string name="onboarding_accounts_title">Les comptes, plus tard</string>
+    <string name="onboarding_accounts_body">Connectez votre messagerie et vos autres comptes dans leurs apps. Le verrouillage de l’écran et l’accès réseau utilisent les paramètres d’Android ; aucune autorisation supplémentaire n’est demandée ici.</string>
+
+    <string name="onboarding_typing_title">Lettres ou chiffres ?</string>
+    <string name="onboarding_typing_body">Choisissez comment démarrent les champs de texte. Maintenez # (T9) ou aA (Mini QWERTY) pour basculer pendant la saisie.</string>
+    <string name="onboarding_numbers">Chiffres</string>
+    <string name="onboarding_letters">Lettres · multitape</string>
+    <string name="onboarding_words_title">Mots pendant la saisie</string>
+    <string name="onboarding_words_body">Les suggestions apparaissent dans la barre d’actions. Choisissez-en une pour compléter un mot. Votre préférence de saisie se modifie dans Paramètres.</string>
+
+    <string name="onboarding_module">Module</string>
+    <string name="onboarding_module_position">%1$d / %2$d · %3$s</string>
+    <string name="onboarding_controller">Manette</string>
+    <string name="onboarding_use_module">Utiliser %1$s</string>
+    <string name="onboarding_current_module">%1$s est votre sélection actuelle. Appuyez sur une lettre, un chiffre ou une touche multimédia pour détecter le vôtre.</string>
+
+    <string name="onboarding_access_back_key">Touche Retour</string>
+    <string name="onboarding_access_back_key_reason">Nécessaire pour la touche Retour en haut à gauche. Activez le clavier Sidekit dans Accessibilité. Maintenir Retour ouvre toujours le téléphone.</string>
+    <string name="onboarding_access_sms_app">App SMS par défaut</string>
+    <string name="onboarding_access_sms_app_reason">Nécessaire pour recevoir et gérer les SMS dans Sidemessage. Choisissez-la avant d’accorder l’accès aux SMS.</string>
+    <string name="onboarding_access_sms">SMS</string>
+    <string name="onboarding_access_sms_reason">Lire, envoyer et recevoir des SMS dans Sidemessage.</string>
+    <string name="onboarding_access_contacts">Contacts et appels</string>
+    <string name="onboarding_access_contacts_reason">Afficher les noms des contacts et les appels récents, et appeler depuis Répertoire.</string>
+    <string name="onboarding_access_notifications">Notifications</string>
+    <string name="onboarding_access_notifications_reason">Afficher les alertes de messages, minuteurs et rappels.</string>
+    <string name="onboarding_access_alarms">Alarmes et rappels</string>
+    <string name="onboarding_access_alarms_reason">Autoriser les alarmes d’Horloge et les rappels Sideticks à l’heure choisie.</string>
+    <string name="onboarding_access_full_screen">Alarmes plein écran</string>
+    <string name="onboarding_access_full_screen_reason">Une alarme qui sonne s’affiche par-dessus l’écran de verrouillage.</string>
+    <string name="onboarding_access_camera">Appareil photo</string>
+    <string name="onboarding_access_camera_reason">Prendre des photos avec Appareil photo.</string>
+    <string name="onboarding_access_microphone">Micro</string>
+    <string name="onboarding_access_microphone_reason">Parler à Traduction et enregistrer du son si possible.</string>
+    <string name="onboarding_access_photos">Photos et vidéos</string>
+    <string name="onboarding_access_photos_reason">Parcourir vos photos et vidéos partagées. L’accès limité se gère dans les paramètres d’Android.</string>
+    <string name="onboarding_access_music">Musique</string>
+    <string name="onboarding_access_music_reason">Parcourir l’audio enregistré sur votre téléphone.</string>
+    <string name="onboarding_access_media">Médias et fichiers</string>
+    <string name="onboarding_access_media_reason">Parcourir les photos, vidéos et musiques partagées.</string>
+    <string name="onboarding_access_calendar">Agenda</string>
+    <string name="onboarding_access_calendar_reason">Lire et créer des événements d’agenda.</string>
+    <string name="onboarding_access_location">Position approximative</string>
+    <string name="onboarding_access_location_reason">Trouver la météo locale sans position précise.</string>
+    <string name="onboarding_access_activity">Activité</string>
+    <string name="onboarding_access_activity_reason">Compter vos pas dans Santé.</string>
+    <string name="onboarding_access_nearby">Appareils à proximité</string>
+    <string name="onboarding_access_nearby_reason">Afficher les appareils Bluetooth connectés.</string>
+    <string name="onboarding_access_system">Commandes système</string>
+    <string name="onboarding_access_system_reason">Autoriser la luminosité et les autres commandes système prises en charge.</string>
+    <string name="onboarding_access_dnd">Ne pas déranger</string>
+    <string name="onboarding_access_dnd_reason">Autoriser les commandes de son à modifier les interruptions.</string>
+    <string name="onboarding_access_sideport">Accessibilité Sideport</string>
+    <string name="onboarding_access_sideport_reason">Facultatif : permet à Sideport de lire et contrôler l’écran des apps que vous projetez dans Sidekit. À activer seulement si vous voulez Sideport.</string>
+    <string name="onboarding_access_sideport_notifications">Notifications Sideport</string>
+    <string name="onboarding_access_sideport_notifications_reason">Facultatif : permet à Sideport de lire les notifications et de répondre aux chats pris en charge.</string>
+    <string name="onboarding_access_install">Installer des apps Sideport</string>
+    <string name="onboarding_access_install_reason">Facultatif : autoriser l’installation des APK de votre choix. Android demande avant chaque installation.</string>
+</resources>

@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavGraphBuilder
@@ -42,7 +43,8 @@ fun NavGraphBuilder.settingsGraph(nav: NavHostController) {
             onHiddenApps = { nav.navigate("${SubApp.Settings.route}/hidden-apps") },
             onSystem = { nav.navigate("${SubApp.Settings.route}/system") },
             onKeyboard = { nav.navigate(keyboardSettingsRoute()) },
-            onArrange = { nav.navigate("${SubApp.Settings.route}/arrange") }
+            onArrange = { nav.navigate("${SubApp.Settings.route}/arrange") },
+            onLanguage = { nav.navigate("${SubApp.Settings.route}/language") }
         )
     }
     keyboardSettingsGraph(nav)
@@ -52,12 +54,14 @@ fun NavGraphBuilder.settingsGraph(nav: NavHostController) {
     composable("${SubApp.Settings.route}/setup") { OnboardingScreen(onFinish = { nav.popBackStack() }, replay = true) }
     composable("${SubApp.Settings.route}/case-colour") { CaseColourScreen { nav.popBackStack() } }
     composable("${SubApp.Settings.route}/arrange") { ArrangeHomeScreen { nav.popBackStack() } }
+    composable("${SubApp.Settings.route}/language") { LanguageScreen { nav.popBackStack() } }
     composable("${SubApp.Settings.route}/about") { AboutScreen { nav.popBackStack() } }
 }
 
 @Composable
-internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour: () -> Unit = {}, onSetup: () -> Unit = {}, onHiddenApps: () -> Unit = {}, onSystem: () -> Unit = {}, onKeyboard: () -> Unit = {}, onArrange: () -> Unit = {}) {
+internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour: () -> Unit = {}, onSetup: () -> Unit = {}, onHiddenApps: () -> Unit = {}, onSystem: () -> Unit = {}, onKeyboard: () -> Unit = {}, onArrange: () -> Unit = {}, onLanguage: () -> Unit = {}) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val prefs = remember { SidekitPreferences(context) }
     val caseColour = rememberCaseColour(prefs)
     var revision by remember { mutableIntStateOf(0) }
@@ -71,41 +75,42 @@ internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour:
         try {
             context.startActivity(Intent(action))
         } catch (_: Exception) {
-            message = "This settings screen is unavailable on this device."
+            message = resources.getString(R.string.settings_unavailable)
         }
     }
     val listLayout = remember(revision) { prefs.listLayout }
     val compactLayout = remember(revision) { prefs.compactLayout }
     val list = rememberLazyListState()
-    val actions = withNotice(message, { message = null }, listOf(SideAction.back("home", "Home", onHome)))
-    SidekitScaffold("Settings", actions = actions) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("home", stringResource(R.string.settings_home), onHome)))
+    SidekitScaffold(stringResource(R.string.settings_title), actions = actions) { padding ->
         SidekitList(padding, state = list) {
             // Toggles act in place: compact rows, no arrow.
             item {
-                SidekitItem("Launcher default", Modifier.height(CompactRowHeight).listFade(list, 0), secondary = if (listLayout) "List" else "Grid", secondaryToEnd = true, onClick = {
+                SidekitItem(stringResource(R.string.settings_launcher_default), Modifier.height(CompactRowHeight).listFade(list, 0), secondary = stringResource(if (listLayout) R.string.settings_list else R.string.settings_grid), secondaryToEnd = true, onClick = {
                     prefs.listLayout = !prefs.listLayout
                     revision++
                 })
             }
             // Shorter header and action bar on every screen: more room for the body.
             item {
-                SidekitItem("Compact layout", Modifier.height(CompactRowHeight).listFade(list, 1), secondary = if (compactLayout) "On" else "Off", secondaryToEnd = true, onClick = {
+                SidekitItem(stringResource(R.string.settings_compact_layout), Modifier.height(CompactRowHeight).listFade(list, 1), secondary = stringResource(if (compactLayout) R.string.settings_on else R.string.settings_off), secondaryToEnd = true, onClick = {
                     prefs.compactLayout = !prefs.compactLayout
                     revision++
                 })
             }
             // Opens a floating system dialog rather than a Sidekit page, so it stays a compact row.
-            item { SidekitItem("Home app", Modifier.height(CompactRowHeight).listFade(list, 2), secondary = if (home) "Sidekit" else "Choose", secondaryToEnd = true, onClick = { open(Settings.ACTION_HOME_SETTINGS) }) }
+            item { SidekitItem(stringResource(R.string.settings_home_app), Modifier.height(CompactRowHeight).listFade(list, 2), secondary = if (home) "Sidekit" else stringResource(R.string.settings_choose), secondaryToEnd = true, onClick = { open(Settings.ACTION_HOME_SETTINGS) }) }
             // Everything below opens another page: full-height rows with a link arrow.
-            item { SidekitItem("Arrange apps", Modifier.listFade(list, 3), showLinkArrow = true, onClick = onArrange) }
-            item { SidekitItem("Case colour", Modifier.listFade(list, 4), secondary = caseColour?.label ?: "Original blue", showLinkArrow = true, onClick = onCaseColour) }
+            item { SidekitItem(stringResource(R.string.settings_arrange_apps), Modifier.listFade(list, 3), showLinkArrow = true, onClick = onArrange) }
+            item { SidekitItem(stringResource(R.string.settings_case_colour), Modifier.listFade(list, 4), secondary = caseColour?.displayLabel() ?: stringResource(R.string.settings_original_blue), showLinkArrow = true, onClick = onCaseColour) }
             // All keypad preferences live together on the Keyboard page, with a separate key guide.
-            item { SidekitItem("Keyboard", Modifier.listFade(list, 5), showLinkArrow = true, onClick = onKeyboard) }
-            item { SidekitItem("Hide apps", showLinkArrow = true, onClick = onHiddenApps) }
+            item { SidekitItem(stringResource(R.string.settings_keyboard), Modifier.listFade(list, 5), showLinkArrow = true, onClick = onKeyboard) }
+            item { SidekitItem(stringResource(R.string.language_title), secondary = languageSummary(), showLinkArrow = true, onClick = onLanguage) }
+            item { SidekitItem(stringResource(R.string.settings_hide_apps), showLinkArrow = true, onClick = onHiddenApps) }
             // Device settings live on their own page, so this screen stays Sidekit's own settings.
-            item { SidekitItem("System settings", showLinkArrow = true, onClick = onSystem) }
-            item { SidekitItem("Setup & keypad tour", showLinkArrow = true, onClick = onSetup) }
-            item { SidekitItem("About", showLinkArrow = true, onClick = onAbout) }
+            item { SidekitItem(stringResource(R.string.settings_system), showLinkArrow = true, onClick = onSystem) }
+            item { SidekitItem(stringResource(R.string.settings_setup_tour), showLinkArrow = true, onClick = onSetup) }
+            item { SidekitItem(stringResource(R.string.settings_about), showLinkArrow = true, onClick = onAbout) }
         }
     }
 }
@@ -114,19 +119,20 @@ internal fun SettingsHome(onHome: () -> Unit, onAbout: () -> Unit, onCaseColour:
 @Composable
 internal fun SystemSettingsScreen(back: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var message by remember { mutableStateOf<String?>(null) }
     fun open(action: String) {
         try {
             context.startActivity(Intent(action))
         } catch (_: Exception) {
-            message = "This settings screen is unavailable on this device."
+            message = resources.getString(R.string.settings_unavailable)
         }
     }
     val list = rememberLazyListState()
-    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", "Settings", back)))
-    SidekitScaffold("System settings", actions = actions) { padding ->
+    val actions = withNotice(message, { message = null }, listOf(SideAction.back("back", stringResource(R.string.settings_title), back)))
+    SidekitScaffold(stringResource(R.string.settings_system), actions = actions) { padding ->
         SidekitList(padding, state = list) {
-            itemsIndexed(SettingsUiState().rows) { index, row -> SidekitItem(row.label, Modifier.height(CompactRowHeight).listFade(list, index), secondary = row.value, onClick = { open(row.key.settingsAction()) }) }
+            itemsIndexed(SettingsUiState().rows) { index, row -> SidekitItem(stringResource(row.label), Modifier.height(CompactRowHeight).listFade(list, index), secondary = stringResource(row.value), onClick = { open(row.key.settingsAction()) }) }
         }
     }
 }
@@ -135,10 +141,10 @@ internal fun SystemSettingsScreen(back: () -> Unit) {
 @Composable
 fun SettingsScreen(rows: List<SettingRow>, onRowClick: (SettingKey) -> Unit, onHome: () -> Unit = {}, onAbout: () -> Unit = {}) {
     val list = rememberLazyListState()
-    SidekitScaffold("Settings", actions = listOf(SideAction.back("home", "Home", onHome))) { padding ->
+    SidekitScaffold(stringResource(R.string.settings_title), actions = listOf(SideAction.back("home", stringResource(R.string.settings_home), onHome))) { padding ->
         SidekitList(padding, state = list) {
-            itemsIndexed(rows) { index, row -> SidekitItem(row.label, Modifier.height(CompactRowHeight).listFade(list, index), secondary = row.value, onClick = { onRowClick(row.key) }) }
-            item { SidekitItem("About", showLinkArrow = true, onClick = onAbout) }
+            itemsIndexed(rows) { index, row -> SidekitItem(stringResource(row.label), Modifier.height(CompactRowHeight).listFade(list, index), secondary = stringResource(row.value), onClick = { onRowClick(row.key) }) }
+            item { SidekitItem(stringResource(R.string.settings_about), showLinkArrow = true, onClick = onAbout) }
         }
     }
 }
@@ -146,17 +152,18 @@ fun SettingsScreen(rows: List<SettingRow>, onRowClick: (SettingKey) -> Unit, onH
 @Composable
 private fun AboutScreen(back: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     // The name comes from resources, so the dev build says "SideKit Dev" instead of the stable
     // name, and names itself and its package on its own row.
     val appName = stringResource(R.string.app_name)
-    val devBuild = context.resources.getBoolean(R.bool.is_dev_build)
+    val devBuild = LocalResources.current.getBoolean(R.bool.is_dev_build)
     var rows by remember {
         mutableStateOf(
             listOf(
-                "Device" to "${Build.MANUFACTURER} ${Build.MODEL}",
-                "Android" to "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
-                "Build" to Build.DISPLAY,
-                "Third-party apps" to "Apps built with the Sidekit SDK can read your case colour and keypad setup. They cannot read messages, credentials, hidden apps or home order."
+                resources.getString(R.string.settings_about_device) to "${Build.MANUFACTURER} ${Build.MODEL}",
+                "Android" to resources.getString(R.string.settings_about_android_version, Build.VERSION.RELEASE, Build.VERSION.SDK_INT),
+                resources.getString(R.string.settings_about_build) to Build.DISPLAY,
+                resources.getString(R.string.settings_about_third_party) to resources.getString(R.string.settings_about_third_party_body)
             )
         )
     }
@@ -165,21 +172,28 @@ private fun AboutScreen(back: () -> Unit) {
             val memory = ActivityManager.MemoryInfo().also { context.getSystemService(ActivityManager::class.java).getMemoryInfo(it) }
             val storage = runCatching {
                 val stats = context.getSystemService(StorageStatsManager::class.java)
-                "${Formatter.formatFileSize(context, stats.getFreeBytes(StorageManager.UUID_DEFAULT))} free / ${Formatter.formatFileSize(context, stats.getTotalBytes(StorageManager.UUID_DEFAULT))}"
-            }.getOrDefault("Unavailable")
+                resources.getString(
+                    R.string.settings_about_storage_value,
+                    Formatter.formatFileSize(context, stats.getFreeBytes(StorageManager.UUID_DEFAULT)),
+                    Formatter.formatFileSize(context, stats.getTotalBytes(StorageManager.UUID_DEFAULT))
+                )
+            }.getOrDefault(resources.getString(R.string.settings_about_unavailable))
             buildList {
                 add(appName to context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty())
-                if (devBuild) add("Dev build" to "Installs alongside Sidekit as ${context.packageName}")
-                add("Storage" to storage)
-                add("RAM" to "${Formatter.formatFileSize(context, memory.availMem)} available / ${Formatter.formatFileSize(context, memory.totalMem)}")
-                add("Open-source notices" to "AndroidX / Jetpack Compose — Apache License 2.0. Kotlin — Apache License 2.0.")
-                add("T9 word list" to context.assets.open("t9/NOTICE").bufferedReader().use { it.readText() })
+                if (devBuild) add(resources.getString(R.string.settings_about_dev_build) to resources.getString(R.string.settings_about_dev_build_body, context.packageName))
+                add(resources.getString(R.string.settings_about_storage) to storage)
+                add(
+                    resources.getString(R.string.settings_about_ram) to
+                        resources.getString(R.string.settings_about_ram_value, Formatter.formatFileSize(context, memory.availMem), Formatter.formatFileSize(context, memory.totalMem))
+                )
+                add(resources.getString(R.string.settings_about_notices) to "AndroidX / Jetpack Compose — Apache License 2.0. Kotlin — Apache License 2.0.")
+                add(resources.getString(R.string.settings_about_t9) to context.assets.open("t9/NOTICE").bufferedReader().use { it.readText() })
             }
         }
         rows = rows + summaries
     }
     val list = rememberLazyListState()
-    SidekitScaffold("About", actions = listOf(SideAction.back("back", "Settings", back))) { padding ->
+    SidekitScaffold(stringResource(R.string.settings_about), actions = listOf(SideAction.back("back", stringResource(R.string.settings_title), back))) { padding ->
         SidekitList(padding, state = list) {
             itemsIndexed(rows) { index, row ->
                 SidekitCard(Modifier.listFade(list, index)) {

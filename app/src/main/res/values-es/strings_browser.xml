@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Web browser: page, tabs, bookmarks and history. -->
+<resources>
+    <string name="browser_title">Navegador web</string>
+    <string name="browser_tabs">Pestañas</string>
+    <string name="browser_search">Buscar</string>
+    <string name="browser_address">Dirección</string>
+    <string name="browser_search_or_address">Búsqueda o dirección</string>
+    <string name="browser_start_heading">Una web más tranquila.</string>
+    <string name="browser_start_body">Escribe una dirección o búsqueda con el teclado y pulsa Listo.</string>
+    <string name="browser_start_link">Buscar →</string>
+    <string name="browser_undo">Deshacer</string>
+    <string name="browser_go">Ir</string>
+    <string name="browser_back_page">Página anterior</string>
+    <string name="browser_forward_page">Página siguiente</string>
+    <string name="browser_stop">Detener</string>
+    <string name="browser_reload">Recargar</string>
+    <string name="browser_reload_page">Recargar página</string>
+    <string name="browser_saved">Guardado</string>
+    <string name="browser_save">Guardar</string>
+    <string name="browser_remove_bookmark">Quitar marcador</string>
+    <string name="browser_bookmark_page">Añadir a marcadores</string>
+    <string name="browser_text_size">Tamaño del texto %1$d por ciento</string>
+    <string name="browser_new_tab">Nueva pestaña</string>
+    <string name="browser_page">Página</string>
+    <plurals name="browser_tab_count">
+        <item quantity="one">%1$d pestaña</item>
+        <item quantity="many">%1$d pestañas</item>
+        <item quantity="other">%1$d pestañas</item>
+    </plurals>
+    <string name="browser_close_tab">Cerrar %1$s</string>
+    <string name="browser_remove_item">Quitar %1$s</string>
+    <string name="browser_bookmarks">Marcadores</string>
+    <string name="browser_history">Historial</string>
+    <string name="browser_downloads">Descargas</string>
+    <string name="browser_no_bookmarks">Aún no hay marcadores. En una página, la tecla Opciones tiene Guardar.</string>
+    <string name="browser_keep_history">Conservar historial</string>
+    <string name="browser_clear">Borrar</string>
+    <string name="browser_confirm_clear">Confirmar borrar historial</string>
+    <string name="browser_clear_history">Borrar historial</string>
+    <string name="browser_history_empty">Las páginas que visitas aparecen aquí.</string>
+    <string name="browser_bookmarked">Añadido a marcadores</string>
+    <string name="browser_bookmark_removed">Marcador quitado</string>
+    <string name="browser_history_cleared">Historial borrado</string>
+    <string name="browser_page_stopped">La página se detuvo; recargando</string>
+    <string name="browser_no_downloads_app">No hay app de descargas en este teléfono</string>
+    <string name="browser_cant_open_link">No se puede abrir ese enlace</string>
+    <string name="browser_no_app_for_link">No hay app para este enlace</string>
+    <string name="browser_download_unsupported">Esta descarga no es compatible</string>
+    <string name="browser_downloading">Descargando %1$s</string>
+    <string name="browser_download_failed">No se pudo descargar %1$s</string>
+</resources>

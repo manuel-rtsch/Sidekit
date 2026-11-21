@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Health: steps today, daily goal and step history. -->
+<resources>
+    <string name="health_title">Health</string>
+    <string name="health_daily_goal">Daily goal</string>
+    <string name="health_step_history">Step history</string>
+    <string name="health_history">History</string>
+    <string name="health_goals">Goals</string>
+    <string name="health_back">Back</string>
+    <string name="health_allow">Allow</string>
+    <string name="health_permission_prompt">Allow activity recognition to count steps. No always-on service.</string>
+    <string name="health_permission_denied">Activity access denied. Saved history and goals still work.</string>
+    <string name="health_goal_invalid">Enter a goal from 1 to 100000</string>
+    <string name="health_steps_per_day">Steps per day</string>
+    <string name="health_no_samples">No samples yet</string>
+    <plurals name="health_day_steps">
+        <item quantity="one">%1$d step</item>
+        <item quantity="other">%1$d steps</item>
+    </plurals>
+    <plurals name="health_day_steps_approx">
+        <item quantity="one">%1$d step · approx.</item>
+        <item quantity="other">%1$d steps · approx.</item>
+    </plurals>
+    <string name="health_no_step_counter">No step counter on this device</string>
+    <string name="health_steps_approximate">Steps are approximate</string>
+    <string name="health_sampling_note">Sampled while open and near midnight. Missed rollovers and reboots can lose or shift steps.</string>
+    <string name="health_heart_sleep">Heart rate and sleep</string>
+    <string name="health_no_source">No connected source</string>
+    <string name="health_steps_today">Steps today</string>
+</resources>

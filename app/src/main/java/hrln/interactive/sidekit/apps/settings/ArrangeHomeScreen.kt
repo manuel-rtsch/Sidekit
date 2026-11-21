@@ -28,8 +28,10 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.apps.AppsRepository
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.design.action.ActionMotion
@@ -143,31 +145,36 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
             runCatching { selectedRow.requestFocus() }
         }
     }
+    val cancelLabel = stringResource(R.string.settings_cancel)
+    val discardLabel = stringResource(R.string.settings_discard)
+    val settingsLabel = stringResource(R.string.settings_title)
+    val resetLabel = stringResource(R.string.settings_reset)
+    val doneLabel = stringResource(R.string.settings_done)
     val actions = if (confirmingDiscard) {
         listOf(
             SideAction(
                 "cancel",
-                "Cancel",
+                cancelLabel,
                 icon = SidekitIcon.ArrowLeftAlt,
                 tone = ActionTone.Muted,
                 motion = ActionMotion.Back,
                 onClick = { confirmingDiscard = false }
             ),
-            SideAction("discard", "Discard", icon = SidekitIcon.Undo, tone = ActionTone.Destructive, motion = ActionMotion.Up, onClick = ::discard)
+            SideAction("discard", discardLabel, icon = SidekitIcon.Undo, tone = ActionTone.Destructive, motion = ActionMotion.Up, onClick = ::discard)
         )
     } else {
         buildList {
-            add(SideAction.back("back", "Settings", ::requestBack))
+            add(SideAction.back("back", settingsLabel, ::requestBack))
             // Reset is only useful while the buffer differs from the built-in default.
             if (!arranger.isDefault) {
-                add(SideAction("reset", "Reset", icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() }))
+                add(SideAction("reset", resetLabel, icon = SidekitIcon.Undo, tone = ActionTone.Muted, onClick = { arranger.reset() }))
             }
-            add(SideAction.forward("done", "Done", ::done, icon = SidekitIcon.Check))
+            add(SideAction.forward("done", doneLabel, ::done, icon = SidekitIcon.Check))
         }
     }
     val options = emptyList<SideAction>()
     SidekitScaffold(
-        "Arrange apps",
+        stringResource(R.string.settings_arrange_apps),
         // With nothing selected, Up/Down are left to focus traversal, so the keypad walks the app
         // list like Home. Once an app is selected, Up/Down move that app instead (T/B on the
         // keypad); Left/Right, Confirm and Back are untouched so the user can still reach the
@@ -203,7 +210,7 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
             item { ArrangeHint() }
             val last = order.lastIndex
             itemsIndexed(order, key = { _, id -> id }) { index, id ->
-                val label = subsById[id]?.label ?: portedById[id]?.label ?: nativeById[id]?.label ?: installedById[id]?.label ?: return@itemsIndexed
+                val label = subsById[id]?.label(context) ?: portedById[id]?.label ?: nativeById[id]?.label ?: installedById[id]?.label ?: return@itemsIndexed
                 val enabledUp = index > 0
                 val enabledDown = index < last
                 val isSelected = arranger.isSelected(id)
@@ -224,8 +231,8 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                             }
                         ),
                         secondary = when {
-                            isSelected -> "Selected"
-                            arranger.isInDock(id) -> "In dock"
+                            isSelected -> stringResource(R.string.settings_selected)
+                            arranger.isInDock(id) -> stringResource(R.string.settings_in_dock)
                             else -> null
                         },
                         colour = if (isSelected) ItemColour.Secondary else ItemColour.Primary,
@@ -233,8 +240,8 @@ internal fun ArrangeHomeScreen(back: () -> Unit) {
                     )
                     if (isSelected) {
                         Column {
-                            ItemArrow(up = true, enabled = enabledUp, contentDescription = "Move $label up") { arranger.move(id, -1) }
-                            ItemArrow(up = false, enabled = enabledDown, contentDescription = "Move $label down") { arranger.move(id, +1) }
+                            ItemArrow(up = true, enabled = enabledUp, contentDescription = stringResource(R.string.settings_move_up, label)) { arranger.move(id, -1) }
+                            ItemArrow(up = false, enabled = enabledDown, contentDescription = stringResource(R.string.settings_move_down, label)) { arranger.move(id, +1) }
                         }
                     }
                 }
@@ -269,17 +276,17 @@ private fun ArrangeHint() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            KeyCap("Enter")
-            SidekitText(": Select App", style = SidekitTheme.typography.label)
+            KeyCap(stringResource(R.string.settings_key_enter))
+            SidekitText(stringResource(R.string.settings_arrange_select), style = SidekitTheme.typography.label)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            KeyCap("Up")
+            KeyCap(stringResource(R.string.settings_key_up))
             SidekitText("/", style = SidekitTheme.typography.label)
-            KeyCap("Down")
-            SidekitText(": Move App", style = SidekitTheme.typography.label)
+            KeyCap(stringResource(R.string.settings_key_down))
+            SidekitText(stringResource(R.string.settings_arrange_move), style = SidekitTheme.typography.label)
         }
     }
 }

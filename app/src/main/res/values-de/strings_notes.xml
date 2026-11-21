@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sidenotes app. Sidenote(s) is the product name and stays as is. Note text is data, not strings. -->
+<resources>
+    <string name="notes_title">Meine Sidenotes</string>
+    <string name="notes_new">Neue Sidenote</string>
+    <string name="notes_undo_delete">Löschen der Notiz rückgängig machen</string>
+    <string name="notes_untitled">Ohne Titel</string>
+    <string name="notes_delete_named">%1$s löschen</string>
+    <string name="notes_empty_title">Noch keine Sidenotes</string>
+    <string name="notes_empty_body">Deine Notizen erscheinen hier</string>
+    <string name="notes_delete">Notiz löschen</string>
+    <string name="notes_save_and_back">Speichern und zurück</string>
+    <string name="notes_save">Speichern</string>
+    <string name="notes_save_description">Notiz speichern</string>
+    <string name="notes_keep">Notiz behalten</string>
+    <string name="notes_delete_confirm">Löschen</string>
+    <string name="notes_confirm_delete">Löschen bestätigen</string>
+    <string name="notes_placeholder">Schreib los…</string>
+</resources>

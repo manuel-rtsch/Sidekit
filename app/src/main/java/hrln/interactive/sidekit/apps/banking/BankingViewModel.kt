@@ -1,7 +1,10 @@
 package hrln.interactive.sidekit.apps.banking
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -10,8 +13,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Something just deleted, offered back by an Undo split in the bar for a few seconds. */
-data class BankingUndo(val label: String, val removed: BankBook)
+/**
+ * Something just deleted, offered back by an Undo split in the bar for a few seconds. [name] is
+ * the account or payee, as the user typed it.
+ */
+data class BankingUndo(val name: String, val removed: BankBook) {
+    /** "Undo delete Barclays". */
+    @Composable
+    fun label(): String = stringResource(R.string.banking_undo_delete, name)
+}
 
 data class BankingUiState(
     val load: BankingRepository.Load = BankingRepository.Load.Locked,
@@ -57,12 +67,12 @@ class BankingViewModel(
 
     fun deleteAccount(id: Long) {
         val removed = repository.deleteAccount(id) ?: return
-        offerUndo(BankingUndo("Undo delete ${removed.accounts.first().name}", removed))
+        offerUndo(BankingUndo(removed.accounts.first().name, removed))
     }
 
     fun deleteTransaction(id: Long) {
         val t = repository.deleteTransaction(id) ?: return
-        offerUndo(BankingUndo("Undo delete ${t.payee}", BankBook(transactions = listOf(t))))
+        offerUndo(BankingUndo(t.payee, BankBook(transactions = listOf(t))))
     }
 
     fun undo() {

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Video: the phone's videos and the player. -->
+<resources>
+    <string name="video_title">Vídeo</string>
+    <string name="video_untitled">Vídeo</string>
+    <string name="video_home">Inicio</string>
+    <string name="video_open_settings">Abrir ajustes</string>
+    <string name="video_allow">Permitir</string>
+    <string name="video_allow_description">Permitir acceso a los vídeos</string>
+    <string name="video_rationale_title">Ver tus vídeos</string>
+    <string name="video_rationale_body">Vídeo reproduce los clips guardados en este teléfono, incluidos los que grabas con la Cámara.</string>
+    <string name="video_empty">Aún no hay vídeos. Los clips que grabes con la Cámara aparecerán aquí.</string>
+    <string name="video_cant_play">No se puede reproducir este vídeo</string>
+    <string name="video_back_to_videos">Volver a los vídeos</string>
+    <string name="video_play">Reproducir</string>
+    <string name="video_pause">Pausa</string>
+    <string name="video_play_description">Reproducir vídeo</string>
+    <string name="video_pause_description">Pausar vídeo</string>
+    <string name="video_forward_10">Avanzar 10 segundos</string>
+    <string name="video_back_10">Atrás 10 s</string>
+    <string name="video_restart">Reiniciar</string>
+    <string name="video_seek">Buscar</string>
+</resources>

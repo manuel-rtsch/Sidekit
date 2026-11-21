@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Health: steps today, daily goal and step history. -->
+<resources>
+    <string name="health_title">Gesundheit</string>
+    <string name="health_daily_goal">Tagesziel</string>
+    <string name="health_step_history">Schrittverlauf</string>
+    <string name="health_history">Verlauf</string>
+    <string name="health_goals">Ziele</string>
+    <string name="health_back">Zurück</string>
+    <string name="health_allow">Erlauben</string>
+    <string name="health_permission_prompt">Erlaube die Aktivitätserkennung, um Schritte zu zählen. Kein dauerhaft laufender Dienst.</string>
+    <string name="health_permission_denied">Zugriff auf Aktivität verweigert. Gespeicherter Verlauf und Ziele funktionieren weiter.</string>
+    <string name="health_goal_invalid">Gib ein Ziel von 1 bis 100000 ein</string>
+    <string name="health_steps_per_day">Schritte pro Tag</string>
+    <string name="health_no_samples">Noch keine Messungen</string>
+    <plurals name="health_day_steps">
+        <item quantity="one">%1$d Schritt</item>
+        <item quantity="other">%1$d Schritte</item>
+    </plurals>
+    <plurals name="health_day_steps_approx">
+        <item quantity="one">%1$d Schritt · ca.</item>
+        <item quantity="other">%1$d Schritte · ca.</item>
+    </plurals>
+    <string name="health_no_step_counter">Kein Schrittzähler auf diesem Gerät</string>
+    <string name="health_steps_approximate">Schritte sind ungefähr</string>
+    <string name="health_sampling_note">Gemessen, solange geöffnet, und gegen Mitternacht. Verpasste Tageswechsel und Neustarts können Schritte verlieren oder verschieben.</string>
+    <string name="health_heart_sleep">Puls und Schlaf</string>
+    <string name="health_no_source">Keine Quelle verbunden</string>
+    <string name="health_steps_today">Schritte heute</string>
+</resources>

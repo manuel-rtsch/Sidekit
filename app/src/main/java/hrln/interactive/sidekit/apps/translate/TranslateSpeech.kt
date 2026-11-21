@@ -14,13 +14,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import hrln.interactive.sidekit.R
 import java.util.Locale
 
 /** Owns speech only while Translate is visible. Both platform services are optional on AOSP. */
 class TranslateSpeech(
     private val context: Context,
     private val onHeard: (TranslateSide, String) -> Unit,
-    private val onError: (String) -> Unit,
+    private val onError: (TranslateNotice) -> Unit
 ) {
     private var recognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
@@ -31,28 +32,32 @@ class TranslateSpeech(
     fun listen(side: TranslateSide, language: TranslateLanguage) {
         stopListening()
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            onError("Speech recognition isn't installed on this phone")
+            onError(TranslateNotice(R.string.translate_error_no_recognizer))
             return
         }
         try {
             recognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
                 setRecognitionListener(Listener())
                 listening = side
-                startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, language.speechCode)
-                    putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                })
+                startListening(
+                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, language.speechCode)
+                        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    }
+                )
             }
         } catch (_: Exception) {
             releaseRecognizer()
-            onError("Couldn't start speech recognition")
+            onError(TranslateNotice(R.string.translate_error_recognizer))
         }
     }
 
     fun stopListening() {
-        try { recognizer?.stopListening() } catch (_: Exception) {}
+        try {
+            recognizer?.stopListening()
+        } catch (_: Exception) {}
         listening = null
     }
 
@@ -61,11 +66,14 @@ class TranslateSpeech(
         val engine = tts ?: try {
             TextToSpeech(context) { status ->
                 ttsReady = status == TextToSpeech.SUCCESS
-                if (ttsReady) pendingSpeech?.let(::speakNow)
-                else onError("Text-to-speech isn't installed on this phone")
+                if (ttsReady) {
+                    pendingSpeech?.let(::speakNow)
+                } else {
+                    onError(TranslateNotice(R.string.translate_error_no_tts))
+                }
             }.also { tts = it }
         } catch (_: Exception) {
-            onError("Text-to-speech isn't installed on this phone")
+            onError(TranslateNotice(R.string.translate_error_no_tts))
             return
         }
         if (ttsReady) speakNow(engine, request)
@@ -80,7 +88,7 @@ class TranslateSpeech(
         pendingSpeech = null
         val locale = Locale.forLanguageTag(request.language.speechCode)
         if (engine.setLanguage(locale) == TextToSpeech.LANG_MISSING_DATA) {
-            onError("No speech voice for ${request.language.label}")
+            onError(TranslateNotice(R.string.translate_error_no_voice, request.language))
             return
         }
         engine.speak(request.text, TextToSpeech.QUEUE_FLUSH, null, "sidekit-translation")
@@ -96,7 +104,9 @@ class TranslateSpeech(
     }
 
     private fun releaseRecognizer() {
-        try { recognizer?.cancel() } catch (_: Exception) {}
+        try {
+            recognizer?.cancel()
+        } catch (_: Exception) {}
         recognizer?.destroy()
         recognizer = null
         listening = null
@@ -112,8 +122,10 @@ class TranslateSpeech(
         override fun onError(error: Int) {
             listening = null
             if (error != SpeechRecognizer.ERROR_CLIENT && error != SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                onError("Didn't hear that. Try again.")
-            } else if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) onError("Didn't hear anything")
+                onError(TranslateNotice(R.string.translate_error_not_heard))
+            } else if (error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+                onError(TranslateNotice(R.string.translate_error_silence))
+            }
         }
         override fun onReadyForSpeech(params: Bundle?) = Unit
         override fun onBeginningOfSpeech() = Unit
@@ -130,17 +142,16 @@ fun TranslateSpeechEffects(
     vm: TranslateViewModel,
     talking: TranslateSide?,
     permissionNeeded: Boolean,
-    sourceLabel: String,
-    targetLabel: String,
+    sourceLanguage: TranslateLanguage,
+    targetLanguage: TranslateLanguage
 ) {
     val context = LocalContext.current
     val speech = remember { TranslateSpeech(context, vm::onHeard, vm::onSpeechError) }
     LaunchedEffect(talking, permissionNeeded) {
-        if (talking == null) speech.stopListening()
-        else if (!permissionNeeded) {
-            val label = if (talking == TranslateSide.Source) sourceLabel else targetLabel
-            val language = TranslateLanguage.entries.first { it.label == label }
-            speech.listen(talking, language)
+        if (talking == null) {
+            speech.stopListening()
+        } else if (!permissionNeeded) {
+            speech.listen(talking, if (talking == TranslateSide.Source) sourceLanguage else targetLanguage)
         }
     }
     LaunchedEffect(speech) { vm.speech.collect(speech::speak) }

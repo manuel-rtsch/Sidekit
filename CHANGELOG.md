@@ -12,6 +12,15 @@
 - **The keypad typing bar no longer takes over while the on-screen keyboard is up.** The ABC /
   Done strip belongs to a keypad that types; when the IME is the input, the screen keeps its own
   (or empty) action bar instead of publishing the keypad's strip over it.
+- **Sidekit speaks German, Spanish and French, and the language is a setting.** Every string the
+  app and the design library show now lives in `res/values/strings_<area>.xml` (and its
+  `values-de` / `values-es` / `values-fr` translations), and Settings → Language picks the app's
+  language independently of the phone's. Code that runs without a Context — the Options bar, the
+  keypad guide — reads the same resources. This is `upstream/main` (PR #59) merged in. Where the
+  fork's own work added text to a shared surface (the touch Options button, the case colour Cloud,
+  the keypad's Home key and controller shoulders, the App names) it went into the same files in all
+  four languages; fork-only screens that are still English-until-translated are the Emulator and a
+  few of the newer side apps, which keep their literals for now.
 
 ## v1.10.1 — 2026-11-21
 

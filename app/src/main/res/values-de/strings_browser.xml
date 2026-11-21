@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Web browser: page, tabs, bookmarks and history. -->
+<resources>
+    <string name="browser_title">Webbrowser</string>
+    <string name="browser_tabs">Tabs</string>
+    <string name="browser_search">Suchen</string>
+    <string name="browser_address">Adresse</string>
+    <string name="browser_search_or_address">Suche oder Adresse</string>
+    <string name="browser_start_heading">Ein ruhigeres Web.</string>
+    <string name="browser_start_body">Gib mit der Tastatur eine Adresse oder Suche ein, dann Fertig.</string>
+    <string name="browser_start_link">Suchen →</string>
+    <string name="browser_undo">Rückgängig</string>
+    <string name="browser_go">Los</string>
+    <string name="browser_back_page">Eine Seite zurück</string>
+    <string name="browser_forward_page">Eine Seite vor</string>
+    <string name="browser_stop">Stopp</string>
+    <string name="browser_reload">Neu laden</string>
+    <string name="browser_reload_page">Seite neu laden</string>
+    <string name="browser_saved">Gespeichert</string>
+    <string name="browser_save">Speichern</string>
+    <string name="browser_remove_bookmark">Lesezeichen entfernen</string>
+    <string name="browser_bookmark_page">Seite als Lesezeichen</string>
+    <string name="browser_text_size">Textgröße %1$d Prozent</string>
+    <string name="browser_new_tab">Neuer Tab</string>
+    <string name="browser_page">Seite</string>
+    <plurals name="browser_tab_count">
+        <item quantity="one">%1$d Tab</item>
+        <item quantity="other">%1$d Tabs</item>
+    </plurals>
+    <string name="browser_close_tab">%1$s schließen</string>
+    <string name="browser_remove_item">%1$s entfernen</string>
+    <string name="browser_bookmarks">Lesezeichen</string>
+    <string name="browser_history">Verlauf</string>
+    <string name="browser_downloads">Downloads</string>
+    <string name="browser_no_bookmarks">Noch keine Lesezeichen. Auf einer Seite findest du Speichern unter der Optionstaste.</string>
+    <string name="browser_keep_history">Verlauf behalten</string>
+    <string name="browser_clear">Löschen</string>
+    <string name="browser_confirm_clear">Löschen des Verlaufs bestätigen</string>
+    <string name="browser_clear_history">Verlauf löschen</string>
+    <string name="browser_history_empty">Besuchte Seiten erscheinen hier.</string>
+    <string name="browser_bookmarked">Lesezeichen gesetzt</string>
+    <string name="browser_bookmark_removed">Lesezeichen entfernt</string>
+    <string name="browser_history_cleared">Verlauf gelöscht</string>
+    <string name="browser_page_stopped">Seite gestoppt; wird neu geladen</string>
+    <string name="browser_no_downloads_app">Keine Download-App auf diesem Telefon</string>
+    <string name="browser_cant_open_link">Link kann nicht geöffnet werden</string>
+    <string name="browser_no_app_for_link">Keine App für diesen Link</string>
+    <string name="browser_download_unsupported">Dieser Download wird nicht unterstützt</string>
+    <string name="browser_downloading">%1$s wird heruntergeladen</string>
+    <string name="browser_download_failed">%1$s konnte nicht heruntergeladen werden</string>
+</resources>

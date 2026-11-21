@@ -16,7 +16,7 @@ import org.robolectric.annotation.GraphicsMode
 class MusicScreenshotTest {
     @get:Rule val compose = createComposeRule()
     private val tracks = listOf(Track(1, "Our Mission", 1, 3, "Yoshiruma Terui", "Hidden Inventory", 180_000))
-    private val library = MusicLibrary.from(tracks, listOf(Playlist(1, "Playlist 1", listOf(1))))
+    private val library = MusicLibrary.from(tracks, MusicLabels("Unknown album", "Unknown artist", "Various Artists"), listOf(Playlist(1, "Playlist 1", listOf(1))))
     private fun shoot(name: String, content: @Composable () -> Unit) {
         compose.setContent { SidekitPreviewFrame(content) }
         compose.onRoot().captureRoboImage("screenshots/$name.png")

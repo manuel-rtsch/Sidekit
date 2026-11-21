@@ -11,10 +11,15 @@ import android.net.Uri
 import android.os.Build
 import android.os.CancellationSignal
 import android.util.AtomicFile
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import hrln.interactive.sidekit.R
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Locale
 import kotlin.coroutines.resume
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -41,7 +46,16 @@ class OutdoorStore<T>(
     private val mutable = MutableStateFlow<T?>(null)
     private val pendingEdits = mutableListOf<(T) -> T>()
     val state = mutable.asStateFlow()
+
+    /** The last load or save failure, for the UI to resolve; null once a save succeeds. */
+    val errorRes = MutableStateFlow<Int?>(null)
+
+    /** [errorRes] in English, for callers that have not moved to [errorRes]. */
     val error = MutableStateFlow<String?>(null)
+    private fun fail(@StringRes res: Int, english: String) {
+        errorRes.value = res
+        error.value = english
+    }
     private val persisted = MutableStateFlow<T?>(null)
     suspend fun flush() {
         val value = mutable.value ?: return
@@ -54,7 +68,7 @@ class OutdoorStore<T>(
             } catch (_: java.io.FileNotFoundException) {
                 initial
             } catch (_: Exception) {
-                error.value = "Could not read saved data"
+                fail(R.string.maps_store_read_failed, "Could not read saved data")
                 initial
             }
             synchronized(this@OutdoorStore) {
@@ -72,10 +86,11 @@ class OutdoorStore<T>(
                         disk.finishWrite(out)
                         written = value
                         persisted.value = value
+                        errorRes.value = null
                         error.value = null
                     } catch (_: Exception) {
                         out?.let(disk::failWrite)
-                        error.value = "Could not save; please retry"
+                        fail(R.string.maps_store_save_failed, "Could not save; please retry")
                     }
                 }
             }
@@ -116,7 +131,7 @@ suspend fun fetchJson(url: String): JSONObject = withContext(Dispatchers.IO) {
 
 suspend fun searchPlaces(query: String): List<Place> {
     if (query.trim().length < 2) return emptyList()
-    val json = fetchJson("https://geocoding-api.open-meteo.com/v1/search?name=${Uri.encode(query.trim())}&count=10&language=en&format=json")
+    val json = fetchJson("https://geocoding-api.open-meteo.com/v1/search?name=${Uri.encode(query.trim())}&count=10&language=${Locale.getDefault().language}&format=json")
     val rows = json.optJSONArray("results") ?: return emptyList()
     return List(rows.length()) { i ->
         rows.getJSONObject(i).let {
@@ -177,6 +192,14 @@ fun currentLocationName(city: String?) = if (city.isNullOrBlank()) CURRENT_LOCAT
 
 /** A fix from [locate], whether or not its town has been looked up yet. */
 val Place.isCurrentLocation get() = name == CURRENT_LOCATION || name.startsWith("$CURRENT_LOCATION · ")
+
+/** [Place.name] for the screen: a [currentLocationName] (saved in English) reads in the app's language. */
+val Place.displayName: String
+    @Composable get() = when {
+        name == CURRENT_LOCATION -> stringResource(R.string.maps_current_location)
+        name.startsWith("$CURRENT_LOCATION · ") -> stringResource(R.string.maps_current_location_in, name.removePrefix("$CURRENT_LOCATION · "))
+        else -> name
+    }
 
 /**
  * The town or city at [place], from the platform geocoder. Null when the device has no geocoder,

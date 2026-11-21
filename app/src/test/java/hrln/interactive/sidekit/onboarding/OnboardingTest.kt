@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.settings.*
 import hrln.interactive.sidekit.design.canvas.SidekitCanvas
 import hrln.interactive.sidekit.design.input.*
@@ -140,7 +141,7 @@ class OnboardingTest {
     }
 
     @Test fun `access status reflects grants and revocations`() {
-        val camera = setupAccess().first { it.title == "Camera" }
+        val camera = setupAccess().first { it.title == R.string.onboarding_access_camera }
         val app = org.robolectric.Shadows.shadowOf(context as android.app.Application)
         app.denyPermissions(android.Manifest.permission.CAMERA)
         assertFalse(camera.enabled(context))
@@ -169,7 +170,7 @@ class OnboardingTest {
 
     @Test fun `Android 15 uses granular media access and full screen alarm settings`() {
         val entries = setupAccess()
-        assertTrue(entries.any { it.title == "Full-screen alarms" })
+        assertTrue(entries.any { it.title == R.string.onboarding_access_full_screen })
         assertTrue(entries.any { android.Manifest.permission.READ_MEDIA_IMAGES in it.permissions })
         assertFalse(entries.any { android.Manifest.permission.READ_EXTERNAL_STORAGE in it.permissions })
     }

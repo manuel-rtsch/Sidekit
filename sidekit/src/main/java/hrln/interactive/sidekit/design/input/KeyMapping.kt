@@ -1,11 +1,14 @@
 package hrln.interactive.sidekit.design.input
 
+import android.content.res.Resources
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import hrln.interactive.sidekit.design.R
 
 /**
  * One physical key: the input device that sent it and the code it reported. Keys are told apart
@@ -16,9 +19,12 @@ import androidx.compose.runtime.setValue
  * or headset that sends the same code is left alone.
  */
 data class PhysicalKey(val device: String, val keyCode: Int, val scanCode: Int = 0) {
-    /** Readable name, e.g. "F1" or "Scan code 250". */
+    /** Readable name in English, e.g. "F1" or "Scan code 250". */
     val label: String
         get() = if (keyCode == KeyEvent.KEYCODE_UNKNOWN) "Scan code $scanCode" else keyName(keyCode)
+
+    /** Readable name in the app language, e.g. "F1" or "Scan code 250". */
+    fun label(resources: Resources): String = if (keyCode == KeyEvent.KEYCODE_UNKNOWN) resources.getString(R.string.sk_sidekit_key_scan_code, scanCode) else keyName(keyCode, resources)
 
     companion object {
         /** KeyEvent's own constant names, by code (keyCodeToString isn't available everywhere). */
@@ -33,9 +39,12 @@ data class PhysicalKey(val device: String, val keyCode: Int, val scanCode: Int =
             return PhysicalKey(device, event.keyCode, if (known) 0 else event.scanCode)
         }
 
-        /** "KEYCODE_DPAD_UP" -> "D-pad up", "KEYCODE_F1" -> "F1". */
-        fun keyName(code: Int): String {
-            val raw = names[code] ?: return "Key $code"
+        /**
+         * "KEYCODE_DPAD_UP" -> "D-pad up", "KEYCODE_F1" -> "F1". The names are Android's own
+         * constants, so only a code with no name ("Key 300") is put in [resources]' language.
+         */
+        fun keyName(code: Int, resources: Resources? = null): String {
+            val raw = names[code] ?: return resources?.getString(R.string.sk_sidekit_key_code, code) ?: "Key $code"
             if (raw.length <= 3) return raw
             return raw.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }.replace("Dpad", "D-pad")
         }
@@ -45,88 +54,101 @@ data class PhysicalKey(val device: String, val keyCode: Int, val scanCode: Int =
 /**
  * Something a key does in SideKit: one printed key of a [KeypadModule] (or one of the system
  * keys). [keyCode] is the code the Sidephone's own module sends for it, which is what the rest of
- * SideKit (T9 typing, focus, Back, Options) acts on.
+ * SideKit (T9 typing, focus, Back, Options) acts on. [label] and [hint] are in the language of the
+ * resources [KeypadControls] was given (English without any).
  */
 class KeypadControl(val keyCode: Int, val label: String, val hint: String)
 
-/** The controls of each module, in the order they're printed on it. */
+/**
+ * The controls of each module, in the order they're printed on it. Pass [Resources] (for example
+ * `LocalContext.current.resources`) to get the labels and hints in the app language; without them
+ * they are English.
+ */
 object KeypadControls {
-    fun of(module: KeypadModule): List<KeypadControl> = when (module) {
-        KeypadModule.T9 -> system + dpad + listOf(
-            control(KeyEvent.KEYCODE_ENTER, "OK", "Select, or take a suggestion")
-        ) + (1..9).map { digit(it) } + listOf(
-            control(KeyEvent.KEYCODE_STAR, "*", "Punctuation and symbols"),
-            digit(0),
-            control(KeyEvent.KEYCODE_POUND, "#", "Case; hold for numbers"),
-            control(KeyEvent.KEYCODE_HOME, "Home", "Go to the home screen"),
-            control(KeyEvent.KEYCODE_DEL, "Delete", "Delete the previous character")
+    fun of(module: KeypadModule, resources: Resources? = null): List<KeypadControl> {
+        val t = Text(resources)
+        val system = listOf(
+            // Back is the plain Back key here: the Sidephone's top-left key (CALL) only becomes Back
+            // through the keypad accessibility service, which keeps working whatever is mapped.
+            t.control(KeyEvent.KEYCODE_BACK, R.string.sk_sidekit_key_back, "Back", R.string.sk_sidekit_hint_back, "Go back a screen"),
+            t.control(KeyEvent.KEYCODE_ENDCALL, R.string.sk_sidekit_key_options, "Options", R.string.sk_sidekit_hint_options, "Show the screen's extra actions")
         )
+        val dpad = listOf(
+            t.control(KeyEvent.KEYCODE_DPAD_UP, R.string.sk_sidekit_key_up, "Up", R.string.sk_sidekit_hint_move_up, "Move up"),
+            t.control(KeyEvent.KEYCODE_DPAD_DOWN, R.string.sk_sidekit_key_down, "Down", R.string.sk_sidekit_hint_move_down, "Move down"),
+            t.control(KeyEvent.KEYCODE_DPAD_LEFT, R.string.sk_sidekit_key_left, "Left", R.string.sk_sidekit_hint_move_left_cursor, "Move left; cursor"),
+            t.control(KeyEvent.KEYCODE_DPAD_RIGHT, R.string.sk_sidekit_key_right, "Right", R.string.sk_sidekit_hint_move_right_cursor, "Move right; cursor")
+        )
+        return when (module) {
+            KeypadModule.T9 -> system + dpad + listOf(
+                t.printed(KeyEvent.KEYCODE_ENTER, "OK", R.string.sk_sidekit_hint_select_or_suggestion, "Select, or take a suggestion")
+            ) + (1..9).map { t.digit(it) } + listOf(
+                t.printed(KeyEvent.KEYCODE_STAR, "*", R.string.sk_sidekit_hint_punctuation_symbols, "Punctuation and symbols"),
+                t.digit(0),
+                t.printed(KeyEvent.KEYCODE_POUND, "#", R.string.sk_sidekit_hint_case_numbers, "Case; hold for numbers"),
+                t.control(KeyEvent.KEYCODE_HOME, R.string.sk_sidekit_key_home, "Home", R.string.sk_sidekit_hint_go_home, "Go to the home screen"),
+                t.control(KeyEvent.KEYCODE_DEL, R.string.sk_sidekit_key_delete, "Delete", R.string.sk_sidekit_hint_delete, "Delete the previous character")
+            )
 
-        KeypadModule.Qwerty -> system + QwertyLayout.letters.map { (code, letters) ->
-            control(code, letters.uppercase(), "Hold for ${QwertyLayout.printed[code]}")
-        } + listOf(
-            control(KeyEvent.KEYCODE_SPACE, "Space", "Hold for 0"),
-            control(KeyEvent.KEYCODE_DEL, "Delete", "Delete the previous character"),
-            control(KeyEvent.KEYCODE_ENTER, "Enter", "New line, or take a suggestion"),
-            control(QwertyLayout.SUGGEST, "↕", "Next suggestion"),
-            control(QwertyLayout.SYM, "SYM", "Symbols"),
-            control(QwertyLayout.CASE, "aA", "Case; hold for numbers")
-        )
+            KeypadModule.Qwerty -> system + QwertyLayout.letters.map { (code, letters) ->
+                val printed = QwertyLayout.printed[code].toString()
+                KeypadControl(code, letters.uppercase(), t.get(R.string.sk_sidekit_hint_hold_for, "Hold for %1\$s", printed))
+            } + listOf(
+                KeypadControl(KeyEvent.KEYCODE_SPACE, t.get(R.string.sk_sidekit_key_space, "Space"), t.get(R.string.sk_sidekit_hint_hold_for, "Hold for %1\$s", "0")),
+                t.control(KeyEvent.KEYCODE_DEL, R.string.sk_sidekit_key_delete, "Delete", R.string.sk_sidekit_hint_delete, "Delete the previous character"),
+                t.control(KeyEvent.KEYCODE_ENTER, R.string.sk_sidekit_key_enter, "Enter", R.string.sk_sidekit_hint_new_line, "New line, or take a suggestion"),
+                t.printed(QwertyLayout.SUGGEST, "↕", R.string.sk_sidekit_hint_next_suggestion, "Next suggestion"),
+                t.printed(QwertyLayout.SYM, "SYM", R.string.sk_sidekit_hint_symbols, "Symbols"),
+                t.printed(QwertyLayout.CASE, "aA", R.string.sk_sidekit_hint_case_numbers, "Case; hold for numbers")
+            )
 
-        KeypadModule.Sundial -> system + listOf(
-            control(KeyEvent.KEYCODE_DPAD_UP, "Top", "Move up"),
-            control(KeyEvent.KEYCODE_MEDIA_NEXT, "Right edge", "Next track"),
-            control(KeyEvent.KEYCODE_DPAD_DOWN, "Bottom", "Move down"),
-            control(KeyEvent.KEYCODE_MEDIA_PREVIOUS, "Left edge", "Previous track"),
-            control(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, "Centre", "Play or pause; hold for Confirm"),
-            control(KeyEvent.KEYCODE_DPAD_LEFT, "Corner ←", "Move left; hold for Options fallback"),
-            control(KeyEvent.KEYCODE_DPAD_RIGHT, "Corner →", "Move right"),
-            control(KeyEvent.KEYCODE_TAB, "Tab", "Next control; hold for Back"),
-            control(KeyEvent.KEYCODE_ENTER, "Enter", "Select; hold for Options (some revisions report Play/Pause)")
-        )
+            KeypadModule.Sundial -> system + listOf(
+                t.control(KeyEvent.KEYCODE_DPAD_UP, R.string.sk_sidekit_key_top, "Top", R.string.sk_sidekit_hint_move_up, "Move up"),
+                t.control(KeyEvent.KEYCODE_MEDIA_NEXT, R.string.sk_sidekit_key_right_edge, "Right edge", R.string.sk_sidekit_hint_next_track, "Next track"),
+                t.control(KeyEvent.KEYCODE_DPAD_DOWN, R.string.sk_sidekit_key_bottom, "Bottom", R.string.sk_sidekit_hint_move_down, "Move down"),
+                t.control(KeyEvent.KEYCODE_MEDIA_PREVIOUS, R.string.sk_sidekit_key_left_edge, "Left edge", R.string.sk_sidekit_hint_previous_track, "Previous track"),
+                t.control(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, R.string.sk_sidekit_key_centre, "Centre", R.string.sk_sidekit_hint_play_pause, "Play or pause; hold for Confirm"),
+                t.control(KeyEvent.KEYCODE_DPAD_LEFT, R.string.sk_sidekit_key_corner_left, "Corner ←", R.string.sk_sidekit_hint_corner_left, "Move left; hold for Options fallback"),
+                t.control(KeyEvent.KEYCODE_DPAD_RIGHT, R.string.sk_sidekit_key_corner_right, "Corner →", R.string.sk_sidekit_hint_move_right, "Move right"),
+                t.printed(KeyEvent.KEYCODE_TAB, "Tab", R.string.sk_sidekit_hint_tab, "Next control; hold for Back"),
+                t.control(KeyEvent.KEYCODE_ENTER, R.string.sk_sidekit_key_enter, "Enter", R.string.sk_sidekit_hint_enter_sundial, "Select; hold for Options (some revisions report Play/Pause)")
+            )
 
-        KeypadModule.GamePad -> system + dpad + listOf(
-            control(KeyEvent.KEYCODE_BUTTON_A, "A", "Confirm"),
-            control(KeyEvent.KEYCODE_BUTTON_B, "B", "Back in games"),
-            control(KeyEvent.KEYCODE_BUTTON_X, "X", "Options; hold for the action bar"),
-            control(KeyEvent.KEYCODE_BUTTON_Y, "Y", "Jump to the action bar"),
-            control(KeyEvent.KEYCODE_BUTTON_SELECT, "Select", "Options"),
-            control(KeyEvent.KEYCODE_BUTTON_L1, "Left shoulder", "Open search"),
-            control(KeyEvent.KEYCODE_BUTTON_R1, "Right shoulder", "Open search"),
-            control(KeyEvent.KEYCODE_BUTTON_START, "Start", "Go to the home screen")
-        )
+            KeypadModule.GamePad -> system + dpad + listOf(
+                t.printed(KeyEvent.KEYCODE_BUTTON_A, "A", R.string.sk_sidekit_hint_confirm, "Confirm"),
+                t.printed(KeyEvent.KEYCODE_BUTTON_B, "B", R.string.sk_sidekit_hint_back_in_games, "Back in games"),
+                t.printed(KeyEvent.KEYCODE_BUTTON_X, "X", R.string.sk_sidekit_hint_button_x, "Options; hold for the action bar"),
+                t.printed(KeyEvent.KEYCODE_BUTTON_Y, "Y", R.string.sk_sidekit_hint_button_y, "Jump to the action bar"),
+                t.printed(KeyEvent.KEYCODE_BUTTON_SELECT, "Select", R.string.sk_sidekit_hint_options, "Show the screen's extra actions"),
+                t.control(KeyEvent.KEYCODE_BUTTON_L1, R.string.sk_sidekit_key_shoulder_left, "Left shoulder", R.string.sk_sidekit_hint_open_search, "Open search"),
+                t.control(KeyEvent.KEYCODE_BUTTON_R1, R.string.sk_sidekit_key_shoulder_right, "Right shoulder", R.string.sk_sidekit_hint_open_search, "Open search"),
+                t.printed(KeyEvent.KEYCODE_BUTTON_START, "Start", R.string.sk_sidekit_hint_go_home, "Go to the home screen")
+            )
+        }
     }
 
-    fun find(module: KeypadModule, keyCode: Int): KeypadControl? = of(module).firstOrNull { it.keyCode == keyCode }
+    fun find(module: KeypadModule, keyCode: Int, resources: Resources? = null): KeypadControl? = of(module, resources).firstOrNull { it.keyCode == keyCode }
 
-    private fun control(code: Int, label: String, hint: String) = KeypadControl(code, label, hint)
-    private fun digit(n: Int): KeypadControl {
-        val letters = listOf("", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz")[n]
-        return control(
-            KeyEvent.KEYCODE_0 + n,
-            if (letters.isEmpty()) "$n" else "$n $letters",
-            if (n == 0) {
-                "Space; hold for 0"
-            } else if (n == 1) {
-                "Punctuation; hold for 1"
-            } else {
-                "Letters; hold for $n"
+    /** Looks strings up in [resources], or formats the English text when there are none. */
+    private class Text(private val resources: Resources?) {
+        fun get(@StringRes id: Int, english: String, vararg args: Any): String = resources?.getString(id, *args) ?: if (args.isEmpty()) english else english.format(*args)
+
+        /** A key with a translatable name. */
+        fun control(code: Int, @StringRes label: Int, englishLabel: String, @StringRes hint: Int, englishHint: String) = KeypadControl(code, get(label, englishLabel), get(hint, englishHint))
+
+        /** A key named by what is printed on it ("OK", "*", "A"), the same in every language. */
+        fun printed(code: Int, label: String, @StringRes hint: Int, englishHint: String) = KeypadControl(code, label, get(hint, englishHint))
+
+        fun digit(n: Int): KeypadControl {
+            val letters = listOf("", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz")[n]
+            val hint = when (n) {
+                0 -> get(R.string.sk_sidekit_hint_digit_0, "Space; hold for 0")
+                1 -> get(R.string.sk_sidekit_hint_digit_1, "Punctuation; hold for 1")
+                else -> get(R.string.sk_sidekit_hint_digit, "Letters; hold for %1\$d", n)
             }
-        )
+            return KeypadControl(KeyEvent.KEYCODE_0 + n, if (letters.isEmpty()) "$n" else "$n $letters", hint)
+        }
     }
-
-    private val system = listOf(
-        // Back is the plain Back key here: the Sidephone's top-left key (CALL) only becomes Back
-        // through the keypad accessibility service, which keeps working whatever is mapped.
-        control(KeyEvent.KEYCODE_BACK, "Back", "Go back a screen"),
-        control(KeyEvent.KEYCODE_ENDCALL, "Options", "Show the screen's extra actions")
-    )
-    private val dpad = listOf(
-        control(KeyEvent.KEYCODE_DPAD_UP, "Up", "Move up"),
-        control(KeyEvent.KEYCODE_DPAD_DOWN, "Down", "Move down"),
-        control(KeyEvent.KEYCODE_DPAD_LEFT, "Left", "Move left; cursor"),
-        control(KeyEvent.KEYCODE_DPAD_RIGHT, "Right", "Move right; cursor")
-    )
 }
 
 /**

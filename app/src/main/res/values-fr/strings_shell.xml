@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher, app names, the Apps app, and shared media/integration messages. -->
+<resources>
+    <!-- App names on the launcher and as app titles. Brand names stay as they are. -->
+    <string name="shell_app_phonebook">Répertoire</string>
+    <string name="shell_app_photos">Photos</string>
+    <string name="shell_app_translate">Traduction</string>
+    <string name="shell_app_calculator">Calculatrice</string>
+    <string name="shell_app_mail">E-mail</string>
+    <string name="shell_app_files">Fichiers</string>
+    <string name="shell_app_maps">Plans</string>
+    <string name="shell_app_music">Musique</string>
+    <string name="shell_app_clock">Horloge</string>
+    <string name="shell_app_video">Vidéo</string>
+    <string name="shell_app_vault">Coffre-fort</string>
+    <string name="shell_app_trip_planning">Itinéraires</string>
+    <string name="shell_app_banking">Banque</string>
+    <string name="shell_app_settings">Paramètres</string>
+    <string name="shell_app_web_browser">Navigateur</string>
+    <string name="shell_app_apps">Applis</string>
+    <string name="shell_app_camera">Appareil photo</string>
+    <string name="shell_app_calendar">Calendrier</string>
+    <string name="shell_app_compass">Boussole</string>
+    <string name="shell_app_emulator">Émulateur</string>
+    <string name="shell_app_health">Santé</string>
+    <string name="shell_home">Accueil</string>
+    <!-- Launcher. -->
+    <string name="launcher_search_hint">Rechercher</string>
+    <string name="launcher_search_clear">Effacer la recherche</string>
+    <string name="launcher_layout_list">Liste</string>
+    <string name="launcher_layout_grid">Grille</string>
+    <string name="launcher_layout_switch">Grille ou liste</string>
+    <string name="launcher_no_matches">Aucune appli trouvée</string>
+    <string name="launcher_none_shown">Aucune appli affichée. Allez dans Options → Paramètres pour en afficher.</string>
+    <!-- Apps: every app installed on the phone. -->
+    <string name="apps_open_failed">Impossible d\'ouvrir l\'appli : %1$s</string>
+    <string name="apps_list_failed">Impossible de lister les applis : %1$s</string>
+    <string name="apps_info">Infos appli</string>
+    <string name="apps_uninstall">Désinstaller</string>
+    <string name="apps_selected">%1$s sélectionnée. Appuyez sur Options pour les infos ou désinstaller.</string>
+    <string name="apps_hint">Touchez pour ouvrir · maintenez une appli pour sa page</string>
+    <string name="apps_loading">Chargement des applis…</string>
+    <string name="apps_work_profile">Profil professionnel</string>
+    <string name="apps_page">Page de l\'appli</string>
+    <string name="apps_back">Retour</string>
+    <string name="apps_open">Ouvrir</string>
+    <string name="apps_in_sideport">Dans Sideport</string>
+    <string name="apps_in_sideport_note">Ne peut pas aussi aller sur l\'accueil</string>
+    <string name="apps_add_to_home">Ajouter à l\'accueil</string>
+    <string name="apps_remove_from_home">Retirer de l\'accueil</string>
+    <string name="apps_uninstall_app">Désinstaller l\'appli</string>
+    <string name="apps_version">Version %1$s</string>
+    <string name="apps_not_installed">Non installée</string>
+    <!-- Media permissions (Photos, Music, Video, Camera). -->
+    <string name="media_allow">Autoriser</string>
+    <string name="media_allow_access">Autoriser l\'accès à %1$s</string>
+    <string name="media_open_settings">Ouvrir les paramètres</string>
+    <string name="media_access_blocked">%1$s\n\nL\'accès a été désactivé. Autorisez-le dans Paramètres, puis revenez.</string>
+    <!-- Online services (Banking, Trip Planning). -->
+    <string name="integrations_access_denied">Accès refusé. Vérifiez vos identifiants.</string>
+    <string name="integrations_rate_limited">Limite de requêtes atteinte. Réessayez plus tard.</string>
+    <string name="integrations_unavailable">Service indisponible (HTTP %1$d). Réessayez.</string>
+    <string name="integrations_too_large">Réponse du service trop volumineuse</string>
+</resources>

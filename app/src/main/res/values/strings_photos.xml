@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Photos app. Folder names come from the phone and are not strings. -->
+<resources>
+    <string name="photos_title">Photos</string>
+    <string name="photos_albums">Albums</string>
+    <string name="photos_album">Album</string>
+    <string name="photos_recent">Recent</string>
+    <string name="photos_favourites">Favourites</string>
+    <string name="photos_videos">Videos</string>
+    <string name="photos_camera">Camera</string>
+    <string name="photos_untitled">Untitled</string>
+    <plurals name="photos_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="photos_empty">No photos yet</string>
+    <string name="photos_album_empty">Nothing in this album</string>
+    <string name="photos_favourites_empty">Tap the heart on a photo to add it here</string>
+    <string name="photos_permission_title">See your photos</string>
+    <string name="photos_permission_reason">Photos shows the pictures and videos on this phone. Nothing leaves the device.</string>
+    <string name="photos_open_settings">Open settings</string>
+    <string name="photos_allow">Allow</string>
+    <string name="photos_allow_description">Allow access to photos</string>
+    <string name="photos_open_photo">Open photo</string>
+    <string name="photos_open_video">Open video</string>
+    <string name="photos_photo">Photo</string>
+    <string name="photos_video">Video</string>
+    <string name="photos_play_video">Play video</string>
+    <string name="photos_back">Back</string>
+    <string name="photos_back_from_photo">Back from photo</string>
+    <string name="photos_back_from_video">Back from video</string>
+    <string name="photos_keep_photo">Keep photo</string>
+    <string name="photos_keep_video">Keep video</string>
+    <string name="photos_delete">Delete</string>
+    <string name="photos_confirm_delete">Confirm delete</string>
+    <string name="photos_delete_photo">Delete photo</string>
+    <string name="photos_delete_video">Delete video</string>
+    <string name="photos_add_favourite">Add to Favourites</string>
+    <string name="photos_remove_favourite">Remove from Favourites</string>
+    <string name="photos_share">Share</string>
+    <string name="photos_favourite">Favourite</string>
+    <string name="photos_unfavourite">Unfavourite</string>
+    <string name="photos_play">Play</string>
+</resources>

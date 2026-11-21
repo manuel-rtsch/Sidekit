@@ -2,6 +2,7 @@ package hrln.interactive.sidekit.apps.music
 
 import android.content.Context
 import androidx.core.util.AtomicFile
+import hrln.interactive.sidekit.R
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -84,7 +85,9 @@ class FilePlaylistStore(file: File) : PlaylistStore {
 class PlaylistRepository(
     private val store: PlaylistStore,
     scope: CoroutineScope,
-    io: CoroutineDispatcher = Dispatchers.IO
+    io: CoroutineDispatcher = Dispatchers.IO,
+    /** The name of the [n]th playlist when it is created without one ("Playlist 3"). */
+    private val defaultName: (n: Int) -> String
 ) {
     private val _playlists = MutableStateFlow<List<Playlist>?>(null)
 
@@ -124,7 +127,7 @@ class PlaylistRepository(
     fun create(name: String, trackIds: List<Long> = emptyList()): Long {
         val id = nextId()
         mutate { list ->
-            val title = name.trim().ifEmpty { "Playlist ${list.size + 1}" }
+            val title = name.trim().ifEmpty { defaultName(list.size + 1) }
             list + Playlist(id, title, trackIds.distinct())
         }
         return id
@@ -176,6 +179,6 @@ object Playlists {
         repository ?: PlaylistRepository(
             FilePlaylistStore(File(context.applicationContext.filesDir, "music_playlists.bin")),
             CoroutineScope(SupervisorJob())
-        ).also { repository = it }
+        ) { n -> context.applicationContext.getString(R.string.music_playlist_default, n) }.also { repository = it }
     }
 }

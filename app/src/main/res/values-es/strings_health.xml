@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Health: steps today, daily goal and step history. -->
+<resources>
+    <string name="health_title">Salud</string>
+    <string name="health_daily_goal">Objetivo diario</string>
+    <string name="health_step_history">Historial de pasos</string>
+    <string name="health_history">Historial</string>
+    <string name="health_goals">Objetivos</string>
+    <string name="health_back">Atrás</string>
+    <string name="health_allow">Permitir</string>
+    <string name="health_permission_prompt">Permite el reconocimiento de actividad para contar pasos. Sin servicio siempre activo.</string>
+    <string name="health_permission_denied">Acceso a la actividad denegado. El historial y los objetivos guardados siguen funcionando.</string>
+    <string name="health_goal_invalid">Introduce un objetivo de 1 a 100000</string>
+    <string name="health_steps_per_day">Pasos al día</string>
+    <string name="health_no_samples">Aún no hay datos</string>
+    <plurals name="health_day_steps">
+        <item quantity="one">%1$d paso</item>
+        <item quantity="many">%1$d pasos</item>
+        <item quantity="other">%1$d pasos</item>
+    </plurals>
+    <plurals name="health_day_steps_approx">
+        <item quantity="one">%1$d paso · aprox.</item>
+        <item quantity="many">%1$d pasos · aprox.</item>
+        <item quantity="other">%1$d pasos · aprox.</item>
+    </plurals>
+    <string name="health_no_step_counter">Este dispositivo no tiene podómetro</string>
+    <string name="health_steps_approximate">Los pasos son aproximados</string>
+    <string name="health_sampling_note">Se mide con la app abierta y cerca de medianoche. Los cambios de día perdidos y los reinicios pueden perder o mover pasos.</string>
+    <string name="health_heart_sleep">Pulso y sueño</string>
+    <string name="health_no_source">Sin fuente conectada</string>
+    <string name="health_steps_today">Pasos hoy</string>
+</resources>

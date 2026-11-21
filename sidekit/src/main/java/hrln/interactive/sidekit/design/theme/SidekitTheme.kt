@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalContext
+import hrln.interactive.sidekit.design.SidekitStrings
 
 private val LocalSidekitColors = staticCompositionLocalOf { SidekitColors() }
 private val LocalSidekitTypography = staticCompositionLocalOf { SidekitTypography() }
@@ -21,6 +23,8 @@ fun SidekitTheme(
     shapes: SidekitShapes = SidekitShapes(),
     content: @Composable () -> Unit
 ) {
+    // Default action labels are built outside composition; they read the current language here.
+    SidekitStrings.attach(LocalContext.current.resources)
     CompositionLocalProvider(
         LocalSidekitColors provides colors,
         LocalSidekitTypography provides typography,

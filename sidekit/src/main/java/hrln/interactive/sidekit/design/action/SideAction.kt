@@ -23,6 +23,8 @@ import androidx.compose.ui.focus.saveFocusedChild
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.style.TextAlign
+import hrln.interactive.sidekit.design.R
+import hrln.interactive.sidekit.design.SidekitStrings
 import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.theme.SidekitColors
 
@@ -127,10 +129,10 @@ class SideAction(
          * Commit: green, check at the end, rises from below. The screen names the act, the role
          * owns the colour — saving looks the same in every sub-app.
          */
-        fun save(key: String, label: String = "Save", onClick: () -> Unit) = SideAction(key, label, SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onClick)
+        fun save(key: String, label: String = SidekitStrings.get(R.string.sk_sidekit_action_save, "Save"), onClick: () -> Unit) = SideAction(key, label, SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onClick)
 
         /** Commit that leaves the screen: green, arrow at the end, enters from the right. */
-        fun send(key: String, label: String = "Send", onClick: () -> Unit) = SideAction(key, label, SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward, onClick = onClick)
+        fun send(key: String, label: String = SidekitStrings.get(R.string.sk_sidekit_action_send, "Send"), onClick: () -> Unit) = SideAction(key, label, SidekitIcon.ArrowRightAlt, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Forward, onClick = onClick)
 
         /**
          * Take it back: grey, no promise to advance. Cancel and Undo wear the same colour because
@@ -140,7 +142,7 @@ class SideAction(
          */
         fun cancel(
             key: String = "back",
-            label: String = "Cancel",
+            label: String = SidekitStrings.get(R.string.sk_sidekit_action_cancel, "Cancel"),
             icon: SidekitIcon? = SidekitIcon.ArrowLeftAlt,
             motion: ActionMotion = ActionMotion.Back,
             contentDescription: String? = null,
@@ -153,7 +155,7 @@ class SideAction(
          */
         fun undo(
             key: String = "undo",
-            label: String = "Undo",
+            label: String = SidekitStrings.get(R.string.sk_sidekit_action_undo, "Undo"),
             contentDescription: String? = null,
             onClick: () -> Unit
         ) = SideAction(key, label, SidekitIcon.Undo, tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = contentDescription, onClick = onClick)
@@ -178,7 +180,7 @@ class SideAction(
         )
 
         /** Destroy: red, wherever it appears (bar, confirm, Options). [icon] stays optional. */
-        fun delete(key: String, label: String = "Delete", icon: SidekitIcon? = null, onClick: () -> Unit) = SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)
+        fun delete(key: String, label: String = SidekitStrings.get(R.string.sk_sidekit_action_delete, "Delete"), icon: SidekitIcon? = null, onClick: () -> Unit) = SideAction(key, label, icon, tone = ActionTone.Destructive, onClick = onClick)
 
         /** Square icon-only button. */
         fun square(
@@ -411,7 +413,7 @@ internal class ChromePublisher {
         if (barFor === opts) bar?.let { return it }
         val built = if (opts.isEmpty()) {
             ActionBarSpec(
-                leading = listOf(SideAction("options.none", "No options here", tone = ActionTone.Muted, motion = ActionMotion.Up, onClick = close))
+                leading = listOf(SideAction("options.none", SidekitStrings.get(R.string.sk_sidekit_options_none, "No options here"), tone = ActionTone.Muted, motion = ActionMotion.Up, onClick = close))
             )
         } else {
             ActionBarSpec(
@@ -424,7 +426,7 @@ internal class ChromePublisher {
                         o.onClick()
                     }
                 },
-                trailing = listOf(SideAction.square("options.close", SidekitIcon.Close, "Close options", close, tone = ActionTone.Muted))
+                trailing = listOf(SideAction.square("options.close", SidekitIcon.Close, SidekitStrings.get(R.string.sk_sidekit_options_close, "Close options"), close, tone = ActionTone.Muted))
             )
         }
         bar = built

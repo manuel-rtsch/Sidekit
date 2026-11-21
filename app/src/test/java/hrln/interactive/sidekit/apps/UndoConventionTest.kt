@@ -50,7 +50,7 @@ class UndoConventionTest {
     fun `no screen builds its own Undo action`() {
         val offences = appSources().flatMap { file ->
             file.readLines().withIndex().filter { (_, line) ->
-                line.contains("SideAction(") && line.contains("\"Undo\"")
+                line.contains("SideAction(") && (line.contains("\"Undo\"") || "Undo" in EnglishStrings.referencedIn(line))
             }.map { (index, line) -> "${file.name}:${index + 1} $line" }
         }
         assertTrue(

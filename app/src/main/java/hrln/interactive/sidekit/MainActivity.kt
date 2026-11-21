@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.compose.runtime.Composable
@@ -12,6 +13,7 @@ import hrln.interactive.sidekit.apps.settings.SidekitPreferences
 import hrln.interactive.sidekit.apps.sidemessage.IncomingLinks
 import hrln.interactive.sidekit.apps.sideport.SideportLinks
 import hrln.interactive.sidekit.design.input.Keypad
+import hrln.interactive.sidekit.locale.AppLanguage
 import hrln.interactive.sidekit.navigation.SidekitNavHost
 import hrln.interactive.sidekit.onboarding.OnboardingScreen
 import hrln.interactive.sidekit.sdk.SidekitStores
@@ -35,6 +37,11 @@ class MainActivity : SidekitActivity() {
      * read-only provider would drop every keypad change made in Settings.
      */
     override val stores: SidekitStores.Stores by lazy { SidekitStores.local(this) }
+
+    /** Android 12 has no per-app language; apply the one chosen in Settings → Language. */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     override fun onSidekitCreate(savedInstanceState: Bundle?) {
         // The launcher saves the last Search request it handled; restore the counter too, or a

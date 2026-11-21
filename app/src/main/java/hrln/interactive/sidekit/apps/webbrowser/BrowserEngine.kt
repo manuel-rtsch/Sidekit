@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import hrln.interactive.sidekit.R
 
 /** What the chrome shows of the live page. [progress] is read in the draw phase only. */
 @Stable
@@ -40,7 +41,7 @@ class PageState {
 interface BrowserHost {
     fun onPage(tabId: Long, url: String, title: String)
     fun onVisited(url: String, title: String)
-    fun onNotice(message: String)
+    fun onNotice(message: BrowserNotice)
 
     /** The renderer died (killed for memory, usually); the WebView must be replaced. */
     fun onRendererGone()
@@ -58,7 +59,7 @@ class BrowserEngine private constructor(
     private val context: Context,
     val tabId: Long,
     val view: WebView,
-    private val host: BrowserHost,
+    private val host: BrowserHost
 ) {
     val page = PageState()
     private var destroyed = false
@@ -94,18 +95,30 @@ class BrowserEngine private constructor(
     /** Puts back a saved back/forward list; false if there was none. Only on a fresh WebView. */
     fun restore(state: Bundle?): Boolean = state != null && view.restoreState(state) != null
 
-    fun goBack() { if (!destroyed && view.canGoBack()) view.goBack() }
-    fun goForward() { if (!destroyed && view.canGoForward()) view.goForward() }
-    fun reload() { if (!destroyed) view.reload() }
-    fun stop() { if (!destroyed) view.stopLoading() }
+    fun goBack() {
+        if (!destroyed && view.canGoBack()) view.goBack()
+    }
+    fun goForward() {
+        if (!destroyed && view.canGoForward()) view.goForward()
+    }
+    fun reload() {
+        if (!destroyed) view.reload()
+    }
+    fun stop() {
+        if (!destroyed) view.stopLoading()
+    }
 
     fun setTextZoom(percent: Int) {
         if (!destroyed) view.settings.textZoom = percent
     }
 
     /** Stops scripts, animations and media while the page isn't on screen. */
-    fun pause() { if (!destroyed) view.onPause() }
-    fun resume() { if (!destroyed) view.onResume() }
+    fun pause() {
+        if (!destroyed) view.onPause()
+    }
+    fun resume() {
+        if (!destroyed) view.onResume()
+    }
 
     /** A small picture of what's on screen now, for the tab list. */
     fun captureThumbnail() {
@@ -210,23 +223,23 @@ class BrowserEngine private constructor(
                 Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)
             }
         } catch (_: Exception) {
-            host.onNotice("Can't open that link")
+            host.onNotice(BrowserNotice(R.string.browser_cant_open_link))
             return
         }
         try {
             context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (_: ActivityNotFoundException) {
             val fallback = intent.getStringExtra("browser_fallback_url")
-            if (fallback != null && BrowserUrls.isWeb(fallback)) load(fallback) else host.onNotice("No app for this link")
+            if (fallback != null && BrowserUrls.isWeb(fallback)) load(fallback) else host.onNotice(BrowserNotice(R.string.browser_no_app_for_link))
         } catch (_: SecurityException) {
-            host.onNotice("Can't open that link")
+            host.onNotice(BrowserNotice(R.string.browser_cant_open_link))
         }
     }
 
     /** Hands a download to the system DownloadManager (into Downloads; no permission on API 29+). */
     private fun download(url: String, userAgent: String?, disposition: String?, mime: String?) {
         if (!BrowserUrls.isWeb(url)) {
-            host.onNotice("This download isn't supported")
+            host.onNotice(BrowserNotice(R.string.browser_download_unsupported))
             return
         }
         val name = URLUtil.guessFileName(url, disposition, mime)
@@ -239,9 +252,9 @@ class BrowserEngine private constructor(
                 .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
             CookieManager.getInstance().getCookie(url)?.let { request.addRequestHeader("Cookie", it) }
             context.getSystemService(DownloadManager::class.java).enqueue(request)
-            host.onNotice("Downloading $name")
+            host.onNotice(BrowserNotice(R.string.browser_downloading, listOf(name)))
         } catch (_: Exception) {
-            host.onNotice("Couldn't download $name")
+            host.onNotice(BrowserNotice(R.string.browser_download_failed, listOf(name)))
         }
     }
 

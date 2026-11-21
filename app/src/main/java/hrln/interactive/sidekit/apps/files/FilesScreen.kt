@@ -1,6 +1,7 @@
 package hrln.interactive.sidekit.apps.files
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
@@ -62,10 +65,11 @@ object FilesTags {
     const val LIST = "files_list"
 }
 
-/** "Cancel | Delete" confirmation, in the bar instead of a dialog. */
-private fun confirmActions(verb: String, name: String, onCancel: () -> Unit, onConfirm: () -> Unit) = listOf(
-    SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep $name", onClick = onCancel),
-    SideAction("forward", verb, SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm ${verb.lowercase()} $name", onClick = onConfirm)
+/** "Cancel | Delete" confirmation, in the bar instead of a dialog. [confirm] reads "Confirm delete %1$s". */
+@Composable
+private fun confirmActions(@StringRes verb: Int, @StringRes confirm: Int, name: String, onCancel: () -> Unit, onConfirm: () -> Unit) = listOf(
+    SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = stringResource(R.string.files_keep, name), onClick = onCancel),
+    SideAction("forward", stringResource(verb), SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = stringResource(confirm, name), onClick = onConfirm)
 )
 
 /**
@@ -92,22 +96,22 @@ fun FilesScreen(
     val pending = locations.firstOrNull { it.place != null && it.place == removing }
     BackHandler(enabled = pending != null) { removing = null }
     val actions = when {
-        pending != null -> confirmActions("Remove", pending.name, { removing = null }) {
+        pending != null -> confirmActions(R.string.files_remove, R.string.files_confirm_remove, pending.name, { removing = null }) {
             onRemove?.invoke(pending)
             removing = null
         }
 
         needsPermission -> listOf(
-            SideAction.back("back", "Browse", onBrowse),
-            SideAction("forward", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Allow access to media", onClick = onAllow)
+            SideAction.back("back", stringResource(R.string.files_browse), onBrowse),
+            SideAction("forward", stringResource(R.string.files_allow), SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = stringResource(R.string.files_allow_media), onClick = onAllow)
         )
 
-        else -> listOf(SideAction.back("back", "Browse", onBrowse), SideAction.forward("forward", "Search", onSearch))
+        else -> listOf(SideAction.back("back", stringResource(R.string.files_browse), onBrowse), SideAction.forward("forward", stringResource(R.string.files_search), onSearch))
     }
     SidekitScaffold(
-        title = "Files",
+        title = stringResource(R.string.files_title),
         actions = withNotice(notice, onDismissNotice, actions, noticeKind),
-        options = if (needsPermission) listOf(SideAction("search", "Search", SidekitIcon.Search, onClick = onSearch)) else emptyList()
+        options = if (needsPermission) listOf(SideAction("search", stringResource(R.string.files_search), SidekitIcon.Search, onClick = onSearch)) else emptyList()
     ) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
@@ -115,7 +119,7 @@ fun FilesScreen(
             if (needsPermission) {
                 item(key = "permission") {
                     Explain(
-                        "Files lists your photos, videos, music and downloads. Android asks once before an app can see them. Folders you add with Browse work without it.",
+                        stringResource(R.string.files_permission),
                         Modifier.listFade(listState, 0)
                     )
                 }
@@ -137,7 +141,7 @@ fun FilesScreen(
                         group = swipe,
                         onDelete = { removing = location.place },
                         modifier = Modifier.animateItem().listFade(listState, i + offset),
-                        deleteLabel = "Remove ${location.name}"
+                        deleteLabel = stringResource(R.string.files_remove_item, location.name)
                     ) { row() }
                 } else {
                     Column(Modifier.listFade(listState, i + offset)) { row() }
@@ -155,16 +159,21 @@ private fun Explain(text: String, modifier: Modifier = Modifier) {
 }
 
 /** Builds the home rows from what the phone has. */
+@Composable
 internal fun homeRows(home: FilesHome): List<FileLocation> {
     val media = listOf(MediaKind.Recent, MediaKind.Documents, MediaKind.Downloads, MediaKind.Images, MediaKind.Video, MediaKind.Audio).map { kind ->
         FileLocation(
-            kind.title,
-            if (home.mediaAllowed) FileFormat.count(home.counts[kind] ?: 0) else "Needs access",
+            stringResource(kind.title),
+            if (home.mediaAllowed) FileFormat.count(home.counts[kind] ?: 0) else stringResource(R.string.files_needs_access),
             FilePlace.Media(kind).encode()
         )
     }
-    val folders = home.folders.map { FileLocation(it.name, "Folder", it.location.encode(), removable = true) }
-    val space = FileLocation("On Sidephone", if (home.totalBytes > 0) "${FileFormat.size(home.freeBytes)} free" else "Add a folder")
+    val folder = stringResource(R.string.files_folder)
+    val folders = home.folders.map { FileLocation(it.name, folder, it.location.encode(), removable = true) }
+    val space = FileLocation(
+        stringResource(R.string.files_on_sidephone),
+        if (home.totalBytes > 0) stringResource(R.string.files_free, FileFormat.size(home.freeBytes)) else stringResource(R.string.files_add_folder)
+    )
     return media + folders + space
 }
 
@@ -191,17 +200,19 @@ fun FilesBrowseScreen(
 ) {
     BackHandler { if (pendingDelete != null) onCancelDelete() else onBack() }
     val actions = if (pendingDelete != null) {
-        confirmActions("Delete", pendingDelete.name, onCancelDelete, onConfirmDelete)
+        confirmActions(R.string.files_delete, R.string.files_confirm_delete, pendingDelete.name, onCancelDelete, onConfirmDelete)
     } else {
-        listOf(SideAction.back("back", "Back", onBack), SideAction.forward("forward", "Search", onSearch))
+        listOf(SideAction.back("back", stringResource(R.string.files_back), onBack), SideAction.forward("forward", stringResource(R.string.files_search), onSearch))
     }
     SidekitScaffold(title = title, actions = withNotice(notice, onDismissNotice, actions, noticeKind), options = sortOptions(sort, onSort)) { padding ->
-        EntryList(entries, pendingDelete, padding, onOpen, onAskDelete, empty = "Nothing here")
+        EntryList(entries, pendingDelete, padding, onOpen, onAskDelete, empty = stringResource(R.string.files_nothing_here))
     }
 }
 
+@Composable
 private fun sortOptions(sort: FileSort, onSort: (FileSort) -> Unit) = FileSort.entries.map { s ->
-    SideAction("sort.${s.name}", s.label, tone = if (s == sort) ActionTone.Primary else ActionTone.Muted, contentDescription = "Sort by ${s.label}") { onSort(s) }
+    val label = stringResource(s.label)
+    SideAction("sort.${s.name}", label, tone = if (s == sort) ActionTone.Primary else ActionTone.Muted, contentDescription = stringResource(R.string.files_sort_by, label)) { onSort(s) }
 }
 
 @Composable
@@ -223,7 +234,7 @@ private fun EntryList(
     SidekitList(padding, Modifier.testTag(FilesTags.LIST), state = listState) {
         if (header != null) item(key = "header", contentType = "header") { header(Modifier.listFade(listState, 0)) }
         when {
-            entries == null -> item(key = "loading") { Explain("Loading…", Modifier.listFade(listState, offset)) }
+            entries == null -> item(key = "loading") { Explain(stringResource(R.string.files_loading), Modifier.listFade(listState, offset)) }
 
             entries.isEmpty() && empty != null -> item(key = "empty") { Explain(empty, Modifier.listFade(listState, offset)) }
 
@@ -233,7 +244,7 @@ private fun EntryList(
                     group = swipe,
                     onDelete = { onAskDelete(e) },
                     modifier = Modifier.animateItem().listFade(listState, i + offset),
-                    deleteLabel = "Delete ${e.name}"
+                    deleteLabel = stringResource(R.string.files_delete_item, e.name)
                 ) {
                     SidekitItem(
                         e.name,
@@ -269,25 +280,25 @@ fun FilesSearchScreen(
 ) {
     BackHandler { if (pendingDelete != null) onCancelDelete() else onBack() }
     val actions = if (pendingDelete != null) {
-        confirmActions("Delete", pendingDelete.name, onCancelDelete, onConfirmDelete)
+        confirmActions(R.string.files_delete, R.string.files_confirm_delete, pendingDelete.name, onCancelDelete, onConfirmDelete)
     } else {
-        listOf(SideAction.back("back", "Files", onBack))
+        listOf(SideAction.back("back", stringResource(R.string.files_title), onBack))
     }
-    SidekitScaffold(title = "Search", actions = withNotice(notice, onDismissNotice, actions, noticeKind), options = sortOptions(sort, onSort)) { padding ->
+    SidekitScaffold(title = stringResource(R.string.files_search), actions = withNotice(notice, onDismissNotice, actions, noticeKind), options = sortOptions(sort, onSort)) { padding ->
         EntryList(
             entries = if (query.isBlank()) emptyList() else results,
             pendingDelete = pendingDelete,
             padding = padding,
             onOpen = onOpen,
             onAskDelete = onAskDelete,
-            empty = if (query.isBlank()) null else "No files match",
+            empty = if (query.isBlank()) null else stringResource(R.string.files_no_match),
             header = { m ->
                 SidekitCard(m.fillMaxWidth().heightIn(min = CompactRowHeight)) {
                     SidekitTextField(
                         value = query,
                         onValueChange = onQuery,
                         modifier = Modifier.fillMaxWidth().align(Alignment.CenterStart).testTag(FilesTags.SEARCH),
-                        placeholder = "File name",
+                        placeholder = stringResource(R.string.files_file_name),
                         focusOnKeypad = true,
                         singleLine = true,
                         autoFocus = true

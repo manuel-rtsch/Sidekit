@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phonebook_title">Répertoire</string>
+    <string name="phonebook_clear">Effacer</string>
+    <string name="phonebook_clear_cd">Effacer le numéro</string>
+    <string name="phonebook_call">Appeler</string>
+    <string name="phonebook_call_cd">Appeler le %1$s</string>
+    <string name="phonebook_allow">Autoriser</string>
+    <string name="phonebook_allow_contacts_cd">Autoriser les contacts</string>
+    <string name="phonebook_dial">Composer</string>
+    <string name="phonebook_dial_pad">Clavier</string>
+    <string name="phonebook_calls">Appels</string>
+    <string name="phonebook_recent_calls_cd">Appels récents</string>
+    <string name="phonebook_recents">Récents</string>
+    <string name="phonebook_info_permission">Le répertoire a besoin de vos contacts pour les afficher et les chercher au clavier. Vous pouvez quand même composer un numéro.</string>
+    <string name="phonebook_no_match">Aucun contact trouvé</string>
+    <string name="phonebook_empty">Aucun contact avec numéro</string>
+    <string name="phonebook_back">Retour</string>
+    <string name="phonebook_text">SMS</string>
+    <string name="phonebook_message_cd">Envoyer un message au %1$s</string>
+    <string name="phonebook_allow_call_log_cd">Autoriser le journal d\'appels</string>
+    <string name="phonebook_info_call_log">Récents a besoin de votre journal d\'appels pour afficher les appels passés et manqués.</string>
+    <string name="phonebook_no_calls">Aucun appel</string>
+    <string name="phonebook_unknown">Inconnu</string>
+    <string name="phonebook_delete_digit">Effacer le chiffre</string>
+    <string name="phonebook_text_number">Envoyer un SMS à ce numéro</string>
+    <string name="phonebook_enter_number">Saisissez un numéro</string>
+    <string name="phonebook_key_cd">Touche %1$s</string>
+    <string name="phonebook_call_incoming">Entrant</string>
+    <string name="phonebook_call_outgoing">Sortant</string>
+    <string name="phonebook_call_missed">Manqué</string>
+    <string name="phonebook_call_declined">Refusé</string>
+    <string name="phonebook_call_blocked">Bloqué</string>
+    <string name="phonebook_label_mobile">Mobile</string>
+    <string name="phonebook_label_home">Domicile</string>
+    <string name="phonebook_label_work">Travail</string>
+    <string name="phonebook_label_main">Principal</string>
+    <string name="phonebook_label_phone">Téléphone</string>
+    <string name="phonebook_system_dialer">Téléphone du système</string>
+    <string name="phonebook_call_permission">Autorisez l\'accès au téléphone pour appeler le %1$s. Vous pouvez aussi utiliser le téléphone du système depuis Options.</string>
+</resources>

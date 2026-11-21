@@ -23,8 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.phonebook.ContactMatch
 import hrln.interactive.sidekit.apps.phonebook.PhoneFormat
 import hrln.interactive.sidekit.design.action.ActionMotion
@@ -80,23 +82,23 @@ fun SidemessageInboxScreen(
     val offerDefault = !access.isDefault && canBecomeDefault
     val actions = when {
         !access.canRead -> listOf(
-            SideAction("left", "Allow", tone = ActionTone.Primary, motion = ActionMotion.Up, contentDescription = "Allow SMS", onClick = onAllow),
-            SideAction("new", "New", SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = "New Message", onClick = onNewMessage)
+            SideAction("left", stringResource(R.string.messages_allow), tone = ActionTone.Primary, motion = ActionMotion.Up, contentDescription = stringResource(R.string.messages_allow_sms_cd), onClick = onAllow),
+            SideAction("new", stringResource(R.string.messages_new), SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = stringResource(R.string.messages_new_message), onClick = onNewMessage)
         )
 
         offerDefault -> listOf(
-            SideAction("left", "Make default", tone = ActionTone.Muted, weight = 1.2f, motion = ActionMotion.Up, onClick = onMakeDefault),
-            SideAction("new", "New", SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = "New Message", onClick = onNewMessage)
+            SideAction("left", stringResource(R.string.messages_make_default), tone = ActionTone.Muted, weight = 1.2f, motion = ActionMotion.Up, onClick = onMakeDefault),
+            SideAction("new", stringResource(R.string.messages_new), SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = stringResource(R.string.messages_new_message), onClick = onNewMessage)
         )
 
-        else -> listOf(SideAction.forward("new", "New Message", onNewMessage))
+        else -> listOf(SideAction.forward("new", stringResource(R.string.messages_new_message), onNewMessage))
     }
     SidekitScaffold(
         title = "Sidemessage",
         actions = actions,
         options = listOfNotNull(
-            if (offerDefault) SideAction("default", "Make default", onClick = onMakeDefault) else null,
-            if (!contactsAllowed) SideAction("contacts", "Allow contacts", onClick = onAllowContacts) else null
+            if (offerDefault) SideAction("default", stringResource(R.string.messages_make_default), onClick = onMakeDefault) else null,
+            if (!contactsAllowed) SideAction("contacts", stringResource(R.string.messages_allow_contacts), onClick = onAllowContacts) else null
         )
     ) { padding ->
         val listState = rememberLazyListState()
@@ -106,7 +108,7 @@ fun SidemessageInboxScreen(
                 val i = index++
                 item("permission") {
                     InfoCard(
-                        "Allow text access to read conversations. To receive texts here, choose Make default in Options.",
+                        stringResource(R.string.messages_info_permission),
                         Modifier.listFade(listState, i)
                     )
                 }
@@ -114,7 +116,7 @@ fun SidemessageInboxScreen(
                 val i = index++
                 item("default") {
                     InfoCard(
-                        "Sidemessage isn't your default SMS app, so new texts go to your other app first and can't be marked read here. Reading and sending still work.",
+                        stringResource(R.string.messages_info_not_default),
                         Modifier.listFade(listState, i),
                         onClick = onMakeDefault
                     )
@@ -122,7 +124,7 @@ fun SidemessageInboxScreen(
             }
             if (!contactsAllowed && access.canRead) {
                 val i = index++
-                item("contacts") { InfoCard("Allow contacts from Options to show names beside your texts.", Modifier.listFade(listState, i), onAllowContacts) }
+                item("contacts") { InfoCard(stringResource(R.string.messages_info_contacts), Modifier.listFade(listState, i), onAllowContacts) }
             }
             state.pinned.chunked(2).forEachIndexed { r, row ->
                 val i = index++
@@ -142,7 +144,7 @@ fun SidemessageInboxScreen(
             }
             if (access.canRead && state.loaded && state.threads.isEmpty() && state.pinned.isEmpty()) {
                 val i = index++
-                item("empty") { InfoCard("No conversations yet", Modifier.listFade(listState, i)) }
+                item("empty") { InfoCard(stringResource(R.string.messages_empty), Modifier.listFade(listState, i)) }
             }
             val offset = index
             itemsIndexed(state.threads, key = { _, t -> t.id }, contentType = { _, _ -> 0 }) { i, thread ->
@@ -186,12 +188,17 @@ fun ConversationScreen(
     onUndoDelete: () -> Unit = {}
 ) {
     val draft = state.draft
+    val back = stringResource(R.string.messages_back)
+    val send = stringResource(R.string.messages_send)
+    val sendDescription = stringResource(R.string.messages_send_cd)
+    val text = stringResource(R.string.messages_text)
+    val undoDescription = stringResource(R.string.messages_undo_delete_cd)
     val actions = buildList {
         if (!state.access.canRead && draft == null) {
-            add(SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back", onBack, motion = ActionMotion.Back))
-            add(SideAction("allow", "Allow", tone = ActionTone.Primary, motion = ActionMotion.Up, contentDescription = "Allow SMS", onClick = onAllow))
+            add(SideAction.square("back", SidekitIcon.ArrowLeftAlt, back, onBack, motion = ActionMotion.Back))
+            add(SideAction("allow", stringResource(R.string.messages_allow), tone = ActionTone.Primary, motion = ActionMotion.Up, contentDescription = stringResource(R.string.messages_allow_sms_cd), onClick = onAllow))
         } else {
-            add(SideAction.back("back", "Back", onBack))
+            add(SideAction.back("back", back, onBack))
         }
         // As in Mail and Sideticks, Undo takes the primary action's place while a delete can be undone.
         // A draft already open keeps its Send action so typing isn't stranded.
@@ -199,19 +206,19 @@ fun ConversationScreen(
             undoBar(
                 continueWith =
                     if (draft != null) {
-                        SideAction("compose", "Send", SidekitIcon.ArrowUpward, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Send message", onClick = onSend)
+                        SideAction("compose", send, SidekitIcon.ArrowUpward, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = sendDescription, onClick = onSend)
                     } else {
-                        SideAction("compose", "Text", SidekitIcon.ArrowUpward, iconAtEnd = true, motion = ActionMotion.Up, onClick = onStartTyping)
+                        SideAction("compose", text, SidekitIcon.ArrowUpward, iconAtEnd = true, motion = ActionMotion.Up, onClick = onStartTyping)
                     },
-                undo = if (draft == null && state.canUndo) SideAction.undo(contentDescription = "Undo delete message", onClick = onUndoDelete) else null
+                undo = if (draft == null && state.canUndo) SideAction.undo(contentDescription = undoDescription, onClick = onUndoDelete) else null
             )
         )
     }
     val options = listOfNotNull(
-        onAttach?.let { SideAction("attachment", "Attach MMS", onClick = it) },
-        onTogglePin?.let { SideAction("pin", if (state.pinned) "Unpin" else "Pin", onClick = it) },
-        onCall?.let { SideAction("call", "Call", SidekitIcon.Call, onClick = it) },
-        if (!state.access.isDefault && canBecomeDefault) SideAction("default", "Make default", onClick = onMakeDefault) else null
+        onAttach?.let { SideAction("attachment", stringResource(R.string.messages_attach), onClick = it) },
+        onTogglePin?.let { SideAction("pin", stringResource(if (state.pinned) R.string.messages_unpin else R.string.messages_pin), onClick = it) },
+        onCall?.let { SideAction("call", stringResource(R.string.messages_call), SidekitIcon.Call, onClick = it) },
+        if (!state.access.isDefault && canBecomeDefault) SideAction("default", stringResource(R.string.messages_make_default), onClick = onMakeDefault) else null
     )
     SidekitScaffold(title = state.title, actions = actions, options = options) { padding ->
         Column(Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemOuterGap)) {
@@ -226,7 +233,7 @@ fun ConversationScreen(
             // Status under the newest sent message, and under anything still sending or failed.
             val newestMine = remember(messages) { messages.indexOfFirst { it.fromMe } }
             if (!state.access.canRead) {
-                InfoCard("Allow SMS access to see this conversation. You can still send a text.", Modifier.fillMaxWidth())
+                InfoCard(stringResource(R.string.messages_info_conversation_permission), Modifier.fillMaxWidth())
             }
             SidekitList(
                 contentPadding = PaddingValues(0.dp),
@@ -235,7 +242,7 @@ fun ConversationScreen(
             ) {
                 if (state.hasNewer) {
                     item("latest") {
-                        InfoCard("Back to latest messages", onClick = onLoadLatest)
+                        InfoCard(stringResource(R.string.messages_back_to_latest), onClick = onLoadLatest)
                     }
                 }
                 itemsIndexed(messages, key = { i, m -> m.key.ifEmpty { "i$i" } }, contentType = { _, m -> m.fromMe }) { i, message ->
@@ -243,7 +250,7 @@ fun ConversationScreen(
                     val fade = Modifier.listFade(listState, i + if (state.hasNewer) 1 else 0)
                     // Only offer deletion for provider rows that this app is allowed to remove.
                     if (state.access.isDefault && message.isStored) {
-                        SidekitSwipeRow(message.key.ifEmpty { "i$i" }, swipes, { onDelete(message) }, fade, deleteLabel = "Delete message") {
+                        SidekitSwipeRow(message.key.ifEmpty { "i$i" }, swipes, { onDelete(message) }, fade, deleteLabel = stringResource(R.string.messages_delete_message)) {
                             Bubble(message, showStatus, onRetry, Modifier)
                         }
                     } else {
@@ -252,7 +259,7 @@ fun ConversationScreen(
                 }
                 if (state.hasMore) {
                     item("older") {
-                        InfoCard("Older messages", onClick = onLoadOlder)
+                        InfoCard(stringResource(R.string.messages_older), onClick = onLoadOlder)
                     }
                 }
             }
@@ -268,13 +275,15 @@ private fun Bubble(message: Message, showStatus: Boolean, onRetry: (Message) -> 
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var mmsNotice by remember { mutableStateOf<String?>(null) }
+    val requested = stringResource(R.string.messages_download_requested)
+    val retryFailed = stringResource(R.string.messages_retry_failed)
     fun retryMms() {
         scope.launch {
             try {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { MmsTransport.retry(context, android.net.Uri.parse(message.pendingMms)) }
-                mmsNotice = "Download requested"
+                mmsNotice = requested
             } catch (_: Exception) {
-                mmsNotice = "Could not retry MMS"
+                mmsNotice = retryFailed
             }
         }
     }
@@ -302,10 +311,10 @@ private fun Bubble(message: Message, showStatus: Boolean, onRetry: (Message) -> 
         if (showStatus && message.delivery != Delivery.None) {
             SidekitText(
                 when (message.delivery) {
-                    Delivery.Sending -> "Sending…"
-                    Delivery.Sent -> "Sent"
-                    Delivery.Delivered -> "Delivered"
-                    Delivery.Failed -> "Not sent · tap to retry"
+                    Delivery.Sending -> stringResource(R.string.messages_status_sending)
+                    Delivery.Sent -> stringResource(R.string.messages_status_sent)
+                    Delivery.Delivered -> stringResource(R.string.messages_status_delivered)
+                    Delivery.Failed -> stringResource(R.string.messages_status_failed)
                     Delivery.None -> ""
                 },
                 style = SidekitTheme.typography.small,
@@ -347,14 +356,14 @@ fun NewMessageScreen(
 ) {
     val number = state.number
     val actions = listOfNotNull(
-        SideAction.back("back", "Back", onBack),
+        SideAction.back("back", stringResource(R.string.messages_back), onBack),
         when {
-            number != null -> SideAction("next", "Text", SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = "Text $number") { onPick(number) }
-            !state.contactsAllowed -> SideAction("next", "Contacts", tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = "Allow contacts", onClick = onAllowContacts)
+            number != null -> SideAction("next", stringResource(R.string.messages_text), SidekitIcon.ArrowRightAlt, iconAtEnd = true, motion = ActionMotion.Forward, contentDescription = stringResource(R.string.messages_text_number_cd, number)) { onPick(number) }
+            !state.contactsAllowed -> SideAction("next", stringResource(R.string.messages_contacts), tone = ActionTone.Muted, motion = ActionMotion.Up, contentDescription = stringResource(R.string.messages_allow_contacts), onClick = onAllowContacts)
             else -> null
         }
     )
-    SidekitScaffold(title = "New Message", actions = actions) { padding ->
+    SidekitScaffold(title = stringResource(R.string.messages_new_message), actions = actions) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item("to") {
@@ -363,7 +372,7 @@ fun NewMessageScreen(
                         value = state.query,
                         onValueChange = onQuery,
                         modifier = Modifier.fillMaxWidth().testTag(SidemessageTags.TO),
-                        placeholder = "To: name or number",
+                        placeholder = stringResource(R.string.messages_to_hint),
                         focusOnKeypad = true,
                         singleLine = true,
                         autoFocus = true,
@@ -376,7 +385,7 @@ fun NewMessageScreen(
                 val i = index++
                 item("number") {
                     SidekitItem(
-                        title = "Text",
+                        title = stringResource(R.string.messages_text),
                         secondary = PhoneFormat.format(number, region),
                         icon = SidekitIcon.Chat,
                         colour = ItemColour.Secondary,
@@ -388,7 +397,7 @@ fun NewMessageScreen(
             if (!state.contactsAllowed) {
                 val i = index++
                 item("permission") {
-                    InfoCard("Allow contacts to pick who to text by name.", Modifier.listFade(listState, i), onClick = onAllowContacts)
+                    InfoCard(stringResource(R.string.messages_info_pick_contacts), Modifier.listFade(listState, i), onClick = onAllowContacts)
                 }
                 return@SidekitList
             }

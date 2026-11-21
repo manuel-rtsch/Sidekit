@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trip Planning: NSW public transport stops, journeys and departures, and saved trips. Stop and route names come from Transport for NSW and are not translated. -->
+<resources>
+    <!-- App name in the launcher and screen title. -->
+    <string name="trips_title">Trip Planning</string>
+    <string name="trips_saved">Saved</string>
+    <string name="trips_plan">Plan</string>
+    <string name="trips_intro">NSW public transport · times shown in Sydney time</string>
+    <string name="trips_no_stops">No matching stops</string>
+    <string name="trips_choose_stop">Choose a stop</string>
+    <string name="trips_choose_from_first">Search and choose your From stop first</string>
+    <string name="trips_choose_to_first">Search and choose your To stop first</string>
+    <string name="trips_choose_from_stop_first">Search and choose a From stop first</string>
+    <string name="trips_no_journeys">No journeys found</string>
+    <string name="trips_snapshot">Times are a snapshot · refresh before travelling</string>
+    <string name="trips_updated">Updated %1$s · Sydney time</string>
+    <string name="trips_unavailable">Transit service unavailable</string>
+    <string name="trips_live_estimate">Live estimate</string>
+    <string name="trips_scheduled">Scheduled</string>
+    <string name="trips_live_estimate_scheduled">Live estimate (scheduled %1$s)</string>
+    <string name="trips_cancelled">Cancelled</string>
+    <string name="trips_loading_saved">Loading saved trips…</string>
+    <string name="trips_enter_start_destination">Enter a start and destination</string>
+    <string name="trips_enter_stop">Enter a stop or station</string>
+    <!-- yyyy-MM-dd HH:mm is the format to type; keep it as is. -->
+    <string name="trips_time_format_error">Use Sydney time: yyyy-MM-dd HH:mm, or leave blank for now</string>
+    <string name="trips_plan_failed">Journey service could not plan this trip. Try different stops.</string>
+    <!-- Leg of a journey on foot, in place of a route number. -->
+    <string name="trips_route_walk">Walk</string>
+    <!-- Leg of a journey with no route number. -->
+    <string name="trips_route_transit">Transit</string>
+    <string name="trips_cancel">Cancel</string>
+    <string name="trips_save">Save</string>
+    <string name="trips_saving">Saving…</string>
+    <string name="trips_back">Back</string>
+    <string name="trips_undo">Undo</string>
+    <string name="trips_add">Add</string>
+    <string name="trips_plan_again">Plan again</string>
+    <string name="trips_loading">Loading…</string>
+    <string name="trips_refresh">Refresh</string>
+    <string name="trips_use_as_start">Use as start</string>
+    <string name="trips_use_as_destination">Use as destination</string>
+    <string name="trips_edit">Edit</string>
+    <string name="trips_find_from">Find From stop</string>
+    <string name="trips_find_to">Find To stop</string>
+    <string name="trips_find_journeys">Find journeys</string>
+    <string name="trips_departures_here">Departures from here</string>
+    <string name="trips_places">Places</string>
+    <string name="trips_plan_title">Plan a trip</string>
+    <string name="trips_saved_places">Saved places</string>
+    <string name="trips_saved_trips">Saved trips</string>
+    <!-- Trip start field. Find From stop and similar strings refer to it. -->
+    <string name="trips_from">From</string>
+    <!-- Trip destination field. -->
+    <string name="trips_to">To</string>
+    <!-- yyyy-MM-dd HH:mm is the format to type; keep it as is. -->
+    <string name="trips_time_hint">Sydney time: yyyy-MM-dd HH:mm (or now)</string>
+    <string name="trips_notes">Notes</string>
+    <string name="trips_from_hint">Search the start entered above</string>
+    <string name="trips_to_hint">Search the destination entered above</string>
+    <string name="trips_loading_transit">Loading transit…</string>
+    <string name="trips_journeys_detail">Public transport options from Transport for NSW</string>
+    <string name="trips_departures_detail">Next services from your selected From stop</string>
+    <string name="trips_tap_to_save">Tap to save journey</string>
+    <string name="trips_no_departures">No departures found</string>
+    <string name="trips_no_saved_places">No saved places</string>
+    <string name="trips_to_place">To %1$s</string>
+    <string name="trips_no_time">No time set</string>
+    <string name="trips_no_notes">No notes</string>
+    <string name="trips_saved_itinerary">Saved itinerary · refresh before travelling</string>
+    <string name="trips_no_saved_trips">No saved trips</string>
+    <string name="trips_get_started">Plan a trip to get started</string>
+</resources>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mail: inbox, folders, compose and account. -->
+<resources>
+    <string name="mail_title">Mail</string>
+    <string name="mail_folders">Dossiers</string>
+    <string name="mail_compose">Rédiger</string>
+    <string name="mail_refresh_inbox">Actualiser la boîte</string>
+    <string name="mail_back">Retour</string>
+    <string name="mail_reply">Répondre</string>
+    <string name="mail_message_unavailable">Message indisponible</string>
+    <string name="mail_folders_title">Dossiers mail</string>
+    <string name="mail_undo_delete">Annuler la suppression du message</string>
+    <string name="mail_cache_notice">Cache de la boîte · actualisez pour consulter votre serveur. Le balayage ne supprime que la copie locale.</string>
+    <string name="mail_account">Compte</string>
+    <string name="mail_empty_local">Aucun message local</string>
+    <string name="mail_empty_hint">Rédiger crée un brouillon sur ce téléphone</string>
+    <string name="mail_delete_message">Supprimer le message</string>
+    <string name="mail_no_recipient">Aucun destinataire</string>
+    <string name="mail_no_subject">Sans objet</string>
+    <string name="mail_save">Enregistrer</string>
+    <string name="mail_to">À</string>
+    <string name="mail_subject">Objet</string>
+    <string name="mail_message">Message</string>
+    <string name="mail_send_hint">L\'envoi passe par votre compte SMTP connecté. L\'acceptation par le serveur ne confirme pas la remise.</string>
+    <string name="mail_folder_drafts">Brouillons</string>
+    <string name="mail_folder_outbox">Boîte d\'envoi</string>
+    <string name="mail_folder_handed_off">Transmis</string>
+    <string name="mail_folder_inbox">Boîte de réception</string>
+    <string name="mail_folder_sent">Envoyés</string>
+    <string name="mail_empty_drafts">Aucun brouillon</string>
+    <string name="mail_empty_outbox">Boîte d\'envoi vide</string>
+    <string name="mail_empty_handed_off">Rien de transmis</string>
+    <string name="mail_empty_inbox">Boîte de réception vide</string>
+    <string name="mail_empty_sent">Rien d\'envoyé</string>
+    <plurals name="mail_folder_count">
+        <item quantity="one">%1$d sur ce téléphone</item>
+        <item quantity="many">%1$d sur ce téléphone</item>
+        <item quantity="other">%1$d sur ce téléphone</item>
+    </plurals>
+    <string name="mail_notice_not_ready">Mail n\'est pas prêt. Votre brouillon n\'a pas été enregistré</string>
+    <string name="mail_notice_draft_saved">Brouillon enregistré sur ce téléphone</string>
+    <string name="mail_notice_busy">Mail est occupé. Réessayez dans un instant</string>
+    <string name="mail_notice_add_recipient">Ajoutez d\'abord un destinataire</string>
+    <string name="mail_notice_sent">Accepté par votre serveur SMTP</string>
+    <string name="mail_notice_handed_off">App mail ouverte ; envoi non confirmé</string>
+    <string name="mail_notice_no_app">Aucune app mail. Message conservé dans la boîte d\'envoi</string>
+    <string name="mail_notice_send_failed">Échec de l\'envoi ou confirmation perdue. Vérifiez Envoyés avant de réessayer ; message conservé dans la boîte d\'envoi</string>
+    <string name="mail_notice_inbox_updated">Boîte actualisée · 100 derniers messages</string>
+    <string name="mail_notice_refresh_failed">Impossible d\'actualiser la boîte. Vérifiez le compte et la connexion</string>
+    <string name="mail_error_storage_read">Le stockage mail est illisible ; les données existantes sont conservées</string>
+    <string name="mail_error_save">Impossible d\'enregistrer le mail sur ce téléphone</string>
+    <string name="mail_account_title">Compte mail</string>
+    <string name="mail_account_intro">IMAP via TLS (993). SMTP TLS (465) ou STARTTLS (587). Utilisez le mot de passe d\'application de votre fournisseur. Les comptes OAuth uniquement exigent une inscription auprès du fournisseur.</string>
+    <string name="mail_account_failed">Échec de connexion. Vérifiez hôtes, ports, nom d\'utilisateur et mot de passe d\'application ; les deux serveurs doivent accepter le compte.</string>
+    <string name="mail_account_connecting">Connexion…</string>
+    <string name="mail_account_connect">Connecter</string>
+    <string name="mail_account_disconnect">Déconnecter</string>
+    <string name="mail_account_email">E-mail</string>
+    <string name="mail_account_username">Nom d\'utilisateur (ou e-mail)</string>
+    <string name="mail_account_password">Mot de passe d\'application</string>
+    <string name="mail_account_password_keep">Mot de passe d\'app (vide = conserver)</string>
+    <string name="mail_account_imap_host">Hôte IMAP</string>
+    <string name="mail_account_imap_port">Port TLS IMAP (993)</string>
+    <string name="mail_account_smtp_host">Hôte SMTP</string>
+    <string name="mail_account_smtp_port">Port SMTP (465 ou 587)</string>
+</resources>

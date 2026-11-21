@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideweather. -->
+<resources>
+    <!-- Apparent temperature under the current temperature, e.g. "Feels 19°". -->
+    <string name="weather_feels">Feels %1$s</string>
+    <!-- Today's highest temperature, e.g. "High 26°". -->
+    <string name="weather_high">High %1$s</string>
+    <!-- Today's lowest temperature. -->
+    <string name="weather_low">Low %1$s</string>
+    <!-- Chance of rain today, e.g. "Rain 5%". -->
+    <string name="weather_rain">Rain %1$d%%</string>
+    <string name="weather_wind_kmh">Wind %1$d km/h</string>
+    <string name="weather_wind_mph">Wind %1$d mph</string>
+    <!-- First row of the 5-day forecast. -->
+    <string name="weather_today">Today</string>
+    <!-- Sky conditions (WMO weather codes); short, shown after a temperature. -->
+    <string name="weather_sky_clear">Clear</string>
+    <string name="weather_sky_partly_cloudy">Partly cloudy</string>
+    <string name="weather_sky_cloudy">Cloudy</string>
+    <string name="weather_sky_fog">Fog</string>
+    <string name="weather_sky_rain">Rain</string>
+    <string name="weather_sky_snow">Snow</string>
+    <string name="weather_sky_showers">Showers</string>
+    <string name="weather_sky_snow_showers">Snow showers</string>
+    <string name="weather_sky_thunderstorm">Thunderstorm</string>
+    <string name="weather_sky_unknown">Unknown</string>
+    <!-- Status row at the foot of the forecast. -->
+    <string name="weather_status_select">Select a location</string>
+    <string name="weather_status_loading">Loading forecast…</string>
+    <string name="weather_status_cached">Cached forecast</string>
+    <string name="weather_status_unavailable">Forecast unavailable. Try again when online.</string>
+    <string name="weather_status_offline">Offline · showing saved forecast</string>
+    <!-- Open-Meteo is the forecast provider (brand); %1$s is a time, e.g. 14:05. -->
+    <string name="weather_status_updated">Open-Meteo · updated %1$s</string>
+    <!-- Option that switches units. -->
+    <string name="weather_use_celsius">Use °C</string>
+    <string name="weather_use_fahrenheit">Use °F</string>
+    <string name="weather_locations_hint">Allow approximate location for nearby weather, or add a town.</string>
+    <!-- Action bar: add a place. -->
+    <string name="weather_add">Add</string>
+    <!-- Accessibility label; %1$s is a place name. -->
+    <string name="weather_undo_delete">Undo delete %1$s</string>
+    <string name="weather_locations">Locations</string>
+    <string name="weather_back">Back</string>
+    <!-- Marks the place whose forecast is shown. -->
+    <string name="weather_selected">Selected</string>
+    <string name="weather_choose_location">Choose a location</string>
+    <!-- Screen title. -->
+    <string name="weather_hourly_title">Hourly forecast</string>
+    <!-- Screen title. -->
+    <string name="weather_five_day_title">5-day forecast</string>
+    <!-- Action bar label, short. -->
+    <string name="weather_hourly">Hourly</string>
+    <!-- Action bar label, short. -->
+    <string name="weather_five_days">5 days</string>
+</resources>

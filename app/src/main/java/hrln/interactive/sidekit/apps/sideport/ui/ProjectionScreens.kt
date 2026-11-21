@@ -32,7 +32,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.sideport.interpret.ActionSpec
 import hrln.interactive.sidekit.apps.sideport.interpret.Block
 import hrln.interactive.sidekit.apps.sideport.interpret.ButtonBlock
@@ -111,21 +114,24 @@ private fun OpeningScreen(state: ProjectionState, actions: ProjectionActions) {
     SidekitScaffold(
         state.app.label,
         actions = listOf(SideAction.back("back", "Sidekit", actions::exitToSidekit)),
-        options = listOf(SideAction("original", "Original view", onClick = actions::showOriginal))
+        options = listOf(SideAction("original", stringResource(R.string.sideport_original_view), onClick = actions::showOriginal))
     ) { padding ->
         SidekitList(padding) {
-            item { SidekitCard(Modifier.fillMaxWidth()) { SidekitText("Opening ${state.app.label}…", style = SidekitTheme.typography.label, maxLines = 3) } }
+            item { SidekitCard(Modifier.fillMaxWidth()) { SidekitText(stringResource(R.string.sideport_opening, state.app.label), style = SidekitTheme.typography.label, maxLines = 3) } }
         }
     }
 }
 
 @Composable
 private fun ScreenBody(state: ProjectionState, model: ScreenModel, actions: ProjectionActions, openMenu: () -> Unit) {
-    val bar = remember(model.actions, actions) { actionBar(model.actions, actions) }
-    val options = remember(model.options, actions) {
+    val back = stringResource(R.string.sideport_back)
+    val menuLabel = stringResource(R.string.sideport_menu)
+    val originalLabel = stringResource(R.string.sideport_original)
+    val bar = remember(model.actions, actions, back) { actionBar(model.actions, actions, back) }
+    val options = remember(model.options, actions, menuLabel, originalLabel) {
         listOf(
-            SideAction("menu", "Menu", onClick = openMenu),
-            SideAction("original", "Original", tone = ActionTone.Muted, onClick = actions::showOriginal),
+            SideAction("menu", menuLabel, onClick = openMenu),
+            SideAction("original", originalLabel, tone = ActionTone.Muted, onClick = actions::showOriginal),
             SideAction("sidekit", "Sidekit", tone = ActionTone.Muted, onClick = actions::exitToSidekit)
         )
     }
@@ -137,27 +143,27 @@ private fun ScreenBody(state: ProjectionState, model: ScreenModel, actions: Proj
             state.foreignPackage?.let { other ->
                 val i = index++
                 item(key = "foreign") {
-                    SidekitText("From $other", Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding).listFade(list, i), style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
+                    SidekitText(stringResource(R.string.sideport_from, other), Modifier.padding(horizontal = SidekitTheme.spacing.itemPadding).listFade(list, i), style = SidekitTheme.typography.caption, color = SidekitTheme.colors.surfaceA6)
                 }
             }
             index = blocks(model.header, "h", index, list, actions)
             if (model.list?.canScrollBackward == true && state.items.isNotEmpty()) {
                 val i = index++
                 item(key = "earlier") {
-                    SidekitItem("Earlier", Modifier.listFade(list, i), colour = ItemColour.Muted, icon = SidekitIcon.ArrowUpward, onClick = { actions.loadMore(forward = false) })
+                    SidekitItem(stringResource(R.string.sideport_earlier), Modifier.listFade(list, i), colour = ItemColour.Muted, icon = SidekitIcon.ArrowUpward, onClick = { actions.loadMore(forward = false) })
                 }
             }
             index = blocks(state.items, "i", index, list, actions)
             if (state.loadingMore) {
                 val i = index++
-                item(key = "loading") { SidekitItem("Loading…", Modifier.listFade(list, i), colour = ItemColour.Muted) }
+                item(key = "loading") { SidekitItem(stringResource(R.string.sideport_loading), Modifier.listFade(list, i), colour = ItemColour.Muted) }
             }
             index = blocks(model.footer, "f", index, list, actions)
             if (model.isEmpty && state.items.isEmpty()) {
                 item(key = "empty") {
                     SidekitCard(Modifier.fillMaxWidth()) {
                         SidekitText(
-                            "Nothing on this screen can be read. Press Options and choose Original to use the app as it is.",
+                            stringResource(R.string.sideport_unreadable),
                             style = SidekitTheme.typography.label,
                             maxLines = Int.MAX_VALUE
                         )
@@ -207,19 +213,20 @@ private fun BlockRow(block: Block, modifier: Modifier, actions: ProjectionAction
         }
 
         is ItemBlock -> {
-            val secondary = block.checked?.let { if (it) "On" else "Off" } ?: block.secondary
+            val secondary = block.checked?.let { stringResource(if (it) R.string.sideport_on else R.string.sideport_off) } ?: block.secondary
             val colour = when {
                 !block.enabled -> ItemColour.Muted
                 block.selected || block.checked == true -> ItemColour.Secondary
                 else -> ItemColour.Primary
             }
             if (block.longClick != null) {
+                val moreLabel = stringResource(R.string.sideport_more_for, block.title)
                 SidekitItem(
                     block.title,
                     modifier.combinedClickable(
                         onClick = { actions.press(block) },
                         onLongClick = { actions.press(block, long = true) },
-                        onLongClickLabel = "More for ${block.title}"
+                        onLongClickLabel = moreLabel
                     ),
                     secondary = secondary,
                     colour = colour
@@ -268,7 +275,7 @@ private fun ProjectedField(block: FieldBlock, modifier: Modifier, actions: Proje
         value = text,
         onValueChange = { text = it },
         modifier = modifier.onFocusChanged { focused = it.hasFocus },
-        placeholder = block.hint ?: if (block.password) "Password" else null,
+        placeholder = block.hint ?: if (block.password) stringResource(R.string.sideport_password) else null,
         singleLine = true
     )
 }
@@ -283,9 +290,9 @@ private fun Tone.actionTone() = when (this) {
 }
 
 /** Back, then the app's (at most two) actions. Back is a full button when it's alone. */
-private fun actionBar(specs: List<ActionSpec>, actions: ProjectionActions): List<SideAction> {
-    if (specs.isEmpty()) return listOf(SideAction.back("back", "Back", actions::back))
-    return listOf(SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Back", actions::back, tone = ActionTone.Muted, motion = ActionMotion.Back)) +
+private fun actionBar(specs: List<ActionSpec>, actions: ProjectionActions, back: String): List<SideAction> {
+    if (specs.isEmpty()) return listOf(SideAction.back("back", back, actions::back))
+    return listOf(SideAction.square("back", SidekitIcon.ArrowLeftAlt, back, actions::back, tone = ActionTone.Muted, motion = ActionMotion.Back)) +
         specs.map { spec ->
             SideAction("a.${spec.key}", spec.label, tone = spec.tone.actionTone(), motion = ActionMotion.Forward, weight = 1f) {
                 actions.pressAction(spec.handle, spec.key)
@@ -308,24 +315,24 @@ private fun MenuScreen(state: ProjectionState, model: ScreenModel, actions: Proj
         }
     }
     val sideport = listOf<Pair<String, () -> Unit>>(
-        "Show original" to {
+        stringResource(R.string.sideport_show_original) to {
             close()
             actions.showOriginal()
         },
-        "Messages and media" to {
+        stringResource(R.string.sideport_messages_media) to {
             close()
             actions.openHub()
         },
-        "Inspect screen" to {
+        stringResource(R.string.sideport_inspect_screen) to {
             close()
             actions.toggleInspector()
         },
-        "Back to Sidekit" to {
+        stringResource(R.string.sideport_back_to_sidekit) to {
             close()
             actions.exitToSidekit()
         }
     )
-    SidekitScaffold("${state.app.label} menu", actions = listOf(SideAction.back("menu.close", "Close", close))) { padding ->
+    SidekitScaffold(stringResource(R.string.sideport_app_menu, state.app.label), actions = listOf(SideAction.back("menu.close", stringResource(R.string.sideport_close), close))) { padding ->
         SidekitList(padding, state = list) {
             itemsIndexed(rows) { i, (label, run) -> SidekitItem(label, Modifier.listFade(list, i), onClick = run) }
             itemsIndexed(sideport) { i, (label, run) ->
@@ -342,11 +349,16 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
     val rows = remember(tree) { tree?.let(::flatten).orEmpty() }
     val model = state.model
     val list = rememberLazyListState()
+    val screen = model?.signature?.substringAfter('|')?.substringBefore('|')?.ifEmpty { null } ?: stringResource(R.string.sideport_inspect_unknown)
+    val recipe = stringResource(R.string.sideport_inspect_recipe, model?.recipe ?: stringResource(R.string.sideport_inspect_generic))
+    val nodes = pluralStringResource(R.plurals.sideport_inspect_nodes, rows.size, rows.size)
+    val unlabelledCount = model?.unlabelled ?: 0
+    val unlabelled = pluralStringResource(R.plurals.sideport_inspect_unlabelled, unlabelledCount, unlabelledCount)
     SidekitScaffold(
-        "Inspect",
+        stringResource(R.string.sideport_inspect),
         actions = listOf(
-            SideAction.back("inspect.close", "Close", actions::toggleInspector),
-            SideAction("inspect.export", "Export", tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = actions::exportTree)
+            SideAction.back("inspect.close", stringResource(R.string.sideport_close), actions::toggleInspector),
+            SideAction("inspect.export", stringResource(R.string.sideport_export), tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = actions::exportTree)
         )
     ) { padding ->
         SidekitList(padding, state = list) {
@@ -355,10 +367,10 @@ private fun InspectorScreen(state: ProjectionState, actions: ProjectionActions) 
                     SidekitText(
                         buildString {
                             append(model?.packageName ?: state.app.packageName)
-                            append("\n").append(model?.signature?.substringAfter('|')?.substringBefore('|')?.ifEmpty { null } ?: "unknown screen")
-                            append("\nRecipe: ").append(model?.recipe ?: "none (generic)")
-                            append("\n").append(rows.size).append(" nodes")
-                            if ((model?.unlabelled ?: 0) > 0) append(", ").append(model?.unlabelled).append(" unlabelled buttons")
+                            append("\n").append(screen)
+                            append("\n").append(recipe)
+                            append("\n").append(nodes)
+                            if (unlabelledCount > 0) append(", ").append(unlabelled)
                             state.notice?.let { append("\n").append(it) }
                         },
                         style = SidekitTheme.typography.caption,
@@ -408,11 +420,12 @@ private fun flags(n: UiNode) = buildList {
 /** Shown over an app in its original look: one tap returns to the Sidekit projection. */
 @Composable
 fun OriginalPill(label: String, onClick: () -> Unit) {
+    val showLabel = stringResource(R.string.sideport_show_in_sidekit, label)
     Row(
         Modifier
             .clip(RoundedCornerShape(50))
             .background(SidekitTheme.colors.emphasisA1)
-            .clickable(onClickLabel = "Show $label in Sidekit", onClick = onClick)
+            .clickable(onClickLabel = showLabel, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)

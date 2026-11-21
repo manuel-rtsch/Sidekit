@@ -8,10 +8,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
@@ -64,14 +66,14 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
     val custom = keypad?.mapper?.customModule
     val module = keypad?.module ?: KeypadModule.T9
     val list = rememberLazyListState()
-    SidekitScaffold("Keyboard", actions = listOf(SideAction.back("back", "Settings", back))) { padding ->
+    SidekitScaffold(stringResource(R.string.settings_keyboard), actions = listOf(SideAction.back("back", stringResource(R.string.settings_title), back))) { padding ->
         SidekitList(padding, state = list) {
             // A custom mapping fixes the module: the row opens its editor instead of cycling.
             item {
                 SidekitItem(
-                    "Module",
+                    stringResource(R.string.settings_module),
                     Modifier.height(CompactRowHeight).listFade(list, 0),
-                    secondary = custom?.let { "${it.label} · custom" } ?: module.label,
+                    secondary = custom?.let { stringResource(R.string.settings_module_custom, it.label) } ?: module.displayLabel(),
                     secondaryToEnd = true,
                     onClick = {
                         if (custom != null) {
@@ -85,15 +87,17 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             }
             item {
                 SidekitItem(
-                    "Typing",
+                    stringResource(R.string.settings_typing),
                     Modifier.height(CompactRowHeight).listFade(list, 1),
-                    secondary = if (!module.typesOnKeypad) {
-                        "On-screen keyboard"
-                    } else if (inputMode == T9Mode.Numeric) {
-                        "Numbers"
-                    } else {
-                        "Letters"
-                    },
+                    secondary = stringResource(
+                        if (!module.typesOnKeypad) {
+                            R.string.settings_typing_on_screen
+                        } else if (inputMode == T9Mode.Numeric) {
+                            R.string.settings_typing_numbers
+                        } else {
+                            R.string.settings_typing_letters
+                        }
+                    ),
                     secondaryToEnd = true,
                     onClick = if (module.typesOnKeypad) {
                         {
@@ -108,9 +112,9 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             }
             item {
                 SidekitItem(
-                    "Back key",
+                    stringResource(R.string.settings_back_key),
                     Modifier.height(CompactRowHeight).listFade(list, 2),
-                    secondary = if (accessibility) "On" else "Off",
+                    secondary = stringResource(if (accessibility) R.string.settings_on else R.string.settings_off),
                     showLinkArrow = true,
                     showLinkArrowWithSecondary = true,
                     onClick = {
@@ -124,9 +128,9 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             }
             item {
                 SidekitItem(
-                    "Key mapping",
+                    stringResource(R.string.settings_key_mapping),
                     Modifier.height(CompactRowHeight).listFade(list, 3),
-                    secondary = if (custom != null) "Custom" else "Auto",
+                    secondary = stringResource(if (custom != null) R.string.settings_key_mapping_custom else R.string.settings_key_mapping_auto),
                     showLinkArrow = true,
                     showLinkArrowWithSecondary = true,
                     onClick = onKeypadMapping
@@ -134,7 +138,7 @@ internal fun KeyboardSettingsScreen(back: () -> Unit, onKeypadMapping: () -> Uni
             }
             // The guide is the page's main reference, so it stays at full opacity and compact
             // enough to sit above the action bar without scrolling.
-            item { SidekitItem("Key guide", Modifier.height(CompactRowHeight), showLinkArrow = true, onClick = onKeyGuide) }
+            item { SidekitItem(stringResource(R.string.settings_key_guide), Modifier.height(CompactRowHeight), showLinkArrow = true, onClick = onKeyGuide) }
         }
     }
 }

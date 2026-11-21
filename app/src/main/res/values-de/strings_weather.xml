@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideweather. -->
+<resources>
+    <string name="weather_feels">Gefühlt %1$s</string>
+    <string name="weather_high">Max. %1$s</string>
+    <string name="weather_low">Min. %1$s</string>
+    <string name="weather_rain">Regen %1$d%%</string>
+    <string name="weather_wind_kmh">Wind %1$d km/h</string>
+    <string name="weather_wind_mph">Wind %1$d mph</string>
+    <string name="weather_today">Heute</string>
+    <string name="weather_sky_clear">Klar</string>
+    <string name="weather_sky_partly_cloudy">Teils bewölkt</string>
+    <string name="weather_sky_cloudy">Bewölkt</string>
+    <string name="weather_sky_fog">Nebel</string>
+    <string name="weather_sky_rain">Regen</string>
+    <string name="weather_sky_snow">Schnee</string>
+    <string name="weather_sky_showers">Schauer</string>
+    <string name="weather_sky_snow_showers">Schneeschauer</string>
+    <string name="weather_sky_thunderstorm">Gewitter</string>
+    <string name="weather_sky_unknown">Unbekannt</string>
+    <string name="weather_status_select">Wähle einen Ort</string>
+    <string name="weather_status_loading">Vorhersage wird geladen…</string>
+    <string name="weather_status_cached">Gespeicherte Vorhersage</string>
+    <string name="weather_status_unavailable">Vorhersage nicht verfügbar. Versuch es online erneut.</string>
+    <string name="weather_status_offline">Offline · gespeicherte Vorhersage</string>
+    <string name="weather_status_updated">Open-Meteo · aktualisiert %1$s</string>
+    <string name="weather_use_celsius">°C verwenden</string>
+    <string name="weather_use_fahrenheit">°F verwenden</string>
+    <string name="weather_locations_hint">Erlaube den ungefähren Standort für Wetter in der Nähe oder füge einen Ort hinzu.</string>
+    <string name="weather_add">Hinzufügen</string>
+    <string name="weather_undo_delete">%1$s wiederherstellen</string>
+    <string name="weather_locations">Orte</string>
+    <string name="weather_back">Zurück</string>
+    <string name="weather_selected">Ausgewählt</string>
+    <string name="weather_choose_location">Wähle einen Ort</string>
+    <string name="weather_hourly_title">Stündlich</string>
+    <string name="weather_five_day_title">5-Tage-Vorhersage</string>
+    <string name="weather_hourly">Stündlich</string>
+    <string name="weather_five_days">5 Tage</string>
+</resources>

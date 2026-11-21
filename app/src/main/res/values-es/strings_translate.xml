@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Translate app. Language names come from java.util.Locale in the UI language. -->
+<resources>
+    <string name="translate_title">Traductor</string>
+    <string name="translate_action">Traducir</string>
+    <string name="translate_history">Historial</string>
+    <string name="translate_allow">Permitir</string>
+    <string name="translate_from_language">De: %1$s</string>
+    <string name="translate_to_language">A: %1$s</string>
+    <string name="translate_swap">Intercambiar idiomas</string>
+    <string name="translate_large_text">Texto grande</string>
+    <string name="translate_clear">Borrar</string>
+    <string name="translate_clear_history">Borrar historial</string>
+    <string name="translate_translations">Traducciones</string>
+    <string name="translate_from_title">Traducir de</string>
+    <string name="translate_to_title">Traducir a</string>
+    <string name="translate_placeholder">Escribe o habla</string>
+    <string name="translate_translating">Traduciendo…</string>
+    <string name="translate_translation">Traducción</string>
+    <string name="translate_microphone_rationale">Permite el micrófono para que Traductor pueda oír este idioma.</string>
+    <plurals name="translate_service">
+        <item quantity="one">En línea · MyMemory · %1$d carácter</item>
+        <item quantity="many">En línea · MyMemory · %1$d caracteres</item>
+        <item quantity="other">En línea · MyMemory · %1$d caracteres</item>
+    </plurals>
+    <string name="translate_change_language">Cambiar idioma</string>
+    <string name="translate_stop_listening">Dejar de escuchar (%1$s)</string>
+    <string name="translate_speak">Hablar en %1$s</string>
+    <string name="translate_large_empty">Aún no hay nada que mostrar</string>
+    <string name="translate_history_empty">Tus traducciones aparecerán aquí.</string>
+    <string name="translate_delete">Eliminar traducción</string>
+    <string name="translate_error_microphone">Se necesita permiso del micrófono para escuchar</string>
+    <string name="translate_error_empty">Escribe algo para traducir</string>
+    <string name="translate_error_failed">Error al traducir. Comprueba la conexión e inténtalo de nuevo.</string>
+    <string name="translate_error_no_recognizer">Este teléfono no tiene reconocimiento de voz</string>
+    <string name="translate_error_recognizer">No se pudo iniciar el reconocimiento de voz</string>
+    <string name="translate_error_no_tts">Este teléfono no tiene síntesis de voz</string>
+    <string name="translate_error_no_voice">No hay voz para %1$s</string>
+    <string name="translate_error_not_heard">No te he entendido. Inténtalo de nuevo.</string>
+    <string name="translate_error_silence">No se ha oído nada</string>
+</resources>

@@ -21,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -65,22 +67,17 @@ object BankingTags {
     const val ACCOUNT_OPENING = "banking_account_opening"
 }
 
-/** Says plainly, wherever it matters, that this is not a bank connection. */
-const val TRACKER_NOTICE =
-    "Banking is a private tracker. It isn't connected to your bank: accounts, balances and payments are what you record here, encrypted on this phone."
-
-private const val TRACKER_CAPTION = "Tracked here · not bank-linked"
-
 /**
  * Undo split shared by every Banking list: the main action holds the left slot and the right slot
  * offers "Undo delete Barclays" until the window closes. Nothing else is taken away.
  */
+@Composable
 private fun withUndo(undo: BankingUndo?, onUndo: () -> Unit, main: List<SideAction>): List<SideAction> = if (undo == null) {
     main
 } else {
     undoBar(
         continueWith = main.last(),
-        undo = SideAction.undo(contentDescription = undo.label, onClick = onUndo)
+        undo = SideAction.undo(contentDescription = undo.label(), onClick = onUndo)
     )
 }
 
@@ -101,15 +98,20 @@ fun BankingScreen(
     options: List<SideAction> = emptyList()
 ) {
     val actions = when {
-        account == null -> listOf(SideAction.forward("forward", "Add account", onAccounts))
+        account == null -> listOf(SideAction.forward("forward", stringResource(R.string.banking_add_account), onAccounts))
 
         else -> withUndo(
             undo,
             onUndo,
-            listOf(SideAction.back("back", "Accounts", onAccounts), SideAction.forward("forward", "Pay", onPay))
+            listOf(
+                SideAction.back("back", stringResource(R.string.banking_accounts), onAccounts),
+                SideAction.forward("forward", stringResource(R.string.banking_pay), onPay)
+            )
         )
     }
-    SidekitScaffold(title = "Banking", actions = actions, options = options) { padding ->
+    val trackerNotice = stringResource(R.string.banking_tracker_notice)
+    val homeEmpty = stringResource(R.string.banking_home_empty)
+    SidekitScaffold(title = stringResource(R.string.banking_title), actions = actions, options = options) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
         LaunchedEffect(listState) {
@@ -120,7 +122,7 @@ fun BankingScreen(
                 if (account != null) {
                     BalanceCard(account, Modifier.listFade(listState, 0))
                 } else {
-                    NoticeCard("No accounts yet. Add the accounts you want to keep track of, with what's in them now.", Modifier.listFade(listState, 0))
+                    NoticeCard(homeEmpty, Modifier.listFade(listState, 0))
                 }
             }
             itemsIndexed(transactions, key = { _, t -> t.id }, contentType = { _, _ -> "tx" }) { i, t ->
@@ -133,13 +135,13 @@ fun BankingScreen(
                         group = swipe,
                         onDelete = { onDeleteTransaction(t) },
                         modifier = Modifier.animateItem().listFade(listState, i + 1),
-                        deleteLabel = "Delete ${t.description}"
+                        deleteLabel = stringResource(R.string.banking_delete_item, t.description)
                     ) { row() }
                 }
             }
             if (account != null) {
                 item(key = "notice", contentType = "notice") {
-                    NoticeCard(TRACKER_NOTICE, Modifier.listFade(listState, transactions.size + 1))
+                    NoticeCard(trackerNotice, Modifier.listFade(listState, transactions.size + 1))
                 }
             }
         }
@@ -169,9 +171,9 @@ private fun NoticeCard(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Home screen state from the book. */
-internal fun homeAccount(book: BankBook): BankAccount? = book.selected?.let {
-    BankAccount(it.name, Money.format(book.balance(it.id)), TRACKER_CAPTION)
+/** Home screen state from the book. [caption] is the line under the balance. */
+internal fun homeAccount(book: BankBook, caption: String): BankAccount? = book.selected?.let {
+    BankAccount(it.name, Money.format(book.balance(it.id)), caption)
 }
 
 internal fun homeTransactions(book: BankBook): List<BankTransaction> {
@@ -196,16 +198,24 @@ fun BankingAccountsScreen(
 ) {
     BackHandler(onBack = onBack)
     val selected = book.selected
+    val accountsEmpty = stringResource(R.string.banking_accounts_empty)
     SidekitScaffold(
-        title = "Accounts",
-        actions = withUndo(undo, onUndo, listOf(SideAction.back("back", "Banking", onBack), SideAction.forward("forward", "New", onNew))),
-        options = listOfNotNull(selected?.let { SideAction("edit", "Edit ${it.name}", SidekitIcon.Edit) { onEdit(it) } })
+        title = stringResource(R.string.banking_accounts),
+        actions = withUndo(
+            undo,
+            onUndo,
+            listOf(
+                SideAction.back("back", stringResource(R.string.banking_title), onBack),
+                SideAction.forward("forward", stringResource(R.string.banking_new), onNew)
+            )
+        ),
+        options = listOfNotNull(selected?.let { SideAction("edit", stringResource(R.string.banking_edit_item, it.name), SidekitIcon.Edit) { onEdit(it) } })
     ) { padding ->
         val listState = rememberLazyListState()
         val swipe = rememberSwipeRevealGroup()
         SidekitList(padding, state = listState) {
             if (book.accounts.isEmpty()) {
-                item(key = "empty") { NoticeCard("No accounts yet. \"New\" adds one.", Modifier.listFade(listState, 0)) }
+                item(key = "empty") { NoticeCard(accountsEmpty, Modifier.listFade(listState, 0)) }
             }
             itemsIndexed(book.accounts, key = { _, a -> a.id }, contentType = { _, _ -> "account" }) { i, a ->
                 SidekitSwipeRow(
@@ -213,7 +223,7 @@ fun BankingAccountsScreen(
                     group = swipe,
                     onDelete = { onDelete(a) },
                     modifier = Modifier.animateItem().listFade(listState, i),
-                    deleteLabel = "Delete ${a.name}"
+                    deleteLabel = stringResource(R.string.banking_delete_item, a.name)
                 ) {
                     SidekitItem(
                         a.name,
@@ -280,20 +290,35 @@ fun BankingPayScreen(
     BackHandler(onBack = onCancel)
     val actions = if (valid) {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
-            SideAction("record", "Record", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = if (incoming) "Record income" else "Record payment", onClick = record)
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, stringResource(R.string.banking_cancel), onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
+            SideAction(
+                "record",
+                stringResource(R.string.banking_record),
+                SidekitIcon.Check,
+                iconAtEnd = true,
+                tone = ActionTone.Secondary,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(if (incoming) R.string.banking_record_income else R.string.banking_record_payment),
+                onClick = record
+            )
         )
     } else {
         listOf(SideAction.cancel("back", onClick = onCancel))
     }
-    SidekitScaffold(title = if (incoming) "Add income" else "Pay", actions = actions) { padding ->
+    val fromLabel = stringResource(if (incoming) R.string.banking_into else R.string.banking_from)
+    val noAccount = stringResource(R.string.banking_no_account)
+    val payeeHint = stringResource(if (incoming) R.string.banking_received_from else R.string.banking_pay_to)
+    val amountHint = stringResource(R.string.banking_amount_hint, Money.format(0))
+    val noteHint = stringResource(R.string.banking_note_hint)
+    val payNotice = stringResource(R.string.banking_pay_notice)
+    SidekitScaffold(title = stringResource(if (incoming) R.string.banking_add_income else R.string.banking_pay), actions = actions) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item(key = "from") {
                 SidekitItem(
-                    if (incoming) "Into" else "From",
+                    fromLabel,
                     Modifier.listFade(listState, 0),
-                    secondary = account?.let { "${it.name} · ${Money.format(book.balance(it.id))}" } ?: "No account",
+                    secondary = account?.let { "${it.name} · ${Money.format(book.balance(it.id))}" } ?: noAccount,
                     // Tapping steps through the accounts.
                     onClick = if (book.accounts.size > 1) {
                         {
@@ -307,21 +332,21 @@ fun BankingPayScreen(
             }
             item(key = "payee") {
                 Column(Modifier.listFade(listState, 1)) {
-                    FieldCard(payee, { payee = it }, if (incoming) "Received from" else "Pay to", BankingTags.PAYEE, payeeFocus, { amountFocus.requestFocus() }, autoFocus = true, focusOnKeypad = true)
+                    FieldCard(payee, { payee = it }, payeeHint, BankingTags.PAYEE, payeeFocus, { amountFocus.requestFocus() }, autoFocus = true, focusOnKeypad = true)
                 }
             }
             item(key = "amount") {
                 Column(Modifier.listFade(listState, 2)) {
-                    FieldCard(amount, { amount = it }, "Amount (${Money.format(0)})", BankingTags.AMOUNT, amountFocus, { noteFocus.requestFocus() })
+                    FieldCard(amount, { amount = it }, amountHint, BankingTags.AMOUNT, amountFocus, { noteFocus.requestFocus() })
                 }
             }
             item(key = "note") {
                 Column(Modifier.listFade(listState, 3)) {
-                    FieldCard(note, { note = it }, "Note (optional)", BankingTags.NOTE, noteFocus, { if (valid) record() })
+                    FieldCard(note, { note = it }, noteHint, BankingTags.NOTE, noteFocus, { if (valid) record() })
                 }
             }
             item(key = "notice") {
-                NoticeCard("Recording a payment only updates this tracker. No money is moved.", Modifier.listFade(listState, 4))
+                NoticeCard(payNotice, Modifier.listFade(listState, 4))
             }
         }
     }
@@ -345,34 +370,39 @@ fun BankingAccountEditor(
     BackHandler(onBack = onCancel)
     val actions = if (valid) {
         listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Cancel", onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
-            SideAction("save", "Save", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, contentDescription = "Save account", onClick = save)
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, stringResource(R.string.banking_cancel), onCancel, tone = ActionTone.Muted, motion = ActionMotion.Back),
+            SideAction(
+                "save",
+                stringResource(R.string.banking_save),
+                SidekitIcon.Check,
+                iconAtEnd = true,
+                tone = ActionTone.Secondary,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(R.string.banking_save_account),
+                onClick = save
+            )
         )
     } else {
         listOf(SideAction.cancel("back", onClick = onCancel))
     }
-    SidekitScaffold(title = if (existing == null) "New account" else "Edit account", actions = actions) { padding ->
+    val nameHint = stringResource(R.string.banking_account_name)
+    val openingHint = if (existing == null) stringResource(R.string.banking_balance_now, Money.format(0)) else stringResource(R.string.banking_starting_balance)
+    val hint = stringResource(if (existing == null) R.string.banking_new_account_hint else R.string.banking_edit_account_hint)
+    SidekitScaffold(title = stringResource(if (existing == null) R.string.banking_new_account else R.string.banking_edit_account), actions = actions) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item(key = "name") {
                 Column(Modifier.listFade(listState, 0)) {
-                    FieldCard(name, { name = it }, "Account name", BankingTags.ACCOUNT_NAME, nameFocus, { openingFocus.requestFocus() }, autoFocus = existing == null, focusOnKeypad = true)
+                    FieldCard(name, { name = it }, nameHint, BankingTags.ACCOUNT_NAME, nameFocus, { openingFocus.requestFocus() }, autoFocus = existing == null, focusOnKeypad = true)
                 }
             }
             item(key = "opening") {
                 Column(Modifier.listFade(listState, 1)) {
-                    FieldCard(opening, { opening = it }, if (existing == null) "Balance now (${Money.format(0)})" else "Starting balance", BankingTags.ACCOUNT_OPENING, openingFocus, save)
+                    FieldCard(opening, { opening = it }, openingHint, BankingTags.ACCOUNT_OPENING, openingFocus, save)
                 }
             }
             item(key = "hint") {
-                NoticeCard(
-                    if (existing == null) {
-                        "Enter what's in the account today; payments you record are taken from it. Use a minus for money owed."
-                    } else {
-                        "The starting balance is what the account held before the payments recorded here."
-                    },
-                    Modifier.listFade(listState, 2)
-                )
+                NoticeCard(hint, Modifier.listFade(listState, 2))
             }
         }
     }
@@ -389,29 +419,31 @@ fun BankingLockedScreen(
     onUnlock: () -> Unit,
     onBack: () -> Unit
 ) {
+    val status = stringResource(if (deviceSecure) R.string.banking_locked else R.string.banking_no_screen_lock)
+    val notice = message ?: stringResource(if (deviceSecure) R.string.banking_locked_notice else R.string.banking_no_lock_notice)
+    val trackerNotice = stringResource(R.string.banking_tracker_notice)
     SidekitScaffold(
-        title = "Banking",
+        title = stringResource(R.string.banking_title),
         actions = listOf(
-            SideAction.square("back", SidekitIcon.ArrowLeftAlt, "Leave Banking", onBack, motion = ActionMotion.Back),
-            SideAction("unlock", if (deviceSecure) "Unlock" else "Open", SidekitIcon.Encrypted, contentDescription = "Unlock Banking", onClick = onUnlock)
+            SideAction.square("back", SidekitIcon.ArrowLeftAlt, stringResource(R.string.banking_leave_banking), onBack, motion = ActionMotion.Back),
+            SideAction(
+                "unlock",
+                stringResource(if (deviceSecure) R.string.banking_unlock else R.string.banking_open),
+                SidekitIcon.Encrypted,
+                contentDescription = stringResource(R.string.banking_unlock_banking),
+                onClick = onUnlock
+            )
         )
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item {
-                SidekitItem(if (deviceSecure) "Locked" else "No screen lock", Modifier.listFade(listState, 0), icon = SidekitIcon.Encrypted)
+                SidekitItem(status, Modifier.listFade(listState, 0), icon = SidekitIcon.Encrypted)
             }
             item {
-                NoticeCard(
-                    message ?: if (deviceSecure) {
-                        "Banking opens with your screen lock and locks again when you leave."
-                    } else {
-                        "This phone has no screen lock, so Banking can't ask for one. Your data is still encrypted on the phone; set a screen lock in Settings to protect it."
-                    },
-                    Modifier.listFade(listState, 1)
-                )
+                NoticeCard(notice, Modifier.listFade(listState, 1))
             }
-            item { NoticeCard(TRACKER_NOTICE, Modifier.listFade(listState, 2)) }
+            item { NoticeCard(trackerNotice, Modifier.listFade(listState, 2)) }
         }
     }
 }
@@ -423,24 +455,31 @@ fun BankingUnreadableScreen(onBack: () -> Unit, onErase: () -> Unit) {
     BackHandler { if (confirming) confirming = false else onBack() }
     val actions = if (confirming) {
         listOf(
-            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = "Keep the file") { confirming = false },
-            SideAction("erase", "Erase", SidekitIcon.DeleteForever, tone = ActionTone.Destructive, weight = 1.2f, motion = ActionMotion.Up, contentDescription = "Confirm erase", onClick = onErase)
+            SideAction.cancel(icon = null, motion = ActionMotion.Up, contentDescription = stringResource(R.string.banking_keep_file)) { confirming = false },
+            SideAction(
+                "erase",
+                stringResource(R.string.banking_erase),
+                SidekitIcon.DeleteForever,
+                tone = ActionTone.Destructive,
+                weight = 1.2f,
+                motion = ActionMotion.Up,
+                contentDescription = stringResource(R.string.banking_confirm_erase),
+                onClick = onErase
+            )
         )
     } else {
-        listOf(SideAction.back("back", "Leave", onBack))
+        listOf(SideAction.back("back", stringResource(R.string.banking_leave), onBack))
     }
+    val unreadable = stringResource(R.string.banking_unreadable)
     SidekitScaffold(
-        title = "Banking",
+        title = stringResource(R.string.banking_title),
         actions = actions,
-        options = listOf(SideAction("erase", "Erase and start over", SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { confirming = true })
+        options = listOf(SideAction("erase", stringResource(R.string.banking_erase_start_over), SidekitIcon.DeleteForever, tone = ActionTone.Destructive) { confirming = true })
     ) { padding ->
         val listState = rememberLazyListState()
         SidekitList(padding, state = listState) {
             item {
-                NoticeCard(
-                    "Banking's data can't be decrypted on this phone, so nothing has been changed. The Options key can erase it and start over.",
-                    Modifier.listFade(listState, 0)
-                )
+                NoticeCard(unreadable, Modifier.listFade(listState, 0))
             }
         }
     }

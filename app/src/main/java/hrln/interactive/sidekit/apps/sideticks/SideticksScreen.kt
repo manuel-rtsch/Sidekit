@@ -13,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionMotion
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -61,25 +63,25 @@ fun SideticksScreen(
     val screenFocus = remember { FocusRequester() }
     SidekitScaffold(
         modifier = Modifier.focusRequester(screenFocus).focusable(),
-        title = "My Sideticks",
+        title = stringResource(R.string.ticks_title),
         actions = buildList {
             if (state.draft != null) {
                 add(SideAction.cancel("cancel", onClick = onCancel))
-                add(SideAction("main", "Confirm", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onConfirmDraft))
+                add(SideAction("main", stringResource(R.string.ticks_confirm), SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, motion = ActionMotion.Up, onClick = onConfirmDraft))
             } else {
                 addAll(
                     undoBar(
-                        continueWith = SideAction("main", "New Sidetick", SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Up, onClick = onNewTick),
-                        undo = if (state.recentlyDeleted.isNotEmpty()) SideAction.undo(contentDescription = "Undo delete tick", onClick = onUndo) else null
+                        continueWith = SideAction("main", stringResource(R.string.ticks_new), SidekitIcon.Add, iconAtEnd = true, motion = ActionMotion.Up, onClick = onNewTick),
+                        undo = if (state.recentlyDeleted.isNotEmpty()) SideAction.undo(contentDescription = stringResource(R.string.ticks_undo_delete), onClick = onUndo) else null
                     )
                 )
             }
-            if (needsNotifications && state.dueText != null) add(SideAction("allow", "Allow", onClick = onNotifications))
+            if (needsNotifications && state.dueText != null) add(SideAction("allow", stringResource(R.string.ticks_allow), onClick = onNotifications))
         },
         options = if (state.draft != null) {
-            listOf(SideAction("due", if (state.dueText == null) "Due time" else "No due time") { onDue(if (state.dueText == null) "" else null) })
+            listOf(SideAction("due", stringResource(if (state.dueText == null) R.string.ticks_due_time else R.string.ticks_no_due_time)) { onDue(if (state.dueText == null) "" else null) })
         } else {
-            listOf(SideAction("sort", if (state.byDue) "Newest first" else "Due first", onClick = onSort))
+            listOf(SideAction("sort", stringResource(if (state.byDue) R.string.ticks_sort_newest else R.string.ticks_sort_due), onClick = onSort))
         }
     ) { padding ->
         val listState = rememberLazyListState()
@@ -90,9 +92,9 @@ fun SideticksScreen(
                 val i = index++
                 item(key) { content(Modifier.listFade(listState, i)) }
             }
-            state.error?.let { message -> row("error") { SidekitItem(message, it) } }
-            if (!state.loaded) row("loading") { SidekitItem("Loading reminders…", it) }
-            if (needsNotifications && state.dueText != null) row("permission") { SidekitItem("Allow notifications for due reminders", it) }
+            state.error?.let { message -> row("error") { SidekitItem(stringResource(message), it) } }
+            if (!state.loaded) row("loading") { SidekitItem(stringResource(R.string.ticks_loading), it) }
+            if (needsNotifications && state.dueText != null) row("permission") { SidekitItem(stringResource(R.string.ticks_allow_notifications), it) }
             if (state.dueText != null) {
                 row("due") { modifier ->
                     SidekitCard(modifier.fillMaxWidth()) {
@@ -104,11 +106,11 @@ fun SideticksScreen(
             state.open.forEach { tick -> row(tick.id) { SidekitSwipeRow(tick.id, swipes, { onDelete(tick) }, it) { TickRow(tick, { onToggle(tick) }, Modifier) } } }
             if (state.ticked.isNotEmpty()) {
                 if (!state.showTicked) {
-                    row("show") { SidekitItem("Show Ticked", it, onClick = { onShowTickedChange(true) }) }
+                    row("show") { SidekitItem(stringResource(R.string.ticks_show_ticked), it, onClick = { onShowTickedChange(true) }) }
                 } else {
-                    row("hide") { SidekitItem("Hide Ticked", it, onClick = { onShowTickedChange(false) }) }
+                    row("hide") { SidekitItem(stringResource(R.string.ticks_hide_ticked), it, onClick = { onShowTickedChange(false) }) }
                     state.ticked.forEach { tick -> row(tick.id) { SidekitSwipeRow(tick.id, swipes, { onDelete(tick) }, it) { TickRow(tick, { onToggle(tick) }, Modifier) } } }
-                    row("clear") { SidekitItem("Clear All Ticked", it, onClick = onClearTicked) }
+                    row("clear") { SidekitItem(stringResource(R.string.ticks_clear_ticked), it, onClick = onClearTicked) }
                 }
             }
         }

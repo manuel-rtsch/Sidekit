@@ -1,7 +1,9 @@
 package hrln.interactive.sidekit.apps.mail
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,8 +18,10 @@ class MailViewModel(
     val storageError = repository.error
     private var sending = false
     val messages: StateFlow<List<MailMessage>?> = repository.messages
-    private val _notice = MutableStateFlow<String?>(null)
-    val notice: StateFlow<String?> = _notice.asStateFlow()
+
+    /** The action-bar notice, as a string resource the screen resolves. */
+    private val _notice = MutableStateFlow<Int?>(null)
+    val notice: StateFlow<Int?> = _notice.asStateFlow()
     private val _noticeKind = MutableStateFlow(NoticeKind.Other)
     val noticeKind: StateFlow<NoticeKind> = _noticeKind.asStateFlow()
     private val _undo = MutableStateFlow<Triple<MailMessage, Int, Long>?>(null)
@@ -28,20 +32,20 @@ class MailViewModel(
 
     fun saveDraft(id: Long?, to: String, subject: String, body: String) {
         if (messages.value == null) {
-            say("Mail is not ready. Your draft has not been saved")
+            say(R.string.mail_notice_not_ready)
             return
         }
         repository.save(id, to, subject, body, MailFolder.Draft)
-        say("Draft saved on this phone", NoticeKind.Success)
+        say(R.string.mail_notice_draft_saved, NoticeKind.Success)
     }
 
     fun send(id: Long?, to: String, subject: String, body: String) {
         if (sending || messages.value == null) {
-            say("Mail is busy. Try again shortly")
+            say(R.string.mail_notice_busy)
             return
         }
         if (to.isBlank()) {
-            say("Add a recipient first")
+            say(R.string.mail_notice_add_recipient)
             return
         }
         sending = true
@@ -51,20 +55,20 @@ class MailViewModel(
                 when (account.send(message)) {
                     MailSendResult.Sent -> {
                         repository.folder(message.id, MailFolder.Sent)
-                        say("Accepted by your SMTP server", NoticeKind.Success)
+                        say(R.string.mail_notice_sent, NoticeKind.Success)
                     }
 
                     MailSendResult.HandedOff -> {
                         repository.folder(message.id, MailFolder.HandedOff)
-                        say("Mail app opened; sending isn't confirmed")
+                        say(R.string.mail_notice_handed_off)
                     }
 
-                    MailSendResult.Unavailable -> say("No mail app. Message kept in Outbox")
+                    MailSendResult.Unavailable -> say(R.string.mail_notice_no_app)
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (_: Exception) {
-                say("Send failed or confirmation lost. Check Sent before retrying; message kept in Outbox")
+                say(R.string.mail_notice_send_failed)
             } finally {
                 sending = false
             }
@@ -78,11 +82,11 @@ class MailViewModel(
         viewModelScope.launch {
             try {
                 repository.replaceInbox(account.inbox())
-                say("Inbox updated · latest 100 messages", NoticeKind.Success)
+                say(R.string.mail_notice_inbox_updated, NoticeKind.Success)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (_: Exception) {
-                say("Inbox could not refresh. Check account settings and connection")
+                say(R.string.mail_notice_refresh_failed)
             } finally {
                 busy.value = false
             }
@@ -112,7 +116,7 @@ class MailViewModel(
 
     fun resumeUndo() = undoWindow.resume()
 
-    fun say(text: String, kind: NoticeKind = NoticeKind.Other) {
+    fun say(@StringRes text: Int, kind: NoticeKind = NoticeKind.Other) {
         _notice.value = text
         _noticeKind.value = kind
     }

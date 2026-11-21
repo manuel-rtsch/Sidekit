@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Health: steps today, daily goal and step history. -->
+<resources>
+    <string name="health_title">Santé</string>
+    <string name="health_daily_goal">Objectif du jour</string>
+    <string name="health_step_history">Historique des pas</string>
+    <string name="health_history">Historique</string>
+    <string name="health_goals">Objectifs</string>
+    <string name="health_back">Retour</string>
+    <string name="health_allow">Autoriser</string>
+    <string name="health_permission_prompt">Autorisez la reconnaissance d\'activité pour compter les pas. Aucun service permanent.</string>
+    <string name="health_permission_denied">Accès à l\'activité refusé. L\'historique et les objectifs enregistrés fonctionnent toujours.</string>
+    <string name="health_goal_invalid">Saisissez un objectif de 1 à 100000</string>
+    <string name="health_steps_per_day">Pas par jour</string>
+    <string name="health_no_samples">Aucune mesure pour l\'instant</string>
+    <plurals name="health_day_steps">
+        <item quantity="one">%1$d pas</item>
+        <item quantity="many">%1$d pas</item>
+        <item quantity="other">%1$d pas</item>
+    </plurals>
+    <plurals name="health_day_steps_approx">
+        <item quantity="one">%1$d pas · env.</item>
+        <item quantity="many">%1$d pas · env.</item>
+        <item quantity="other">%1$d pas · env.</item>
+    </plurals>
+    <string name="health_no_step_counter">Aucun podomètre sur cet appareil</string>
+    <string name="health_steps_approximate">Les pas sont approximatifs</string>
+    <string name="health_sampling_note">Mesuré pendant l\'ouverture et vers minuit. Les changements de jour manqués et les redémarrages peuvent perdre ou décaler des pas.</string>
+    <string name="health_heart_sleep">Pouls et sommeil</string>
+    <string name="health_no_source">Aucune source connectée</string>
+    <string name="health_steps_today">Pas aujourd\'hui</string>
+</resources>

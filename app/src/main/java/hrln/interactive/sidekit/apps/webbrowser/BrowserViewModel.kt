@@ -1,7 +1,12 @@
 package hrln.interactive.sidekit.apps.webbrowser
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.NoticeKind
 import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -14,6 +19,13 @@ import kotlinx.coroutines.launch
 
 /** Which list the browser shows instead of the page. The page's WebView stays alive behind them. */
 enum class BrowserMode { Page, Tabs, Bookmarks, History }
+
+/** A message for the action bar: a string resource and its arguments, resolved by the screen. */
+@Immutable
+data class BrowserNotice(@StringRes val text: Int, val args: List<Any> = emptyList()) {
+    @Composable
+    fun resolve(): String = stringResource(text, *args.toTypedArray())
+}
 
 /** Something just removed, offered back by an Undo split in the bar. */
 sealed interface BrowserUndo {
@@ -34,8 +46,8 @@ class BrowserViewModel(
     private val _undo = MutableStateFlow<BrowserUndo?>(null)
     val undo: StateFlow<BrowserUndo?> = _undo.asStateFlow()
 
-    private val _notice = MutableStateFlow<String?>(null)
-    val notice: StateFlow<String?> = _notice.asStateFlow()
+    private val _notice = MutableStateFlow<BrowserNotice?>(null)
+    val notice: StateFlow<BrowserNotice?> = _notice.asStateFlow()
     private val _noticeKind = MutableStateFlow(NoticeKind.Other)
     val noticeKind: StateFlow<NoticeKind> = _noticeKind.asStateFlow()
 
@@ -100,14 +112,14 @@ class BrowserViewModel(
     }
 
     fun toggleBookmark(url: String, title: String) {
-        say(if (repository.toggleBookmark(url, title)) "Bookmarked" else "Bookmark removed", NoticeKind.Success)
+        say(BrowserNotice(if (repository.toggleBookmark(url, title)) R.string.browser_bookmarked else R.string.browser_bookmark_removed), NoticeKind.Success)
     }
 
     fun removeVisit(v: Visit) = repository.removeVisit(v)
 
     fun clearHistory() {
         repository.clearHistory()
-        say("History cleared", NoticeKind.Success)
+        say(BrowserNotice(R.string.browser_history_cleared), NoticeKind.Success)
     }
 
     /** Steps through [BrowserRepository.TEXT_ZOOMS]. */
@@ -122,7 +134,7 @@ class BrowserViewModel(
         _notice.value = null
     }
 
-    fun say(message: String, kind: NoticeKind = NoticeKind.Other) {
+    fun say(message: BrowserNotice, kind: NoticeKind = NoticeKind.Other) {
         _notice.value = message
         _noticeKind.value = kind
     }
@@ -134,11 +146,11 @@ class BrowserViewModel(
 
     override fun onVisited(url: String, title: String) = repository.visited(url, title)
 
-    override fun onNotice(message: String) = say(message)
+    override fun onNotice(message: BrowserNotice) = say(message)
 
     override fun onRendererGone() {
         _generation.value++
-        say("The page stopped; reloading")
+        say(BrowserNotice(R.string.browser_page_stopped))
     }
 
     private fun offerUndo(u: BrowserUndo) {

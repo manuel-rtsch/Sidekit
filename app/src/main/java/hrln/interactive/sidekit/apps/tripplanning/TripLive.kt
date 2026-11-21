@@ -1,10 +1,13 @@
 package hrln.interactive.sidekit.apps.tripplanning
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -14,6 +17,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
+import hrln.interactive.sidekit.R
+import hrln.interactive.sidekit.apps.integrations.ServiceException
 import hrln.interactive.sidekit.apps.maps.*
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
@@ -26,6 +31,18 @@ import hrln.interactive.sidekit.sdk.ui.rememberUndoWindow
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 
+/** A status line: a string resource the UI resolves, or text a service sent as-is. */
+sealed interface TripMessage {
+    data class Res(@StringRes val id: Int, val args: List<Any> = emptyList()) : TripMessage
+    data class Text(val text: String) : TripMessage
+}
+
+@Composable
+private fun TripMessage.text(): String = when (this) {
+    is TripMessage.Res -> stringResource(id, *args.toTypedArray())
+    is TripMessage.Text -> text
+}
+
 class TripViewModel(val repository: TripRepository, private val planner: TripPlanner = LocalTripPlanner(), private val transit: NswTransit = NswTransit()) : ViewModel() {
     var from by mutableStateOf("")
     var to by mutableStateOf("")
@@ -34,7 +51,7 @@ class TripViewModel(val repository: TripRepository, private val planner: TripPla
     var selected by mutableStateOf<Trip?>(null)
     var editingId: String? = null
     private var itinerary = ""
-    val message = MutableStateFlow("NSW public transport · times shown in Sydney time")
+    val message = MutableStateFlow<TripMessage>(TripMessage.Res(R.string.trips_intro))
     var stops by mutableStateOf<List<TransitStop>>(emptyList())
     var origin by mutableStateOf<TransitStop?>(null)
     var destination by mutableStateOf<TransitStop?>(null)
@@ -48,21 +65,21 @@ class TripViewModel(val repository: TripRepository, private val planner: TripPla
         val query = if (fromOrigin) from else to
         request {
             stops = transit.stops(query)
-            message.value = if (stops.isEmpty()) "No matching stops" else "Choose a stop"
+            message.value = TripMessage.Res(if (stops.isEmpty()) R.string.trips_no_stops else R.string.trips_choose_stop)
             onReady()
         }
     }
     fun find(onReady: () -> Unit) = request {
-        val a = origin?.takeIf { it.name == from } ?: throw IllegalArgumentException("Search and choose your From stop first")
-        val b = destination?.takeIf { it.name == to } ?: throw IllegalArgumentException("Search and choose your To stop first")
+        val a = origin?.takeIf { it.name == from } ?: throw TransitInputException(R.string.trips_choose_from_first, "Search and choose your From stop first")
+        val b = destination?.takeIf { it.name == to } ?: throw TransitInputException(R.string.trips_choose_to_first, "Search and choose your To stop first")
         journeys = transit.journeys(a, b, time)
-        message.value = if (journeys.isEmpty()) "No journeys found" else "Times are a snapshot · refresh before travelling"
+        message.value = TripMessage.Res(if (journeys.isEmpty()) R.string.trips_no_journeys else R.string.trips_snapshot)
         onReady()
     }
     fun board(onReady: () -> Unit) = request {
-        val stop = origin?.takeIf { it.name == from } ?: throw IllegalArgumentException("Search and choose a From stop first")
+        val stop = origin?.takeIf { it.name == from } ?: throw TransitInputException(R.string.trips_choose_from_stop_first, "Search and choose a From stop first")
         departures = transit.departures(stop)
-        message.value = "Updated ${java.time.LocalTime.now(java.time.ZoneId.of("Australia/Sydney")).withNano(0)} · Sydney time"
+        message.value = TripMessage.Res(R.string.trips_updated, listOf(java.time.LocalTime.now(java.time.ZoneId.of("Australia/Sydney")).withNano(0).toString()))
         onReady()
     }
     private fun request(block: suspend () -> Unit) {
@@ -74,14 +91,18 @@ class TripViewModel(val repository: TripRepository, private val planner: TripPla
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                message.value = e.message ?: "Transit service unavailable"
+                message.value = (e as? TransitProblem)?.let { TripMessage.Res(it.text) }
+                    ?: (e as? ServiceException)?.let { TripMessage.Res(it.messageRes, listOfNotNull(it.code)) }
+                    ?: e.message?.let(TripMessage::Text) ?: TripMessage.Res(R.string.trips_unavailable)
             } finally {
                 busy = false
             }
         }
     }
-    fun saveJourney(journey: TransitJourney, onSaved: () -> Unit) {
-        itinerary = journey.legs.joinToString("\n") { "${it.route}: ${it.from} → ${it.to} · ${transitTime(it.departure)}–${transitTime(it.arrival)} · ${if (it.live) "Live estimate" else "Scheduled"}" }
+
+    /** [itinerary] is the journey's legs as the UI wrote them, in the app's language. */
+    fun saveJourney(journey: TransitJourney, itinerary: String, onSaved: () -> Unit) {
+        this.itinerary = itinerary
         time = "${journey.departure} – ${journey.arrival}"
         save(onSaved)
     }
@@ -100,7 +121,7 @@ class TripViewModel(val repository: TripRepository, private val planner: TripPla
     fun save(onSaved: () -> Unit) {
         if (saving) return
         if (repository.store.state.value == null) {
-            message.value = "Loading saved trips…"
+            message.value = TripMessage.Res(R.string.trips_loading_saved)
             return
         }
         saving = true
@@ -114,7 +135,7 @@ class TripViewModel(val repository: TripRepository, private val planner: TripPla
             } catch (e: CancellationException) {
                 throw e
             } catch (_: IllegalArgumentException) {
-                message.value = "Enter a start and destination"
+                message.value = TripMessage.Res(R.string.trips_enter_start_destination)
             } finally {
                 saving = false
             }
@@ -131,7 +152,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                 val vm: TripViewModel = viewModel(parent, factory = viewModelFactory { initializer { TripViewModel(TripRepository.get(context), transit = transit) } })
                 val data by vm.repository.store.state.collectAsStateWithLifecycle()
                 val message by vm.message.collectAsStateWithLifecycle()
-                val error by vm.repository.store.error.collectAsStateWithLifecycle()
+                val error by vm.repository.store.errorRes.collectAsStateWithLifecycle()
                 val back = {
                     nav.popBackStack()
                     Unit
@@ -152,33 +173,38 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                         vm.edit(null)
                         nav.navigate("$root/plan")
                     }
+                    val backLabel = stringResource(R.string.trips_back)
+                    val undoLabel = stringResource(R.string.trips_undo)
                     val actions = when (page) {
-                        "home" -> listOf(SideAction.back("saved", "Saved") { nav.navigate("$root/saved") }, SideAction.forward("plan", "Plan", ::plan))
+                        "home" -> listOf(SideAction.back("saved", stringResource(R.string.trips_saved)) { nav.navigate("$root/saved") }, SideAction.forward("plan", stringResource(R.string.trips_plan), ::plan))
 
-                        "plan" -> listOf(SideAction.cancel("back", onClick = back), SideAction.save("save", if (vm.saving) "Saving…" else "Save") { vm.save(back) })
+                        "plan" -> listOf(
+                            SideAction.cancel("back", stringResource(R.string.trips_cancel), onClick = back),
+                            SideAction.save("save", stringResource(if (vm.saving) R.string.trips_saving else R.string.trips_save)) { vm.save(back) }
+                        )
 
-                        "places" -> listOf(SideAction.back("back", "Back", back), SideAction("add", "Add") { nav.navigate("$root/search") })
+                        "places" -> listOf(SideAction.back("back", backLabel, back), SideAction("add", stringResource(R.string.trips_add)) { nav.navigate("$root/search") })
 
                         "detail" -> listOf(
-                            SideAction.back("back", "Back", back),
-                            SideAction("replan", "Plan again") {
+                            SideAction.back("back", backLabel, back),
+                            SideAction("replan", stringResource(R.string.trips_plan_again)) {
                                 vm.edit(vm.selected)
                                 nav.navigate("$root/plan")
                             }
                         )
 
-                        "departures" -> listOf(SideAction.back("back", "Back", back), SideAction("refresh", if (vm.busy) "Loading…" else "Refresh") { vm.board {} })
+                        "departures" -> listOf(SideAction.back("back", backLabel, back), SideAction("refresh", stringResource(if (vm.busy) R.string.trips_loading else R.string.trips_refresh)) { vm.board {} })
 
-                        "stops", "journeys" -> listOf(SideAction.back("back", "Back", back))
+                        "stops", "journeys" -> listOf(SideAction.back("back", backLabel, back))
 
-                        else -> listOf(SideAction.back("back", "Back", back), SideAction.forward("plan", "Plan", ::plan))
+                        else -> listOf(SideAction.back("back", backLabel, back), SideAction.forward("plan", stringResource(R.string.trips_plan), ::plan))
                     }.let { actions ->
                         // The undo window belongs to the lists a delete can happen on: saved places, and
                         // the saved trips shown on both "home" and "saved". It must not evict Save from the
                         // editor if the user navigates during the window.
                         val undoAction = undo?.takeIf { page == "places" || page == "saved" || page == "home" }
                             ?.let { restore ->
-                                SideAction.undo {
+                                SideAction.undo(label = undoLabel) {
                                     undoWindow.cancel()
                                     restore()
                                     undo = null
@@ -187,45 +213,47 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                         if (undoAction == null) actions else undoBar(continueWith = actions.last(), undo = undoAction)
                     }
                     val options = if (page == "places") {
-                        listOf(SideAction("useAs", if (useAsStart) "Use as destination" else "Use as start") { useAsStart = !useAsStart })
+                        listOf(SideAction("useAs", stringResource(if (useAsStart) R.string.trips_use_as_destination else R.string.trips_use_as_start)) { useAsStart = !useAsStart })
                     } else if (page == "detail") {
                         listOf(
-                            SideAction("edit", "Edit") {
+                            SideAction("edit", stringResource(R.string.trips_edit)) {
                                 vm.edit(vm.selected)
                                 nav.navigate("$root/plan")
                             }
                         )
                     } else if (page == "plan") {
                         listOf(
-                            SideAction("fromSearch", "Find From stop") { vm.search(true) { nav.navigate("$root/stops") } },
-                            SideAction("toSearch", "Find To stop") { vm.search(false) { nav.navigate("$root/stops") } },
-                            SideAction("journeys", "Find journeys") { vm.find { nav.navigate("$root/journeys") } },
-                            SideAction("departures", "Departures from here") { vm.board { nav.navigate("$root/departures") } }
+                            SideAction("fromSearch", stringResource(R.string.trips_find_from)) { vm.search(true) { nav.navigate("$root/stops") } },
+                            SideAction("toSearch", stringResource(R.string.trips_find_to)) { vm.search(false) { nav.navigate("$root/stops") } },
+                            SideAction("journeys", stringResource(R.string.trips_find_journeys)) { vm.find { nav.navigate("$root/journeys") } },
+                            SideAction("departures", stringResource(R.string.trips_departures_here)) { vm.board { nav.navigate("$root/departures") } }
                         )
                     } else {
-                        listOf(SideAction("places", "Places") { nav.navigate("$root/places") })
+                        listOf(SideAction("places", stringResource(R.string.trips_places)) { nav.navigate("$root/places") })
                     }
                     SidekitScaffold(
-                        when (page) {
-                            "plan" -> "Plan a trip"
-                            "places" -> "Saved places"
-                            "saved" -> "Saved trips"
-                            else -> "Trip Planning"
-                        },
+                        stringResource(
+                            when (page) {
+                                "plan" -> R.string.trips_plan_title
+                                "places" -> R.string.trips_saved_places
+                                "saved" -> R.string.trips_saved_trips
+                                else -> R.string.trips_title
+                            }
+                        ),
                         actions = actions,
                         options = options
                     ) { padding ->
                         SidekitList(padding, state = list) {
                             when (page) {
                                 "plan" -> {
-                                    item { TripField("From", vm.from, { vm.from = it }, Modifier.listFade(list, 0), true) }
-                                    item { TripField("To", vm.to, { vm.to = it }, Modifier.listFade(list, 1)) }
-                                    item { TripField("Sydney time: yyyy-MM-dd HH:mm (or now)", vm.time, { vm.time = it }, Modifier.listFade(list, 2)) }
-                                    item { TripField("Notes", vm.notes, { vm.notes = it }, Modifier.listFade(list, 3)) }
-                                    item { TripInfo("Find From stop", secondary = vm.origin?.name ?: "Search the start entered above", onClick = { vm.search(true) { nav.navigate("$root/stops") } }) }
-                                    item { TripInfo("Find To stop", secondary = vm.destination?.name ?: "Search the destination entered above", onClick = { vm.search(false) { nav.navigate("$root/stops") } }) }
-                                    item { TripInfo(if (vm.busy) "Loading transit…" else "Find journeys", secondary = "Public transport options from Transport for NSW", onClick = { vm.find { nav.navigate("$root/journeys") } }) }
-                                    item { TripInfo("Departures from here", secondary = "Next services from your selected From stop", onClick = { vm.board { nav.navigate("$root/departures") } }) }
+                                    item { TripField(stringResource(R.string.trips_from), vm.from, { vm.from = it }, Modifier.listFade(list, 0), true) }
+                                    item { TripField(stringResource(R.string.trips_to), vm.to, { vm.to = it }, Modifier.listFade(list, 1)) }
+                                    item { TripField(stringResource(R.string.trips_time_hint), vm.time, { vm.time = it }, Modifier.listFade(list, 2)) }
+                                    item { TripField(stringResource(R.string.trips_notes), vm.notes, { vm.notes = it }, Modifier.listFade(list, 3)) }
+                                    item { TripInfo(stringResource(R.string.trips_find_from), secondary = vm.origin?.name ?: stringResource(R.string.trips_from_hint), onClick = { vm.search(true) { nav.navigate("$root/stops") } }) }
+                                    item { TripInfo(stringResource(R.string.trips_find_to), secondary = vm.destination?.name ?: stringResource(R.string.trips_to_hint), onClick = { vm.search(false) { nav.navigate("$root/stops") } }) }
+                                    item { TripInfo(stringResource(if (vm.busy) R.string.trips_loading_transit else R.string.trips_find_journeys), secondary = stringResource(R.string.trips_journeys_detail), onClick = { vm.find { nav.navigate("$root/journeys") } }) }
+                                    item { TripInfo(stringResource(R.string.trips_departures_here), secondary = stringResource(R.string.trips_departures_detail), onClick = { vm.board { nav.navigate("$root/departures") } }) }
                                 }
 
                                 "stops" -> items(vm.stops.size) { i ->
@@ -244,32 +272,33 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
 
                                 "journeys" -> items(vm.journeys.size) { i ->
                                     val j = vm.journeys[i]
+                                    val itinerary = j.legs.joinToString("\n") { "${routeName(context, it.route)}: ${it.from} → ${it.to} · ${transitTime(it.departure)}–${transitTime(it.arrival)} · ${legTiming(context, it.live)}" }
                                     TripInfo(
-                                        "${transitTime(j.departure)}–${transitTime(j.arrival)} · ${j.legs.joinToString(" → ") { it.route }}",
-                                        secondary = j.legs.joinToString("\n") { "${it.from} → ${it.to} · ${if (it.live) "Live estimate" else "Scheduled"}" } + "\nTap to save journey",
-                                        onClick = { vm.saveJourney(j) { nav.navigate("$root/home") { popUpTo("$root/home") { inclusive = true } } } }
+                                        "${transitTime(j.departure)}–${transitTime(j.arrival)} · ${j.legs.joinToString(" → ") { routeName(context, it.route) }}",
+                                        secondary = j.legs.joinToString("\n") { "${it.from} → ${it.to} · ${legTiming(context, it.live)}" } + "\n" + stringResource(R.string.trips_tap_to_save),
+                                        onClick = { vm.saveJourney(j, itinerary) { nav.navigate("$root/home") { popUpTo("$root/home") { inclusive = true } } } }
                                     )
                                 }
 
                                 "departures" -> {
-                                    if (vm.departures.isEmpty()) item { TripInfo("No departures found") }
+                                    if (vm.departures.isEmpty()) item { TripInfo(stringResource(R.string.trips_no_departures)) }
                                     items(vm.departures.size) { i ->
                                         val d = vm.departures[i]
                                         TripInfo(
                                             "${d.route} → ${d.destination}",
                                             secondary = "${transitTime(d.estimated ?: d.planned)} · ${if (d.cancelled) {
-                                                "Cancelled"
+                                                stringResource(R.string.trips_cancelled)
                                             } else if (d.live) {
-                                                "Live estimate (scheduled ${transitTime(d.planned)})"
+                                                stringResource(R.string.trips_live_estimate_scheduled, transitTime(d.planned))
                                             } else {
-                                                "Scheduled"
+                                                stringResource(R.string.trips_scheduled)
                                             }}\n${d.platform}"
                                         )
                                     }
                                 }
 
                                 "places" -> {
-                                    if (data?.places.isNullOrEmpty()) item { TripInfo("No saved places", modifier = Modifier.listFade(list, 0)) }
+                                    if (data?.places.isNullOrEmpty()) item { TripInfo(stringResource(R.string.trips_no_saved_places), modifier = Modifier.listFade(list, 0)) }
                                     items(data?.places?.size ?: 0) { i ->
                                         val p = data!!.places[i]
                                         SidekitSwipeRow(p.key, group, {
@@ -277,7 +306,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                                             undo = { vm.repository.savePlace(p) }
                                             undoWindow.start()
                                         }, Modifier.listFade(list, i)) {
-                                            TripInfo(p.name, secondary = if (useAsStart) "Use as start" else "Use as destination", onClick = {
+                                            TripInfo(p.name, secondary = stringResource(if (useAsStart) R.string.trips_use_as_start else R.string.trips_use_as_destination), onClick = {
                                                 val inEditor = nav.previousBackStackEntry?.destination?.route == "$root/plan"
                                                 if (!inEditor) vm.edit(null)
                                                 if (useAsStart) vm.from = p.name else vm.to = p.name
@@ -290,14 +319,14 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                                 }
 
                                 "detail" -> vm.selected?.let { t ->
-                                    item { TripInfo(t.from, secondary = "To ${t.to}", modifier = Modifier.listFade(list, 0)) }
-                                    item { TripInfo(savedTripTime(t.time).ifBlank { "No time set" }, secondary = t.notes.ifBlank { "No notes" }, modifier = Modifier.listFade(list, 1)) }
-                                    if (t.itinerary.isNotBlank()) item { TripInfo("Saved itinerary · refresh before travelling", secondary = t.itinerary) }
+                                    item { TripInfo(t.from, secondary = stringResource(R.string.trips_to_place, t.to), modifier = Modifier.listFade(list, 0)) }
+                                    item { TripInfo(savedTripTime(t.time).ifBlank { stringResource(R.string.trips_no_time) }, secondary = t.notes.ifBlank { stringResource(R.string.trips_no_notes) }, modifier = Modifier.listFade(list, 1)) }
+                                    if (t.itinerary.isNotBlank()) item { TripInfo(stringResource(R.string.trips_saved_itinerary), secondary = t.itinerary) }
                                 }
 
                                 else -> {
                                     val trips = data?.trips.orEmpty()
-                                    if (trips.isEmpty()) item { TripInfo("No saved trips", secondary = "Plan a trip to get started", modifier = Modifier.listFade(list, 0)) }
+                                    if (trips.isEmpty()) item { TripInfo(stringResource(R.string.trips_no_saved_trips), secondary = stringResource(R.string.trips_get_started), modifier = Modifier.listFade(list, 0)) }
                                     items(trips.size, key = { trips[it].id }) { i ->
                                         val t = trips[i]
                                         SidekitSwipeRow(t.id, group, {
@@ -305,7 +334,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                                             undo = { vm.repository.save(t) }
                                             undoWindow.start()
                                         }, Modifier.listFade(list, i)) {
-                                            TripInfo("${t.from} → ${t.to}", secondary = savedTripTime(t.time).ifBlank { "No time set" }, onClick = {
+                                            TripInfo("${t.from} → ${t.to}", secondary = savedTripTime(t.time).ifBlank { stringResource(R.string.trips_no_time) }, onClick = {
                                                 vm.selected = t
                                                 nav.navigate("$root/detail")
                                             })
@@ -313,7 +342,7 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
                                     }
                                 }
                             }
-                            item { TripInfo(error ?: message, modifier = Modifier.listFade(list, if (page == "plan") 4 else 1)) }
+                            item { TripInfo(error?.let { stringResource(it) } ?: message.text(), modifier = Modifier.listFade(list, if (page == "plan") 4 else 1)) }
                         }
                     }
                 }
@@ -321,6 +350,15 @@ fun NavGraphBuilder.liveTripsGraph(nav: NavHostController, transit: NswTransit =
         }
     }
 }
+
+/** A leg's route number, or Walk / Transit for a leg without one. */
+private fun routeName(context: Context, route: String) = when (route) {
+    NswTransit.WALK -> context.getString(R.string.trips_route_walk)
+    NswTransit.TRANSIT -> context.getString(R.string.trips_route_transit)
+    else -> route
+}
+
+private fun legTiming(context: Context, live: Boolean) = context.getString(if (live) R.string.trips_live_estimate else R.string.trips_scheduled)
 
 @Composable
 private fun TripField(label: String, value: String, change: (String) -> Unit, modifier: Modifier, main: Boolean = false) {

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Call log row: call kind, then its time ("Missed · 14:02"). -->
+    <string name="phonebook_call_time" translatable="false">%1$s · %2$s</string>
+    <string name="phonebook_title">Phonebook</string>
+    <string name="phonebook_clear">Clear</string>
+    <string name="phonebook_clear_cd">Clear number</string>
+    <!-- Action label and screen title: place a phone call. -->
+    <string name="phonebook_call">Call</string>
+    <string name="phonebook_call_cd">Call %1$s</string>
+    <string name="phonebook_allow">Allow</string>
+    <string name="phonebook_allow_contacts_cd">Allow contacts</string>
+    <!-- Action-bar label and dial pad title. Keep short. -->
+    <string name="phonebook_dial">Dial</string>
+    <string name="phonebook_dial_pad">Dial pad</string>
+    <string name="phonebook_calls">Calls</string>
+    <string name="phonebook_recent_calls_cd">Recent calls</string>
+    <string name="phonebook_recents">Recents</string>
+    <string name="phonebook_info_permission">Phonebook needs your contacts to list them and search them from the keypad. You can still dial a number.</string>
+    <string name="phonebook_no_match">No contacts match</string>
+    <string name="phonebook_empty">No contacts with phone numbers yet</string>
+    <string name="phonebook_back">Back</string>
+    <!-- Action label: send a text message (SMS) to the chosen number. Keep short. -->
+    <string name="phonebook_text">Text</string>
+    <string name="phonebook_message_cd">Message %1$s</string>
+    <string name="phonebook_allow_call_log_cd">Allow call log</string>
+    <string name="phonebook_info_call_log">Recents needs your call log to show calls you\'ve made and missed.</string>
+    <string name="phonebook_no_calls">No calls yet</string>
+    <string name="phonebook_unknown">Unknown</string>
+    <string name="phonebook_delete_digit">Delete digit</string>
+    <string name="phonebook_text_number">Text this number</string>
+    <string name="phonebook_enter_number">Enter a number</string>
+    <string name="phonebook_key_cd">Key %1$s</string>
+    <string name="phonebook_call_incoming">Incoming</string>
+    <string name="phonebook_call_outgoing">Outgoing</string>
+    <!-- Call log: kind of call, shown as "Missed · 14:02". -->
+    <string name="phonebook_call_missed">Missed</string>
+    <string name="phonebook_call_declined">Declined</string>
+    <string name="phonebook_call_blocked">Blocked</string>
+    <string name="phonebook_label_mobile">Mobile</string>
+    <string name="phonebook_label_home">Home</string>
+    <string name="phonebook_label_work">Work</string>
+    <!-- Phone number type: main number. -->
+    <string name="phonebook_label_main">Main</string>
+    <string name="phonebook_label_phone">Phone</string>
+    <string name="phonebook_system_dialer">System dialer</string>
+    <string name="phonebook_call_permission">Allow phone access to call %1$s. You can also use the system dialer from Options.</string>
+</resources>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mail: inbox, folders, compose and account. -->
+<resources>
+    <string name="mail_title">Mail</string>
+    <string name="mail_folders">Ordner</string>
+    <string name="mail_compose">Verfassen</string>
+    <string name="mail_refresh_inbox">Posteingang aktualisieren</string>
+    <string name="mail_back">Zurück</string>
+    <string name="mail_reply">Antworten</string>
+    <string name="mail_message_unavailable">Nachricht nicht verfügbar</string>
+    <string name="mail_folders_title">Mail-Ordner</string>
+    <string name="mail_undo_delete">Löschen der Nachricht rückgängig machen</string>
+    <string name="mail_cache_notice">Posteingang-Cache · aktualisiere, um deinen Server abzufragen. Wischen löscht nur die lokale Kopie.</string>
+    <string name="mail_account">Konto</string>
+    <string name="mail_empty_local">Keine lokalen Nachrichten</string>
+    <string name="mail_empty_hint">Verfassen erstellt einen Entwurf auf diesem Telefon</string>
+    <string name="mail_delete_message">Nachricht löschen</string>
+    <string name="mail_no_recipient">Kein Empfänger</string>
+    <string name="mail_no_subject">Kein Betreff</string>
+    <string name="mail_save">Speichern</string>
+    <string name="mail_to">An</string>
+    <string name="mail_subject">Betreff</string>
+    <string name="mail_message">Nachricht</string>
+    <string name="mail_send_hint">Senden übermittelt über dein verbundenes SMTP-Konto. Die Annahme durch den Server bestätigt nicht die Zustellung.</string>
+    <string name="mail_folder_drafts">Entwürfe</string>
+    <string name="mail_folder_outbox">Postausgang</string>
+    <string name="mail_folder_handed_off">Übergeben</string>
+    <string name="mail_folder_inbox">Posteingang</string>
+    <string name="mail_folder_sent">Gesendet</string>
+    <string name="mail_empty_drafts">Keine Entwürfe</string>
+    <string name="mail_empty_outbox">Postausgang leer</string>
+    <string name="mail_empty_handed_off">Nichts übergeben</string>
+    <string name="mail_empty_inbox">Posteingang leer</string>
+    <string name="mail_empty_sent">Nichts gesendet</string>
+    <plurals name="mail_folder_count">
+        <item quantity="one">%1$d auf diesem Telefon</item>
+        <item quantity="other">%1$d auf diesem Telefon</item>
+    </plurals>
+    <string name="mail_notice_not_ready">Mail ist nicht bereit. Dein Entwurf wurde nicht gespeichert</string>
+    <string name="mail_notice_draft_saved">Entwurf auf diesem Telefon gespeichert</string>
+    <string name="mail_notice_busy">Mail ist beschäftigt. Versuch es gleich noch mal</string>
+    <string name="mail_notice_add_recipient">Füge zuerst einen Empfänger hinzu</string>
+    <string name="mail_notice_sent">Von deinem SMTP-Server angenommen</string>
+    <string name="mail_notice_handed_off">Mail-App geöffnet; Senden nicht bestätigt</string>
+    <string name="mail_notice_no_app">Keine Mail-App. Nachricht bleibt im Postausgang</string>
+    <string name="mail_notice_send_failed">Senden fehlgeschlagen oder Bestätigung verloren. Prüfe Gesendet, bevor du es erneut versuchst; Nachricht bleibt im Postausgang</string>
+    <string name="mail_notice_inbox_updated">Posteingang aktualisiert · neueste 100 Nachrichten</string>
+    <string name="mail_notice_refresh_failed">Posteingang konnte nicht aktualisiert werden. Prüfe Konto und Verbindung</string>
+    <string name="mail_error_storage_read">Mail-Speicher kann nicht gelesen werden; vorhandene Daten bleiben erhalten</string>
+    <string name="mail_error_save">Mail konnte nicht auf diesem Telefon gespeichert werden</string>
+    <string name="mail_account_title">Mail-Konto</string>
+    <string name="mail_account_intro">IMAP über TLS (993). SMTP TLS (465) oder STARTTLS (587). Nutze das App-Passwort deines Anbieters. Reine OAuth-Konten erfordern eine Registrierung beim Anbieter.</string>
+    <string name="mail_account_failed">Verbindung fehlgeschlagen. Prüfe Hosts, Ports, Benutzername und App-Passwort; beide Server müssen das Konto akzeptieren.</string>
+    <string name="mail_account_connecting">Verbinden…</string>
+    <string name="mail_account_connect">Verbinden</string>
+    <string name="mail_account_disconnect">Trennen</string>
+    <string name="mail_account_email">E-Mail</string>
+    <string name="mail_account_username">Benutzername (oder E-Mail)</string>
+    <string name="mail_account_password">App-Passwort</string>
+    <string name="mail_account_password_keep">App-Passwort (leer behält gespeichertes)</string>
+    <string name="mail_account_imap_host">IMAP-Host</string>
+    <string name="mail_account_imap_port">IMAP-TLS-Port (993)</string>
+    <string name="mail_account_smtp_host">SMTP-Host</string>
+    <string name="mail_account_smtp_port">SMTP-Port (465 oder 587)</string>
+</resources>

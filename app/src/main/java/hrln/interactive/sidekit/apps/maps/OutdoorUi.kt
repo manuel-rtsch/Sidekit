@@ -9,9 +9,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -30,20 +33,42 @@ fun PlaceSearch(onBack: () -> Unit, onSelect: (Place) -> Unit) {
     var submitted by remember { mutableStateOf("") }
     var attempt by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf(emptyList<Place>()) }
-    var status by remember { mutableStateOf("Search towns and cities · Open-Meteo / GeoNames") }
+    var status by remember { mutableIntStateOf(R.string.maps_search_hint) }
     WhileVisible(submitted to attempt) {
         if (submitted.isNotBlank()) {
-            status = "Searching…"
-            try { results = searchPlaces(submitted); status = if (results.isEmpty()) "No places found" else "Select a place" }
-            catch (e: CancellationException) { throw e }
-            catch (_: Exception) { status = "Search unavailable. Check your connection and try again." }
+            status = R.string.maps_searching
+            try {
+                results = searchPlaces(submitted)
+                status = if (results.isEmpty()) R.string.maps_no_places else R.string.maps_select_place
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                status = R.string.maps_search_unavailable
+            }
         }
     }
     val list = rememberLazyListState()
-    SidekitScaffold("Find a place", actions = listOf(SideAction.back("back", "Back", onBack), SideAction("search", "Search") { submitted = query.trim(); attempt++; results = emptyList() })) { padding ->
+    SidekitScaffold(
+        stringResource(R.string.maps_find_place),
+        actions = listOf(
+            SideAction.back("back", stringResource(R.string.maps_back), onBack),
+            SideAction("search", stringResource(R.string.maps_search)) {
+                submitted = query.trim()
+                attempt++
+                results = emptyList()
+            }
+        )
+    ) { padding ->
         SidekitList(padding, state = list) {
-            item { SidekitTile(Modifier.listFade(list, 0)) { SidekitTextField(query, { query = it }, Modifier.fillMaxWidth().padding(SidekitTheme.spacing.itemPadding), placeholder = "Town or city", singleLine = true, focusOnKeypad = true, autoFocus = true, onDone = { submitted = query.trim(); attempt++ }) } }
-            item { OutdoorInfo(status, modifier = Modifier.listFade(list, 1)) }
+            item {
+                SidekitTile(Modifier.listFade(list, 0)) {
+                    SidekitTextField(query, { query = it }, Modifier.fillMaxWidth().padding(SidekitTheme.spacing.itemPadding), placeholder = stringResource(R.string.maps_town_or_city), singleLine = true, focusOnKeypad = true, autoFocus = true, onDone = {
+                        submitted = query.trim()
+                        attempt++
+                    })
+                }
+            }
+            item { OutdoorInfo(stringResource(status), modifier = Modifier.listFade(list, 1)) }
             items(results.size) { i -> OutdoorInfo(results[i].name, modifier = Modifier.listFade(list, i + 2), onClick = { onSelect(results[i]) }) }
         }
     }
@@ -53,29 +78,43 @@ fun PlaceSearch(onBack: () -> Unit, onSelect: (Place) -> Unit) {
 @Composable
 fun locationAction(onFix: (Place) -> Unit, onStatus: (String) -> Unit): SideAction {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var request by remember { mutableIntStateOf(0) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (hasLocation(context)) request++
-        else onStatus("Location denied. You can still search for a place.")
+        if (hasLocation(context)) {
+            request++
+        } else {
+            onStatus(resources.getString(R.string.maps_location_denied))
+        }
     }
     WhileVisible(request) {
         if (request > 0) {
-            onStatus("Finding location…")
+            onStatus(resources.getString(R.string.maps_finding_location))
             val place = locate(context)
-            if (place != null) { onFix(place); onStatus(if (hasPreciseLocation(context)) "Precise location" else "Approximate location") }
-            else onStatus("Location unavailable. Enable precise location or search for a place.")
+            if (place != null) {
+                onFix(place)
+                onStatus(resources.getString(if (hasPreciseLocation(context)) R.string.maps_precise_location else R.string.maps_approximate_location))
+            } else {
+                onStatus(resources.getString(R.string.maps_location_unavailable))
+            }
         }
     }
     val badge = when {
-        hasPreciseLocation(context) -> "Locate"
-        hasLocation(context) -> "Enable precise"
-        else -> "Allow"
+        hasPreciseLocation(context) -> stringResource(R.string.maps_locate)
+        hasLocation(context) -> stringResource(R.string.maps_enable_precise)
+        else -> stringResource(R.string.maps_allow)
     }
     return SideAction("location", badge) {
-        if (hasPreciseLocation(context)) request++ else launcher.launch(arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-        ))
+        if (hasPreciseLocation(context)) {
+            request++
+        } else {
+            launcher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
     }
 }
 

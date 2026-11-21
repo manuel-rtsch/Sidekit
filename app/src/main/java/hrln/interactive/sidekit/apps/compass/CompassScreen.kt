@@ -17,12 +17,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
@@ -53,8 +55,8 @@ fun NavGraphBuilder.compassGraph(nav: NavHostController) {
 @Composable
 fun CompassScreen(reading: CompassReading, onCalibrate: () -> Unit = {}, onSave: () -> Unit = {}) {
     SidekitScaffold(
-        title = "Compass",
-        actions = dualArrowActions("Calibrate", "Save", onCalibrate, onSave)
+        title = stringResource(R.string.compass_title),
+        actions = dualArrowActions(stringResource(R.string.compass_calibrate), stringResource(R.string.compass_save), onCalibrate, onSave)
     ) { padding ->
         EverydayContent(padding) {
             // "Compass dial" (96:682): 460 x 278, the 268 dial inset 5 from the top.
@@ -79,13 +81,14 @@ fun CompassScreen(reading: CompassReading, onCalibrate: () -> Unit = {}, onSave:
 private val DialSize = 268.dp
 
 /** Dial-local centres of the N, E, S, W labels, measured from the mock. */
-private val BearingLabels = listOf("N" to Offset(133.5f, 41.5f), "E" to Offset(239.5f, 134.5f), "S" to Offset(133f, 233.5f), "W" to Offset(29.5f, 134.5f))
+private val BearingLabels = listOf(R.string.compass_north to Offset(133.5f, 41.5f), R.string.compass_east to Offset(239.5f, 134.5f), R.string.compass_south to Offset(133f, 233.5f), R.string.compass_west to Offset(29.5f, 134.5f))
 
 /** "Vector compass needle and bearings" (96:683), redrawn from its geometry. */
 @Composable
 internal fun CompassDial(degrees: () -> Float, modifier: Modifier = Modifier) {
     val colors = SidekitTheme.colors
-    Box(modifier.size(DialSize).semantics { contentDescription = "Compass dial" }) {
+    val dialDescription = stringResource(R.string.compass_dial)
+    Box(modifier.size(DialSize).semantics { contentDescription = dialDescription }) {
         Canvas(Modifier.fillMaxSize()) {
             val u = 1.dp.toPx()
             val c = Offset(134 * u, 134 * u)
@@ -120,7 +123,7 @@ internal fun CompassDial(degrees: () -> Float, modifier: Modifier = Modifier) {
                     .size(40.dp, 30.dp),
                 contentAlignment = Alignment.Center
             ) {
-                SidekitText(letter, style = SidekitTheme.typography.small)
+                SidekitText(stringResource(letter), style = SidekitTheme.typography.small)
             }
         }
     }

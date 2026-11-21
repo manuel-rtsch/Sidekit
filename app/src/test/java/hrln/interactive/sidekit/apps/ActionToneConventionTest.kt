@@ -91,10 +91,11 @@ class ActionToneConventionTest {
             val body = text.substring(open + 1, close)
             val args = splitTopLevel(body)
             val labelExpr = args.getOrNull(1)?.let { it.substringAfter("label =", it).trim() } ?: return@mapNotNull null
-            val labels = Regex("\"((?:[^\"\\\\]|\\\\.)*)\"").findAll(labelExpr)
-                .map { it.groupValues[1] }
+            val labels = (
+                Regex("\"((?:[^\"\\\\]|\\\\.)*)\"").findAll(labelExpr).map { it.groupValues[1] }.toList() +
+                    EnglishStrings.referencedIn(labelExpr)
+                )
                 .filter { it.isNotBlank() }
-                .toList()
             if (labels.isEmpty()) return@mapNotNull null
             Action(
                 file = file.name,

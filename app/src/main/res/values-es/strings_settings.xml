@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings: home, system settings, About, Keyboard, Key guide, Hide apps, Arrange apps, Case colour. -->
+<resources>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_home">Inicio</string>
+    <string name="settings_unavailable">Esta pantalla de ajustes no está disponible en este dispositivo.</string>
+    <string name="settings_launcher_default">Vista del launcher</string>
+    <string name="settings_list">Lista</string>
+    <string name="settings_grid">Cuadrícula</string>
+    <string name="settings_compact_layout">Diseño compacto</string>
+    <string name="settings_on">Sí</string>
+    <string name="settings_off">No</string>
+    <string name="settings_home_app">App de inicio</string>
+    <string name="settings_choose">Elegir</string>
+    <string name="settings_arrange_apps">Ordenar apps</string>
+    <string name="settings_case_colour">Color de la funda</string>
+    <string name="settings_original_blue">Azul original</string>
+    <string name="settings_keyboard">Teclado</string>
+    <string name="settings_hide_apps">Ocultar apps</string>
+    <string name="settings_system">Ajustes del sistema</string>
+    <string name="settings_setup_tour">Configuración y teclado</string>
+    <string name="settings_about">Información</string>
+
+    <string name="settings_row_wifi">Wi-Fi</string>
+    <string name="settings_row_wifi_value">Red</string>
+    <string name="settings_row_bluetooth">Bluetooth</string>
+    <string name="settings_row_bluetooth_value">Dispositivos</string>
+    <string name="settings_row_display">Pantalla</string>
+    <string name="settings_row_display_value">Brillo</string>
+    <string name="settings_row_sounds">Sonidos</string>
+    <string name="settings_row_sounds_value">Volumen</string>
+    <string name="settings_row_battery">Batería</string>
+    <string name="settings_row_battery_value">Uso</string>
+    <string name="settings_row_storage">Almacenamiento</string>
+    <string name="settings_row_storage_value">Del dispositivo</string>
+    <string name="settings_row_date_time">Fecha y hora</string>
+    <string name="settings_row_date_time_value">Reloj</string>
+    <string name="settings_row_privacy">Privacidad</string>
+    <string name="settings_row_privacy_value">Permisos</string>
+
+    <string name="settings_about_device">Dispositivo</string>
+    <string name="settings_about_android_version">%1$s (API %2$d)</string>
+    <string name="settings_about_build">Compilación</string>
+    <string name="settings_about_third_party">Apps de terceros</string>
+    <string name="settings_about_third_party_body">Las apps creadas con el SDK de Sidekit pueden leer el color de tu funda y la configuración del teclado. No pueden leer mensajes, credenciales, apps ocultas ni el orden de inicio.</string>
+    <string name="settings_about_dev_build">Versión de desarrollo</string>
+    <string name="settings_about_dev_build_body">Se instala junto a Sidekit como %1$s</string>
+    <string name="settings_about_storage">Almacenamiento</string>
+    <string name="settings_about_storage_value">%1$s libres / %2$s</string>
+    <string name="settings_about_unavailable">No disponible</string>
+    <string name="settings_about_ram">RAM</string>
+    <string name="settings_about_ram_value">%1$s disponibles / %2$s</string>
+    <string name="settings_about_notices">Avisos de código abierto</string>
+    <string name="settings_about_t9">Lista de palabras T9</string>
+
+    <string name="settings_module">Módulo</string>
+    <string name="settings_module_custom">%1$s · personalizado</string>
+    <string name="settings_module_in_use">%1$s · en uso</string>
+    <string name="settings_typing">Escritura</string>
+    <string name="settings_typing_on_screen">Teclado en pantalla</string>
+    <string name="settings_typing_numbers">Números</string>
+    <string name="settings_typing_letters">Letras</string>
+    <string name="settings_back_key">Tecla Atrás</string>
+    <string name="settings_key_mapping">Asignación de teclas</string>
+    <string name="settings_key_mapping_custom">Personalizada</string>
+    <string name="settings_key_mapping_auto">Auto</string>
+    <string name="settings_key_guide">Guía de teclas</string>
+
+    <string name="settings_show_all">Mostrar todo</string>
+    <string name="settings_hide_apps_intro">Oculta apps del inicio, la búsqueda y el dock. Vuelve a tocar para restaurarlas. Las apps siguen instaladas; Ajustes sigue en Opciones.</string>
+    <string name="settings_hidden">Oculta</string>
+    <string name="settings_shown">Visible</string>
+
+    <string name="settings_cancel">Cancelar</string>
+    <string name="settings_discard">Descartar</string>
+    <string name="settings_reset">Restablecer</string>
+    <string name="settings_done">Listo</string>
+    <string name="settings_selected">Seleccionada</string>
+    <string name="settings_in_dock">En el dock</string>
+    <string name="settings_move_up">Subir %1$s</string>
+    <string name="settings_move_down">Bajar %1$s</string>
+    <string name="settings_key_enter">Intro</string>
+    <string name="settings_key_up">Arriba</string>
+    <string name="settings_key_down">Abajo</string>
+    <string name="settings_arrange_select">: Seleccionar app</string>
+    <string name="settings_arrange_move">: Mover app</string>
+
+    <!-- Keypad accessibility service (English in values/strings.xml). -->
+    <string name="keypad_service_label">Teclado de SideKit</string>
+    <string name="keypad_service_summary">Convierte la tecla superior izquierda en Atrás (mantenla para el teléfono)</string>
+    <string name="keypad_service_description">Convierte la tecla superior izquierda del teclado del Sidephone en una tecla Atrás en todas las apps. Al mantenerla pulsada se abre la app de teléfono. SideKit solo vigila esa tecla; no lee la pantalla ni nada de lo que escribes.</string>
+</resources>

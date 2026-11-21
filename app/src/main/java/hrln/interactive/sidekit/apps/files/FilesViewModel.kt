@@ -3,8 +3,13 @@ package hrln.interactive.sidekit.apps.files
 import android.content.Context
 import android.content.IntentSender
 import android.net.Uri
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.NoticeKind
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -34,6 +39,13 @@ data class FilesHome(
     val totalBytes: Long = 0
 )
 
+/** A message for the action bar: a string resource and its arguments, resolved by the screen. */
+@Immutable
+data class FilesNotice(@StringRes val text: Int, val args: List<Any> = emptyList()) {
+    @Composable
+    fun resolve(): String = stringResource(text, *args.toTypedArray())
+}
+
 /** The open folder's contents; [entries] is null while loading. */
 data class FilesListing(val place: FilePlace, val entries: List<FileEntry>?)
 
@@ -61,8 +73,8 @@ class FilesViewModel(
     val pendingDelete: StateFlow<FileEntry?> = _pendingDelete.asStateFlow()
 
     /** A short message shown in the action bar for a moment (e.g. "No app opens this file"). */
-    private val _notice = MutableStateFlow<String?>(null)
-    val notice: StateFlow<String?> = _notice.asStateFlow()
+    private val _notice = MutableStateFlow<FilesNotice?>(null)
+    val notice: StateFlow<FilesNotice?> = _notice.asStateFlow()
     private val _noticeKind = MutableStateFlow(NoticeKind.Other)
     val noticeKind: StateFlow<NoticeKind> = _noticeKind.asStateFlow()
 
@@ -120,7 +132,7 @@ class FilesViewModel(
 
     fun askDelete(entry: FileEntry) {
         if (!entry.canDelete) {
-            say("This file can't be deleted here")
+            say(R.string.files_cant_delete)
             return
         }
         _pendingDelete.value = entry
@@ -146,7 +158,7 @@ class FilesViewModel(
                     onConsent(r.request)
                 }
 
-                DeleteResult.Failed -> say("Couldn't delete ${entry.name}")
+                DeleteResult.Failed -> say(R.string.files_couldnt_delete, entry.name)
             }
         }
     }
@@ -162,10 +174,12 @@ class FilesViewModel(
     private fun removed(entry: FileEntry) {
         _listing.update { it?.copy(entries = it.entries?.filter { e -> e.key != entry.key }) }
         _results.update { r -> r?.filter { it.key != entry.key } }
-        say("Deleted ${entry.name}", NoticeKind.Success)
+        say(FilesNotice(R.string.files_deleted, listOf(entry.name)), NoticeKind.Success)
     }
 
-    fun say(message: String, kind: NoticeKind = NoticeKind.Other) {
+    fun say(@StringRes text: Int, vararg args: Any) = say(FilesNotice(text, args.toList()))
+
+    fun say(message: FilesNotice, kind: NoticeKind = NoticeKind.Other) {
         _notice.value = message
         _noticeKind.value = kind
     }

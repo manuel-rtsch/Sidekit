@@ -1,14 +1,17 @@
 package hrln.interactive.sidekit.apps.settings
 
+import android.content.Context
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.apps.AppsRepository
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApp
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
@@ -53,27 +56,30 @@ internal fun HiddenAppsScreen(back: () -> Unit) {
         installed.filter { it.component.packageName !in nativePackages }
             .map { it.homeId(context) to it.label }.filter { it.first in ids }
     }
+    val settings = stringResource(R.string.settings_title)
+    val showAll = stringResource(R.string.settings_show_all)
     val actions = buildList {
-        add(SideAction.back("back", "Settings", back))
-        if (hidden.isNotEmpty()) add(SideAction("showAll", "Show all", tone = ActionTone.Secondary) { prefs.hiddenApps = emptySet() })
+        add(SideAction.back("back", settings, back))
+        if (hidden.isNotEmpty()) add(SideAction("showAll", showAll, tone = ActionTone.Secondary) { prefs.hiddenApps = emptySet() })
     }
-    SidekitScaffold("Hide apps", actions = actions) { padding ->
-        SidekitList(padding) { hiddenAppChoices(hidden, ported, pinned, native) { prefs.hiddenApps = it } }
+    SidekitScaffold(stringResource(R.string.settings_hide_apps), actions = actions) { padding ->
+        SidekitList(padding) { hiddenAppChoices(context, hidden, ported, pinned, native) { prefs.hiddenApps = it } }
     }
 }
 
 internal fun LazyListScope.hiddenAppChoices(
+    context: Context,
     hidden: Set<String>,
     ported: List<PortedApp>,
     installed: List<Pair<String, String>> = emptyList(),
     native: List<NativeApp> = emptyList(),
     save: (Set<String>) -> Unit
 ) {
-    item { SidekitText("Hide apps from home, search and the dock. Tap again to restore. Apps stay installed; Settings remains in Options.", style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp), maxLines = Int.MAX_VALUE) }
-    val choices = SubApp.entries.map { it.visibilityId() to it.label } +
+    item { SidekitText(stringResource(R.string.settings_hide_apps_intro), style = SidekitTheme.typography.label.copy(fontSize = 24.sp, lineHeight = 30.sp), maxLines = Int.MAX_VALUE) }
+    val choices = SubApp.entries.map { it.visibilityId() to it.label(context) } +
         ported.map { it.visibilityId() to it.label } + native.map { it.visibilityId to it.label } + installed
     items(choices, key = { it.first }) { (id, label) ->
-        SidekitItem(label, Modifier.height(76.dp), secondary = if (id in hidden) "Hidden" else "Shown", onClick = {
+        SidekitItem(label, Modifier.height(76.dp), secondary = stringResource(if (id in hidden) R.string.settings_hidden else R.string.settings_shown), onClick = {
             save(if (id in hidden) hidden - id else hidden + id)
         })
     }

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideport: Android apps redrawn as Sidekit apps. Sideport and Sidekit are product names. -->
+<resources>
+    <!-- %1$s is an app's name. Quote the translated sideport_service_label. -->
+    <string name="sideport_needs_service">Turn on \"Sideport projection\" in Accessibility, then open %1$s again.</string>
+    <string name="sideport_not_installed">%1$s isn\'t installed any more. Hold it in Sideport and choose Remove from Sideport.</string>
+    <string name="sideport_home">Home</string>
+    <string name="sideport_add_app">Add app</string>
+    <string name="sideport_intro">Add an Android app and it opens here as a Sidekit app: its screens redrawn with Sidekit\'s lists and action bar, its chats and music right in Sidekit.</string>
+    <!-- Accessibility label of a long press on an app. -->
+    <string name="sideport_app_hub_label">%1$s messages, media and options</string>
+    <!-- The app shown in its own design rather than Sidekit's. -->
+    <string name="sideport_original">Original</string>
+    <string name="sideport_projection">Projection</string>
+    <string name="sideport_on">On</string>
+    <string name="sideport_off">Off</string>
+    <string name="sideport_turn_on">Turn on</string>
+    <string name="sideport_chats_media">Chats &amp; media</string>
+    <string name="sideport_install_confirm">Confirm installing %1$s.</string>
+    <string name="sideport_installed">%1$s installed and added.</string>
+    <string name="sideport_install_failed_with">Install failed: %1$s</string>
+    <string name="sideport_allow_installs">Allow Sidekit to install apps, then choose Install APK again.</string>
+    <string name="sideport_install_apk">Install APK</string>
+    <string name="sideport_remove">Remove</string>
+    <string name="sideport_uninstall">Uninstall</string>
+    <string name="sideport_confirm_remove">Confirm remove %1$s</string>
+    <string name="sideport_confirm_uninstall">Confirm uninstall %1$s</string>
+    <string name="sideport_back">Back</string>
+    <string name="sideport_app_removed">This app was removed</string>
+    <string name="sideport_now_playing">Now playing</string>
+    <string name="sideport_keep">Keep %1$s</string>
+    <string name="sideport_open">Open</string>
+    <string name="sideport_remove_from">Remove from Sideport</string>
+    <string name="sideport_uninstall_app">Uninstall app</string>
+    <string name="sideport_app_info">App info</string>
+    <string name="sideport_open_as">Open as</string>
+    <string name="sideport_bridge_prompt">Turn on notification access for Sidekit to read and answer %1$s\'s chats here and control its music.</string>
+    <string name="sideport_no_chats">No chats or media yet</string>
+    <string name="sideport_version">Version %1$s</string>
+    <string name="sideport_not_installed_short">Not installed</string>
+    <string name="sideport_chat_gone">This chat can\'t be answered from Sidekit any more. Open the app to reply.</string>
+    <string name="sideport_send">Send</string>
+    <string name="sideport_open_chat">Open chat</string>
+    <string name="sideport_chat">Chat</string>
+    <string name="sideport_reply">Reply</string>
+    <!-- Sender of a message you sent. -->
+    <string name="sideport_you">You</string>
+    <string name="sideport_previous">Previous</string>
+    <string name="sideport_play">Play</string>
+    <string name="sideport_pause">Pause</string>
+    <string name="sideport_next">Next</string>
+    <string name="sideport_nothing_playing">Nothing playing</string>
+    <string name="sideport_unknown">Unknown</string>
+    <string name="sideport_reading_file">Reading file…</string>
+    <string name="sideport_cant_open_file">Couldn\'t open the file</string>
+    <string name="sideport_no_apk">That file has no APK in it</string>
+    <string name="sideport_not_android_app">Not an Android app</string>
+    <string name="sideport_installing">Installing %1$s…</string>
+    <string name="sideport_no_confirm">Android didn\'t ask to confirm the install</string>
+    <string name="sideport_install_cancelled">Install cancelled</string>
+    <string name="sideport_install_blocked">Install blocked</string>
+    <string name="sideport_install_conflict">Conflicts with an installed app (signed by someone else?)</string>
+    <string name="sideport_install_incompatible">Not compatible with this phone</string>
+    <string name="sideport_install_invalid">The APK is damaged or incomplete</string>
+    <string name="sideport_install_storage">Not enough storage</string>
+    <string name="sideport_install_failed">Install failed</string>
+    <string name="sideport_row_gone">That row has gone from the app.</string>
+    <string name="sideport_no_response">The app didn\'t respond to that.</string>
+    <!-- %1$s is a file name. -->
+    <string name="sideport_saved_file">Saved %1$s</string>
+    <string name="sideport_save_failed">Couldn\'t save: %1$s</string>
+    <string name="sideport_original_view">Original view</string>
+    <string name="sideport_opening">Opening %1$s…</string>
+    <string name="sideport_menu">Menu</string>
+    <!-- %1$s is the package of another app the ported app opened. -->
+    <string name="sideport_from">From %1$s</string>
+    <!-- Loads the rows above, in the app's list. -->
+    <string name="sideport_earlier">Earlier</string>
+    <string name="sideport_loading">Loading…</string>
+    <string name="sideport_unreadable">Nothing on this screen can be read. Press Options and choose Original to use the app as it is.</string>
+    <string name="sideport_more_for">More for %1$s</string>
+    <string name="sideport_password">Password</string>
+    <string name="sideport_show_original">Show original</string>
+    <string name="sideport_messages_media">Messages and media</string>
+    <string name="sideport_inspect_screen">Inspect screen</string>
+    <string name="sideport_back_to_sidekit">Back to Sidekit</string>
+    <string name="sideport_app_menu">%1$s menu</string>
+    <string name="sideport_close">Close</string>
+    <string name="sideport_inspect">Inspect</string>
+    <string name="sideport_export">Export</string>
+    <string name="sideport_inspect_unknown">unknown screen</string>
+    <!-- A recipe describes how Sideport reads one app's screen. -->
+    <string name="sideport_inspect_recipe">Recipe: %1$s</string>
+    <string name="sideport_inspect_generic">none (generic)</string>
+    <plurals name="sideport_inspect_nodes">
+        <item quantity="one">%d node</item>
+        <item quantity="other">%d nodes</item>
+    </plurals>
+    <plurals name="sideport_inspect_unlabelled">
+        <item quantity="one">%d unlabelled button</item>
+        <item quantity="other">%d unlabelled buttons</item>
+    </plurals>
+    <!-- Accessibility label of the pill over an app in its original design. -->
+    <string name="sideport_show_in_sidekit">Show %1$s in Sidekit</string>
+</resources>

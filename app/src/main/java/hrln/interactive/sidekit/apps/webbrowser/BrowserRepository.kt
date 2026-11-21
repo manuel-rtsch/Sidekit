@@ -5,6 +5,15 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.compose.runtime.Immutable
 import androidx.core.util.AtomicFile
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.IOException
+import java.net.URI
+import java.net.URLEncoder
+import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,21 +25,14 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.IOException
-import java.net.URI
-import java.net.URLEncoder
-import java.util.Locale
 
 /** A tab: only its address and title are kept; just one tab at a time has a live WebView. */
 @Immutable
 data class BrowserTab(val id: Long, val url: String, val title: String) {
     val isBlank: Boolean get() = url.isEmpty()
-    val label: String get() = title.ifBlank { BrowserUrls.host(url).ifEmpty { "New tab" } }
+
+    /** The page's title, else its host; empty for a blank tab (the screen shows "New tab"). */
+    val label: String get() = title.ifBlank { BrowserUrls.host(url) }
 }
 
 @Immutable
@@ -47,7 +49,7 @@ data class BrowserData(
     /** Newest first, capped at [BrowserRepository.HISTORY_MAX]. */
     val history: List<Visit> = emptyList(),
     /** WebView text zoom, percent. */
-    val textZoom: Int = BrowserRepository.DEFAULT_TEXT_ZOOM,
+    val textZoom: Int = BrowserRepository.DEFAULT_TEXT_ZOOM
 ) {
     val currentTab: BrowserTab? get() = tabs.firstOrNull { it.id == currentTabId } ?: tabs.firstOrNull()
     fun isBookmarked(url: String) = url.isNotEmpty() && bookmarks.any { it.url == url }
@@ -122,11 +124,22 @@ class FileBrowserStore(file: File) : BrowserStore {
             d.writeLong(data.currentTabId)
             d.writeInt(data.textZoom)
             d.writeInt(data.tabs.size)
-            data.tabs.forEach { d.writeLong(it.id); d.writeUTF(it.url.take(URL_MAX)); d.writeUTF(it.title.take(TITLE_MAX)) }
+            data.tabs.forEach {
+                d.writeLong(it.id)
+                d.writeUTF(it.url.take(URL_MAX))
+                d.writeUTF(it.title.take(TITLE_MAX))
+            }
             d.writeInt(data.bookmarks.size)
-            data.bookmarks.forEach { d.writeUTF(it.url.take(URL_MAX)); d.writeUTF(it.title.take(TITLE_MAX)) }
+            data.bookmarks.forEach {
+                d.writeUTF(it.url.take(URL_MAX))
+                d.writeUTF(it.title.take(TITLE_MAX))
+            }
             d.writeInt(data.history.size)
-            data.history.forEach { d.writeUTF(it.url.take(URL_MAX)); d.writeUTF(it.title.take(TITLE_MAX)); d.writeLong(it.at) }
+            data.history.forEach {
+                d.writeUTF(it.url.take(URL_MAX))
+                d.writeUTF(it.title.take(TITLE_MAX))
+                d.writeLong(it.at)
+            }
             d.flush()
             file.finishWrite(out)
         } catch (e: IOException) {
@@ -153,7 +166,7 @@ class BrowserRepository(
     private val store: BrowserStore,
     scope: CoroutineScope,
     io: CoroutineDispatcher = Dispatchers.IO,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     private val _data = MutableStateFlow<BrowserData?>(null)
 
@@ -270,8 +283,7 @@ class BrowserRepository(
 
     fun setTextZoom(percent: Int) = mutate { d -> d.copy(textZoom = percent.coerceIn(50, 300)) }
 
-    private inline fun mutate(crossinline change: (BrowserData) -> BrowserData) =
-        _data.update { change(withTab(it ?: BrowserData())) }
+    private inline fun mutate(crossinline change: (BrowserData) -> BrowserData) = _data.update { change(withTab(it ?: BrowserData())) }
 
     @Synchronized
     private fun nextId(d: BrowserData): Long {
@@ -300,9 +312,16 @@ object BrowserTabMemory {
     }
 
     @Synchronized fun state(tab: Long): Bundle? = states[tab]
-    @Synchronized fun putState(tab: Long, state: Bundle) { states[tab] = state }
+
+    @Synchronized fun putState(tab: Long, state: Bundle) {
+        states[tab] = state
+    }
+
     @Synchronized fun thumbnail(tab: Long): Bitmap? = thumbs[tab]
-    @Synchronized fun putThumbnail(tab: Long, bitmap: Bitmap) { thumbs[tab] = bitmap }
+
+    @Synchronized fun putThumbnail(tab: Long, bitmap: Bitmap) {
+        thumbs[tab] = bitmap
+    }
 
     @Synchronized fun forget(tab: Long) {
         states.remove(tab)
@@ -316,7 +335,7 @@ object Browser {
     fun repository(context: Context): BrowserRepository = repository ?: synchronized(this) {
         repository ?: BrowserRepository(
             FileBrowserStore(File(context.applicationContext.filesDir, "browser.bin")),
-            CoroutineScope(SupervisorJob()),
+            CoroutineScope(SupervisorJob())
         ).also { repository = it }
     }
 }

@@ -5,6 +5,7 @@ import android.content.*
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
+import hrln.interactive.sidekit.R
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -54,7 +55,7 @@ class ClockAlarms(private val context: Context) : ClockScheduling {
     }
     fun notify(ring: Ringing) {
         val manager = context.getSystemService(NotificationManager::class.java)
-        val channel = NotificationChannel("clock_alarms", "Clock alarms", NotificationManager.IMPORTANCE_HIGH).apply {
+        val channel = NotificationChannel("clock_alarms", context.getString(R.string.clock_channel), NotificationManager.IMPORTANCE_HIGH).apply {
             setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build())
             enableVibration(true)
         }
@@ -67,11 +68,11 @@ class ClockAlarms(private val context: Context) : ClockScheduling {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notification = Notification.Builder(context, "clock_alarms")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle(ring.label)
-            .setContentText("Snooze for 5 minutes or dismiss").setCategory(Notification.CATEGORY_ALARM)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle(ring.title(context))
+            .setContentText(context.getString(R.string.clock_notification_text)).setCategory(Notification.CATEGORY_ALARM)
             .setContentIntent(open).setFullScreenIntent(open, true).setOngoing(true)
-            .addAction(Notification.Action.Builder(null, "Snooze", action(SNOOZE)).build())
-            .addAction(Notification.Action.Builder(null, "Dismiss", action(DISMISS)).build())
+            .addAction(Notification.Action.Builder(null, context.getString(R.string.clock_snooze), action(SNOOZE)).build())
+            .addAction(Notification.Action.Builder(null, context.getString(R.string.clock_dismiss), action(DISMISS)).build())
             .setTimeoutAfter(600000).build().apply { flags = flags or Notification.FLAG_INSISTENT }
         try {
             manager.notify(NOTIFICATION_ID, notification)

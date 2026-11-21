@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.*
 import hrln.interactive.sidekit.design.theme.SidekitTheme
@@ -36,7 +38,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
     var end by rememberSaveable { mutableStateOf<String?>(null) }
     var calendarId by rememberSaveable { mutableStateOf<Long?>(null) }
     var allDay by rememberSaveable { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<Int?>(null) }
     var busy by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     var choosingCalendar by remember { mutableStateOf(false) }
@@ -45,7 +47,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
             calendars = repo.calendars()
             original = id?.let { repo.event(it) }
             if (id != null && original == null) {
-                error = "This event no longer exists."
+                error = R.string.calendar_error_missing
                 return@LaunchedEffect
             }
             val event = original
@@ -61,21 +63,21 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            error = "Could not open event calendars. Check calendar access and try again."
+            error = R.string.calendar_error_open
         }
     }
     fun save() {
         if (!ready || busy) return
         val calendar = calendarId
         if (calendar == null || calendars.none { it.id == calendar }) {
-            error = "Choose a writable device calendar."
+            error = R.string.calendar_error_choose
             return
         }
         val zone = if (allDay) ZoneOffset.UTC else original?.timezone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: ZoneId.systemDefault()
         val begin = runCatching { LocalDateTime.parse(start, EventDateFormat).let { if (allDay) it.toLocalDate().atStartOfDay() else it }.atZone(zone).toInstant().toEpochMilli() }.getOrNull()
         val finish = runCatching { LocalDateTime.parse(end, EventDateFormat).let { if (allDay) it.toLocalDate().atStartOfDay() else it }.atZone(zone).toInstant().toEpochMilli() }.getOrNull()
         if (title.isNullOrBlank() || begin == null || finish == null || finish <= begin) {
-            error = "Enter a title and YYYY-MM-DD HH:mm times. End must be after start."
+            error = R.string.calendar_error_invalid
             return
         }
         busy = true
@@ -86,7 +88,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                error = "Could not save. Check calendar access and try again."
+                error = R.string.calendar_error_save
             } finally {
                 busy = false
             }
@@ -100,21 +102,23 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
     }
     SidekitScaffold(
         modifier = Modifier.focusRequester(focus).focusable(),
-        title = if (choosingCalendar) {
-            "Choose calendar"
-        } else if (id == null) {
-            "New event"
-        } else {
-            "Edit event"
-        },
+        title = stringResource(
+            if (choosingCalendar) {
+                R.string.calendar_choose_calendar
+            } else if (id == null) {
+                R.string.calendar_new_event
+            } else {
+                R.string.calendar_edit_event
+            }
+        ),
         actions = when {
-            busy -> listOf(SideAction("main", "Saving…") {})
+            busy -> listOf(SideAction("main", stringResource(R.string.calendar_saving)) {})
 
-            choosingCalendar -> listOf(SideAction("main", "Back") { choosingCalendar = false })
+            choosingCalendar -> listOf(SideAction("main", stringResource(R.string.calendar_back)) { choosingCalendar = false })
 
             deleting -> listOf(
                 SideAction.cancel("cancel") { deleting = false },
-                SideAction.delete("main", if (original?.rrule.isNullOrBlank()) "Delete" else "Delete series") {
+                SideAction.delete("main", stringResource(if (original?.rrule.isNullOrBlank()) R.string.calendar_delete else R.string.calendar_delete_series)) {
                     if (id != null) {
                         busy = true
                         scope.launch {
@@ -124,7 +128,7 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (_: Exception) {
-                                error = "Could not delete. Check calendar access and try again."
+                                error = R.string.calendar_error_delete
                                 deleting = false
                             } finally {
                                 busy = false
@@ -150,15 +154,15 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                     }
                 }
             } else {
-                error?.let { item { SidekitItem(it, Modifier.listFade(list, 0)) } }
-                if (!ready && error == null) item { SidekitItem("Loading…", Modifier.listFade(list, 0)) }
+                error?.let { message -> item { SidekitItem(stringResource(message), Modifier.listFade(list, 0)) } }
+                if (!ready && error == null) item { SidekitItem(stringResource(R.string.calendar_loading), Modifier.listFade(list, 0)) }
                 if (ready) {
-                    if (!original?.rrule.isNullOrBlank()) item { SidekitItem("Changes and deletion apply to the whole recurring series.", Modifier.listFade(list, 0)) }
-                    item { SidekitCard(Modifier.listFade(list, 1).fillMaxWidth()) { SidekitTextField(title.orEmpty(), { title = it }, placeholder = "Title", focusOnKeypad = true, autoFocus = id == null, singleLine = true, onDone = { focus.requestFocus() }) } }
+                    if (!original?.rrule.isNullOrBlank()) item { SidekitItem(stringResource(R.string.calendar_series_notice), Modifier.listFade(list, 0)) }
+                    item { SidekitCard(Modifier.listFade(list, 1).fillMaxWidth()) { SidekitTextField(title.orEmpty(), { title = it }, placeholder = stringResource(R.string.calendar_event_title), focusOnKeypad = true, autoFocus = id == null, singleLine = true, onDone = { focus.requestFocus() }) } }
                     item {
                         SidekitCard(Modifier.listFade(list, 2).fillMaxWidth()) {
                             Column {
-                                SidekitText("Start · YYYY-MM-DD HH:mm", style = SidekitTheme.typography.caption)
+                                SidekitText(stringResource(R.string.calendar_start_format), style = SidekitTheme.typography.caption)
                                 SidekitTextField(start.orEmpty(), { start = it }, singleLine = true, dictation = false, onDone = { focus.requestFocus() })
                             }
                         }
@@ -166,14 +170,14 @@ fun CalendarEditor(id: Long?, date: LocalDate, onClose: () -> Unit) {
                     item {
                         SidekitCard(Modifier.listFade(list, 3).fillMaxWidth()) {
                             Column {
-                                SidekitText("End · YYYY-MM-DD HH:mm", style = SidekitTheme.typography.caption)
+                                SidekitText(stringResource(R.string.calendar_end_format), style = SidekitTheme.typography.caption)
                                 SidekitTextField(end.orEmpty(), { end = it }, singleLine = true, dictation = false, onDone = { focus.requestFocus() })
                             }
                         }
                     }
-                    item { SidekitItem(if (allDay) "All day · End date is exclusive" else "Timed event", Modifier.listFade(list, 4), onClick = { allDay = !allDay }) }
-                    item { SidekitItem(calendars.find { it.id == calendarId }?.name ?: "No writable calendar", Modifier.listFade(list, 5), onClick = { choosingCalendar = true }) }
-                    if (calendars.isEmpty()) item { SidekitItem("Add a calendar account in Android settings first. Sidekit saves events to your device calendars.", Modifier.listFade(list, 6)) }
+                    item { SidekitItem(stringResource(if (allDay) R.string.calendar_all_day_exclusive else R.string.calendar_timed), Modifier.listFade(list, 4), onClick = { allDay = !allDay }) }
+                    item { SidekitItem(calendars.find { it.id == calendarId }?.name ?: stringResource(R.string.calendar_no_writable), Modifier.listFade(list, 5), onClick = { choosingCalendar = true }) }
+                    if (calendars.isEmpty()) item { SidekitItem(stringResource(R.string.calendar_add_account), Modifier.listFade(list, 6)) }
                 }
             }
         }

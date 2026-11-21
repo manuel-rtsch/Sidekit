@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clock: alarms, timer and stopwatch. -->
+<resources>
+    <string name="clock_title">Clock</string>
+    <!-- Tab and screen title; three tabs share one row, keep short. -->
+    <string name="clock_tab_alarms">Alarms</string>
+    <string name="clock_tab_timer">Timer</string>
+    <string name="clock_tab_stopwatch">Stopwatch</string>
+    <!-- Title of the ringing notification and screen. -->
+    <string name="clock_timer_finished">Timer finished</string>
+    <!-- %1$s is the alarm time, e.g. "Alarm 07:00". -->
+    <string name="clock_alarm_title">Alarm %1$s</string>
+    <string name="clock_error_load">Could not load Clock data.</string>
+    <string name="clock_error_save">Clock could not save or schedule. Please retry.</string>
+    <!-- Notification channel name in Android settings. -->
+    <string name="clock_channel">Clock alarms</string>
+    <string name="clock_notification_text">Snooze for 5 minutes or dismiss</string>
+    <string name="clock_snooze">Snooze</string>
+    <string name="clock_dismiss">Dismiss</string>
+    <string name="clock_close">Close</string>
+    <string name="clock_no_ringing">No alarm ringing</string>
+    <string name="clock_snooze_hint">Snooze for 5 minutes</string>
+    <string name="clock_allow">Allow</string>
+    <string name="clock_back">Back</string>
+    <string name="clock_new_alarm">New alarm</string>
+    <string name="clock_edit_alarm">Edit alarm</string>
+    <string name="clock_pause">Pause</string>
+    <string name="clock_resume">Resume</string>
+    <string name="clock_start">Start</string>
+    <string name="clock_reset">Reset</string>
+    <!-- Action: record a stopwatch lap. -->
+    <string name="clock_lap">Lap</string>
+    <string name="clock_lap_number">Lap %1$d</string>
+    <string name="clock_error_minutes">Enter 1–10080 minutes.</string>
+    <!-- Accessibility label. -->
+    <string name="clock_undo_delete">Undo delete alarm</string>
+    <string name="clock_access_title">Clock access</string>
+    <string name="clock_alarm_access">Alarm access</string>
+    <string name="clock_access_notifications">Allow notifications to hear alarms.</string>
+    <string name="clock_access_exact">Allow exact alarms for on-time ringing. Until then, alarms may be delayed.</string>
+    <string name="clock_access_fullscreen">Allow full-screen alarms to show over the lock screen.</string>
+    <string name="clock_access_ready">Alarm access is ready</string>
+    <string name="clock_review_access">Review alarm access</string>
+    <string name="clock_loading">Loading…</string>
+    <string name="clock_no_alarms">No alarms yet</string>
+    <!-- Alarm row detail: on/off, then its repeat days or "Once". -->
+    <string name="clock_alarm_summary">%1$s · %2$s</string>
+    <!-- An alarm that will ring. -->
+    <string name="clock_on">On</string>
+    <string name="clock_off">Off</string>
+    <!-- An alarm that does not repeat. -->
+    <string name="clock_once">Once</string>
+    <!-- Timer length field placeholder. -->
+    <string name="clock_minutes">Minutes</string>
+    <!-- HH:mm is the time format the field accepts; keep it as is. -->
+    <string name="clock_error_time">Use HH:mm, from 00:00 to 23:59.</string>
+    <string name="clock_alarm_on">Alarm on</string>
+    <string name="clock_alarm_off">Alarm off</string>
+    <!-- Marks a weekday the alarm repeats on. -->
+    <string name="clock_repeat">Repeat</string>
+</resources>

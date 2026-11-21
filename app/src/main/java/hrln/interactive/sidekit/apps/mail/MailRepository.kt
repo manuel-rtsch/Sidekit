@@ -1,7 +1,15 @@
 package hrln.interactive.sidekit.apps.mail
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.core.util.AtomicFile
+import hrln.interactive.sidekit.R
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,15 +20,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.IOException
 
 /** Local folders and the latest IMAP inbox snapshot. */
-enum class MailFolder(val label: String) { Draft("Drafts"), Outbox("Outbox"), HandedOff("Handed off"), Inbox("Inbox"), Sent("Sent") }
+enum class MailFolder(@StringRes val label: Int, @StringRes val empty: Int) {
+    Draft(R.string.mail_folder_drafts, R.string.mail_empty_drafts),
+    Outbox(R.string.mail_folder_outbox, R.string.mail_empty_outbox),
+    HandedOff(R.string.mail_folder_handed_off, R.string.mail_empty_handed_off),
+    Inbox(R.string.mail_folder_inbox, R.string.mail_empty_inbox),
+    Sent(R.string.mail_folder_sent, R.string.mail_empty_sent)
+}
 
 enum class MailSendResult { HandedOff, Unavailable, Sent }
 
@@ -39,15 +47,25 @@ interface MailStore {
 class FileMailStore(file: File) : MailStore {
     private val file = AtomicFile(file)
     override fun read(): List<MailMessage> {
-        val stream = try { file.openRead() } catch (_: IOException) { return emptyList() }
+        val stream = try {
+            file.openRead()
+        } catch (_: IOException) {
+            return emptyList()
+        }
         return DataInputStream(BufferedInputStream(stream)).use { input ->
             if (input.readInt() != MAGIC) throw IOException("Invalid mail file")
             val version = input.readInt()
             if (version !in 1..VERSION) throw IOException("Unknown mail version")
             List(input.readInt()) {
                 MailMessage(
-                    sender = input.readUTF(), subject = input.readUTF(), body = input.readUTF(), to = input.readUTF(),
-                    id = input.readLong(), folder = MailFolder.valueOf(input.readUTF()), updatedAt = input.readLong(), remoteKey = if (version >= 2) input.readUTF() else "",
+                    sender = input.readUTF(),
+                    subject = input.readUTF(),
+                    body = input.readUTF(),
+                    to = input.readUTF(),
+                    id = input.readLong(),
+                    folder = MailFolder.valueOf(input.readUTF()),
+                    updatedAt = input.readLong(),
+                    remoteKey = if (version >= 2) input.readUTF() else ""
                 )
             }
         }
@@ -57,38 +75,66 @@ class FileMailStore(file: File) : MailStore {
         val out = file.startWrite()
         try {
             val data = DataOutputStream(BufferedOutputStream(out))
-            data.writeInt(MAGIC); data.writeInt(VERSION); data.writeInt(messages.size)
+            data.writeInt(MAGIC)
+            data.writeInt(VERSION)
+            data.writeInt(messages.size)
             messages.forEach {
-                data.writeUTF(it.sender.take(300)); data.writeUTF(it.subject.take(500)); data.writeUTF(it.body.take(50_000))
-                data.writeUTF(it.to.take(300)); data.writeLong(it.id); data.writeUTF(it.folder.name); data.writeLong(it.updatedAt); data.writeUTF(it.remoteKey)
+                data.writeUTF(it.sender.take(300))
+                data.writeUTF(it.subject.take(500))
+                data.writeUTF(it.body.take(50_000))
+                data.writeUTF(it.to.take(300))
+                data.writeLong(it.id)
+                data.writeUTF(it.folder.name)
+                data.writeLong(it.updatedAt)
+                data.writeUTF(it.remoteKey)
             }
-            data.flush(); file.finishWrite(out)
-        } catch (e: IOException) { file.failWrite(out); throw e }
+            data.flush()
+            file.finishWrite(out)
+        } catch (e: IOException) {
+            file.failWrite(out)
+            throw e
+        }
     }
 
-    private companion object { const val MAGIC = 0x534B4D4C; const val VERSION = 2 }
+    private companion object {
+        const val MAGIC = 0x534B4D4C
+        const val VERSION = 2
+    }
 }
 
 class MailRepository(
     private val store: MailStore,
     scope: CoroutineScope,
     io: CoroutineDispatcher = Dispatchers.IO,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     private val _messages = MutableStateFlow<List<MailMessage>?>(null)
     val messages: StateFlow<List<MailMessage>?> = _messages.asStateFlow()
     private var lastId = 0L
-    val error = MutableStateFlow<String?>(null)
+
+    /** A storage problem to show, as a string resource. */
+    val error = MutableStateFlow<Int?>(null)
 
     init {
         scope.launch(io) {
-            val loaded = try { store.read() } catch (_: Exception) { error.value = "Mail storage cannot be read; existing data has been preserved"; return@launch }
+            val loaded = try {
+                store.read()
+            } catch (_: Exception) {
+                error.value = R.string.mail_error_storage_read
+                return@launch
+            }
             lastId = loaded.maxOfOrNull { it.id } ?: 0
             _messages.value = loaded
             var written = loaded
             _messages.filterNotNull().conflate().collect {
                 if (it !== written) {
-                    try { store.write(it); written = it; error.value = null } catch (_: Exception) { error.value = "Mail could not be saved on this phone" }
+                    try {
+                        store.write(it)
+                        written = it
+                        error.value = null
+                    } catch (_: Exception) {
+                        error.value = R.string.mail_error_save
+                    }
                 }
             }
         }
@@ -100,8 +146,13 @@ class MailRepository(
         val cleanTo = to.trim()
         val old = _messages.value.orEmpty().firstOrNull { it.id == id }
         val message = MailMessage(
-            sender = cleanTo.ifEmpty { "No recipient" }, subject = subject.trim(), body = body.trim(), to = cleanTo,
-            id = old?.id ?: ++lastId, folder = folder, updatedAt = clock(),
+            sender = cleanTo.ifEmpty { "No recipient" },
+            subject = subject.trim(),
+            body = body.trim(),
+            to = cleanTo,
+            id = old?.id ?: ++lastId,
+            folder = folder,
+            updatedAt = clock()
         )
         _messages.value = listOf(message) + _messages.value.orEmpty().filterNot { it.id == message.id }
         return message

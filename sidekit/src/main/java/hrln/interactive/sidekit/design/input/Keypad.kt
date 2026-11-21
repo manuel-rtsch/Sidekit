@@ -2,12 +2,17 @@ package hrln.interactive.sidekit.design.input
 
 import android.content.Context
 import android.view.KeyEvent
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.design.R
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
@@ -17,19 +22,31 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The Sidephone's swappable keypad modules. */
-enum class KeypadModule(val label: String, val typesOnKeypad: Boolean) {
+/**
+ * The Sidephone's swappable keypad modules. [label] is the English name, kept for callers that
+ * still show it; [labelRes] (through [label] with a Context, or [displayLabel]) is the name in the
+ * app language.
+ */
+enum class KeypadModule(val label: String, @StringRes val labelRes: Int, val typesOnKeypad: Boolean) {
     /** Phone keypad with D-pad, OK and call keys. */
-    T9("T9", true),
+    T9("T9", R.string.sk_sidekit_keypad_t9, true),
 
     /** Two letters per key, 20 keys. */
-    Qwerty("Mini QWERTY", true),
+    Qwerty("Mini QWERTY", R.string.sk_sidekit_keypad_qwerty, true),
 
     /** Ring of eight keys with a centre button. */
-    Sundial("Sundial", false),
+    Sundial("Sundial", R.string.sk_sidekit_keypad_sundial, false),
 
     /** D-pad, A / B / X / Y and a shoulder key. */
-    GamePad("Game controller", false)
+    GamePad("Game controller", R.string.sk_sidekit_keypad_gamepad, false);
+
+    /** The module's name in the app language. */
+    fun label(context: Context): String = context.getString(labelRes)
+
+    /** The module's name in the app language. */
+    @Composable
+    @ReadOnlyComposable
+    fun displayLabel(): String = stringResource(labelRes)
 }
 
 /**

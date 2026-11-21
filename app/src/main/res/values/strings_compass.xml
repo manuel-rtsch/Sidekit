@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compass: the live dial, its saved headings and the design mock. N/E/S/W are the dial's one-letter cardinal points. -->
+<resources>
+    <string name="compass_title">Compass</string>
+    <string name="compass_calibrate">Calibrate</string>
+    <string name="compass_save">Save</string>
+    <string name="compass_hold_flat">Hold flat · magnetic north</string>
+    <string name="compass_no_sensor">No compass sensor on this device</string>
+    <string name="compass_calibrate_hint">Move phone in a figure eight, away from metal; then hold flat</string>
+    <string name="compass_waiting_heading">Waiting for a heading</string>
+    <string name="compass_loading_bookmarks">Loading bookmarks…</string>
+    <string name="compass_saved_with_location">Heading saved with location</string>
+    <string name="compass_saved_without_location">Heading saved without location</string>
+    <string name="compass_waiting">Waiting…</string>
+    <string name="compass_degrees_magnetic">%1$d° magnetic</string>
+    <string name="compass_low_accuracy">Low accuracy: move phone in a figure eight, away from metal</string>
+    <string name="compass_location_optional">Location is optional</string>
+    <!-- "Allow" is the maps_allow location action. -->
+    <string name="compass_location_optional_detail">Options → Allow attaches an approximate location to saved headings</string>
+    <string name="compass_bookmarks">Bookmarks</string>
+    <string name="compass_saved_headings">Saved headings</string>
+    <string name="compass_back">Back</string>
+    <string name="compass_undo">Undo</string>
+    <string name="compass_undo_delete">Undo delete heading</string>
+    <string name="compass_no_saved">No saved headings</string>
+    <string name="compass_no_location">No location</string>
+    <string name="compass_dial">Compass dial</string>
+    <string name="compass_north">N</string>
+    <string name="compass_east">E</string>
+    <string name="compass_south">S</string>
+    <string name="compass_west">W</string>
+</resources>

@@ -13,29 +13,38 @@ import android.os.Environment
 import android.os.StatFs
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.R
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 
 /**
  * Where a listing comes from. Encoded as a string ([encode]/[decode]) so it can travel in a
  * navigation route.
  */
 sealed interface FilePlace {
-    val title: String
-
     /** A MediaStore collection (needs the storage permission on API 31/32). */
-    data class Media(val kind: MediaKind) : FilePlace {
-        override val title get() = kind.title
-    }
+    data class Media(val kind: MediaKind) : FilePlace
 
     /** A folder inside a tree the user granted through the Storage Access Framework. */
-    data class Tree(val tree: Uri, val documentId: String, override val title: String) : FilePlace
+    data class Tree(val tree: Uri, val documentId: String, val title: String) : FilePlace
+
+    /** What the place is called on screen: the collection's name, or the folder's own. */
+    @Composable
+    fun title(): String = when (this) {
+        is Media -> stringResource(kind.title)
+        is Tree -> title
+    }
 
     fun encode(): String = when (this) {
         is Media -> "media:${kind.name}"
@@ -45,21 +54,23 @@ sealed interface FilePlace {
     companion object {
         fun decode(s: String): FilePlace? = when {
             s.startsWith("media:") -> MediaKind.entries.firstOrNull { it.name == s.removePrefix("media:") }?.let(::Media)
+
             s.startsWith("tree:") -> s.removePrefix("tree:").split('\u001F').takeIf { it.size == 3 }?.let { (t, d, n) ->
                 Tree(Uri.parse(t), d, n)
             }
+
             else -> null
         }
     }
 }
 
-enum class MediaKind(val title: String) {
-    Recent("Recents"),
-    Documents("Documents"),
-    Downloads("Downloads"),
-    Images("Photos"),
-    Video("Videos"),
-    Audio("Music"),
+enum class MediaKind(@StringRes val title: Int) {
+    Recent(R.string.files_media_recent),
+    Documents(R.string.files_media_documents),
+    Downloads(R.string.files_media_downloads),
+    Images(R.string.files_media_photos),
+    Video(R.string.files_media_videos),
+    Audio(R.string.files_media_music)
 }
 
 /** One file or folder in a listing. */
@@ -73,15 +84,15 @@ data class FileEntry(
     val isDirectory: Boolean = false,
     val canDelete: Boolean = true,
     /** For folders inside a SAF tree: where tapping goes. */
-    val folder: FilePlace.Tree? = null,
+    val folder: FilePlace.Tree? = null
 ) {
     val key: String get() = uri.toString()
 }
 
-enum class FileSort(val label: String) {
-    Name("Name"),
-    Newest("Newest"),
-    Largest("Largest");
+enum class FileSort(@StringRes val label: Int) {
+    Name(R.string.files_sort_name),
+    Newest(R.string.files_sort_newest),
+    Largest(R.string.files_sort_largest);
 
     /** Folders first, then by this order. */
     fun apply(entries: List<FileEntry>): List<FileEntry> {
@@ -232,7 +243,7 @@ class AndroidFilesSource(context: Context) : FilesSource {
             }
         } catch (_: Exception) {
             null
-        } ?: DocumentsContract.getTreeDocumentId(tree).substringAfterLast(':').substringAfterLast('/').ifEmpty { "Folder" }
+        } ?: DocumentsContract.getTreeDocumentId(tree).substringAfterLast(':').substringAfterLast('/').ifEmpty { app.getString(R.string.files_folder) }
     }
 
     private fun listTree(location: FilePlace.Tree): List<FileEntry> {
@@ -243,7 +254,7 @@ class AndroidFilesSource(context: Context) : FilesSource {
             DocumentsContract.Document.COLUMN_MIME_TYPE,
             DocumentsContract.Document.COLUMN_SIZE,
             DocumentsContract.Document.COLUMN_LAST_MODIFIED,
-            DocumentsContract.Document.COLUMN_FLAGS,
+            DocumentsContract.Document.COLUMN_FLAGS
         )
         return try {
             resolver.query(children, projection, null, null, null)?.use { c ->
@@ -262,7 +273,7 @@ class AndroidFilesSource(context: Context) : FilesSource {
                         modified = c.getLongOr(4),
                         isDirectory = dir,
                         canDelete = flags and DocumentsContract.Document.FLAG_SUPPORTS_DELETE != 0,
-                        folder = if (dir) FilePlace.Tree(location.tree, id, name) else null,
+                        folder = if (dir) FilePlace.Tree(location.tree, id, name) else null
                     )
                 }
                 out
@@ -279,7 +290,7 @@ class AndroidFilesSource(context: Context) : FilesSource {
             MediaStore.MediaColumns.DISPLAY_NAME,
             MediaStore.MediaColumns.MIME_TYPE,
             MediaStore.MediaColumns.SIZE,
-            MediaStore.MediaColumns.DATE_MODIFIED,
+            MediaStore.MediaColumns.DATE_MODIFIED
         )
         return try {
             resolver.query(collection, projection, bundle(selection, args, MediaStore.MediaColumns.DATE_MODIFIED + " DESC", limit), null)?.use { c ->
@@ -291,7 +302,7 @@ class AndroidFilesSource(context: Context) : FilesSource {
                         name = name,
                         mime = c.getString(2) ?: "application/octet-stream",
                         size = c.getLongOr(3),
-                        modified = c.getLongOr(4) * 1000,
+                        modified = c.getLongOr(4) * 1000
                     )
                 }
                 out
@@ -307,10 +318,15 @@ class AndroidFilesSource(context: Context) : FilesSource {
         val args = ArrayList<String>()
         val uri = when (kind) {
             MediaKind.Images -> MediaStore.Images.Media.getContentUri(volume)
+
             MediaKind.Video -> MediaStore.Video.Media.getContentUri(volume)
+
             MediaKind.Audio -> MediaStore.Audio.Media.getContentUri(volume)
+
             MediaKind.Downloads -> MediaStore.Downloads.getContentUri(volume)
+
             MediaKind.Recent -> MediaStore.Files.getContentUri(volume)
+
             MediaKind.Documents -> MediaStore.Files.getContentUri(volume).also {
                 clauses += MediaStore.Files.FileColumns.MEDIA_TYPE + "=?"
                 args += MediaStore.Files.FileColumns.MEDIA_TYPE_DOCUMENT.toString()
@@ -344,22 +360,28 @@ class AndroidFilesSource(context: Context) : FilesSource {
     }
 }
 
-/** Labels for sizes and dates in file rows. */
+/** Labels for sizes and dates in file rows, in the app's language. */
 object FileFormat {
-    fun size(bytes: Long): String = when {
-        bytes <= 0 -> ""
-        bytes < 1_000 -> "$bytes B"
-        bytes < 1_000_000 -> String.format(Locale.ROOT, "%.0f KB", bytes / 1e3)
-        bytes < 1_000_000_000 -> String.format(Locale.ROOT, "%.1f MB", bytes / 1e6)
-        else -> String.format(Locale.ROOT, "%.1f GB", bytes / 1e9)
+    @Composable
+    fun size(bytes: Long): String {
+        val locale = LocalConfiguration.current.locales[0]
+        return when {
+            bytes <= 0 -> ""
+            bytes < 1_000 -> stringResource(R.string.files_size_bytes, String.format(locale, "%d", bytes))
+            bytes < 1_000_000 -> stringResource(R.string.files_size_kb, String.format(locale, "%.0f", bytes / 1e3))
+            bytes < 1_000_000_000 -> stringResource(R.string.files_size_mb, String.format(locale, "%.1f", bytes / 1e6))
+            else -> stringResource(R.string.files_size_gb, String.format(locale, "%.1f", bytes / 1e9))
+        }
     }
 
+    @Composable
     fun detail(entry: FileEntry): String = when {
-        entry.isDirectory -> "Folder"
+        entry.isDirectory -> stringResource(R.string.files_folder)
         else -> listOf(size(entry.size), date(entry.modified)).filter { it.isNotEmpty() }.joinToString(" · ")
     }
 
     fun date(millis: Long): String = if (millis <= 0) "" else DateFormat.getDateInstance(DateFormat.SHORT).format(Date(millis))
 
-    fun count(n: Int) = if (n == 1) "1 file" else "$n files"
+    @Composable
+    fun count(n: Int) = pluralStringResource(R.plurals.files_count, n, n)
 }

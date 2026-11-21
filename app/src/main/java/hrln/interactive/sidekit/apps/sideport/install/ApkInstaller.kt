@@ -8,6 +8,7 @@ import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.sideport.registry.PortedApps
 import hrln.interactive.sidekit.home.HomePreferences
 import java.io.File
@@ -51,7 +52,7 @@ object ApkInstaller {
 
     suspend fun install(context: Context, uri: Uri) {
         val app = context.applicationContext
-        _status.value = InstallStatus.Working("Reading file…")
+        _status.value = InstallStatus.Working(app.getString(R.string.sideport_reading_file))
         val result = runCatching { withContext(Dispatchers.IO) { stageAndCommit(app, uri) } }
         result.exceptionOrNull()?.let { _status.value = InstallStatus.Failed(it.localizedMessage ?: it.javaClass.simpleName) }
     }
@@ -63,17 +64,17 @@ object ApkInstaller {
         }
         val download = File(dir, "download")
         context.contentResolver.openInputStream(uri).use { input ->
-            requireNotNull(input) { "Couldn't open the file" }
+            requireNotNull(input) { context.getString(R.string.sideport_cant_open_file) }
             download.outputStream().use { input.copyTo(it) }
         }
         val apks = splitApks(download, dir)
-        require(apks.isNotEmpty()) { "That file has no APK in it" }
+        require(apks.isNotEmpty()) { context.getString(R.string.sideport_no_apk) }
 
         val pm = context.packageManager
         val base = apks.firstNotNullOfOrNull { apk ->
             pm.getPackageArchiveInfo(apk.path, 0)?.takeIf { it.splitNames.isNullOrEmpty() }?.let { apk to it }
         } ?: apks.firstNotNullOfOrNull { apk -> pm.getPackageArchiveInfo(apk.path, 0)?.let { apk to it } }
-            ?: error("Not an Android app")
+            ?: error(context.getString(R.string.sideport_not_android_app))
         val (baseFile, info) = base
         val label = info.applicationInfo?.let { ai ->
             ai.sourceDir = baseFile.path
@@ -81,7 +82,7 @@ object ApkInstaller {
             ai.loadLabel(pm).toString()
         } ?: info.packageName
 
-        _status.value = InstallStatus.Working("Installing $label…")
+        _status.value = InstallStatus.Working(context.getString(R.string.sideport_installing, label))
         val installer = pm.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(info.packageName)
@@ -130,7 +131,7 @@ object ApkInstaller {
                         intent.getParcelableExtra(Intent.EXTRA_INTENT)
                     }
                     if (confirm == null) {
-                        _status.value = InstallStatus.Failed("Android didn't ask to confirm the install")
+                        _status.value = InstallStatus.Failed(context.getString(R.string.sideport_no_confirm))
                         return
                     }
                     _status.value = InstallStatus.Confirming(label)
@@ -145,19 +146,19 @@ object ApkInstaller {
                 }
 
                 else -> _status.value = InstallStatus.Failed(
-                    intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: describe(status)
+                    intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: context.getString(describe(status))
                 )
             }
         }
 
         private fun describe(status: Int) = when (status) {
-            PackageInstaller.STATUS_FAILURE_ABORTED -> "Install cancelled"
-            PackageInstaller.STATUS_FAILURE_BLOCKED -> "Install blocked"
-            PackageInstaller.STATUS_FAILURE_CONFLICT -> "Conflicts with an installed app (signed by someone else?)"
-            PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> "Not compatible with this phone"
-            PackageInstaller.STATUS_FAILURE_INVALID -> "The APK is damaged or incomplete"
-            PackageInstaller.STATUS_FAILURE_STORAGE -> "Not enough storage"
-            else -> "Install failed"
+            PackageInstaller.STATUS_FAILURE_ABORTED -> R.string.sideport_install_cancelled
+            PackageInstaller.STATUS_FAILURE_BLOCKED -> R.string.sideport_install_blocked
+            PackageInstaller.STATUS_FAILURE_CONFLICT -> R.string.sideport_install_conflict
+            PackageInstaller.STATUS_FAILURE_INCOMPATIBLE -> R.string.sideport_install_incompatible
+            PackageInstaller.STATUS_FAILURE_INVALID -> R.string.sideport_install_invalid
+            PackageInstaller.STATUS_FAILURE_STORAGE -> R.string.sideport_install_storage
+            else -> R.string.sideport_install_failed
         }
     }
 }

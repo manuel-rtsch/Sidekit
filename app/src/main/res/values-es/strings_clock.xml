@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clock: alarms, timer and stopwatch. -->
+<resources>
+    <string name="clock_title">Reloj</string>
+    <string name="clock_tab_alarms">Alarmas</string>
+    <string name="clock_tab_timer">Temporizador</string>
+    <string name="clock_tab_stopwatch">Cronómetro</string>
+    <string name="clock_timer_finished">Temporizador terminado</string>
+    <string name="clock_alarm_title">Alarma %1$s</string>
+    <string name="clock_error_load">No se pudieron cargar los datos del reloj.</string>
+    <string name="clock_error_save">No se pudo guardar ni programar. Inténtalo de nuevo.</string>
+    <string name="clock_channel">Alarmas del reloj</string>
+    <string name="clock_notification_text">Pospón 5 minutos o descarta</string>
+    <string name="clock_snooze">Posponer</string>
+    <string name="clock_dismiss">Descartar</string>
+    <string name="clock_close">Cerrar</string>
+    <string name="clock_no_ringing">Ninguna alarma sonando</string>
+    <string name="clock_snooze_hint">Posponer 5 minutos</string>
+    <string name="clock_allow">Permitir</string>
+    <string name="clock_back">Atrás</string>
+    <string name="clock_new_alarm">Nueva alarma</string>
+    <string name="clock_edit_alarm">Editar alarma</string>
+    <string name="clock_pause">Pausa</string>
+    <string name="clock_resume">Reanudar</string>
+    <string name="clock_start">Iniciar</string>
+    <string name="clock_reset">Restablecer</string>
+    <string name="clock_lap">Vuelta</string>
+    <string name="clock_lap_number">Vuelta %1$d</string>
+    <string name="clock_error_minutes">Introduce de 1 a 10080 minutos.</string>
+    <string name="clock_undo_delete">Deshacer eliminar alarma</string>
+    <string name="clock_access_title">Acceso del reloj</string>
+    <string name="clock_alarm_access">Acceso a alarmas</string>
+    <string name="clock_access_notifications">Permite las notificaciones para oír las alarmas.</string>
+    <string name="clock_access_exact">Permite las alarmas exactas para que suenen a tiempo. Hasta entonces, pueden retrasarse.</string>
+    <string name="clock_access_fullscreen">Permite las alarmas a pantalla completa sobre la pantalla de bloqueo.</string>
+    <string name="clock_access_ready">El acceso a alarmas está listo</string>
+    <string name="clock_review_access">Revisar acceso a alarmas</string>
+    <string name="clock_loading">Cargando…</string>
+    <string name="clock_no_alarms">Aún no hay alarmas</string>
+    <string name="clock_alarm_summary">%1$s · %2$s</string>
+    <string name="clock_on">Activada</string>
+    <string name="clock_off">Desactivada</string>
+    <string name="clock_once">Una vez</string>
+    <string name="clock_minutes">Minutos</string>
+    <string name="clock_error_time">Usa HH:mm, de 00:00 a 23:59.</string>
+    <string name="clock_alarm_on">Alarma activada</string>
+    <string name="clock_alarm_off">Alarma desactivada</string>
+    <string name="clock_repeat">Repetir</string>
+</resources>

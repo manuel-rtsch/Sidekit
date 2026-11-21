@@ -31,6 +31,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.navigation.SubApp
 
 private val ROOT = SubApp.Files.route
@@ -55,7 +56,7 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
         composable(HOME) { entry ->
             val vm = entry.filesViewModel(nav)
             val home by vm.home.collectAsStateWithLifecycle()
-            val notice by vm.notice.collectAsStateWithLifecycle()
+            val notice = vm.notice.collectAsStateWithLifecycle().value?.resolve()
             val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val context = LocalContext.current
             val activity = LocalActivity.current
@@ -74,13 +75,13 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
             }
             FilesScreen(
                 locations = homeRows(home),
-                onBrowse = { picker.launchSafely(null) { vm.say("No folder picker on this phone") } },
+                onBrowse = { picker.launchSafely(null) { vm.say(R.string.files_no_picker) } },
                 onSearch = { nav.navigateFrom(entry, SEARCH) },
                 onOpen = { row ->
                     val place = row.place?.let(FilePlace::decode)
                     when {
-                        place == null -> picker.launchSafely(null) { vm.say("No folder picker on this phone") }
-                        place is FilePlace.Media && !home.mediaAllowed -> vm.say("Allow access first")
+                        place == null -> picker.launchSafely(null) { vm.say(R.string.files_no_picker) }
+                        place is FilePlace.Media && !home.mediaAllowed -> vm.say(R.string.files_allow_first)
                         else -> nav.navigateFrom(entry, browseRoute(place))
                     }
                 },
@@ -114,12 +115,12 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
             val listing by vm.listing.collectAsStateWithLifecycle()
             val sort by vm.sort.collectAsStateWithLifecycle()
             val pending by vm.pendingDelete.collectAsStateWithLifecycle()
-            val notice by vm.notice.collectAsStateWithLifecycle()
+            val notice = vm.notice.collectAsStateWithLifecycle().value?.resolve()
             val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val consent = rememberDeleteConsent(vm)
             val open = rememberFileOpener(vm)
             FilesBrowseScreen(
-                title = place.title,
+                title = place.title(),
                 entries = listing?.takeIf { it.place == place }?.entries,
                 sort = sort,
                 pendingDelete = pending,
@@ -141,7 +142,7 @@ fun NavGraphBuilder.filesGraph(nav: NavHostController) {
             val results by vm.results.collectAsStateWithLifecycle()
             val sort by vm.sort.collectAsStateWithLifecycle()
             val pending by vm.pendingDelete.collectAsStateWithLifecycle()
-            val notice by vm.notice.collectAsStateWithLifecycle()
+            val notice = vm.notice.collectAsStateWithLifecycle().value?.resolve()
             val noticeKind by vm.noticeKind.collectAsStateWithLifecycle()
             val consent = rememberDeleteConsent(vm)
             val open = rememberFileOpener(vm)
@@ -189,9 +190,9 @@ private fun rememberFileOpener(vm: FilesViewModel): (FileEntry) -> Unit {
             try {
                 context.startActivity(intent)
             } catch (_: ActivityNotFoundException) {
-                vm.say("No app on this phone opens this file")
+                vm.say(R.string.files_no_app)
             } catch (_: SecurityException) {
-                vm.say("Couldn't open ${e.name}")
+                vm.say(R.string.files_couldnt_open, e.name)
             }
         }
     }

@@ -1,10 +1,10 @@
 package hrln.interactive.sidekit.apps.placeholder
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.SideAction
-import androidx.compose.ui.Modifier
 import hrln.interactive.sidekit.design.components.SidekitScaffold
-import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.navigation.SubApp
 
 /**
@@ -14,7 +14,7 @@ import hrln.interactive.sidekit.navigation.SubApp
 @Composable
 fun PlaceholderAppScreen(app: SubApp, onBack: () -> Unit) {
     SidekitScaffold(
-        title = app.label,
-        actions = listOf(SideAction.back("back", "Home", onBack)),
+        title = app.displayLabel(),
+        actions = listOf(SideAction.back("back", stringResource(R.string.shell_home), onBack))
     ) { }
 }

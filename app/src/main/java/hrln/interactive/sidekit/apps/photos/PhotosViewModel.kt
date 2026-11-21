@@ -25,7 +25,7 @@ data class GridState(
     val items: List<MediaItem> = emptyList(),
     /** False until the first page has been read; the grid shows nothing rather than "empty". */
     val loaded: Boolean = false,
-    val endReached: Boolean = false,
+    val endReached: Boolean = false
 )
 
 @Immutable
@@ -44,7 +44,7 @@ internal class GridLoader(
     private val source: PhotoSource,
     private val favourites: StateFlow<Set<Long>?>,
     private val scope: CoroutineScope,
-    private val io: CoroutineDispatcher,
+    private val io: CoroutineDispatcher
 ) {
     private val current = MutableStateFlow(GridState())
     private val mutex = Mutex()
@@ -103,12 +103,11 @@ internal class GridLoader(
 class PhotosViewModel(
     private val source: PhotoSource,
     private val favourites: FavouritesRepository,
-    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val io: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
     private val grids = HashMap<AlbumKey, GridLoader>()
 
-    private fun loader(album: AlbumKey): GridLoader =
-        grids.getOrPut(album) { GridLoader(album, source, favourites.ids, viewModelScope, io) }
+    private fun loader(album: AlbumKey): GridLoader = grids.getOrPut(album) { GridLoader(album, source, favourites.ids, viewModelScope, io) }
 
     fun grid(album: AlbumKey): StateFlow<GridState> = loader(album).state
 
@@ -135,5 +134,5 @@ class PhotosViewModel(
     fun indexOf(album: AlbumKey, id: Long): Int = loader(album).value.items.indexOfFirst { it.id == id }.coerceAtLeast(0)
 }
 
-/** Album names for the Albums screen's two-up tiles. */
-val smartAlbums: List<PhotoAlbum> = AlbumKey.smart.map { PhotoAlbum(it, it.smartName()!!) }
+/** The Albums screen's two-up tiles; the UI names them with [smartName]. */
+val smartAlbums: List<PhotoAlbum> = AlbumKey.smart.map { PhotoAlbum(it, "") }

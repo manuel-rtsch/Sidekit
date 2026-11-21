@@ -7,5 +7,5 @@
     app/src/dev/res/values/build.xml.
 -->
 <resources>
-    <string name="app_name">SideKit Dev</string>
+    <string name="app_name" translatable="false">SideKit Dev</string>
 </resources>

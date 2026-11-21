@@ -283,7 +283,7 @@ object Sidemessage {
         repository ?: run {
             val app = context.applicationContext
             SidemessageRepository(
-                source = AndroidMessageSource(app.contentResolver),
+                source = AndroidMessageSource(app.contentResolver) { MmsLabels.from(app) },
                 transport = AndroidSmsTransport(app),
                 pinStore = FilePinStore(File(app.filesDir, "sidemessage_pins.txt")),
                 names = Phonebook.names(app),

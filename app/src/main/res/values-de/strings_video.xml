@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Video: the phone's videos and the player. -->
+<resources>
+    <string name="video_title">Video</string>
+    <string name="video_untitled">Video</string>
+    <string name="video_home">Start</string>
+    <string name="video_open_settings">Einstellungen öffnen</string>
+    <string name="video_allow">Erlauben</string>
+    <string name="video_allow_description">Zugriff auf Videos erlauben</string>
+    <string name="video_rationale_title">Deine Videos ansehen</string>
+    <string name="video_rationale_body">Video spielt die Clips auf diesem Handy ab, auch die, die du mit der Kamera filmst.</string>
+    <string name="video_empty">Noch keine Videos. Clips, die du mit der Kamera aufnimmst, erscheinen hier.</string>
+    <string name="video_cant_play">Dieses Video kann nicht abgespielt werden</string>
+    <string name="video_back_to_videos">Zurück zu den Videos</string>
+    <string name="video_play">Abspielen</string>
+    <string name="video_pause">Pause</string>
+    <string name="video_play_description">Video abspielen</string>
+    <string name="video_pause_description">Video pausieren</string>
+    <string name="video_forward_10">10 Sekunden vor</string>
+    <string name="video_back_10">10 s zurück</string>
+    <string name="video_restart">Von vorn</string>
+    <string name="video_seek">Spulen</string>
+</resources>

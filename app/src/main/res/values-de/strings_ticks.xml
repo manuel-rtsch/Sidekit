@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideticks (reminders). A "Sidetick" is one reminder; keep the product name as is. -->
+<resources>
+    <string name="ticks_title">Meine Sideticks</string>
+    <string name="ticks_confirm">Bestätigen</string>
+    <string name="ticks_new">Neuer Sidetick</string>
+    <string name="ticks_undo_delete">Löschen rückgängig machen</string>
+    <string name="ticks_allow">Erlauben</string>
+    <string name="ticks_due_time">Fälligkeit</string>
+    <string name="ticks_no_due_time">Keine Fälligkeit</string>
+    <string name="ticks_sort_newest">Neueste zuerst</string>
+    <string name="ticks_sort_due">Fällige zuerst</string>
+    <string name="ticks_loading">Erinnerungen werden geladen…</string>
+    <string name="ticks_allow_notifications">Erlaube Benachrichtigungen für fällige Erinnerungen</string>
+    <string name="ticks_show_ticked">Erledigte zeigen</string>
+    <string name="ticks_hide_ticked">Erledigte ausblenden</string>
+    <string name="ticks_clear_ticked">Alle Erledigten löschen</string>
+    <string name="ticks_error_due_format">Nutze YYYY-MM-DD HH:mm für die Fälligkeit.</string>
+    <string name="ticks_error_due_past">Wähle eine Zeit in der Zukunft.</string>
+    <string name="ticks_error_read">Erinnerungen konnten nicht gelesen werden. Starte Sidekit neu.</string>
+    <string name="ticks_error_save">Erinnerungen konnten nicht gespeichert werden. Bearbeite etwas, um es erneut zu versuchen.</string>
+    <string name="ticks_channel">Sidetick-Erinnerungen</string>
+    <string name="ticks_due_now">Sidetick jetzt fällig</string>
+</resources>

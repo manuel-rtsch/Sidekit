@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files: media collections, picked folders and search. -->
+<resources>
+    <string name="files_title">Files</string>
+    <string name="files_browse">Browse</string>
+    <string name="files_search">Search</string>
+    <string name="files_allow">Allow</string>
+    <string name="files_allow_media">Allow access to media</string>
+    <string name="files_back">Back</string>
+    <string name="files_remove">Remove</string>
+    <string name="files_delete">Delete</string>
+    <string name="files_keep">Keep %1$s</string>
+    <string name="files_confirm_remove">Confirm remove %1$s</string>
+    <string name="files_confirm_delete">Confirm delete %1$s</string>
+    <string name="files_remove_item">Remove %1$s</string>
+    <string name="files_delete_item">Delete %1$s</string>
+    <string name="files_permission">Files lists your photos, videos, music and downloads. Android asks once before an app can see them. Folders you add with Browse work without it.</string>
+    <string name="files_needs_access">Needs access</string>
+    <string name="files_folder">Folder</string>
+    <string name="files_on_sidephone">On Sidephone</string>
+    <string name="files_free">%1$s free</string>
+    <string name="files_add_folder">Add a folder</string>
+    <string name="files_nothing_here">Nothing here</string>
+    <string name="files_loading">Loading…</string>
+    <string name="files_no_match">No files match</string>
+    <string name="files_file_name">File name</string>
+    <string name="files_sort_name">Name</string>
+    <string name="files_sort_newest">Newest</string>
+    <string name="files_sort_largest">Largest</string>
+    <string name="files_sort_by">Sort by %1$s</string>
+    <string name="files_media_recent">Recents</string>
+    <string name="files_media_documents">Documents</string>
+    <string name="files_media_downloads">Downloads</string>
+    <string name="files_media_photos">Photos</string>
+    <string name="files_media_videos">Videos</string>
+    <string name="files_media_music">Music</string>
+    <plurals name="files_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+    <string name="files_size_bytes">%1$s B</string>
+    <string name="files_size_kb">%1$s KB</string>
+    <string name="files_size_mb">%1$s MB</string>
+    <string name="files_size_gb">%1$s GB</string>
+    <string name="files_no_picker">No folder picker on this phone</string>
+    <string name="files_allow_first">Allow access first</string>
+    <string name="files_cant_delete">This file can\'t be deleted here</string>
+    <string name="files_couldnt_delete">Couldn\'t delete %1$s</string>
+    <string name="files_deleted">Deleted %1$s</string>
+    <string name="files_no_app">No app on this phone opens this file</string>
+    <string name="files_couldnt_open">Couldn\'t open %1$s</string>
+</resources>

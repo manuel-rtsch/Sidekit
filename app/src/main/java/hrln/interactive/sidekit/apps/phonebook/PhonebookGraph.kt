@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -22,6 +23,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.sidemessage.SidemessageRoutes
 import hrln.interactive.sidekit.navigation.SubApp
 
@@ -59,7 +61,7 @@ fun NavGraphBuilder.phonebookGraph(nav: NavHostController) {
                 onOpen = { nav.navigateFrom(entry, PhonebookRoutes.contact(it.id)) },
                 onRecents = { nav.navigateFrom(entry, RECENTS) },
                 onDialPad = { nav.navigateFrom(entry, PhonebookRoutes.dial(state.query)) },
-                onCall = call,
+                onCall = call
             )
         }
         composable(CONTACT, arguments = listOf(navArgument(ARG_ID) { type = NavType.LongType })) { entry ->
@@ -74,10 +76,18 @@ fun NavGraphBuilder.phonebookGraph(nav: NavHostController) {
             val chosen = if (selected in numbers.indices) selected else numbers.indexOf(contact?.primaryNumber)
             DetailRoute(nav, entry, contact?.name ?: "", numbers, chosen) { selected = it }
         }
-        composable(NUMBER, arguments = listOf(navArgument(ARG_NUMBER) { type = NavType.StringType; defaultValue = "" })) { entry ->
+        composable(
+            NUMBER,
+            arguments = listOf(
+                navArgument(ARG_NUMBER) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { entry ->
             val number = entry.arguments?.getString(ARG_NUMBER).orEmpty()
             val region = rememberRegion()
-            DetailRoute(nav, entry, PhoneFormat.format(number, region), listOf(PhoneNumber(number, "Phone")), 0) {}
+            DetailRoute(nav, entry, PhoneFormat.format(number, region), listOf(PhoneNumber(number, stringResource(R.string.phonebook_label_phone))), 0) {}
         }
         composable(RECENTS) { entry ->
             val vm = entry.phonebookViewModel(nav)
@@ -97,25 +107,54 @@ fun NavGraphBuilder.phonebookGraph(nav: NavHostController) {
                     if (row.call.number.isNotBlank()) nav.navigateFrom(entry, route)
                 },
                 onBack = { nav.popFrom(entry) },
-                onDialPad = { nav.navigateFrom(entry, PhonebookRoutes.dial()) },
+                onDialPad = { nav.navigateFrom(entry, PhonebookRoutes.dial()) }
             )
         }
-        composable(CALL, arguments = listOf(navArgument(ARG_NUMBER) { type = NavType.StringType; defaultValue = "" })) { entry ->
+        composable(
+            CALL,
+            arguments = listOf(
+                navArgument(ARG_NUMBER) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { entry ->
             val context = LocalContext.current
             val number = entry.arguments?.getString(ARG_NUMBER).orEmpty()
             val gate = rememberPermissionGate(Manifest.permission.CALL_PHONE) { ok ->
-                if (ok) { placeCall(context, number); nav.popFrom(entry) }
+                if (ok) {
+                    placeCall(context, number)
+                    nav.popFrom(entry)
+                }
             }
             CallPermissionScreen(number, onBack = { nav.popFrom(entry) }, onAllow = {
-                if (gate.granted) { placeCall(context, number); nav.popFrom(entry) } else gate.request()
+                if (gate.granted) {
+                    placeCall(context, number)
+                    nav.popFrom(entry)
+                } else {
+                    gate.request()
+                }
             }, onDialer = { openDialer(context, number) })
         }
-        composable(DIAL, arguments = listOf(navArgument(ARG_NUMBER) { type = NavType.StringType; defaultValue = "" })) { entry ->
+        composable(
+            DIAL,
+            arguments = listOf(
+                navArgument(ARG_NUMBER) {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { entry ->
             val vm = entry.phonebookViewModel(nav)
             val prefill = entry.arguments?.getString(ARG_NUMBER).orEmpty()
             // Prefill once per visit; coming back to the pad (e.g. from Messages) keeps what was typed.
             var prefilled by rememberSaveable { mutableStateOf(false) }
-            LaunchedEffect(Unit) { if (!prefilled) { vm.setDial(prefill); prefilled = true } }
+            LaunchedEffect(Unit) {
+                if (!prefilled) {
+                    vm.setDial(prefill)
+                    prefilled = true
+                }
+            }
             val number by vm.dial.collectAsStateWithLifecycle()
             val call = caller(nav, entry)
             DialPadScreen(
@@ -126,7 +165,7 @@ fun NavGraphBuilder.phonebookGraph(nav: NavHostController) {
                 onPlus = vm::dialPlus,
                 onBack = { nav.popFrom(entry) },
                 onCall = call,
-                onMessage = { nav.navigateFrom(entry, SidemessageRoutes.conversation(listOf(it))) },
+                onMessage = { nav.navigateFrom(entry, SidemessageRoutes.conversation(listOf(it))) }
             )
         }
     }
@@ -143,7 +182,7 @@ private fun DetailRoute(nav: NavHostController, entry: NavBackStackEntry, title:
         onSelect = onSelect,
         onBack = { nav.popFrom(entry) },
         onCall = call,
-        onMessage = { nav.navigateFrom(entry, SidemessageRoutes.conversation(listOf(it))) },
+        onMessage = { nav.navigateFrom(entry, SidemessageRoutes.conversation(listOf(it))) }
     )
 }
 
@@ -175,8 +214,11 @@ private fun caller(nav: NavHostController, entry: NavBackStackEntry): (String) -
     val context = LocalContext.current
     return { number ->
         if (number.isNotBlank()) {
-            if (context.hasPermissions(Manifest.permission.CALL_PHONE)) placeCall(context, number)
-            else nav.navigateFrom(entry, "$ROOT/call?$ARG_NUMBER=${Uri.encode(number)}")
+            if (context.hasPermissions(Manifest.permission.CALL_PHONE)) {
+                placeCall(context, number)
+            } else {
+                nav.navigateFrom(entry, "$ROOT/call?$ARG_NUMBER=${Uri.encode(number)}")
+            }
         }
     }
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Maps, and the place search, location and saved-data messages Trips, Compass and Sideweather share. -->
+<resources>
+    <string name="maps_title">Mapas</string>
+    <string name="maps_search">Buscar</string>
+    <string name="maps_go">Ir</string>
+    <string name="maps_back">Atrás</string>
+    <string name="maps_location_prompt">Permite la ubicación aproximada para ver dónde estás, o busca un lugar.</string>
+    <string name="maps_choose_destination_first">Primero busca y elige un destino</string>
+    <string name="maps_no_navigation_app">No hay app de navegación. Solo guía en línea recta; no se tienen en cuenta caminos ni obstáculos.</string>
+    <string name="maps_zoom_in">Zoom +</string>
+    <string name="maps_zoom_out">Zoom −</string>
+    <string name="maps_centre">Centrar</string>
+    <string name="maps_choose_destination">Elige un destino</string>
+    <string name="maps_you_at">Tú: %1$.4f, %2$.4f</string>
+    <string name="maps_location_not_available">Tu ubicación no está disponible</string>
+    <string name="maps_distance_bearing">%1$d m · %2$d° geográfico</string>
+    <string name="maps_no_compass">Sin brújula</string>
+    <string name="maps_calibrate">Calibrar: mueve en forma de ocho</string>
+    <string name="maps_hold_flat">Mantén el teléfono en plano</string>
+    <string name="maps_store_read_failed">No se pudieron leer los datos guardados</string>
+    <string name="maps_store_save_failed">No se pudo guardar; inténtalo de nuevo</string>
+    <string name="maps_current_location">Ubicación actual</string>
+    <string name="maps_current_location_in">Ubicación actual · %1$s</string>
+    <string name="maps_search_hint">Busca pueblos y ciudades · Open-Meteo / GeoNames</string>
+    <string name="maps_searching">Buscando…</string>
+    <string name="maps_no_places">No se encontraron lugares</string>
+    <string name="maps_select_place">Elige un lugar</string>
+    <string name="maps_search_unavailable">Búsqueda no disponible. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="maps_find_place">Buscar un lugar</string>
+    <string name="maps_town_or_city">Pueblo o ciudad</string>
+    <string name="maps_location_denied">Ubicación denegada. Aún puedes buscar un lugar.</string>
+    <string name="maps_finding_location">Buscando ubicación…</string>
+    <string name="maps_precise_location">Ubicación exacta</string>
+    <string name="maps_approximate_location">Ubicación aproximada</string>
+    <string name="maps_location_unavailable">Ubicación no disponible. Activa la ubicación exacta o busca un lugar.</string>
+    <string name="maps_locate">Localizar</string>
+    <string name="maps_enable_precise">Activar exacta</string>
+    <string name="maps_allow">Permitir</string>
+    <string name="maps_tiles_missing">Faltan algunos mosaicos · la ubicación y la búsqueda siguen funcionando</string>
+    <string name="maps_panning">Desplazando · la cruceta mueve el mapa; OK o Atrás para parar</string>
+    <string name="maps_map_ready">Mapa listo · arrastra, u OK para mover con la cruceta; Opciones para el zoom</string>
+    <string name="maps_osm_attribution">© colaboradores de OpenStreetMap</string>
+    <string name="maps_preview_description">Mapa: ruta a pie desde tu ubicación hasta Central Station</string>
+    <string name="maps_you">Tú</string>
+</resources>

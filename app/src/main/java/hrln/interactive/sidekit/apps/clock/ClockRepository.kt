@@ -4,10 +4,13 @@ import android.content.Context
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.core.util.AtomicFile
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.sdk.ui.UndoWindow
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.*
+import java.time.format.TextStyle
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.*
@@ -24,7 +27,11 @@ data class ClockAlarm(
     val nextAt: Long = 0
 ) {
     val time: String get() = "%02d:%02d".format(hour, minute)
-    val repeat: String get() = if (days.isEmpty()) "Once" else days.sorted().joinToString(" ") { DayOfWeek.of(it).name.take(3) }
+
+    /** The repeat days in the phone's language ("MON WED"), or null for a one-off alarm. */
+    val repeatDays: String? get() = days.takeIf { it.isNotEmpty() }?.sorted()?.joinToString(" ") {
+        DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, Locale.getDefault()).uppercase(Locale.getDefault())
+    }
 }
 
 data class ClockTimer(val endAt: Long? = null, val remaining: Long = 0, val elapsedEndAt: Long? = null) {
@@ -39,7 +46,15 @@ data class Stopwatch(val startedAt: Long? = null, val elapsed: Long = 0, val lap
     fun elapsedAt(now: Long) = elapsed + (startedAt?.let { (now - it).coerceAtLeast(0) } ?: 0)
 }
 
-data class Ringing(val id: String, val label: String, val at: Long)
+/** [label] is the alarm's time ("07:00"); [title] says what is ringing. */
+data class Ringing(val id: String, val label: String, val at: Long) {
+    fun title(context: Context): String = if (id == ClockRepository.TIMER_ID) {
+        context.getString(R.string.clock_timer_finished)
+    } else {
+        // Ringing saved before labels were localised read "Alarm 07:00".
+        context.getString(R.string.clock_alarm_title, label.removePrefix("Alarm "))
+    }
+}
 
 /** A removed alarm that can still be restored. */
 data class PendingDelete(val alarm: ClockAlarm, val token: Long)
@@ -135,7 +150,9 @@ class ClockRepository(
 ) {
     private val mutable = MutableStateFlow<ClockData?>(null)
     val data = mutable.asStateFlow()
-    val error = MutableStateFlow<String?>(null)
+
+    /** A string resource explaining the last load or save failure, or null. */
+    val error = MutableStateFlow<Int?>(null)
     private val _deleted = MutableStateFlow<PendingDelete?>(null)
 
     /** The last removed alarm while Undo is available, or null. */
@@ -152,7 +169,7 @@ class ClockRepository(
             val loaded = try {
                 store.read()
             } catch (_: Exception) {
-                error.value = "Could not load Clock data."
+                error.value = R.string.clock_error_load
                 return@launch
             }
             mutable.value = if (loaded.boot != boot) loaded.copy(boot = boot, stopwatch = loaded.stopwatch.copy(startedAt = null), timer = loaded.timer.copy(elapsedEndAt = loaded.timer.endAt?.let { elapsed() + (it - now()).coerceAtLeast(0) })) else loaded
@@ -165,7 +182,7 @@ class ClockRepository(
                     persisted.value = next
                     error.value = null
                 } catch (_: Exception) {
-                    error.value = "Clock could not save or schedule. Please retry."
+                    error.value = R.string.clock_error_save
                 }
             }
         }
@@ -221,12 +238,12 @@ class ClockRepository(
         val label: String
         if (id == TIMER_ID) {
             if (current.timer.endAt != trigger || current.timer.remainingAt(now(), elapsed()) > 0) return null
-            label = "Timer finished"
+            label = ""
             mutate { it.copy(timer = ClockTimer()) }
         } else {
             if (trigger > now()) return null
             val alarm = current.alarms.find { it.id == id && it.enabled && it.nextAt == trigger } ?: return null
-            label = "Alarm ${alarm.time}"
+            label = alarm.time
             mutate { it.copy(alarms = it.alarms.map { a -> if (a.id != id) a else a.copy(enabled = a.days.isNotEmpty(), nextAt = nextAlarm(a.hour, a.minute, a.days, now())) }) }
         }
         val ring = Ringing(id, label, now())

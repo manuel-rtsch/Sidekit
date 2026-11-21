@@ -106,10 +106,11 @@ fun matchesApp(label: String, query: String): Boolean {
     return digits.contains(text)
 }
 
+/** [error] is the system's reason the apps could not be listed; the screen words the message around it. */
 data class AppsState(val apps: List<LaunchableApp> = emptyList(), val loaded: Boolean = false, val error: String? = null)
 class AppsViewModel(val repository: AppsSource) : ViewModel() {
     val query = MutableStateFlow("")
-    val state = combine(repository.apps.map { AppsState(it, true) }.catch { emit(AppsState(error = "Unable to list apps: ${it.localizedMessage}")) }, query) { state, query ->
+    val state = combine(repository.apps.map { AppsState(it, true) }.catch { emit(AppsState(error = it.localizedMessage.orEmpty())) }, query) { state, query ->
         state.copy(apps = state.apps.filter { matchesApp(it.label, query) })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(0), AppsState())
 }

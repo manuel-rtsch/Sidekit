@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideticks (reminders). A "Sidetick" is one reminder; keep the product name as is. -->
+<resources>
+    <string name="ticks_title">My Sideticks</string>
+    <string name="ticks_confirm">Confirm</string>
+    <!-- Action bar label, keep short. -->
+    <string name="ticks_new">New Sidetick</string>
+    <!-- Accessibility label. -->
+    <string name="ticks_undo_delete">Undo delete tick</string>
+    <string name="ticks_allow">Allow</string>
+    <!-- Option: give the new reminder a due time. -->
+    <string name="ticks_due_time">Due time</string>
+    <string name="ticks_no_due_time">No due time</string>
+    <!-- Sort option. -->
+    <string name="ticks_sort_newest">Newest first</string>
+    <!-- Sort option. -->
+    <string name="ticks_sort_due">Due first</string>
+    <string name="ticks_loading">Loading reminders…</string>
+    <string name="ticks_allow_notifications">Allow notifications for due reminders</string>
+    <string name="ticks_show_ticked">Show Ticked</string>
+    <string name="ticks_hide_ticked">Hide Ticked</string>
+    <string name="ticks_clear_ticked">Clear All Ticked</string>
+    <!-- YYYY-MM-DD HH:mm is the format the field accepts; keep it as is. -->
+    <string name="ticks_error_due_format">Use YYYY-MM-DD HH:mm for the due date.</string>
+    <string name="ticks_error_due_past">Choose a future due time.</string>
+    <string name="ticks_error_read">Could not read reminders. Restart Sidekit to retry.</string>
+    <string name="ticks_error_save">Could not save reminders. Make an edit to retry.</string>
+    <!-- Notification channel name in Android settings. -->
+    <string name="ticks_channel">Sidetick reminders</string>
+    <string name="ticks_due_now">Sidetick due now</string>
+</resources>

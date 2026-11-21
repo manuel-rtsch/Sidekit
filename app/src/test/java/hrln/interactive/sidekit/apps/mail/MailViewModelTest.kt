@@ -1,5 +1,6 @@
 package hrln.interactive.sidekit.apps.mail
 
+import hrln.interactive.sidekit.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -15,13 +16,18 @@ import org.junit.Test
 
 private class MemoryMailStore(var saved: List<MailMessage> = emptyList()) : MailStore {
     override fun read() = saved
-    override fun write(messages: List<MailMessage>) { saved = messages }
+    override fun write(messages: List<MailMessage>) {
+        saved = messages
+    }
 }
 
 private class FakeMailAccount(private val result: MailSendResult) : MailAccount {
     override val configured = false
     val sent = mutableListOf<MailMessage>()
-    override suspend fun send(message: MailMessage): MailSendResult { sent += message; return result }
+    override suspend fun send(message: MailMessage): MailSendResult {
+        sent += message
+        return result
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -57,7 +63,7 @@ class MailViewModelTest {
         scope.testScheduler.runCurrent()
         assertEquals(1, account.sent.size)
         assertEquals(MailFolder.HandedOff, repository.messages.value!!.single().folder)
-        assertEquals("Mail app opened; sending isn't confirmed", vm.notice.value)
+        assertEquals(R.string.mail_notice_handed_off, vm.notice.value)
     }
 
     @Test fun `no mail app leaves outbox message and delete can be undone`() {
@@ -66,30 +72,31 @@ class MailViewModelTest {
         scope.testScheduler.runCurrent()
         val message = repository.messages.value!!.single()
         assertEquals(MailFolder.Outbox, message.folder)
-        assertEquals("No mail app. Message kept in Outbox", vm.notice.value)
+        assertEquals(R.string.mail_notice_no_app, vm.notice.value)
         vm.delete(message.id)
         assertTrue(repository.messages.value!!.isEmpty())
         vm.undo()
         assertEquals(message, repository.messages.value!!.single())
     }
+
     @Test fun `SMTP acceptance uses Sent while failed refresh preserves the inbox and drafts`() {
-        val inbox = MailMessage("sender@example.com", "Inbox", id=7, folder=MailFolder.Inbox, remoteKey="me|epoch|uid")
+        val inbox = MailMessage("sender@example.com", "Inbox", id = 7, folder = MailFolder.Inbox, remoteKey = "me|epoch|uid")
         repository.replaceInbox(listOf(inbox))
         val account = object : MailAccount {
             override val configured = true
             override suspend fun send(message: MailMessage) = MailSendResult.Sent
             override suspend fun inbox(): List<MailMessage> = throw java.io.IOException("Offline")
         }
-        val vm = MailViewModel(repository,account)
-        vm.send(null,"recipient@example.com","Sent subject","Body")
+        val vm = MailViewModel(repository, account)
+        vm.send(null, "recipient@example.com", "Sent subject", "Body")
         scope.testScheduler.runCurrent()
         assertTrue(repository.messages.value!!.any { it.folder == MailFolder.Sent })
-        assertEquals("Accepted by your SMTP server", vm.notice.value)
+        assertEquals(R.string.mail_notice_sent, vm.notice.value)
         val before = repository.messages.value
-        vm.refresh(); scope.testScheduler.runCurrent()
-        assertEquals(before,repository.messages.value)
-        assertTrue(vm.notice.value!!.contains("could not refresh"))
+        vm.refresh()
+        scope.testScheduler.runCurrent()
+        assertEquals(before, repository.messages.value)
+        assertEquals(R.string.mail_notice_refresh_failed, vm.notice.value)
         assertEquals(false, vm.busy.value)
     }
-
 }

@@ -1,15 +1,17 @@
 package hrln.interactive.sidekit.apps.tripplanning
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.apps.everyday.CompactRowHeight
-import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.apps.everyday.EverydayContent
 import hrln.interactive.sidekit.apps.everyday.InfoStrip
 import hrln.interactive.sidekit.apps.everyday.TopAlignedRow
+import hrln.interactive.sidekit.apps.everyday.dualArrowActions
 import hrln.interactive.sidekit.design.components.SidekitScaffold
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.navigation.SubApp
@@ -22,11 +24,11 @@ data class Departure(val service: String, val destination: String, val dueIn: St
 
 object TripPlanningSampleData {
     // Placeholder content from "Trip Planning / Home" (96:1022).
-    const val stop = "Central · Next departures"
+    val stop = "Central · Next departures"
     val departures = listOf(
         Departure("Bus 373", "Coogee", "4 min"),
         Departure("Tram L2", "Randwick", "7 min"),
-        Departure("Train T1", "Hornsby", "12 min"),
+        Departure("Train T1", "Hornsby", "12 min")
     )
 }
 
@@ -41,11 +43,11 @@ fun TripPlanningScreen(
     stop: String,
     departures: List<Departure>,
     onSaved: () -> Unit = {},
-    onPlan: () -> Unit = {},
+    onPlan: () -> Unit = {}
 ) {
     SidekitScaffold(
-        title = "Trip Planning",
-        actions = dualArrowActions("Saved", "Plan", onSaved, onPlan),
+        title = stringResource(R.string.trips_title),
+        actions = dualArrowActions(stringResource(R.string.trips_saved), stringResource(R.string.trips_plan), onSaved, onPlan)
     ) { padding ->
         EverydayContent(padding) {
             InfoStrip(stop, height = CompactRowHeight, top = 14.dp)

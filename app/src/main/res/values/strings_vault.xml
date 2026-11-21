@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vault: private notes behind the device lock. -->
+<resources>
+    <string name="vault_title">Vault</string>
+    <string name="vault_needs_lock">Set a screen lock in Android Settings before using Vault.</string>
+    <string name="vault_unlock_title">Unlock Vault</string>
+    <string name="vault_unlock_subtitle">Private notes · locks after 55 seconds</string>
+    <string name="vault_working">Working…</string>
+    <string name="vault_home">Home</string>
+    <string name="vault_unlock">Unlock</string>
+    <string name="vault_keep_editing">Keep editing</string>
+    <string name="vault_discard">Discard</string>
+    <string name="vault_notes">Notes</string>
+    <string name="vault_lock">Lock</string>
+    <string name="vault_new_note">New note</string>
+    <string name="vault_intro">Protected by your device lock. Save before leaving: Vault locks after 55 seconds or when you leave. Unsaved edits are discarded. Private keypad uses abc without saving learned words.</string>
+    <string name="vault_empty">No private notes yet</string>
+    <string name="vault_placeholder">Private note…</string>
+    <string name="vault_untitled">Untitled</string>
+    <!-- %1$s is the system's reason. -->
+    <string name="vault_cannot_unlock">Cannot unlock: %1$s. Existing encrypted data has been kept.</string>
+    <string name="vault_type_first">Type a note before saving.</string>
+    <string name="vault_saved">Saved encrypted</string>
+    <!-- %1$s is the system's reason. -->
+    <string name="vault_not_saved">Not saved: %1$s. Unlock again if authentication expired.</string>
+    <string name="vault_not_saved_too_large">Not saved: Note is too large (maximum 1 MB). Unlock again if authentication expired.</string>
+</resources>

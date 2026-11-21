@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sideticks (reminders). A "Sidetick" is one reminder; keep the product name as is. -->
+<resources>
+    <string name="ticks_title">Mis Sideticks</string>
+    <string name="ticks_confirm">Confirmar</string>
+    <string name="ticks_new">Nuevo Sidetick</string>
+    <string name="ticks_undo_delete">Deshacer eliminar</string>
+    <string name="ticks_allow">Permitir</string>
+    <string name="ticks_due_time">Vencimiento</string>
+    <string name="ticks_no_due_time">Sin vencimiento</string>
+    <string name="ticks_sort_newest">Más recientes</string>
+    <string name="ticks_sort_due">Por vencimiento</string>
+    <string name="ticks_loading">Cargando recordatorios…</string>
+    <string name="ticks_allow_notifications">Permite notificaciones para los recordatorios</string>
+    <string name="ticks_show_ticked">Mostrar marcados</string>
+    <string name="ticks_hide_ticked">Ocultar marcados</string>
+    <string name="ticks_clear_ticked">Borrar marcados</string>
+    <string name="ticks_error_due_format">Usa YYYY-MM-DD HH:mm para el vencimiento.</string>
+    <string name="ticks_error_due_past">Elige una hora futura.</string>
+    <string name="ticks_error_read">No se pudieron leer los recordatorios. Reinicia Sidekit.</string>
+    <string name="ticks_error_save">No se pudieron guardar los recordatorios. Haz un cambio para reintentar.</string>
+    <string name="ticks_channel">Recordatorios de Sidetick</string>
+    <string name="ticks_due_now">Sidetick pendiente ahora</string>
+</resources>

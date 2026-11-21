@@ -26,10 +26,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import hrln.interactive.sidekit.R
 import hrln.interactive.sidekit.design.action.ActionTone
 import hrln.interactive.sidekit.design.action.SideAction
 import hrln.interactive.sidekit.design.components.SidekitCard
@@ -49,11 +51,9 @@ object MediaPermissions {
     val camera: Array<String> = arrayOf(Manifest.permission.CAMERA)
     val microphone: Array<String> = arrayOf(Manifest.permission.RECORD_AUDIO)
 
-    private fun storage(vararg tiramisu: String): Array<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) arrayOf(*tiramisu) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    private fun storage(vararg tiramisu: String): Array<String> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) arrayOf(*tiramisu) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 
-    fun granted(context: Context, permissions: Array<String>): Boolean =
-        permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+    fun granted(context: Context, permissions: Array<String>): Boolean = permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
 }
 
 /** Where a permission stands, as far as a screen needs to know. */
@@ -64,13 +64,13 @@ enum class Access {
     Ask,
 
     /** Refused for good: only the app's system settings page can grant it now. */
-    Blocked,
+    Blocked
 }
 
 @Stable
 class PermissionState internal constructor(
     private val permissions: Array<String>,
-    private val context: Context,
+    internal val context: Context
 ) {
     var access: Access by mutableStateOf(if (MediaPermissions.granted(context, permissions)) Access.Granted else Access.Ask)
         internal set
@@ -85,15 +85,20 @@ class PermissionState internal constructor(
     }
 
     internal fun refresh() {
-        if (MediaPermissions.granted(context, permissions)) access = Access.Granted
-        else if (access == Access.Granted) access = Access.Ask
+        if (MediaPermissions.granted(context, permissions)) {
+            access = Access.Granted
+        } else if (access == Access.Granted) {
+            access = Access.Ask
+        }
     }
 
     internal fun onResult(context: Context) {
         access = when {
             MediaPermissions.granted(context, permissions) -> Access.Granted
+
             // Refused and no rationale to show: the system won't prompt again.
             permissions.none { context.findActivity()?.shouldShowRequestPermissionRationale(it) == true } -> Access.Blocked
+
             else -> Access.Ask
         }
     }
@@ -126,13 +131,26 @@ fun rememberPermissionState(permissions: Array<String>, onGranted: () -> Unit = 
     return state
 }
 
-/** The bar's answer to a missing permission: one wide "Allow" (or "Open settings" once blocked). */
-fun allowAction(state: PermissionState, what: String): SideAction =
-    if (state.access == Access.Blocked) {
-        SideAction.forward("allow", "Open settings", state::request, icon = SidekitIcon.Settings)
+/**
+ * The bar's answer to a missing permission: one wide "Allow" (or "Open settings" once blocked).
+ * [what] names what access is for ("music"), in the app language.
+ */
+fun allowAction(state: PermissionState, what: String): SideAction {
+    val context = state.context
+    return if (state.access == Access.Blocked) {
+        SideAction.forward("allow", context.getString(R.string.media_open_settings), state::request, icon = SidekitIcon.Settings)
     } else {
-        SideAction("allow", "Allow", SidekitIcon.Check, iconAtEnd = true, tone = ActionTone.Secondary, contentDescription = "Allow access to $what", onClick = state::request)
+        SideAction(
+            "allow",
+            context.getString(R.string.media_allow),
+            SidekitIcon.Check,
+            iconAtEnd = true,
+            tone = ActionTone.Secondary,
+            contentDescription = context.getString(R.string.media_allow_access, what),
+            onClick = state::request
+        )
     }
+}
 
 /**
  * The body row explaining why a permission is needed, shown in place of the content it unlocks.
@@ -144,10 +162,10 @@ fun PermissionRationale(title: String, reason: String, access: Access, padding: 
             Column(verticalArrangement = Arrangement.spacedBy(SidekitTheme.spacing.itemContentGap)) {
                 SidekitText(title, style = SidekitTheme.typography.headline, maxLines = 2)
                 SidekitText(
-                    if (access == Access.Blocked) "$reason\n\nAccess was turned off. Allow it in Settings, then come back." else reason,
+                    if (access == Access.Blocked) stringResource(R.string.media_access_blocked, reason) else reason,
                     style = SidekitTheme.typography.label,
                     color = SidekitTheme.colors.surfaceA6,
-                    maxLines = 8,
+                    maxLines = 8
                 )
             }
         }
