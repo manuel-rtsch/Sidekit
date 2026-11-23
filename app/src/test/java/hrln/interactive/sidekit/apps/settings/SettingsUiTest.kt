@@ -101,8 +101,8 @@ class SettingsUiTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.onRoot().captureRoboImage("screenshots/settings_compact.png")
         val compactTop = compose.onNodeWithText("Launcher default").getUnclippedBoundsInRoot().top
-        // Header 103 -> 61, so the body starts 42 dp higher (1 dp == 1 px on this canvas).
-        assertEquals(42f, (bodyTop - compactTop).value, 1f)
+        // Header 103 -> 65, so the body starts 38 dp higher (1 dp == 1 px on this canvas).
+        assertEquals(38f, (bodyTop - compactTop).value, 1f)
     }
 
     @Test fun `system settings live on their own page`() {

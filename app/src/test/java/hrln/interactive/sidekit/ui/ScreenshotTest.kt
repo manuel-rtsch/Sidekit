@@ -53,7 +53,7 @@ class ScreenshotTest {
 
     @Test fun launcherList() = shoot("launcher_list_36-2", launcher(LauncherUiState(layout = LauncherLayout.List)))
 
-    /** The same frame with Settings → Compact layout on: header 61 instead of 103, bar 100 instead of 112. */
+    /** The same frame with Settings → Compact layout on: header 65 instead of 103, bar 100 instead of 112. */
     @Test fun launcherGridCompact() {
         compose.setContent {
             hrln.interactive.sidekit.design.theme.SidekitTheme(

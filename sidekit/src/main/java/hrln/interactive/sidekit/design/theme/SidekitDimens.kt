@@ -36,14 +36,14 @@ data class SidekitSpacing(
 ) {
     companion object {
         /**
-         * The measured Figma sizes, except the top and bottom chrome: the header is exactly one
-         * title line (61) with no inset above it (28 less than the mock) and the action bar is 12
+         * The measured Figma sizes, except the top and bottom chrome: the header is one title
+         * line (61) with a 4 dp inset above it (24 less than the mock) and the action bar is 12
          * shorter. Slightly tighter insets buy body space on the 480 x 640 display without
          * touching the type scale. Chosen from Settings → Compact layout.
          */
         val Compact: SidekitSpacing = SidekitSpacing(
-            headerPaddingTop = 0.dp,
-            headerHeight = 61.dp,
+            headerPaddingTop = 4.dp,
+            headerHeight = 65.dp,
             actionBarHeight = 100.dp
         )
     }
