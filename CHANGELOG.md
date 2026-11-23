@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.12.0 — 2026-11-23
+
+- **The compact header is one title line again.** It keeps a 4 dp top inset above the 61 dp line
+  (65 dp total) instead of the 14 dp gap, so the body starts 10 dp higher while the title stays off
+  the top edge.
+- **The D-pad focus band follows the measured row, not the 104 dp token.** A list with its own row
+  height (Sidetrack's 100 dp and 80 dp rows) no longer keeps a sliver of the previous row under the
+  title when focus scrolls; the band measures the focused item plus the gap.
+- **Build:** AGP 9.5.2 and Gradle 9.9.2, with the matching wrapper checksum.
+
+SDK artifacts for this tag are published to the GitHub Pages Maven repo (`sidekit-design` and
+`sidekit-sdk`, version `1.12.0`).
+
 ## v1.11.0 — 2026-11-21
 
 - **The touch Options button takes space in the top band instead of floating over it.** The three

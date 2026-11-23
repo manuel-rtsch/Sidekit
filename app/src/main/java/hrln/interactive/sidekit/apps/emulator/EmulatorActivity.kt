@@ -142,6 +142,10 @@ class EmulatorActivity :
             .setPositiveButton("Back") { _, _ -> finish() }.setOnCancelListener { finish() }.show()
     }
 
+    // SurfaceView's canvas is locked from the render thread by design; lint reads the holder as
+    // UI-thread-only and flags both the lock and the matching unlock. The whole loop is the
+    // renderer, so moving it to the main thread would stall every frame.
+    @SuppressLint("ThreadConstraint")
     private fun start() {
         if (!resumed || !ready || paused || handle == 0L || worker != null) return
         running = true
