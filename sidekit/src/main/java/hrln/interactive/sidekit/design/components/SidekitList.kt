@@ -100,7 +100,7 @@ fun SidekitList(
         with(density) {
             FocusBand(
                 top = contentPadding.calculateTopPadding().toPx(),
-                pitch = (spacing.itemHeight + spacing.itemOuterGap).toPx(),
+                rowGap = spacing.itemOuterGap.toPx(),
                 hasFocus = { hasFocus.value }
             )
         }
@@ -120,15 +120,22 @@ fun SidekitList(
  * Where D-pad focus scrolls a list to: the focused row is kept in the top two slots under the
  * title, where the list fade is lightest and the action bar is far away. Moving down a long list
  * scrolls it a row at a time, like a wheel menu.
+ *
+ * The slot is one item deep, measured from the item being brought into view rather than from the
+ * `itemHeight` token: a list whose rows are shorter or taller than the token (an app that sizes
+ * its own rows) still lands the row above flush with the top edge. Taking the token instead left
+ * the difference between the token and the real row as a sliver of the previous row under the
+ * title: 4 dp for a 97 dp row, 26 dp for a 78 dp one.
  */
 private class FocusBand(
     private val top: Float,
-    private val pitch: Float,
+    /** Between rows; the band is one item plus this gap deep. */
+    private val rowGap: Float,
     private val hasFocus: () -> Boolean
 ) : BringIntoViewSpec {
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
         if (!hasFocus()) return 0f
-        val bandEnd = top + pitch
+        val bandEnd = top + size + rowGap
         return when {
             offset < top -> offset - top
             offset > bandEnd -> offset - bandEnd
