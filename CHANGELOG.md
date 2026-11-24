@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.13.0 — 2026-11-24
 
 - **`ChromeState.focusActionBar(key)` can name the button it wants.** Until now only the first
   visible button could be asked for, so an app that wanted the cursor on the close square had to
@@ -10,6 +10,13 @@
 - **`ChromeState.saveContentFocus()` and `restoreContentFocus()` are public.** An app can remember
   the element the user was on before a transient bar takes the cursor, and put it back when the bar
   goes away, instead of leaving the keypad on a bar that is no longer showing.
+- **The key-cap card grows with its sentences.** The card that shows one key's tap and long press
+  was pinned to 112 dp, so a key whose sentences wrapped lost the second line; it now keeps 112 dp
+  as a floor and grows, and takes its text colours from the tile surface it paints rather than the
+  page beneath it.
+
+SDK artifacts for this tag are published to the GitHub Pages Maven repo (`sidekit-design` and
+`sidekit-sdk`, version `1.13.0`).
 
 ## v1.12.0 — 2026-11-23
 
