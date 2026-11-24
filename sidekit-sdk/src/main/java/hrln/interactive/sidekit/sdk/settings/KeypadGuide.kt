@@ -5,13 +5,15 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -21,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,6 +32,7 @@ import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.SidekitTile
 import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.theme.SidekitTheme
+import hrln.interactive.sidekit.design.theme.contentColorFor
 import hrln.interactive.sidekit.sdk.R
 
 /** One printed key and what it does on tap and on a long press. */
@@ -244,23 +249,40 @@ fun KeypadGuide(module: KeypadModule) {
 
 @Composable
 private fun KeypadGuideDetail(key: KeypadGuideKey) {
-    SidekitTile(
-        Modifier.fillMaxWidth().height(112.dp),
+    // The card grows with its tap and hold sentences instead of clipping them at a fixed height.
+    val surface = SidekitTheme.colors.surfaceA3
+    val content = SidekitTheme.colors.contentColorFor(surface)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 112.dp)
+            .clip(SidekitTheme.shapes.item)
+            .background(surface),
         contentAlignment = Alignment.CenterStart
     ) {
         Column(
-            Modifier.fillMaxSize().padding(horizontal = 20.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            SidekitText(key.label, style = SidekitTheme.typography.label, maxLines = 1)
-            GuideAction(stringResource(R.string.sk_sdk_guide_tap), key.tap)
-            GuideAction(stringResource(R.string.sk_sdk_guide_hold), key.hold ?: stringResource(R.string.sk_sdk_guide_no_long_press), muted = key.hold == null)
+            SidekitText(key.label, style = SidekitTheme.typography.label, color = content, maxLines = 1)
+            GuideAction(stringResource(R.string.sk_sdk_guide_tap), key.tap, contentColor = content)
+            GuideAction(
+                stringResource(R.string.sk_sdk_guide_hold),
+                key.hold ?: stringResource(R.string.sk_sdk_guide_no_long_press),
+                muted = key.hold == null,
+                contentColor = content
+            )
         }
     }
 }
 
 @Composable
-private fun GuideAction(label: String, action: String, muted: Boolean = false) {
+private fun GuideAction(
+    label: String,
+    action: String,
+    muted: Boolean = false,
+    contentColor: Color = SidekitTheme.colors.contentColorFor(SidekitTheme.colors.surfaceA3)
+) {
     Row(
         modifier = Modifier.padding(top = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -273,21 +295,12 @@ private fun GuideAction(label: String, action: String, muted: Boolean = false) {
             color = SidekitTheme.colors.surfaceA6,
             maxLines = 1
         )
-        if (muted) {
-            SidekitText(
-                action,
-                Modifier.weight(1f),
-                style = SidekitTheme.typography.tiny,
-                color = SidekitTheme.colors.surfaceA6,
-                maxLines = 2
-            )
-        } else {
-            SidekitText(
-                action,
-                Modifier.weight(1f),
-                style = SidekitTheme.typography.tiny,
-                maxLines = 2
-            )
-        }
+        SidekitText(
+            action,
+            Modifier.weight(1f),
+            style = SidekitTheme.typography.tiny,
+            color = if (muted) SidekitTheme.colors.surfaceA6 else contentColor,
+            maxLines = Int.MAX_VALUE
+        )
     }
 }
