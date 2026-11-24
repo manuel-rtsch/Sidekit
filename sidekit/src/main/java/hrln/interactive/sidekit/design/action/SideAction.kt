@@ -338,22 +338,23 @@ class ChromeState {
     }
 
     /**
-     * Moves focus to the first action button, if the action bar is showing one. The host registers
-     * the move because it also has to leave touch mode first: a clickable button is only focusable
-     * while Compose's input mode is Keyboard. Used by the Options hold so a long list does not have
-     * to be walked to reach the actions.
+     * Moves focus to an action button: the one with [key] when it is showing, else the first. The
+     * host registers the move because it also has to leave touch mode first: a clickable button is
+     * only focusable while Compose's input mode is Keyboard. Used by the Options hold so a long
+     * list does not have to be walked to reach the actions, and by apps that want the cursor on a
+     * particular button — the close square, say — when a bar appears.
      */
-    private var actionBarFocus: (() -> Boolean)? = null
+    private var actionBarFocus: ((String?) -> Boolean)? = null
 
-    internal fun registerActionBarFocus(focus: () -> Boolean) {
+    internal fun registerActionBarFocus(focus: (String?) -> Boolean) {
         actionBarFocus = focus
     }
 
-    internal fun unregisterActionBarFocus(focus: () -> Boolean) {
+    internal fun unregisterActionBarFocus(focus: (String?) -> Boolean) {
         if (actionBarFocus === focus) actionBarFocus = null
     }
 
-    fun focusActionBar(): Boolean = actionBarFocus?.invoke() ?: false
+    fun focusActionBar(key: String? = null): Boolean = actionBarFocus?.invoke(key) ?: false
 
     private val activeContentFocus: FocusRequester?
         get() = contentFocus ?: canvasContentFocus
@@ -362,8 +363,11 @@ class ChromeState {
      * Remembers the deepest focused child of the current screen's content. Called after every
      * D-pad move: Compose stores it as a saveable hash, not a node, so it can't go stale.
      * Does nothing (and never clobbers the memory) while focus is outside the content.
+     *
+     * An app calls this itself before it takes focus away from the page — see
+     * [restoreContentFocus] — so the element the user was on is the one they come back to.
      */
-    internal fun saveContentFocus() {
+    fun saveContentFocus() {
         runCatching { activeContentFocus?.saveFocusedChild() }
     }
 
@@ -372,7 +376,7 @@ class ChromeState {
      * focus; if that element is gone (the action replaced the screen), enters the current
      * screen's first focusable element. Returns false if there is nothing to focus.
      */
-    internal fun restoreContentFocus(): Boolean {
+    fun restoreContentFocus(): Boolean {
         val requester = activeContentFocus ?: return false
         return runCatching {
             requester.restoreFocusedChild() ||

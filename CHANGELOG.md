@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **`ChromeState.focusActionBar(key)` can name the button it wants.** Until now only the first
+  visible button could be asked for, so an app that wanted the cursor on the close square had to
+  focus the bar and then move right a frame later — a double jump that could land while the bar was
+  still morphing. Every button now carries its own `FocusRequester`, and the call resolves the key
+  the button is showing, so one request is enough. `focusActionBar()` still focuses the first slot.
+- **`ChromeState.saveContentFocus()` and `restoreContentFocus()` are public.** An app can remember
+  the element the user was on before a transient bar takes the cursor, and put it back when the bar
+  goes away, instead of leaving the keypad on a bar that is no longer showing.
+
 ## v1.12.0 — 2026-11-23
 
 - **The compact header is one title line again.** It keeps a 4 dp top inset above the 61 dp line

@@ -122,6 +122,13 @@ internal class ActionSlot(
     private var contentJob: Job? = null
     val press = Animatable(0f)
 
+    /**
+     * Focus target for this button. It lives with the slot rather than with the action, so a chain
+     * of morphs keeps one attached node and [ChromeState.focusActionBar] can ask for a button by
+     * key at any point in it.
+     */
+    val focusRequester = FocusRequester()
+
     /** Last settled content width, used to measure content while this slot merges away. */
     var contentMaxWidth: Int = 0
 
@@ -294,22 +301,23 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
 
     if (model.slots.isEmpty()) return
 
-    // The Options hold asks this requester for the first visible button. It stays attached to
-    // whichever slot is first, so the bar can morph between screens without losing the target.
-    val firstFocus = remember { FocusRequester() }
+    // Every button carries its own requester, so a caller can ask for one by key. Without a key
+    // the first visible button takes focus, which is what the Options hold wants.
     val inputMode = LocalInputModeManager.current
-    val focusFirst = remember(firstFocus, inputMode) {
-        {
+    val focusByKey = remember(model, inputMode) {
+        { key: String? ->
             // A clickable button is Focusability.SystemDefined, so it cannot take focus while
             // Compose still thinks the last input was a touch. requestInputMode(Keyboard) leaves
             // Android's touch mode first, then the focus request can land.
             inputMode.requestInputMode(InputMode.Keyboard)
-            firstFocus.requestFocus()
+            val target = model.slots.firstOrNull { !it.removing && (key == null || it.key == key) }
+            // The slot may be known but not yet composed (the bar morphs a frame late).
+            target != null && runCatching { target.focusRequester.requestFocus() }.getOrDefault(false)
         }
     }
-    DisposableEffect(state, focusFirst) {
-        state.registerActionBarFocus(focusFirst)
-        onDispose { state.unregisterActionBarFocus(focusFirst) }
+    DisposableEffect(state, focusByKey) {
+        state.registerActionBarFocus(focusByKey)
+        onDispose { state.unregisterActionBarFocus(focusByKey) }
     }
 
     val spacing = SidekitTheme.spacing
@@ -318,13 +326,12 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
     val edgePx = with(LocalDensity.current) { LABEL_EDGE.toPx() }
     val iconPx = with(LocalDensity.current) { spacing.iconSize.roundToPx() }
     val slots = model.slots
-    val firstVisible = slots.indexOfFirst { !it.removing }
 
     Layout(
         contents = listOf(
             {
                 slots.forEachIndexed { index, slot ->
-                    key(slot) { SlotSurface(slot, model, if (index == firstVisible) firstFocus else null) }
+                    key(slot) { SlotSurface(slot, model, slot.focusRequester) }
                 }
             },
             { slots.forEach { slot -> key(slot) { SlotContent(slot) } } }
