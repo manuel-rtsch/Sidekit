@@ -59,6 +59,7 @@
     <string name="sk_sdk_guide_activate_focused">Activate the focused control.</string>
     <string name="sk_sdk_guide_open_options">Open options.</string>
     <string name="sk_sdk_guide_open_search">Open search.</string>
+    <string name="sk_sdk_guide_open_playing_now">Open the playing now screen.</string>
     <string name="sk_sdk_guide_focus_action_bar">Focus the action bar.</string>
     <string name="sk_sdk_guide_go_home_screen">Go to the home screen.</string>
     <!-- Keypad guide: the rest of the screen. -->

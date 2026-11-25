@@ -57,6 +57,7 @@
     <string name="sk_sdk_guide_activate_focused">Activar el control enfocado.</string>
     <string name="sk_sdk_guide_open_options">Abrir opciones.</string>
     <string name="sk_sdk_guide_open_search">Abrir la búsqueda.</string>
+    <string name="sk_sdk_guide_open_playing_now">Abrir la pantalla de reproducción actual.</string>
     <string name="sk_sdk_guide_focus_action_bar">Enfocar la barra de acciones.</string>
     <string name="sk_sdk_guide_go_home_screen">Ir a la pantalla de inicio.</string>
     <!-- Keypad guide: the rest of the screen. -->
