@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **A game controller's Y key opens Playing Now.** Y used to jump to the action bar; that is now
+  what the Options hold does (hold X or Select), which every module has. `NavControls.PlayingNow`
+  is a new canonical chrome key (`KEYCODE_MUSIC`), `SidekitInputController` takes an
+  `onPlayingNow` callback, and `SidekitActivity` grew a matching `onSidekitPlayingNow()` hook so a
+  host can open its now-playing screen. The Sundial keeps its printed roles on press and on hold,
+  and has no spare hold, so it is the one module with no Playing Now key.
+- **The key guide draws each key's printed glyph.** The diagram shows the symbol above the
+  translated key name, so CALL, END CALL, Home, Delete, Enter, Search, the media keys and the
+  D-pad read like the module in hand. Five Material Symbols Rounded drawables (`arrow_downward`,
+  `backspace`, `call_end`, `home`, `keyboard_return`) join `SidekitIcon`, cut from the upstream
+  Symbols set in the same negative-coordinate form as the rest of the icon set.
+
 ## v1.13.0 — 2026-11-24
 
 - **`ChromeState.focusActionBar(key)` can name the button it wants.** Until now only the first

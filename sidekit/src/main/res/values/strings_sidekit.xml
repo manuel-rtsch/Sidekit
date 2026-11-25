@@ -65,13 +65,13 @@
     <string name="sk_sidekit_hint_next_track">Next track</string>
     <string name="sk_sidekit_hint_previous_track">Previous track</string>
     <string name="sk_sidekit_hint_play_pause">Play or pause; hold for Confirm</string>
-    <string name="sk_sidekit_hint_corner_left">Move left; hold for Options fallback</string>
+    <string name="sk_sidekit_hint_corner_left">Move left</string>
     <string name="sk_sidekit_hint_tab">Next control; hold for Back</string>
     <string name="sk_sidekit_hint_enter_sundial">Select; hold for Options (some revisions report Play/Pause)</string>
     <string name="sk_sidekit_hint_confirm">Confirm</string>
     <string name="sk_sidekit_hint_back_in_games">Back in games</string>
     <string name="sk_sidekit_hint_button_x">Options; hold for the action bar</string>
-    <string name="sk_sidekit_hint_button_y">Jump to the action bar</string>
+    <string name="sk_sidekit_hint_button_y">Open the playing now screen</string>
     <string name="sk_sidekit_hint_open_search">Open search</string>
     <string name="sk_sidekit_hint_go_home">Go to the home screen</string>
     <string name="sk_sidekit_hint_digit_0">Space; hold for 0</string>

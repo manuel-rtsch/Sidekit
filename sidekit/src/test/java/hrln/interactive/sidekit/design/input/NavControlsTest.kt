@@ -53,10 +53,18 @@ class NavControlsTest {
         assertEquals(NavControls.Search, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_R1))
     }
 
-    @Test fun gamePadLeavesActionBarKeyAndCanonicalKeysAlone() {
-        // Y is a direct action-bar jump, handled by SidekitInputController.
-        assertNull(mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_Y))
+    @Test fun gamePadYOpensPlayingNow() {
+        // Y is the controller's now-playing key; the action bar is the X/Options hold instead.
+        assertEquals(NavControls.PlayingNow, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_Y))
         assertNull(mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_DPAD_UP))
+    }
+
+    @Test fun everyChromeActionKeyIsCanonical() {
+        // Home, Search and Playing Now are handled by SidekitInputController, not by focus.
+        for (target in listOf(NavControls.Home, NavControls.Search, NavControls.PlayingNow)) {
+            assertTrue("$target must be a canonical key", target in NavControls.all)
+        }
+        assertEquals(3, setOf(NavControls.Home, NavControls.Search, NavControls.PlayingNow).size)
     }
 
     @Test fun qwertyLetterCrossNavigates() {
@@ -93,6 +101,8 @@ class NavControlsTest {
         // Previous/Next are media keys; their holds must not turn them into left/right.
         assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
         assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
+        // The Sundial has no spare hold, so Playing Now is reachable from the controller only.
+        assertNull(NavControls.defaultFor.getValue(KeypadModule.Sundial)[KeyEvent.KEYCODE_BUTTON_Y])
         // The arrows must keep moving on press and repeating while held.
         for (arrow in listOf(NavControls.Up, NavControls.Down, NavControls.Left, NavControls.Right)) {
             assertNull("arrow $arrow must not be a hold key", NavControls.sundialHoldFor[arrow])

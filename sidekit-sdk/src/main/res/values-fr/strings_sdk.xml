@@ -22,6 +22,7 @@
     <string name="sk_sdk_guide_search">Rech.</string>
     <string name="sk_sdk_guide_action">Action</string>
     <string name="sk_sdk_guide_confirm">Valider</string>
+    <string name="sk_sdk_guide_playing_now">Lecture en cours</string>
     <!-- Keypad guide: what a key does on a tap or a long press. -->
     <string name="sk_sdk_guide_go_back_screen">Revenir à l\'écran précédent.</string>
     <string name="sk_sdk_guide_open_dialer">Ouvrir le clavier téléphonique.</string>
@@ -57,6 +58,7 @@
     <string name="sk_sdk_guide_activate_focused">Activer l\'élément sélectionné.</string>
     <string name="sk_sdk_guide_open_options">Ouvrir les options.</string>
     <string name="sk_sdk_guide_open_search">Ouvrir la recherche.</string>
+    <string name="sk_sdk_guide_open_playing_now">Ouvrir l\'écran de lecture en cours.</string>
     <string name="sk_sdk_guide_focus_action_bar">Sélectionner la barre d\'actions.</string>
     <string name="sk_sdk_guide_go_home_screen">Aller à l\'écran d\'accueil.</string>
     <!-- Keypad guide: the rest of the screen. -->

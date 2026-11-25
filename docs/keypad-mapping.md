@@ -26,11 +26,11 @@ Sidekit only treats the keypad modules' own input devices as keypads, and reads 
 
 ## Sundial holds
 
-The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter** for Options. Hold the **centre Play/Pause** key for Confirm when a revision reports Enter as the centre media key; a tap still controls media. The **Previous** / **Next** edges and the corner arrows always keep their printed roles: the edges skip tracks and the corners move left/right, on press as well as when held. Keypad holds follow Android's long-press timeout (`ViewConfiguration.getLongPressTimeout()`, 400 ms by default), so a device or accessibility tool that changes the system value also changes them. The Back-to-dialer hold stays at 600 ms.
+The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter** for Options. Hold the **centre Play/Pause** key for Confirm when a revision reports Enter as the centre media key; a tap still controls media. The **Previous** / **Next** edges and the corner arrows always keep their printed roles: the edges skip tracks and the corners move left/right, on press as well as when held. That leaves no spare hold, so the Sundial is the one module that cannot open Playing Now from its own keys. Keypad holds follow Android's long-press timeout (`ViewConfiguration.getLongPressTimeout()`, 400 ms by default), so a device or accessibility tool that changes the system value also changes them. The Back-to-dialer hold stays at 600 ms.
 
 ## Game controller
 
-The controller's D-pad moves focus, **A** confirms, **B** goes back, **X** or **Select** opens Options, **Start** goes home, and either shoulder opens Search. **Y** jumps straight to the first action-bar button.
+The controller's D-pad moves focus, **A** confirms, **B** goes back, **X** or **Select** opens Options (hold for the action bar), **Start** goes home, either shoulder opens Search, and **Y** opens Playing Now.
 
 ## Scope
 

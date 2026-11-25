@@ -52,7 +52,8 @@ abstract class SidekitActivity : ComponentActivity() {
             dispatch = ::dispatchToPlatform,
             onBack = { onBackPressedDispatcher.onBackPressed() },
             onHome = ::onSidekitHome,
-            onSearch = ::onSidekitSearch
+            onSearch = ::onSidekitSearch,
+            onPlayingNow = ::onSidekitPlayingNow
         )
     }
 
@@ -91,6 +92,9 @@ abstract class SidekitActivity : ComponentActivity() {
 
     /** A controller's shoulder/Search key. The host opens its search surface. */
     protected open fun onSidekitSearch() {}
+
+    /** A controller's Y/Playing Now key. The host opens its now-playing surface. */
+    protected open fun onSidekitPlayingNow() {}
 
     final override fun onResume() {
         super.onResume()

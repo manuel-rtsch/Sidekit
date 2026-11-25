@@ -28,15 +28,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.SidekitTile
+import hrln.interactive.sidekit.design.icons.SidekitIcon
 import hrln.interactive.sidekit.design.input.KeypadModule
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.contentColorFor
 import hrln.interactive.sidekit.sdk.R
 
 /** One printed key and what it does on tap and on a long press. */
-data class KeypadGuideKey(val label: String, val tap: String, val hold: String? = null)
+data class KeypadGuideKey(
+    val label: String,
+    val tap: String,
+    val hold: String? = null,
+    val icon: SidekitIcon? = null
+)
 
 /**
  * The keys shown in [KeypadGuide], in the order they sit on the physical module. Pass [resources]
@@ -44,7 +51,7 @@ data class KeypadGuideKey(val label: String, val tap: String, val hold: String? 
  */
 fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<List<KeypadGuideKey?>> {
     fun t(@StringRes id: Int, english: String, vararg args: Any): String = resources?.getString(id, *args) ?: if (args.isEmpty()) english else english.format(*args)
-    fun key(label: String, tap: String, hold: String? = null) = KeypadGuideKey(label, tap, hold)
+    fun key(label: String, tap: String, hold: String? = null, icon: SidekitIcon? = null) = KeypadGuideKey(label, tap, hold, icon)
     val back = t(R.string.sk_sdk_guide_back, "Back")
     val home = t(R.string.sk_sdk_guide_home, "Home")
     val options = t(R.string.sk_sdk_guide_options, "Options")
@@ -53,54 +60,80 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
     val left = t(R.string.sk_sdk_guide_left, "Left")
     val right = t(R.string.sk_sdk_guide_right, "Right")
     val delete = t(R.string.sk_sdk_guide_delete, "Delete")
+    val space = t(R.string.sk_sdk_guide_space, "Space")
+    val enter = t(R.string.sk_sdk_guide_enter, "Enter")
+    val previous = t(R.string.sk_sdk_guide_previous, "Previous")
+    val playPause = t(R.string.sk_sdk_guide_play_pause, "Play / pause")
+    val next = t(R.string.sk_sdk_guide_next, "Next")
+    val search = t(R.string.sk_sdk_guide_search, "Search")
+    val playingNow = t(R.string.sk_sdk_guide_playing_now, "Playing now")
+    val confirm = t(R.string.sk_sdk_guide_confirm, "Confirm")
     val goBackScreen = t(R.string.sk_sdk_guide_go_back_screen, "Go back a screen.")
     val openDialer = t(R.string.sk_sdk_guide_open_dialer, "Open the dialer.")
     val returnHome = t(R.string.sk_sdk_guide_return_home, "Return to your home app.")
-    val extraActions = t(R.string.sk_sdk_guide_extra_actions, "Show this screen’s extra actions.")
+    val extraActions = t(R.string.sk_sdk_guide_extra_actions, "Show this screen\u2019s extra actions.")
     val jumpToBar = t(R.string.sk_sdk_guide_jump_to_bar, "Jump to the action bar.")
     val focusUp = t(R.string.sk_sdk_guide_focus_up, "Move focus up.")
     val focusDown = t(R.string.sk_sdk_guide_focus_down, "Move focus down.")
     val focusLeft = t(R.string.sk_sdk_guide_focus_left, "Move focus left.")
     val focusRight = t(R.string.sk_sdk_guide_focus_right, "Move focus right.")
+    val focusLeftText = t(R.string.sk_sdk_guide_focus_left_text, "Move focus left. In text, move the cursor or suggestion selection.")
+    val focusRightText = t(R.string.sk_sdk_guide_focus_right_text, "Move focus right. In text, move the cursor or suggestion selection.")
+    val okAction = t(R.string.sk_sdk_guide_ok, "Activate the focused control or confirm a suggestion.")
     val deletePrevious = t(R.string.sk_sdk_guide_delete_previous, "Delete the previous character.")
-    val cycleLetters = t(R.string.sk_sdk_guide_cycle_letters, "Tap repeatedly to cycle this key’s letters.")
+    val cycleLetters = t(R.string.sk_sdk_guide_cycle_letters, "Tap repeatedly to cycle this key\u2019s letters.")
     val cycleSymbols = t(R.string.sk_sdk_guide_cycle_symbols, "Tap repeatedly to cycle symbols.")
     val changeCase = t(R.string.sk_sdk_guide_change_case, "Change letter case.")
     val lettersAndNumbers = t(R.string.sk_sdk_guide_letters_numbers, "Switch letters and numbers.")
     val focusActionBar = t(R.string.sk_sdk_guide_focus_action_bar, "Focus the action bar.")
     val activateFocused = t(R.string.sk_sdk_guide_activate_focused, "Activate the focused control.")
     val openOptions = t(R.string.sk_sdk_guide_open_options, "Open options.")
+    val openSearch = t(R.string.sk_sdk_guide_open_search, "Open search.")
+    val openPlayingNow = t(R.string.sk_sdk_guide_open_playing_now, "Open the playing now screen.")
+    val goHomeScreen = t(R.string.sk_sdk_guide_go_home_screen, "Go to the home screen.")
+    val previousTrack = t(R.string.sk_sdk_guide_previous_track, "Previous media track.")
+    val playPauseMedia = t(R.string.sk_sdk_guide_play_pause_media, "Play or pause media.")
+    val confirmFocused = t(R.string.sk_sdk_guide_confirm_focused, "Confirm the focused control.")
+    val nextTrack = t(R.string.sk_sdk_guide_next_track, "Next media track.")
+    val nextControl = t(R.string.sk_sdk_guide_next_control, "Move to the next control.")
+    val goBack = t(R.string.sk_sdk_guide_go_back, "Go back.")
+    fun chooseLetter(label: String) = t(R.string.sk_sdk_guide_choose_letter, "Choose a letter from %1\$s.", label)
+    val typePrinted = t(R.string.sk_sdk_guide_type_printed, "Type the printed digit or symbol.")
+    val cycleSuggestions = t(R.string.sk_sdk_guide_cycle_suggestions, "Cycle the suggested words.")
+    val insertSpace = t(R.string.sk_sdk_guide_insert_space, "Insert a space.")
+    val confirmOrNewLine = t(R.string.sk_sdk_guide_confirm_or_new_line, "Confirm a suggestion or insert a new line.")
     fun type(digit: Int) = t(R.string.sk_sdk_guide_type_digit, "Type %1\$d.", digit)
     fun digit(n: Int) = key("$n", cycleLetters, type(n))
+    // The chrome keys every module carries: Back, Home and Options, each named by its printed glyph.
     val navigation: List<KeypadGuideKey?> = listOf(
-        key(back, goBackScreen, openDialer),
-        key(home, returnHome),
-        key(options, extraActions, jumpToBar)
+        key(back, goBackScreen, openDialer, SidekitIcon.Call),
+        key(home, returnHome, icon = SidekitIcon.Home),
+        key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
     )
     return when (module) {
         // The five-way control is three rows tall. The soft keys sit above and below it, so the
         // two outer columns have a gap in the middle row. This keeps the D-pad cross aligned.
         KeypadModule.T9 -> listOf(
             listOf(
-                key(back, goBackScreen, openDialer),
+                key(back, goBackScreen, openDialer, SidekitIcon.Call),
                 null,
-                key(up, focusUp),
+                key(up, focusUp, icon = SidekitIcon.ArrowUpward),
                 null,
-                key(options, extraActions, jumpToBar)
+                key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
             ),
             listOf(
                 null,
-                key(left, t(R.string.sk_sdk_guide_focus_left_text, "Move focus left. In text, move the cursor or suggestion selection.")),
-                key("OK", t(R.string.sk_sdk_guide_ok, "Activate the focused control or confirm a suggestion.")),
-                key(right, t(R.string.sk_sdk_guide_focus_right_text, "Move focus right. In text, move the cursor or suggestion selection.")),
+                key(left, focusLeftText, icon = SidekitIcon.ArrowLeftAlt),
+                key("OK", okAction),
+                key(right, focusRightText, icon = SidekitIcon.ArrowRightAlt),
                 null
             ),
             listOf(
-                key(home, returnHome),
+                key(home, returnHome, icon = SidekitIcon.Home),
                 null,
-                key(down, focusDown),
+                key(down, focusDown, icon = SidekitIcon.ArrowDownward),
                 null,
-                key(delete, deletePrevious)
+                key(delete, deletePrevious, icon = SidekitIcon.Backspace)
             )
         ) + listOf(
             listOf(null, key("1", t(R.string.sk_sdk_guide_punctuation, "Tap repeatedly for punctuation."), type(1)), digit(2), digit(3), null),
@@ -117,33 +150,35 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         ).map { row ->
             row.map { label ->
                 if (label == null) {
-                    key(delete, deletePrevious)
+                    key(delete, deletePrevious, icon = SidekitIcon.Backspace)
                 } else {
-                    key(label, t(R.string.sk_sdk_guide_choose_letter, "Choose a letter from %1\$s.", label), t(R.string.sk_sdk_guide_type_printed, "Type the printed digit or symbol."))
+                    key(label, chooseLetter(label), typePrinted)
                 }
             }
         } + listOf(
-            listOf(key("↕", t(R.string.sk_sdk_guide_cycle_suggestions, "Cycle the suggested words.")), key("SYM", cycleSymbols), key("aA", changeCase, lettersAndNumbers)),
-            listOf(
-                key(t(R.string.sk_sdk_guide_space, "Space"), t(R.string.sk_sdk_guide_insert_space, "Insert a space."), type(0)),
-                key(t(R.string.sk_sdk_guide_enter, "Enter"), t(R.string.sk_sdk_guide_confirm_or_new_line, "Confirm a suggestion or insert a new line."))
-            )
+            listOf(key("\u2195", cycleSuggestions), key("SYM", cycleSymbols), key("aA", changeCase, lettersAndNumbers)),
+            listOf(key(space, insertSpace, type(0)), key(enter, confirmOrNewLine, icon = SidekitIcon.KeyboardReturn))
         )
 
         // The Sundial is a ring of eight keys around the centre key. Lay it out exactly as it sits
         // on the module: top-left is left, top-right is right, bottom-left is Tab, bottom-right is
         // Enter, and the media keys are the middle row.
+        // Its labels are the printed glyphs themselves, so the arrows need no icon above them.
         KeypadModule.Sundial -> listOf(
-            listOf(key("←", focusLeft), key("↑", focusUp), key("→", focusRight)),
             listOf(
-                key(t(R.string.sk_sdk_guide_previous, "Previous"), t(R.string.sk_sdk_guide_previous_track, "Previous media track."), focusLeft),
-                key(t(R.string.sk_sdk_guide_play_pause, "Play / pause"), t(R.string.sk_sdk_guide_play_pause_media, "Play or pause media."), t(R.string.sk_sdk_guide_confirm_focused, "Confirm the focused control.")),
-                key(t(R.string.sk_sdk_guide_next, "Next"), t(R.string.sk_sdk_guide_next_track, "Next media track."), focusRight)
+                key("\u2190", focusLeft),
+                key("\u2191", focusUp),
+                key("\u2192", focusRight)
             ),
             listOf(
-                key("Tab", t(R.string.sk_sdk_guide_next_control, "Move to the next control."), t(R.string.sk_sdk_guide_go_back, "Go back.")),
-                key("↓", focusDown),
-                key(t(R.string.sk_sdk_guide_enter, "Enter"), activateFocused, openOptions)
+                key(previous, previousTrack),
+                key(playPause, playPauseMedia, confirmFocused, icon = SidekitIcon.PlayArrow),
+                key(next, nextTrack)
+            ),
+            listOf(
+                key("Tab", nextControl, goBack),
+                key("\u2193", focusDown),
+                key(enter, activateFocused, openOptions, icon = SidekitIcon.KeyboardReturn)
             )
         )
 
@@ -152,23 +187,23 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         KeypadModule.GamePad -> listOf(
             listOf(
                 null,
-                key(up, focusUp),
+                key(up, focusUp, icon = SidekitIcon.ArrowUpward),
                 null,
                 null,
-                key(t(R.string.sk_sdk_guide_search, "Search"), t(R.string.sk_sdk_guide_open_search, "Open search."))
+                key(search, openSearch, icon = SidekitIcon.Search)
             ),
             listOf(
-                key(left, focusLeft),
+                key(left, focusLeft, icon = SidekitIcon.ArrowLeftAlt),
                 null,
-                key(right, focusRight),
+                key(right, focusRight, icon = SidekitIcon.ArrowRightAlt),
                 null,
                 null
             ),
             listOf(
                 null,
-                key(down, focusDown),
+                key(down, focusDown, icon = SidekitIcon.ArrowDownward),
                 null,
-                key(t(R.string.sk_sdk_guide_action, "Action"), focusActionBar),
+                key(playingNow, openPlayingNow, icon = SidekitIcon.Album),
                 null
             ),
             listOf(
@@ -179,10 +214,10 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
                 key(back, goBackScreen)
             ),
             listOf(
-                key(home, t(R.string.sk_sdk_guide_go_home_screen, "Go to the home screen.")),
+                key(home, goHomeScreen, icon = SidekitIcon.Home),
                 null,
                 null,
-                key(t(R.string.sk_sdk_guide_confirm, "Confirm"), activateFocused),
+                key(confirm, activateFocused),
                 null
             )
         )
@@ -221,7 +256,20 @@ fun KeypadGuide(module: KeypadModule) {
                                 onClick = { selected = key },
                                 onClickLabel = stringResource(R.string.sk_sdk_guide_show_key, key.label)
                             ) {
-                                SidekitText(key.label, style = SidekitTheme.typography.small, maxLines = 1)
+                                // The printed glyph above the key's name, so the diagram reads like the
+                                // module and the name still reads in the app's language.
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    key.icon?.let { SidekitIconImage(it, size = 20.dp) }
+                                    SidekitText(
+                                        key.label,
+                                        style = if (key.icon == null) SidekitTheme.typography.small else SidekitTheme.typography.tiny,
+                                        // Two lines so a two-word name still fits a fifth of the width.
+                                        maxLines = if (key.icon == null) 1 else 2
+                                    )
+                                }
                             }
                         }
                     }
@@ -264,7 +312,15 @@ private fun KeypadGuideDetail(key: KeypadGuideKey) {
             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            SidekitText(key.label, style = SidekitTheme.typography.label, color = content, maxLines = 1)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                key.icon?.let { icon ->
+                    SidekitIconImage(icon, size = 28.dp, tint = content)
+                }
+                SidekitText(key.label, style = SidekitTheme.typography.label, color = content, maxLines = 1)
+            }
             GuideAction(stringResource(R.string.sk_sdk_guide_tap), key.tap, contentColor = content)
             GuideAction(
                 stringResource(R.string.sk_sdk_guide_hold),

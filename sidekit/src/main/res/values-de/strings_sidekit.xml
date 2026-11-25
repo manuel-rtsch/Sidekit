@@ -62,13 +62,13 @@
     <string name="sk_sidekit_hint_next_track">Nächster Titel</string>
     <string name="sk_sidekit_hint_previous_track">Vorheriger Titel</string>
     <string name="sk_sidekit_hint_play_pause">Wiedergabe/Pause; halten für Bestätigen</string>
-    <string name="sk_sidekit_hint_corner_left">Nach links; halten als Optionen-Ersatz</string>
+    <string name="sk_sidekit_hint_corner_left">Nach links</string>
     <string name="sk_sidekit_hint_tab">Nächstes Element; halten für Zurück</string>
     <string name="sk_sidekit_hint_enter_sundial">Auswählen; halten für Optionen (manche Versionen melden Play/Pause)</string>
     <string name="sk_sidekit_hint_confirm">Bestätigen</string>
     <string name="sk_sidekit_hint_back_in_games">Zurück in Spielen</string>
     <string name="sk_sidekit_hint_button_x">Optionen; halten für die Aktionsleiste</string>
-    <string name="sk_sidekit_hint_button_y">Zur Aktionsleiste springen</string>
+    <string name="sk_sidekit_hint_button_y">Aktuelle Wiedergabe öffnen</string>
     <string name="sk_sidekit_hint_open_search">Suche öffnen</string>
     <string name="sk_sidekit_hint_go_home">Zum Startbildschirm</string>
     <string name="sk_sidekit_hint_digit_0">Leerzeichen; halten für 0</string>

@@ -34,9 +34,10 @@ object NavControls {
     /** Universal chrome actions the host handles (not focus movement). */
     const val Home = KeyEvent.KEYCODE_HOME
     const val Search = KeyEvent.KEYCODE_SEARCH
+    const val PlayingNow = KeyEvent.KEYCODE_MUSIC
 
     /** Every canonical key, for contract tests. */
-    val all = listOf(Up, Down, Left, Right, Confirm, Back, Options, Home, Search)
+    val all = listOf(Up, Down, Left, Right, Confirm, Back, Options, Home, Search, PlayingNow)
 
     /**
      * How each module's native keys map to canonical navigation, active while the module is
@@ -44,8 +45,7 @@ object NavControls {
      *
      * - T9 and the Sundial already send the canonical keys, so they map nothing.
      * - The game controller's D-pad is canonical too; A confirms and B goes back. X and Select
-     *   open Options, Start goes Home and either shoulder opens Search. Y is handled by the SDK
-     *   input loop as a direct jump to the action bar.
+     *   open Options, Start goes Home, either shoulder opens Search and Y opens Playing Now.
      * - Mini QWERTY: its bottom row is the modifier keys (SUGGEST / SYM / CASE = Ctrl / Alt /
      *   Shift) and its only dedicated directional control is a single up-down rocker (code 113),
      *   so navigation uses a cross of letter keys measured on-device: **T up, D left, B down,
@@ -66,7 +66,8 @@ object NavControls {
             KeyEvent.KEYCODE_BUTTON_SELECT to Options,
             KeyEvent.KEYCODE_BUTTON_START to Home,
             KeyEvent.KEYCODE_BUTTON_L1 to Search,
-            KeyEvent.KEYCODE_BUTTON_R1 to Search
+            KeyEvent.KEYCODE_BUTTON_R1 to Search,
+            KeyEvent.KEYCODE_BUTTON_Y to PlayingNow
         ),
         KeypadModule.Qwerty to mapOf(
             // Measured on-device: T / D / B / J around the printed 5 / GH key form a directional
@@ -89,6 +90,9 @@ object NavControls {
      * media controls feel like navigation. The arrows themselves stay plain as well: a hold defers
      * the press to its release and swallows key repeat, so holding ↓ through a long list would stop
      * scrolling and jump Home instead.
+     *
+     * There is therefore no spare hold on the Sundial, and it is the one module that cannot reach
+     * Playing Now from its own keys.
      */
     val sundialHoldFor: Map<Int, Int> = mapOf(
         KeyEvent.KEYCODE_TAB to Back,

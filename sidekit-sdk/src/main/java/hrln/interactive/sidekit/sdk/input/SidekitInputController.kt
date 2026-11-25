@@ -34,7 +34,8 @@ class SidekitInputController(
     private val dispatch: (KeyEvent) -> Boolean,
     private val onBack: () -> Unit,
     private val onHome: () -> Unit = {},
-    private val onSearch: () -> Unit = {}
+    private val onSearch: () -> Unit = {},
+    private val onPlayingNow: () -> Unit = {}
 ) {
     /** The Sundial has no Back/Options key: hold Tab / Enter. Taps keep their media role. */
     private val sundialHold = HoldToAct(onHold = { action, source -> performSundialHold(action, source) })
@@ -137,24 +138,26 @@ class SidekitInputController(
 
     /** Routes an already-translated event; also used for the tap released by [sundialHold]. */
     private fun dispatchTranslated(event: KeyEvent): Boolean {
-        // Generic chrome actions from the controller. A normal keyboard's Home/Search keys keep
+        // Generic chrome actions from the controller. A normal keyboard's Home/Search/PlayingNow keys keep
         // their platform behaviour.
         if (keypad.module == KeypadModule.GamePad &&
-            (event.keyCode == NavControls.Home || event.keyCode == NavControls.Search)
+            (event.keyCode == NavControls.Home || event.keyCode == NavControls.Search || event.keyCode == NavControls.PlayingNow)
         ) {
             if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                if (event.keyCode == NavControls.Home) onHome() else onSearch()
+                when (event.keyCode) {
+                    NavControls.Home -> onHome()
+
+                    NavControls.Search -> onSearch()
+
+                    NavControls.PlayingNow -> {
+                        keypad.finishTyping()
+                        onPlayingNow()
+                    }
+                }
             }
             return true
         }
-        // The controller's Y button jumps straight to the first action button.
-        if (keypad.module == KeypadModule.GamePad && event.keyCode == KeyEvent.KEYCODE_BUTTON_Y) {
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                keypad.finishTyping()
-                chrome.focusActionBar()
-            }
-            return true
-        }
+        // Y reaches PlayingNow through defaultFor, so it needs no case of its own here.
         when {
             // Keypad top-right: the universal Options key. Acts on release; the press is consumed
             // so the system's end-call handling never sees it.
