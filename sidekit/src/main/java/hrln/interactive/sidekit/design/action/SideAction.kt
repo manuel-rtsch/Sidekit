@@ -8,6 +8,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
@@ -255,18 +256,40 @@ class ChromeState {
         get() = optionsSource?.options?.isNotEmpty() == true
 
     /**
+     * A request to move the cursor into the bar once the new buttons are composed, counted so a
+     * repeated press still lands. [focusActionBar] at the moment of the toggle can miss when the
+     * bar was empty and its buttons do not exist yet; the host consumes this after recomposing.
+     */
+    private var pendingBarFocus: String? = null
+    internal var barFocusRequests by mutableIntStateOf(0)
+        private set
+
+    internal fun requestBarFocus(key: String? = null) {
+        pendingBarFocus = key
+        barFocusRequests++
+    }
+
+    internal fun consumeBarFocusRequest(): String? = pendingBarFocus
+
+    /**
      * The Options key (the keypad's top-right key): every screen's universal "more" button. Swaps
      * the action bar to the screen's [ChromePublisher.options] (plus a close button) and back. A
-     * screen without options briefly says so instead of doing nothing.
+     * screen without options briefly says so instead of doing nothing. [focusBar] puts the cursor
+     * on the first option, which is what a keypad press expects; a touch opening leaves it where
+     * it was, since no cursor is visible to the finger.
      */
-    fun toggleOptions() {
+    fun toggleOptions(focusBar: Boolean = false) {
         handler.removeCallbacks(autoClose)
         if (optionsOpen) {
             optionsOwner = null
         } else {
             val source = optionsSource ?: return
             optionsOwner = source
-            if (source.options.isEmpty()) handler.postDelayed(autoClose, NO_OPTIONS_MS)
+            if (source.options.isEmpty()) {
+                handler.postDelayed(autoClose, NO_OPTIONS_MS)
+            } else if (focusBar) {
+                requestBarFocus()
+            }
         }
         onChange?.invoke()
     }

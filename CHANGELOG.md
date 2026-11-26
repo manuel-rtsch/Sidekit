@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **The Options key puts the cursor on the bar it opens.** A tap swapped the bar for the screen's
+  options but left focus in the content, so a keypad user had to walk down before they could move
+  between the options. The keypad loop now asks for `toggleOptions(focusBar = true)`, the first
+  option takes focus after the buttons are composed, and Enter activates it. The request waits for
+  the bar host's next composition, so a screen whose bar was empty still lands on the first option;
+  a touch press keeps the old behaviour because there is no cursor to place. `toggleOptions()`
+  defaults to no focus, so apps that open options from a tap are unchanged. The Sundial's hold on
+  Enter and the controller's X key use the same path.
 - **The game controller's top-right key opens Search again.** The SDK mapped Search onto
   `BUTTON_L1`/`BUTTON_R1`, but the Sidephone's 5x3 gamepad tile has no shoulder: its small
   top-right key arrives as `BUTTON_SELECT` (measured with `getevent`: `BTN_SELECT` top-right,

@@ -319,6 +319,14 @@ internal fun ActionBarHost(state: ChromeState, modifier: Modifier = Modifier) {
         state.registerActionBarFocus(focusByKey)
         onDispose { state.unregisterActionBarFocus(focusByKey) }
     }
+    // The Options key asks for the first option to take the cursor. The request waits for this
+    // effect so the option buttons exist: toggling from a screen with no bar built them in the
+    // same frame, and an immediate request would find nothing to focus.
+    LaunchedEffect(state.barFocusRequests) {
+        // The bar may already have been dismissed (a quick Back) before this effect ran.
+        if (state.barFocusRequests == 0 || !state.optionsOpen) return@LaunchedEffect
+        focusByKey(state.consumeBarFocusRequest())
+    }
 
     val spacing = SidekitTheme.spacing
     val gapPx = with(LocalDensity.current) { spacing.actionButtonGap.toPx() }

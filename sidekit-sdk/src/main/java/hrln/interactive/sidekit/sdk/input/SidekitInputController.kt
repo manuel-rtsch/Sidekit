@@ -105,7 +105,7 @@ class SidekitInputController(
 
             KeyEvent.KEYCODE_ENDCALL -> {
                 keypad.finishTyping()
-                chrome.toggleOptions()
+                chrome.toggleOptions(focusBar = true)
             }
 
             NavControls.Home -> onHome()
@@ -164,7 +164,7 @@ class SidekitInputController(
             SystemKeys.isOptions(event) -> {
                 if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
                     keypad.finishTyping()
-                    chrome.toggleOptions()
+                    chrome.toggleOptions(focusBar = true)
                 }
                 return true
             }

@@ -138,7 +138,7 @@ class ProjectionController(
             SystemKeys.isOptions(event) -> {
                 if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
                     overlay.keypad.finishTyping()
-                    overlay.chrome.toggleOptions()
+                    overlay.chrome.toggleOptions(focusBar = true)
                 }
                 return true
             }

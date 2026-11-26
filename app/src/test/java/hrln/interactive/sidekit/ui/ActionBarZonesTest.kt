@@ -1,5 +1,10 @@
 package hrln.interactive.sidekit.ui
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
@@ -20,6 +25,36 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ActionBarZonesTest {
     @get:Rule val compose = createComposeRule()
+
+    private object KeypadInputMode : InputModeManager {
+        override val inputMode = InputMode.Keyboard
+        override fun requestInputMode(inputMode: InputMode) = true
+    }
+
+    @Test
+    fun optionsOpenedByTheOptionsKeyFocusTheFirstOption() {
+        lateinit var chrome: ChromeState
+        compose.setContent {
+            CompositionLocalProvider(LocalInputModeManager provides KeypadInputMode) {
+                SidekitPreviewFrame {
+                    chrome = LocalChrome.current!!
+                    SidekitScaffold(
+                        title = "Zones",
+                        options = listOf(
+                            square("Queue", "QueueMusic"),
+                            square("Sleep timer", "Bedtime")
+                        )
+                    ) {}
+                }
+            }
+        }
+        settle()
+
+        compose.runOnUiThread { chrome.toggleOptions(focusBar = true) }
+        settle()
+
+        compose.onNodeWithContentDescription("Queue").assertIsFocused()
+    }
 
     @Test
     fun allSquareOptionsKeepCloseAtTheRightEdge() {
