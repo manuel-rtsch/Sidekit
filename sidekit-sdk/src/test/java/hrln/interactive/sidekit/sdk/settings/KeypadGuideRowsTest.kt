@@ -12,12 +12,18 @@ import org.junit.Test
  */
 class KeypadGuideRowsTest {
     @Test
-    fun `T9 prints its glyph keys and the word on the centre key`() {
+    fun `T9 above the numpad prints only glyphs, except the word on the centre key`() {
         val rows = keypadGuideRows(KeypadModule.T9)
 
+        // The soft keys and the five-way control carry their glyph alone.
         val topLeft = rows[0][0]!!
         assertEquals(SidekitIcon.Call, topLeft.icon)
-        assertEquals("Back", topLeft.printed)
+        assertNull(topLeft.printed)
+        for (row in rows.take(3)) {
+            for (key in row.filterNotNull()) {
+                if (key.label != "OK") assertNull(key.printed)
+            }
+        }
 
         // The one cap above the numpad that really prints a word.
         assertEquals("OK", rows[1][2]!!.printed)
@@ -63,6 +69,9 @@ class KeypadGuideRowsTest {
         assertEquals(5, bottom.size)
         assertEquals("\u2195", bottom[0]!!.printed)
         assertEquals("Space", bottom[2]!!.printed)
+        // Enter shows its return glyph, not the word.
+        assertNull(bottom[4]!!.printed)
+        assertEquals(SidekitIcon.KeyboardReturn, bottom[4]!!.icon)
         assertEquals(5, rows.size)
         assertEquals("QW", rows[1][0]!!.printed)
         assertEquals("Delete", rows[3][4]!!.label)
@@ -81,7 +90,10 @@ class KeypadGuideRowsTest {
     @Test
     fun `sundial prints the words on its ring`() {
         val rows = keypadGuideRows(KeypadModule.Sundial)
-        assertEquals("Play / pause", rows[1][1]!!.printed)
+        // Play/pause prints both glyphs around a slash instead of the words.
+        assertNull(rows[1][1]!!.printed)
+        assertEquals(SidekitIcon.PlayArrow, rows[1][1]!!.icon)
+        assertEquals(SidekitIcon.Pause, rows[1][1]!!.trailingIcon)
         assertEquals("Tab", rows[2][0]!!.printed)
         assertEquals("\u2193", rows[2][1]!!.printed)
     }

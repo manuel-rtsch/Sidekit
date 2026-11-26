@@ -40,14 +40,16 @@ import hrln.interactive.sidekit.sdk.R
  * [icon] and [printed] describe what is printed on the physical key, so the diagram reads like the
  * module instead of repeating the translated [label]: a D-pad key prints only its arrow, the
  * controller's face buttons print Y / X / B / A, and a blank cap beside Home prints a dash.
- * [printed] is null when the cap has no text of its own.
+ * [printed] is null when the cap has no text of its own. [trailingIcon] is the second half of a
+ * two-state glyph such as play/pause, drawn after a slash.
  */
 data class KeypadGuideKey(
     val label: String,
     val tap: String,
     val hold: String? = null,
     val icon: SidekitIcon? = null,
-    val printed: String? = null
+    val printed: String? = null,
+    val trailingIcon: SidekitIcon? = null
 )
 
 /**
@@ -61,8 +63,9 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         tap: String,
         hold: String? = null,
         icon: SidekitIcon? = null,
-        printed: String? = null
-    ) = KeypadGuideKey(label, tap, hold, icon, printed)
+        printed: String? = null,
+        trailingIcon: SidekitIcon? = null
+    ) = KeypadGuideKey(label, tap, hold, icon, printed, trailingIcon)
     val back = t(R.string.sk_sdk_guide_back, "Back")
     val home = t(R.string.sk_sdk_guide_home, "Home")
     val options = t(R.string.sk_sdk_guide_options, "Options")
@@ -124,25 +127,25 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         // two outer columns have a gap in the middle row. This keeps the D-pad cross aligned.
         KeypadModule.T9 -> listOf(
             listOf(
-                key(back, goBackScreen, openDialer, SidekitIcon.Call, printed = back),
+                key(back, goBackScreen, openDialer, SidekitIcon.Call),
                 null,
-                key(up, focusUp, icon = SidekitIcon.ArrowUpward, printed = up),
+                key(up, focusUp, icon = SidekitIcon.ArrowUpward),
                 null,
-                key(options, extraActions, jumpToBar, SidekitIcon.CallEnd, printed = options)
+                key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
             ),
             listOf(
                 null,
-                key(left, focusLeftText, icon = SidekitIcon.ArrowLeftAlt, printed = left),
+                key(left, focusLeftText, icon = SidekitIcon.ArrowLeftAlt),
                 key("OK", okAction, openPlayingNow, printed = "OK"),
-                key(right, focusRightText, icon = SidekitIcon.ArrowRightAlt, printed = right),
+                key(right, focusRightText, icon = SidekitIcon.ArrowRightAlt),
                 null
             ),
             listOf(
-                key(home, returnHome, openSearch, icon = SidekitIcon.Home, printed = home),
+                key(home, returnHome, openSearch, icon = SidekitIcon.Home),
                 null,
-                key(down, focusDown, icon = SidekitIcon.ArrowDownward, printed = down),
+                key(down, focusDown, icon = SidekitIcon.ArrowDownward),
                 null,
-                key(delete, deletePrevious, icon = SidekitIcon.Backspace, printed = delete)
+                key(delete, deletePrevious, icon = SidekitIcon.Backspace)
             )
         ) + listOf(
             listOf(null, key("1", t(R.string.sk_sdk_guide_punctuation, "Tap repeatedly for punctuation."), type(1), printed = "1"), digit(2), digit(3), null),
@@ -181,7 +184,7 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
                 key("SYM", cycleSymbols, printed = "SYM"),
                 key(space, insertSpace, type(0), printed = space),
                 key("aA", changeCase, lettersAndNumbers, printed = "aA"),
-                key(enter, confirmOrNewLine, openPlayingNow, icon = SidekitIcon.KeyboardReturn, printed = enter)
+                key(enter, confirmOrNewLine, openPlayingNow, icon = SidekitIcon.KeyboardReturn)
             )
         )
 
@@ -197,7 +200,7 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
             ),
             listOf(
                 key(previous, previousTrack, printed = previous),
-                key(playPause, playPauseMedia, confirmFocused, SidekitIcon.PlayArrow, printed = playPause),
+                key(playPause, playPauseMedia, confirmFocused, SidekitIcon.PlayArrow, trailingIcon = SidekitIcon.Pause),
                 key(next, nextTrack, printed = next)
             ),
             listOf(
@@ -286,19 +289,31 @@ fun KeypadGuide(module: KeypadModule, modifier: Modifier = Modifier) {
                                 onClickLabel = stringResource(R.string.sk_sdk_guide_show_key, key.label)
                             ) {
                                 // What the cap prints: its glyph, the legend on a blank cap, or
-                                // both. The translated name stays in the detail card.
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    key.icon?.let { SidekitIconImage(it, size = 20.dp) }
-                                    key.printed?.let { printed ->
-                                        SidekitText(
-                                            printed,
-                                            style = if (key.icon == null) SidekitTheme.typography.small else SidekitTheme.typography.tiny,
-                                            // Two lines so a two-word legend still fits a fifth of the width.
-                                            maxLines = if (key.icon == null) 1 else 2
-                                        )
+                                // both. A two-state glyph prints both halves around a slash. The
+                                // translated name stays in the detail card.
+                                if (key.trailingIcon != null) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        key.icon?.let { SidekitIconImage(it, size = 20.dp) }
+                                        SidekitText("/", style = SidekitTheme.typography.small)
+                                        SidekitIconImage(key.trailingIcon, size = 20.dp)
+                                    }
+                                } else {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        key.icon?.let { SidekitIconImage(it, size = 20.dp) }
+                                        key.printed?.let { printed ->
+                                            SidekitText(
+                                                printed,
+                                                style = if (key.icon == null) SidekitTheme.typography.small else SidekitTheme.typography.tiny,
+                                                // Two lines so a two-word legend still fits a fifth of the width.
+                                                maxLines = if (key.icon == null) 1 else 2
+                                            )
+                                        }
                                     }
                                 }
                             }
