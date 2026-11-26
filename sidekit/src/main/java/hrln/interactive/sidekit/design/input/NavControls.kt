@@ -44,8 +44,10 @@ object NavControls {
      * auto-detected and no text field owns the keypad (see [Keypad.translateForUi]).
      *
      * - T9 and the Sundial already send the canonical keys, so they map nothing.
-     * - The game controller's D-pad is canonical too; A confirms and B goes back. X and Select
-     *   open Options, Start goes Home, either shoulder opens Search and Y opens Playing Now.
+     * - The game controller's D-pad is canonical too; A confirms and B goes back. X opens
+     *   Options, Start goes Home, Y opens Playing Now, and Search is the top-right key. On the
+     *   Sidephone's 5x3 tile that key reports as Select, not as a shoulder; the shoulder codes
+     *   stay mapped for controller revisions that really have them.
      * - Mini QWERTY: its bottom row is the modifier keys (SUGGEST / SYM / CASE = Ctrl / Alt /
      *   Shift) and its only dedicated directional control is a single up-down rocker (code 113),
      *   so navigation uses a cross of letter keys measured on-device: **T up, D left, B down,
@@ -63,7 +65,9 @@ object NavControls {
             KeyEvent.KEYCODE_BUTTON_A to Confirm,
             KeyEvent.KEYCODE_BUTTON_B to Back,
             KeyEvent.KEYCODE_BUTTON_X to Options,
-            KeyEvent.KEYCODE_BUTTON_SELECT to Options,
+            // The tile's small top-right key arrives as Select (BTN_SELECT); a real generic
+            // controller reports it as L1/R1 instead. All three mean Search here.
+            KeyEvent.KEYCODE_BUTTON_SELECT to Search,
             KeyEvent.KEYCODE_BUTTON_START to Home,
             KeyEvent.KEYCODE_BUTTON_L1 to Search,
             KeyEvent.KEYCODE_BUTTON_R1 to Search,

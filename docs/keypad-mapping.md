@@ -30,7 +30,7 @@ The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter**
 
 ## Game controller
 
-The controller's D-pad moves focus, **A** confirms, **B** goes back, **X** or **Select** opens Options (hold for the action bar), **Start** goes home, either shoulder opens Search, and **Y** opens Playing Now.
+The controller's D-pad moves focus, **A** confirms, **B** goes back, **X** opens Options (hold for the action bar), **Start** goes home, the small top-right key opens Search and **Y** opens Playing Now. On the 5x3 gamepad tile that top-right key reports as **Select** (`BTN_SELECT`) rather than as a shoulder; `L1` / `R1` stay mapped to Search for controller revisions that really carry them.
 
 ## Scope
 

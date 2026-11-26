@@ -31,7 +31,7 @@ class KeypadNavTest {
     @Test fun gamePadMenuHomeAndSearchMapInUi() {
         val keypad = keypad(KeypadModule.GamePad)
         assertEquals(KeyEvent.KEYCODE_ENDCALL, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_X))?.keyCode)
-        assertEquals(KeyEvent.KEYCODE_ENDCALL, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_SELECT))?.keyCode)
+        assertEquals(KeyEvent.KEYCODE_SEARCH, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_SELECT))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_HOME, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_START))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_SEARCH, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_L1))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_SEARCH, keypad.translateForUi(down(KeyEvent.KEYCODE_BUTTON_R1))?.keyCode)

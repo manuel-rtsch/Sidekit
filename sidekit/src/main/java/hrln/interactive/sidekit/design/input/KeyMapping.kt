@@ -118,8 +118,9 @@ object KeypadControls {
                 t.printed(KeyEvent.KEYCODE_BUTTON_A, "A", R.string.sk_sidekit_hint_confirm, "Confirm"),
                 t.printed(KeyEvent.KEYCODE_BUTTON_B, "B", R.string.sk_sidekit_hint_back_in_games, "Back in games"),
                 t.printed(KeyEvent.KEYCODE_BUTTON_X, "X", R.string.sk_sidekit_hint_button_x, "Options; hold for the action bar"),
-                t.printed(KeyEvent.KEYCODE_BUTTON_Y, "Y", R.string.sk_sidekit_hint_button_y, "Jump to the action bar"),
-                t.printed(KeyEvent.KEYCODE_BUTTON_SELECT, "Select", R.string.sk_sidekit_hint_options, "Show the screen's extra actions"),
+                t.printed(KeyEvent.KEYCODE_BUTTON_Y, "Y", R.string.sk_sidekit_hint_button_y, "Open the playing now screen"),
+                // The tile's top-right key: Search, the same action as a real controller's shoulder.
+                t.printed(KeyEvent.KEYCODE_BUTTON_SELECT, "Select", R.string.sk_sidekit_hint_open_search, "Open search"),
                 t.control(KeyEvent.KEYCODE_BUTTON_L1, R.string.sk_sidekit_key_shoulder_left, "Left shoulder", R.string.sk_sidekit_hint_open_search, "Open search"),
                 t.control(KeyEvent.KEYCODE_BUTTON_R1, R.string.sk_sidekit_key_shoulder_right, "Right shoulder", R.string.sk_sidekit_hint_open_search, "Open search"),
                 t.printed(KeyEvent.KEYCODE_BUTTON_START, "Start", R.string.sk_sidekit_hint_go_home, "Go to the home screen")

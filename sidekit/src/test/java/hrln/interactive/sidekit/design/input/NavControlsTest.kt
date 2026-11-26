@@ -40,17 +40,23 @@ class NavControlsTest {
         assertEquals(NavControls.Back, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_B))
     }
 
-    @Test fun gamePadMenuButtonsOpenOptions() {
-        for (code in listOf(KeyEvent.KEYCODE_BUTTON_X, KeyEvent.KEYCODE_BUTTON_SELECT)) {
-            assertEquals(KeyEvent.KEYCODE_ENDCALL, mapped(KeypadModule.GamePad, code))
-            assertEquals(NavControls.Options, mapped(KeypadModule.GamePad, code))
-        }
+    @Test fun gamePadXOpensOptions() {
+        assertEquals(KeyEvent.KEYCODE_ENDCALL, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_X))
+        assertEquals(NavControls.Options, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_X))
     }
 
-    @Test fun gamePadStartGoesHomeAndShouldersSearch() {
-        assertEquals(NavControls.Home, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_START))
+    @Test fun gamePadTopRightKeySearches() {
+        // The Sidephone's 5x3 gamepad tile has no shoulder: its small top-right key arrives as
+        // Select, so that code - not only L1/R1 - has to mean Search. Measured with getevent:
+        // BTN_SELECT (314) is the top-right key, BTN_START (315) the bottom-left one.
+        assertEquals(NavControls.Search, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_SELECT))
+        // A controller revision with real shoulders keeps them on Search.
         assertEquals(NavControls.Search, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_L1))
         assertEquals(NavControls.Search, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_R1))
+    }
+
+    @Test fun gamePadStartGoesHome() {
+        assertEquals(NavControls.Home, mapped(KeypadModule.GamePad, KeyEvent.KEYCODE_BUTTON_START))
     }
 
     @Test fun gamePadYOpensPlayingNow() {

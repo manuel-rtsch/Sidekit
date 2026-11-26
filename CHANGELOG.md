@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+- **The game controller's top-right key opens Search again.** The SDK mapped Search onto
+  `BUTTON_L1`/`BUTTON_R1`, but the Sidephone's 5x3 gamepad tile has no shoulder: its small
+  top-right key arrives as `BUTTON_SELECT` (measured with `getevent`: `BTN_SELECT` top-right,
+  `BTN_START` bottom-left), and Select was bound to Options — the same action as X. Search was
+  therefore unreachable from the tile while Options had two keys. Select now means Search, X keeps
+  Options (and its hold), Start stays Home, and the shoulder codes remain mapped for controllers
+  that actually have them. The keypad mapping list and guide now say the same thing.
 - **A game controller's Y key opens Playing Now.** Y used to jump to the action bar; that is now
-  what the Options hold does (hold X or Select), which every module has. `NavControls.PlayingNow`
+  what the Options hold does (hold X), which every module has. `NavControls.PlayingNow`
   is a new canonical chrome key (`KEYCODE_MUSIC`), `SidekitInputController` takes an
   `onPlayingNow` callback, and `SidekitActivity` grew a matching `onSidekitPlayingNow()` hook so a
   host can open its now-playing screen. The Sundial keeps its printed roles on press and on hold,
