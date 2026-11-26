@@ -24,6 +24,7 @@
     <string name="sk_sdk_guide_action">Action</string>
     <string name="sk_sdk_guide_confirm">Confirm</string>
     <string name="sk_sdk_guide_playing_now">Playing now</string>
+    <string name="sk_sdk_guide_recents">Recents</string>
     <!-- Keypad guide: what a key does on a tap or a long press. -->
     <string name="sk_sdk_guide_go_back_screen">Go back a screen.</string>
     <string name="sk_sdk_guide_open_dialer">Open the dialer.</string>
@@ -61,6 +62,7 @@
     <string name="sk_sdk_guide_open_options">Open options.</string>
     <string name="sk_sdk_guide_open_search">Open search.</string>
     <string name="sk_sdk_guide_open_playing_now">Open the playing now screen.</string>
+    <string name="sk_sdk_guide_show_recents">Show recent apps.</string>
     <string name="sk_sdk_guide_focus_action_bar">Focus the action bar.</string>
     <string name="sk_sdk_guide_go_home_screen">Go to the home screen.</string>
     <!-- Keypad guide: the rest of the screen. -->

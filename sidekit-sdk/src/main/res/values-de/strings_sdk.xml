@@ -23,6 +23,7 @@
     <string name="sk_sdk_guide_action">Aktion</string>
     <string name="sk_sdk_guide_confirm">OK</string>
     <string name="sk_sdk_guide_playing_now">Wiedergabe</string>
+    <string name="sk_sdk_guide_recents">Zuletzt</string>
     <!-- Keypad guide: what a key does on a tap or a long press. -->
     <string name="sk_sdk_guide_go_back_screen">Einen Bildschirm zurück.</string>
     <string name="sk_sdk_guide_open_dialer">Telefon-App öffnen.</string>
@@ -59,6 +60,7 @@
     <string name="sk_sdk_guide_open_options">Optionen öffnen.</string>
     <string name="sk_sdk_guide_open_search">Suche öffnen.</string>
     <string name="sk_sdk_guide_open_playing_now">Aktuelle Wiedergabe öffnen.</string>
+    <string name="sk_sdk_guide_show_recents">Zuletzt verwendete Apps anzeigen.</string>
     <string name="sk_sdk_guide_focus_action_bar">Aktionsleiste fokussieren.</string>
     <string name="sk_sdk_guide_go_home_screen">Zum Startbildschirm.</string>
     <!-- Keypad guide: the rest of the screen. -->

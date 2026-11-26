@@ -15,11 +15,19 @@
   `onPlayingNow` callback, and `SidekitActivity` grew a matching `onSidekitPlayingNow()` hook so a
   host can open its now-playing screen. The Sundial keeps its printed roles on press and on hold,
   and has no spare hold, so it is the one module with no Playing Now key.
-- **The key guide draws each key's printed glyph.** The diagram shows the symbol above the
-  translated key name, so CALL, END CALL, Home, Delete, Enter, Search, the media keys and the
-  D-pad read like the module in hand. Five Material Symbols Rounded drawables (`arrow_downward`,
-  `backspace`, `call_end`, `home`, `keyboard_return`) join `SidekitIcon`, cut from the upstream
-  Symbols set in the same negative-coordinate form as the rest of the icon set.
+- **The key guide is the module in your hand.** Each tile draws what its cap prints — a glyph on
+  CALL, END CALL, Home, Delete, Enter, Search, the media keys and the D-pad, the shell's **Y / X /
+  B / A** on the controller's face buttons, a dash on the two blank caps beside Home — while the
+  translated name moves to the detail card and the screen reader. `KeypadGuideKey` grew a
+  `printed` field (the legend on the cap, null when the cap has no text), so hosts no longer have
+  to re-derive the capsule layout. The mini QWERTY guide now folds its top and bottom rows into
+  the five keys the module really has (call, Back, Home, Recents, END CALL; rocker, SYM, Space,
+  aA, Enter) and the game controller keeps its five-column shell. `KeypadGuide(module, modifier)`
+  takes a modifier and lets its card grow to fit a long tap or hold sentence instead of clipping
+  it at two lines, so a host does not need its own copy of the diagram — Sidetrack's was deleted.
+  Five Material Symbols Rounded drawables (`arrow_downward`, `backspace`, `call_end`, `home`,
+  `keyboard_return`) join `SidekitIcon`, cut from the upstream Symbols set in the same
+  negative-coordinate form as the rest of the icon set.
 
 ## v1.13.0 — 2026-11-24
 

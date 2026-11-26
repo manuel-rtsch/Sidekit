@@ -5,15 +5,12 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
@@ -23,11 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import hrln.interactive.sidekit.design.components.SidekitCard
 import hrln.interactive.sidekit.design.components.SidekitIconImage
 import hrln.interactive.sidekit.design.components.SidekitText
 import hrln.interactive.sidekit.design.components.SidekitTile
@@ -37,12 +33,21 @@ import hrln.interactive.sidekit.design.theme.SidekitTheme
 import hrln.interactive.sidekit.design.theme.contentColorFor
 import hrln.interactive.sidekit.sdk.R
 
-/** One printed key and what it does on tap and on a long press. */
+/**
+ * One printed key: the name the detail card and screen readers use, what a tap and a long press
+ * do, and the ink the cap itself carries.
+ *
+ * [icon] and [printed] describe what is printed on the physical key, so the diagram reads like the
+ * module instead of repeating the translated [label]: a D-pad key prints only its arrow, the
+ * controller's face buttons print Y / X / B / A, and a blank cap beside Home prints a dash.
+ * [printed] is null when the cap has no text of its own.
+ */
 data class KeypadGuideKey(
     val label: String,
     val tap: String,
     val hold: String? = null,
-    val icon: SidekitIcon? = null
+    val icon: SidekitIcon? = null,
+    val printed: String? = null
 )
 
 /**
@@ -51,7 +56,13 @@ data class KeypadGuideKey(
  */
 fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<List<KeypadGuideKey?>> {
     fun t(@StringRes id: Int, english: String, vararg args: Any): String = resources?.getString(id, *args) ?: if (args.isEmpty()) english else english.format(*args)
-    fun key(label: String, tap: String, hold: String? = null, icon: SidekitIcon? = null) = KeypadGuideKey(label, tap, hold, icon)
+    fun key(
+        label: String,
+        tap: String,
+        hold: String? = null,
+        icon: SidekitIcon? = null,
+        printed: String? = null
+    ) = KeypadGuideKey(label, tap, hold, icon, printed)
     val back = t(R.string.sk_sdk_guide_back, "Back")
     val home = t(R.string.sk_sdk_guide_home, "Home")
     val options = t(R.string.sk_sdk_guide_options, "Options")
@@ -102,48 +113,57 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
     val cycleSuggestions = t(R.string.sk_sdk_guide_cycle_suggestions, "Cycle the suggested words.")
     val insertSpace = t(R.string.sk_sdk_guide_insert_space, "Insert a space.")
     val confirmOrNewLine = t(R.string.sk_sdk_guide_confirm_or_new_line, "Confirm a suggestion or insert a new line.")
+    val recents = t(R.string.sk_sdk_guide_recents, "Recents")
+    val showRecents = t(R.string.sk_sdk_guide_show_recents, "Show recent apps.")
+    // The two blank caps beside Home print a dash, not a word.
+    val dash = "\u2013"
     fun type(digit: Int) = t(R.string.sk_sdk_guide_type_digit, "Type %1\$d.", digit)
-    fun digit(n: Int) = key("$n", cycleLetters, type(n))
-    // The chrome keys every module carries: Back, Home and Options, each named by its printed glyph.
-    val navigation: List<KeypadGuideKey?> = listOf(
-        key(back, goBackScreen, openDialer, SidekitIcon.Call),
-        key(home, returnHome, icon = SidekitIcon.Home),
-        key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
-    )
+    fun digit(n: Int) = key("$n", cycleLetters, type(n), printed = "$n")
     return when (module) {
         // The five-way control is three rows tall. The soft keys sit above and below it, so the
         // two outer columns have a gap in the middle row. This keeps the D-pad cross aligned.
         KeypadModule.T9 -> listOf(
             listOf(
-                key(back, goBackScreen, openDialer, SidekitIcon.Call),
+                key(back, goBackScreen, openDialer, SidekitIcon.Call, printed = back),
                 null,
-                key(up, focusUp, icon = SidekitIcon.ArrowUpward),
+                key(up, focusUp, icon = SidekitIcon.ArrowUpward, printed = up),
                 null,
-                key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
+                key(options, extraActions, jumpToBar, SidekitIcon.CallEnd, printed = options)
             ),
             listOf(
                 null,
-                key(left, focusLeftText, icon = SidekitIcon.ArrowLeftAlt),
-                key("OK", okAction),
-                key(right, focusRightText, icon = SidekitIcon.ArrowRightAlt),
+                key(left, focusLeftText, icon = SidekitIcon.ArrowLeftAlt, printed = left),
+                key("OK", okAction, printed = "OK"),
+                key(right, focusRightText, icon = SidekitIcon.ArrowRightAlt, printed = right),
                 null
             ),
             listOf(
-                key(home, returnHome, icon = SidekitIcon.Home),
+                key(home, returnHome, icon = SidekitIcon.Home, printed = home),
                 null,
-                key(down, focusDown, icon = SidekitIcon.ArrowDownward),
+                key(down, focusDown, icon = SidekitIcon.ArrowDownward, printed = down),
                 null,
-                key(delete, deletePrevious, icon = SidekitIcon.Backspace)
+                key(delete, deletePrevious, icon = SidekitIcon.Backspace, printed = delete)
             )
         ) + listOf(
-            listOf(null, key("1", t(R.string.sk_sdk_guide_punctuation, "Tap repeatedly for punctuation."), type(1)), digit(2), digit(3), null),
+            listOf(null, key("1", t(R.string.sk_sdk_guide_punctuation, "Tap repeatedly for punctuation."), type(1), printed = "1"), digit(2), digit(3), null),
             listOf(null, digit(4), digit(5), digit(6), null),
             listOf(null, digit(7), digit(8), digit(9), null),
-            listOf(null, key("*", cycleSymbols), key("0", t(R.string.sk_sdk_guide_space_in_letters, "Insert a space in letter mode."), type(0)), key("#", changeCase, lettersAndNumbers), null)
+            listOf(null, key("*", cycleSymbols, printed = "*"), key("0", t(R.string.sk_sdk_guide_space_in_letters, "Insert a space in letter mode."), type(0), printed = "0"), key("#", changeCase, lettersAndNumbers, printed = "#"), null)
         )
 
-        // null marks the Delete key, whose name is translated.
-        KeypadModule.Qwerty -> listOf(navigation) + listOf(
+        // The mini QWERTY's top row is five keys on the module: the call glyph, a dash that goes
+        // back, the Home dot, a dash for Recents, and the end-call glyph that opens Options.
+        // Recents is a system key Sidekit never translates, so its row describes the hardware.
+        // null marks the Delete key, whose name is translated. The bottom row is one line of five.
+        KeypadModule.Qwerty -> listOf(
+            listOf(
+                key(back, goBackScreen, openDialer, SidekitIcon.Call),
+                key(back, goBackScreen, printed = dash),
+                key(home, returnHome, icon = SidekitIcon.Home),
+                key(recents, showRecents, printed = dash),
+                key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
+            )
+        ) + listOf(
             listOf("QW", "ER", "TY", "UI", "OP"),
             listOf("AS", "DF", "GH", "JK", "L"),
             listOf("ZX", "CV", "BN", "M", null)
@@ -152,12 +172,17 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
                 if (label == null) {
                     key(delete, deletePrevious, icon = SidekitIcon.Backspace)
                 } else {
-                    key(label, chooseLetter(label), typePrinted)
+                    key(label, chooseLetter(label), typePrinted, printed = label)
                 }
             }
         } + listOf(
-            listOf(key("\u2195", cycleSuggestions), key("SYM", cycleSymbols), key("aA", changeCase, lettersAndNumbers)),
-            listOf(key(space, insertSpace, type(0)), key(enter, confirmOrNewLine, icon = SidekitIcon.KeyboardReturn))
+            listOf(
+                key("\u2195", cycleSuggestions, printed = "\u2195"),
+                key("SYM", cycleSymbols, printed = "SYM"),
+                key(space, insertSpace, type(0), printed = space),
+                key("aA", changeCase, lettersAndNumbers, printed = "aA"),
+                key(enter, confirmOrNewLine, icon = SidekitIcon.KeyboardReturn, printed = enter)
+            )
         )
 
         // The Sundial is a ring of eight keys around the centre key. Lay it out exactly as it sits
@@ -166,24 +191,26 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         // Its labels are the printed glyphs themselves, so the arrows need no icon above them.
         KeypadModule.Sundial -> listOf(
             listOf(
-                key("\u2190", focusLeft),
-                key("\u2191", focusUp),
-                key("\u2192", focusRight)
+                key("\u2190", focusLeft, printed = "\u2190"),
+                key("\u2191", focusUp, printed = "\u2191"),
+                key("\u2192", focusRight, printed = "\u2192")
             ),
             listOf(
-                key(previous, previousTrack),
-                key(playPause, playPauseMedia, confirmFocused, icon = SidekitIcon.PlayArrow),
-                key(next, nextTrack)
+                key(previous, previousTrack, printed = previous),
+                key(playPause, playPauseMedia, confirmFocused, SidekitIcon.PlayArrow, printed = playPause),
+                key(next, nextTrack, printed = next)
             ),
             listOf(
-                key("Tab", nextControl, goBack),
-                key("\u2193", focusDown),
-                key(enter, activateFocused, openOptions, icon = SidekitIcon.KeyboardReturn)
+                key("Tab", nextControl, goBack, printed = "Tab"),
+                key("\u2193", focusDown, printed = "\u2193"),
+                key(enter, activateFocused, openOptions, SidekitIcon.KeyboardReturn, printed = enter)
             )
         )
 
         // Five columns follow the controller exactly: the D-pad cross on the left, the small
-        // shoulder button at the top right, and the face buttons staggered on the right.
+        // shoulder button at the top right, and the face buttons staggered on the right. The
+        // D-pad, Search and Home print only their glyph; the face buttons print the letter on the
+        // shell — Y is Playing Now, X opens Options, B goes back, A confirms.
         KeypadModule.GamePad -> listOf(
             listOf(
                 null,
@@ -203,21 +230,21 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
                 null,
                 key(down, focusDown, icon = SidekitIcon.ArrowDownward),
                 null,
-                key(playingNow, openPlayingNow, icon = SidekitIcon.Album),
+                key(playingNow, openPlayingNow, printed = "Y"),
                 null
             ),
             listOf(
                 null,
                 null,
-                key(options, openOptions, focusActionBar),
+                key(options, openOptions, focusActionBar, printed = "X"),
                 null,
-                key(back, goBackScreen)
+                key(back, goBackScreen, printed = "B")
             ),
             listOf(
                 key(home, goHomeScreen, icon = SidekitIcon.Home),
                 null,
                 null,
-                key(confirm, activateFocused),
+                key(confirm, activateFocused, printed = "A"),
                 null
             )
         )
@@ -225,16 +252,18 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
 }
 
 /**
- * The keypad diagram: tap a key to read its tap and long-press actions. The detail card stays
- * above the keys so the answer is visible without scrolling away from the key that was tapped.
+ * The keypad diagram: each tile is printed like the physical key, and tapping one shows its tap
+ * and long-press actions. The detail card stays above the keys so the answer is visible without
+ * scrolling away from the key that was tapped, and it grows with its sentences instead of
+ * clipping them.
  */
 @Composable
-fun KeypadGuide(module: KeypadModule) {
+fun KeypadGuide(module: KeypadModule, modifier: Modifier = Modifier) {
     val resources = LocalContext.current.resources
     val rows = remember(module, resources) { keypadGuideRows(module, resources) }
     var selected by remember(module) { mutableStateOf<KeypadGuideKey?>(null) }
     val spacing = SidekitTheme.spacing
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.pageGap)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(spacing.pageGap)) {
         AnimatedVisibility(
             visible = selected != null,
             enter = expandVertically(),
@@ -256,19 +285,21 @@ fun KeypadGuide(module: KeypadModule) {
                                 onClick = { selected = key },
                                 onClickLabel = stringResource(R.string.sk_sdk_guide_show_key, key.label)
                             ) {
-                                // The printed glyph above the key's name, so the diagram reads like the
-                                // module and the name still reads in the app's language.
+                                // What the cap prints: its glyph, the legend on a blank cap, or
+                                // both. The translated name stays in the detail card.
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(2.dp)
                                 ) {
                                     key.icon?.let { SidekitIconImage(it, size = 20.dp) }
-                                    SidekitText(
-                                        key.label,
-                                        style = if (key.icon == null) SidekitTheme.typography.small else SidekitTheme.typography.tiny,
-                                        // Two lines so a two-word name still fits a fifth of the width.
-                                        maxLines = if (key.icon == null) 1 else 2
-                                    )
+                                    key.printed?.let { printed ->
+                                        SidekitText(
+                                            printed,
+                                            style = if (key.icon == null) SidekitTheme.typography.small else SidekitTheme.typography.tiny,
+                                            // Two lines so a two-word legend still fits a fifth of the width.
+                                            maxLines = if (key.icon == null) 1 else 2
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -298,35 +329,20 @@ fun KeypadGuide(module: KeypadModule) {
 @Composable
 private fun KeypadGuideDetail(key: KeypadGuideKey) {
     // The card grows with its tap and hold sentences instead of clipping them at a fixed height.
-    val surface = SidekitTheme.colors.surfaceA3
-    val content = SidekitTheme.colors.contentColorFor(surface)
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 112.dp)
-            .clip(SidekitTheme.shapes.item)
-            .background(surface),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
+    SidekitCard(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                key.icon?.let { icon ->
-                    SidekitIconImage(icon, size = 28.dp, tint = content)
-                }
-                SidekitText(key.label, style = SidekitTheme.typography.label, color = content, maxLines = 1)
+                key.icon?.let { icon -> SidekitIconImage(icon, size = 28.dp) }
+                SidekitText(key.label, style = SidekitTheme.typography.label, maxLines = 1)
             }
-            GuideAction(stringResource(R.string.sk_sdk_guide_tap), key.tap, contentColor = content)
+            GuideAction(stringResource(R.string.sk_sdk_guide_tap), key.tap)
             GuideAction(
                 stringResource(R.string.sk_sdk_guide_hold),
                 key.hold ?: stringResource(R.string.sk_sdk_guide_no_long_press),
-                muted = key.hold == null,
-                contentColor = content
+                muted = key.hold == null
             )
         }
     }
@@ -336,8 +352,7 @@ private fun KeypadGuideDetail(key: KeypadGuideKey) {
 private fun GuideAction(
     label: String,
     action: String,
-    muted: Boolean = false,
-    contentColor: Color = SidekitTheme.colors.contentColorFor(SidekitTheme.colors.surfaceA3)
+    muted: Boolean = false
 ) {
     Row(
         modifier = Modifier.padding(top = 4.dp),
@@ -351,11 +366,13 @@ private fun GuideAction(
             color = SidekitTheme.colors.surfaceA6,
             maxLines = 1
         )
+        // The card grows instead of clipping a long action at two lines.
         SidekitText(
             action,
             Modifier.weight(1f),
             style = SidekitTheme.typography.tiny,
-            color = if (muted) SidekitTheme.colors.surfaceA6 else contentColor,
+            // SidekitCard paints the detail on surfaceA3, so its content colour is the readable one.
+            color = if (muted) SidekitTheme.colors.surfaceA6 else SidekitTheme.colors.contentColorFor(SidekitTheme.colors.surfaceA3),
             maxLines = Int.MAX_VALUE
         )
     }
