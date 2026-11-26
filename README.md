@@ -57,7 +57,7 @@ workflow signs `:app:assembleRelease` and attaches it to the tag's release. See
 | --- | --- |
 | `app/` | The launcher and every built-in app (`app/src/main/java/hrln/interactive/sidekit/apps/`) |
 | `sidekit/` | The shared design system: theme, components, action bar, keypad input and the T9 dictionary |
-| `app/screenshots/` | Roborazzi screenshots of each screen at the Sidephone canvas size |
+| `app/screenshots/` | Roborazzi screenshots at the Sidephone canvas size and on representative taller keypad panels |
 | `docs/` | Setup, keypad mapping, service integrations and CI notes |
 | `site/` | The setup guide web page |
 | `tools/`, `scripts/` | The T9 word-list builder and a transit API probe |

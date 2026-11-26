@@ -1,8 +1,10 @@
 package hrln.interactive.sidekit.design
 
+import hrln.interactive.sidekit.design.canvas.DesignCanvas
 import hrln.interactive.sidekit.design.canvas.SidephoneCanvas
 import hrln.interactive.sidekit.design.components.ListFade
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ListFadeTest {
@@ -25,17 +27,40 @@ class ListFadeTest {
     }
 }
 
-class SidephoneCanvasTest {
+class DesignCanvasTest {
     @Test fun `sidephone panel maps one figma px to one physical px`() {
-        assertEquals(1f, SidephoneCanvas.density(480, 640), 0f)
+        assertEquals(1f, DesignCanvas.density(480, 640), 0f)
     }
 
     @Test fun `higher resolution panels scale the canvas uniformly`() {
-        assertEquals(2f, SidephoneCanvas.density(960, 1280), 0f)
+        assertEquals(2f, DesignCanvas.density(960, 1280), 0f)
     }
 
-    @Test fun `other aspect ratios letterbox to the smaller axis`() {
-        // 1080 x 2400 phone: width limits (2.25) before height (3.75).
-        assertEquals(2.25f, SidephoneCanvas.density(1080, 2400), 0f)
+    @Test fun `tall keypad panels keep the design width and gain height`() {
+        assertEquals(0.5f, DesignCanvas.density(240, 320), 0f)
+        assertEquals(2f / 3f, DesignCanvas.density(320, 480), 0.0001f)
+        assertEquals(0.75f, DesignCanvas.density(360, 640), 0f)
+        assertEquals(1f, DesignCanvas.density(480, 800), 0f)
+        assertEquals(2.25f, DesignCanvas.density(1080, 2400), 0f)
+
+        val tallScale = DesignCanvas.density(360, 640)
+        assertEquals(360f, DesignCanvas.WIDTH * tallScale, 0.0001f)
+        assertEquals(480f, 360 / tallScale, 0.0001f)
+        assertEquals(640f / 0.75f, 640 / tallScale, 0.0001f)
+    }
+
+    @Test fun `wide panels scale by height and leave side bars`() {
+        val wideScale = DesignCanvas.density(800, 600)
+        assertEquals(0.9375f, wideScale, 0f)
+        assertEquals(640f, 600 / wideScale, 0.0001f)
+        assertTrue(DesignCanvas.WIDTH * wideScale < 800f)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun `the old sidephone name forwards to the design canvas`() {
+        assertEquals(DesignCanvas.density(360, 640), SidephoneCanvas.density(360, 640), 0f)
+        assertEquals(DesignCanvas.WIDTH, SidephoneCanvas.WIDTH)
+        assertEquals(DesignCanvas.MIN_HEIGHT, SidephoneCanvas.HEIGHT)
     }
 }

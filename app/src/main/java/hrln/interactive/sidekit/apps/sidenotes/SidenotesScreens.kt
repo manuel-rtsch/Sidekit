@@ -224,7 +224,7 @@ fun NoteEditorScreen(
     val untitled = stringResource(R.string.notes_untitled)
     val title = remember(saved, newNote, untitled) { if (saved.isBlank()) newNote else Note(0, saved, 0).title ?: untitled }
     SidekitScaffold(
-        // On a 640 px panel a touch keyboard leaves little room; the title gives way to the text.
+        // With a touch keyboard up there is little room left; the title gives way to the text.
         title = if (keyboardOpen) null else title,
         actions = actions,
         // Keypad Options key: delete without hunting for the bin button (it may be hidden while editing).

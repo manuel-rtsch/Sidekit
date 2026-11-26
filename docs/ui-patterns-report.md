@@ -13,7 +13,7 @@ Five pieces of chrome are owned by the shell, not by the screens:
 
 | Layer | File | What it does |
 |---|---|---|
-| Canvas | `design/canvas/SidekitCanvas.kt:96` | Draws `HeaderHost` + `ActionBarHost` over the screens, on a fixed 480×640 canvas. Also owns `BackHandler(optionsOpen)`. |
+| Canvas | `design/canvas/SidekitCanvas.kt:88` | Draws `HeaderHost` + `ActionBarHost` over the screens on a fixed 480-wide canvas that grows taller on keypad phones. Also owns `BackHandler(optionsOpen)`. |
 | Publish | `design/action/SideAction.kt:207` (`PublishChrome`) | A screen hands over `header`, `actions`, `options`, `trailingActions`; last attached publisher wins. |
 | Scaffold | `design/components/Scaffold.kt:76` | The only intended entry point: `SidekitScaffold(title, actions, options, header, trailingActions)`. |
 | Action bar | `design/action/ActionBarHost.kt:230` | Morphs between the previous screen's buttons and the new one's. |

@@ -10,8 +10,8 @@ import androidx.compose.ui.unit.dp
  * the rest are measured from the component sheets (Item 62:950, Action Button Frame 62:148,
  * Header frame 62:898) because Figma has no variables for them.
  *
- * All values are in canvas units: 1.dp == 1 Figma px on the 480 x 640 Sidephone frame
- * (see [hrln.interactive.sidekit.design.canvas.SidekitCanvas]).
+ * All values are in canvas units: 1.dp == 1 Figma px on the 480-wide Sidephone frame; the
+ * canvas grows taller on other keypad phones (see [hrln.interactive.sidekit.design.canvas.SidekitCanvas]).
  */
 @Immutable
 data class SidekitSpacing(
@@ -38,7 +38,7 @@ data class SidekitSpacing(
         /**
          * The measured Figma sizes, except the top and bottom chrome: the header is one title
          * line (61) with a 4 dp inset above it (24 less than the mock) and the action bar is 12
-         * shorter. Slightly tighter insets buy body space on the 480 x 640 display without
+         * shorter. Slightly tighter insets buy body space on the 480-wide display without
          * touching the type scale. Chosen from Settings → Compact layout.
          */
         val Compact: SidekitSpacing = SidekitSpacing(

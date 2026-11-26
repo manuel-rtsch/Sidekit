@@ -26,7 +26,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Renders key screens at the Sidephone's 480 x 640 px (robolectric.properties: w480dp-h640dp-mdpi)
- * to app/screenshots/ for side-by-side comparison with the Figma frames.
+ * to app/screenshots/ for side-by-side comparison with the Figma frames. The keypad-panel cases
+ * below keep the 480-wide design and capture how it grows on taller screens.
  */
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -50,6 +51,24 @@ class ScreenshotTest {
     @Config(qualifiers = "w240dp-h320dp-xhdpi")
     @Test
     fun launcherGridAtSidephoneAvdDensity() = shoot("launcher_grid_avd_320dpi", launcher(LauncherUiState()))
+
+    // The 480-wide canvas on keypad panels from 3:4 to 2:1 tall. The width stays the design
+    // width; only the number of rows changes, so these catch stretched or clipped layouts.
+    @Config(qualifiers = "w240dp-h320dp-mdpi")
+    @Test
+    fun launcherGridAt240x320() = shoot("launcher_grid_240x320", launcher(LauncherUiState()))
+
+    @Config(qualifiers = "w320dp-h480dp-mdpi")
+    @Test
+    fun launcherGridAt320x480() = shoot("launcher_grid_320x480", launcher(LauncherUiState()))
+
+    @Config(qualifiers = "w360dp-h640dp-mdpi")
+    @Test
+    fun launcherGridAt360x640() = shoot("launcher_grid_360x640", launcher(LauncherUiState()))
+
+    @Config(qualifiers = "w480dp-h800dp-mdpi")
+    @Test
+    fun launcherGridAt480x800() = shoot("launcher_grid_480x800", launcher(LauncherUiState()))
 
     @Test fun launcherList() = shoot("launcher_list_36-2", launcher(LauncherUiState(layout = LauncherLayout.List)))
 

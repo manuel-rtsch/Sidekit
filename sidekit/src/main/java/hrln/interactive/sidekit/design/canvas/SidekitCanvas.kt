@@ -5,10 +5,11 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -40,22 +41,40 @@ import hrln.interactive.sidekit.design.input.Keypad
 import hrln.interactive.sidekit.design.input.LocalKeypad
 import hrln.interactive.sidekit.design.theme.SidekitTheme
 
-/** The Sidephone display, and the size of every frame in the SideKit Figma file. */
-object SidephoneCanvas {
+/**
+ * The shared canvas every Sidekit screen is designed on: 480 wide and at least 640 tall. The width
+ * is fixed so rows and the action bar keep their proportions; the height grows on taller keypad
+ * phones instead of leaving a letterbox.
+ */
+object DesignCanvas {
     const val WIDTH = 480
-    const val HEIGHT = 640
+    const val MIN_HEIGHT = 640
 
     /**
-     * Density that makes the 480 x 640 canvas fill [widthPx] x [heightPx] (letterboxed if the
-     * aspect ratio differs), so 1.dp in SideKit code is exactly 1 Figma px.
+     * Density that fits the 480 x [MIN_HEIGHT] design into [widthPx] x [heightPx], so 1.dp in
+     * Sidekit code is exactly 1 Figma px. A portrait panel at least 3:4 tall is width-limited:
+     * the canvas fills its width and grows down. A wider panel is height-limited and keeps dark
+     * side bars instead of stretching rows sideways.
      */
-    fun density(widthPx: Int, heightPx: Int): Float = minOf(widthPx / WIDTH.toFloat(), heightPx / HEIGHT.toFloat())
+    fun density(widthPx: Int, heightPx: Int): Float = minOf(widthPx / WIDTH.toFloat(), heightPx / MIN_HEIGHT.toFloat())
+}
+
+/** The old Sidephone-only name for [DesignCanvas], kept for published SDK consumers. */
+@Deprecated("Use DesignCanvas; the canvas is 480 wide and grows taller on other keypad phones.", ReplaceWith("DesignCanvas"))
+object SidephoneCanvas {
+    const val WIDTH = DesignCanvas.WIDTH
+    const val HEIGHT = DesignCanvas.MIN_HEIGHT
+
+    fun density(widthPx: Int, heightPx: Int): Float = DesignCanvas.density(widthPx, heightPx)
 }
 
 /**
- * Lays [content] out on a fixed 480 x 640 canvas scaled to the screen. On the Sidephone this is
- * a 1:1 mapping to physical pixels whatever density the system reports; on other screens the
- * canvas is scaled to fit and centred. Font scale is pinned to 1 because the canvas is fixed.
+ * Lays [content] out on the shared 480-wide design canvas. On the Sidephone this is exactly
+ * 480 x 640 and a 1:1 mapping to physical pixels whatever density the system reports. On a taller
+ * keypad phone the canvas keeps that width and grows down to fill the display. On a wider screen
+ * it stays 640 tall and is centred between dark side bars, since rows and the action bar would only
+ * stretch sideways. Font scale is pinned to 1 because sizes follow the design, not the system font
+ * setting.
  *
  * The canvas also owns the system chrome every screen shares: the title ([HeaderHost]) and the
  * action bar ([ActionBarHost]), drawn above the screens so they morph between them instead of
@@ -63,7 +82,7 @@ object SidephoneCanvas {
  * to text fields here.
  *
  * Overdraw: the activity drops its window background, so the canvas is the only full-screen
- * fill. The black letterbox is only painted when there is a letterbox.
+ * fill. The dark side bars are only painted when the window is wider than the design.
  */
 @Composable
 fun SidekitCanvas(
@@ -76,10 +95,9 @@ fun SidekitCanvas(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        val scale = SidephoneCanvas.density(constraints.maxWidth, constraints.maxHeight)
-        val letterboxed = constraints.maxWidth - SidephoneCanvas.WIDTH * scale >= 1f ||
-            constraints.maxHeight - SidephoneCanvas.HEIGHT * scale >= 1f
-        if (letterboxed) Box(Modifier.fillMaxSize().background(SidekitTheme.colors.dark))
+        val scale = DesignCanvas.density(constraints.maxWidth, constraints.maxHeight)
+        val sideBars = constraints.maxWidth - DesignCanvas.WIDTH * scale >= 1f
+        if (sideBars) Box(Modifier.fillMaxSize().background(SidekitTheme.colors.dark))
         CompositionLocalProvider(
             LocalDensity provides Density(density = scale, fontScale = 1f),
             LocalChrome provides chrome,
@@ -102,7 +120,10 @@ fun SidekitCanvas(
             }
             Box(
                 modifier = Modifier
-                    .size(SidephoneCanvas.WIDTH.dp, SidephoneCanvas.HEIGHT.dp)
+                    // Design width, full height: the width is exactly 480 on any panel at least
+                    // 3:4 tall, and the height is 640 or more.
+                    .width(DesignCanvas.WIDTH.dp)
+                    .fillMaxHeight()
                     .onFocusChanged { hasFocus.value = it.hasFocus }
                     // Keep the content's last focused child saved for the action bar's Up key.
                     // The press records where focus is before the move, the release where it
