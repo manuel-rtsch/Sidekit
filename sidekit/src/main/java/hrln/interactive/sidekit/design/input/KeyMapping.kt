@@ -109,8 +109,8 @@ object KeypadControls {
                 t.control(KeyEvent.KEYCODE_DPAD_DOWN, R.string.sk_sidekit_key_bottom, "Bottom", R.string.sk_sidekit_hint_move_down, "Move down"),
                 t.control(KeyEvent.KEYCODE_MEDIA_PREVIOUS, R.string.sk_sidekit_key_left_edge, "Left edge", R.string.sk_sidekit_hint_previous_track, "Previous track"),
                 t.control(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, R.string.sk_sidekit_key_centre, "Centre", R.string.sk_sidekit_hint_play_pause, "Play or pause; hold for Confirm"),
-                t.control(KeyEvent.KEYCODE_DPAD_LEFT, R.string.sk_sidekit_key_corner_left, "Corner ←", R.string.sk_sidekit_hint_corner_left, "Move left; hold for Options fallback"),
-                t.control(KeyEvent.KEYCODE_DPAD_RIGHT, R.string.sk_sidekit_key_corner_right, "Corner →", R.string.sk_sidekit_hint_move_right, "Move right"),
+                t.control(KeyEvent.KEYCODE_DPAD_LEFT, R.string.sk_sidekit_key_corner_left, "Corner ←", R.string.sk_sidekit_hint_corner_left, "Move left; hold for Search"),
+                t.control(KeyEvent.KEYCODE_DPAD_RIGHT, R.string.sk_sidekit_key_corner_right, "Corner →", R.string.sk_sidekit_hint_corner_right, "Move right; hold for Playing Now"),
                 t.printed(KeyEvent.KEYCODE_TAB, "Tab", R.string.sk_sidekit_hint_tab, "Next control; hold for Back"),
                 t.control(KeyEvent.KEYCODE_ENTER, R.string.sk_sidekit_key_enter, "Enter", R.string.sk_sidekit_hint_enter_sundial, "Select; hold for Options (some revisions report Play/Pause)")
             )

@@ -99,5 +99,11 @@ class KeypadGuideRowsTest {
         assertEquals(SidekitIcon.Pause, rows[1][1]!!.trailingIcon)
         assertEquals("Tab", rows[2][0]!!.printed)
         assertEquals("\u2193", rows[2][1]!!.printed)
+
+        // The two upper corners keep their arrow on a tap and add the chrome screens on a hold
+        // that outranks a repeated left/right move.
+        assertEquals("Open search.", rows[0][0]!!.hold)
+        assertEquals("Open the playing now screen.", rows[0][2]!!.hold)
+        assertNull(rows[0][1]!!.hold)
     }
 }

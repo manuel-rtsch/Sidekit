@@ -67,7 +67,8 @@
     <string name="sk_sidekit_hint_next_track">Next track</string>
     <string name="sk_sidekit_hint_previous_track">Previous track</string>
     <string name="sk_sidekit_hint_play_pause">Play or pause; hold for Confirm</string>
-    <string name="sk_sidekit_hint_corner_left">Move left</string>
+    <string name="sk_sidekit_hint_corner_left">Move left; hold for Search</string>
+    <string name="sk_sidekit_hint_corner_right">Move right; hold for Playing Now</string>
     <string name="sk_sidekit_hint_tab">Next control; hold for Back</string>
     <string name="sk_sidekit_hint_enter_sundial">Select; hold for Options (some revisions report Play/Pause)</string>
     <string name="sk_sidekit_hint_confirm">Confirm</string>

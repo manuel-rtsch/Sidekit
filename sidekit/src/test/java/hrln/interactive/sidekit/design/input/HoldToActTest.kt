@@ -98,4 +98,14 @@ class HoldToActTest {
         assertEquals(HoldToAct.Result.Consume, hold.handle(up(KeyEvent.KEYCODE_ENTER), ::actionOf))
         assertTrue(held.isEmpty())
     }
+
+    @Test
+    fun `a hold that never fired still fires on a late release`() {
+        // A release after the threshold is the hold itself, because its press was still pending.
+        assertEquals(
+            HoldToAct.Result.Consume,
+            hold.handle(up(KeyEvent.KEYCODE_ENTER, at = 1_500), ::actionOf)
+        )
+        assertEquals(listOf(NavControls.PlayingNow), held)
+    }
 }

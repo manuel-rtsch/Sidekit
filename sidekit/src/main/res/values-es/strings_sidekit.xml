@@ -64,7 +64,8 @@
     <string name="sk_sidekit_hint_next_track">Pista siguiente</string>
     <string name="sk_sidekit_hint_previous_track">Pista anterior</string>
     <string name="sk_sidekit_hint_play_pause">Reproducir o pausar; mantén para Confirmar</string>
-    <string name="sk_sidekit_hint_corner_left">Mover a la izquierda</string>
+    <string name="sk_sidekit_hint_corner_left">Mover a la izquierda; mantener para Buscar</string>
+    <string name="sk_sidekit_hint_corner_right">Mover a la derecha; mantener para la reproducción actual</string>
     <string name="sk_sidekit_hint_tab">Siguiente control; mantén para Atrás</string>
     <string name="sk_sidekit_hint_enter_sundial">Seleccionar; mantén para Opciones (algunas versiones envían Play/Pausa)</string>
     <string name="sk_sidekit_hint_confirm">Confirmar</string>

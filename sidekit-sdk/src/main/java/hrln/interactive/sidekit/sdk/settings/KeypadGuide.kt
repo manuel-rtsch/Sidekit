@@ -193,12 +193,14 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         // The Sundial is a ring of eight keys around the centre key. Lay it out exactly as it sits
         // on the module: top-left is left, top-right is right, bottom-left is Tab, bottom-right is
         // Enter, and the media keys are the middle row.
-        // Its labels are the printed glyphs themselves, so the arrows need no icon above them.
+        // Its labels are the printed glyphs themselves, so the arrows need no icon above them. The
+        // two upper corners add Search and Playing Now on a hold that outranks a repeated
+        // left/right move.
         KeypadModule.Sundial -> listOf(
             listOf(
-                key("\u2190", focusLeft, printed = "\u2190"),
+                key("\u2190", focusLeft, openSearch, printed = "\u2190"),
                 key("\u2191", focusUp, printed = "\u2191"),
-                key("\u2192", focusRight, printed = "\u2192")
+                key("\u2192", focusRight, openPlayingNow, printed = "\u2192")
             ),
             listOf(
                 key(previous, previousTrack, printed = previous),

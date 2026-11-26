@@ -64,7 +64,8 @@
     <string name="sk_sidekit_hint_next_track">Nächster Titel</string>
     <string name="sk_sidekit_hint_previous_track">Vorheriger Titel</string>
     <string name="sk_sidekit_hint_play_pause">Wiedergabe/Pause; halten für Bestätigen</string>
-    <string name="sk_sidekit_hint_corner_left">Nach links</string>
+    <string name="sk_sidekit_hint_corner_left">Nach links; halten für Suche</string>
+    <string name="sk_sidekit_hint_corner_right">Nach rechts; halten für Wiedergabe</string>
     <string name="sk_sidekit_hint_tab">Nächstes Element; halten für Zurück</string>
     <string name="sk_sidekit_hint_enter_sundial">Auswählen; halten für Optionen (manche Versionen melden Play/Pause)</string>
     <string name="sk_sidekit_hint_confirm">Bestätigen</string>

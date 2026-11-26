@@ -17,9 +17,10 @@ import hrln.interactive.sidekit.design.input.SystemKeys
  * 1. detect the keypad module from the raw event, before navigation rewrites it;
  * 2. apply the custom mapping and each module's default navigation, so Options, Back, focus and
  *    typing all see the mapped key;
- * 3. give each module's hold keys their hold (Tab for Back and Enter for Options on the Sundial;
- *    Home for Search and OK/Enter for Playing Now on T9 and the mini QWERTY) while a tap still
- *    sends the key's own action;
+ * 3. give each module's hold keys their hold (Tab for Back and Enter for Options on the Sundial,
+ *    its corner arrows for Search and Playing Now, Home for Search and OK/Enter for Playing Now on
+ *    T9 and the mini QWERTY) while a tap still sends the key's own action; every hold defers the
+ *    tap, so a held corner's Search/Playing Now never competes with a repeated left/right move;
  * 4. treat the top-right key as Options (on release) and swallow the top-left CALL key, which the
  *    keypad accessibility service turns into Back before the system dialer starts;
  * 5. send typing keys to [Keypad.dispatch] and only then to the platform.
@@ -71,7 +72,12 @@ class SidekitInputController(
         // Holds apply to the keypad only: Tab/Enter/Home on a Bluetooth keyboard or Next on a headset
         // keep their normal behaviour, a custom mapping replaces them, and a focused text field
         // keeps its OK/Enter.
-        when (val hold = holds.handle(translated) { code -> keypad.holdAction(code, raw) }) {
+        when (
+            val hold = holds.handle(translated) { code ->
+                // A screen's own hold (the library's held arrows) beats the module's chrome hold.
+                if (chrome.isHoldReserved(code)) null else keypad.holdAction(code, raw)
+            }
+        ) {
             HoldToAct.Result.Pass -> Unit
 
             HoldToAct.Result.Consume -> return true
@@ -81,7 +87,9 @@ class SidekitInputController(
                 return true
             }
         }
-        when (val hold = optionsHold.handle(translated) { code -> if (SystemKeys.isOptions(code)) code else null }) {
+        when (
+            val hold = optionsHold.handle(translated) { code -> if (SystemKeys.isOptions(code)) code else null }
+        ) {
             HoldToAct.Result.Pass -> Unit
 
             HoldToAct.Result.Consume -> return true
@@ -108,7 +116,7 @@ class SidekitInputController(
 
             NavControls.Options -> {
                 keypad.finishTyping()
-                chrome.toggleOptions(focusBar = true)
+                chrome.openOptionsOrFocusBar()
             }
 
             NavControls.Home -> onHome()

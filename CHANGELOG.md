@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **The Sundial corners keep Search and Playing Now on the library's category row too.** The
+  category-switch hold that gives held `←`/`→` a category step on the list rows now stands its
+  arrow reservation down when the cursor reaches the filter row above them, so the native corner
+  holds open Search and Playing Now there as well instead of sliding focus across the filters.
+- **Held Enter on the Sundial always lands focus in a bar.** It opens the screen's options when the
+  screen has any, and falls back to focusing the main action bar when it has none — a screen with
+  nothing to offer in its options still answers the hold.
+- **The Sundial's two upper corners open Search and Playing Now, without stealing the arrow.**
+  `←` opens Search and `→` opens Playing Now on a hold. The hold outranks a repeated left/right
+  move: the press is held until the release or Android's long-press timeout, so a held corner
+  never slides the focus over before the screen opens, and a short tap still moves left or right once.
+  Earlier attempts made the arrows *additive* (tap and repeats first, hold on top) to keep a held
+  arrow moving, but that let a held corner rattle the focus to the edge before Search/Playing Now
+  fired, so the corners settled on the same single deferred hold as the rest of the ring.
+  The mapping hints and key guide now show the corner holds.
 - **T9 and the mini QWERTY reach Search and Playing Now from their two free holds.** Neither module
   has a key for either screen, and **hold OK (T9) / Enter (mini QWERTY) opens Playing Now** while
   **hold Delete (T9) / SYM (mini QWERTY) opens Search**. Their taps keep their printed role — OK /

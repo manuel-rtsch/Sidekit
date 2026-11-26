@@ -1,9 +1,28 @@
 package hrln.interactive.sidekit.design.action
 
+import android.view.KeyEvent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OptionsBarTest {
+    @Test
+    fun `a screen can reserve a key's hold until its last owner disposes`() {
+        val chrome = ChromeState()
+        assertFalse(chrome.isHoldReserved(KeyEvent.KEYCODE_DPAD_LEFT))
+
+        val first = chrome.reserveHold(KeyEvent.KEYCODE_DPAD_LEFT)
+        val second = chrome.reserveHold(KeyEvent.KEYCODE_DPAD_LEFT)
+        assertTrue(chrome.isHoldReserved(KeyEvent.KEYCODE_DPAD_LEFT))
+
+        first()
+        first() // releasing twice must not steal the second owner's claim
+        assertTrue(chrome.isHoldReserved(KeyEvent.KEYCODE_DPAD_LEFT))
+        second()
+        assertFalse(chrome.isHoldReserved(KeyEvent.KEYCODE_DPAD_LEFT))
+    }
+
     @Test
     fun `only options that keep the bar open leave it open`() {
         val publisher = ChromePublisher()

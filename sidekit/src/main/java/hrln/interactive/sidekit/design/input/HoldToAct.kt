@@ -9,9 +9,9 @@ import android.view.KeyEvent
  *
  * The press is held back until it is released or [holdMs] passes. A timer fires the hold while the
  * key is still down; a tap is delivered as a normal press/release pair, so a hold never also fires
- * the key's tap action. Used for the Sundial, whose ring has no Back or Options key: hold Tab for
- * Back and Enter for Options while a tap still sends the key's own action, and for the typed
- * modules, where OK / Enter holds Playing Now.
+ * the key's tap action. This is for the command keys (the Sundial's Tab/Enter, the typed modules'
+ * OK/Enter) and the Sundial's corner arrows, whose hold outranks a repeated left/right move. The
+ * price is that the tap only acts on release and a held key does not repeat.
  *
  * A key that is not a hold key is passed through whole: its press goes to typing, and its release
  * follows even if the keypad has changed owners by then (a text field's own OK hold leaves the

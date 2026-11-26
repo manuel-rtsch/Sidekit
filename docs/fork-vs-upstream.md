@@ -105,7 +105,10 @@ Commits: `c57ec95`, `5dbfdd1`, `07cc5c9` (the inset).
 - **Mapping/guide corrections** — mini QWERTY centre **G (the printed 5 / GH key) = Confirm**,
   completing the T/D/B/J cross; controller **Select** and **R1** restored; T9 **Home** soft key
   remappable; **Sundial Previous/Next holds removed** (their tap is the media command and the corner
-  arrows already move left/right).
+  arrows already move left/right); the corner arrows later gained Search/Playing Now holds that
+  outrank a repeated left/right move. A first pass made them *additive* (tap and repeats first,
+  hold on top), but that let a held corner rattle the focus to the edge before the screen opened,
+  so they use the same single deferred hold as the rest of the ring.
 - `HoldToAct` recovers a hold whose DOWN was lost to Android's touch-mode transition, using
   `event.eventTime - event.downTime >= holdMs` on the UP.
 - **Ways out of a text field** — `T9Session.onEscape` and the QWERTY suggestion rocker: a tap cycles
@@ -327,7 +330,7 @@ Rule: **keep the fork's behaviour, take upstream's strings.** Concretely —
 |---|---|
 | `SideAction.kt` | fork's `ActionBarSpec` + `keepOptionsOpen` wrapping, upstream's `SidekitStrings.get(R.string…)` |
 | `CaseColour.kt` | fork's Cloud and row order, upstream's `labelRes` / `label(context)` / `displayLabel()` |
-| `KeyMapping.kt` | rebuilt on upstream's `Text` helper; re-added the fork's T9 **Home** key, dropped the Sundial "hold for left/right" hints, added controller **Select** and both **shoulders** |
+| `KeyMapping.kt` | rebuilt on upstream's `Text` helper; re-added the fork's T9 **Home** key, replaced the Sundial "hold for left/right" hints with the Search/Playing Now corner hints, added controller **Select** and both **shoulders** |
 | `SwipeReveal.kt` | fork's `SwipeAction`, upstream's `stringResource` default label |
 | `SidekitTextField.kt` | both signatures merged: `t9Actions(context, …, suggestions, …)` |
 | `Dictation.kt`, `SwipeReveal` body, `MailAccountScreen`, `OutdoorData`, `MusicGraph`, `MusicService`, `PlaylistRepository`, `AppRow`, `WeatherRepository(Test)` | upstream wholesale (the fork's diff there was Spotless formatting only) |

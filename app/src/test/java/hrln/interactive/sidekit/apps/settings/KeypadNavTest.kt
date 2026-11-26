@@ -99,6 +99,9 @@ class KeypadNavTest {
         val sundial = keypad(KeypadModule.Sundial)
         assertEquals(NavControls.Back, sundial.holdAction(KeyEvent.KEYCODE_TAB, down(KeyEvent.KEYCODE_TAB)))
         assertEquals(NavControls.Options, sundial.holdAction(KeyEvent.KEYCODE_ENTER, down(KeyEvent.KEYCODE_ENTER)))
+        // The two upper corners add the chrome actions, outranking a repeated left/right move.
+        assertEquals(NavControls.Search, sundial.holdAction(KeyEvent.KEYCODE_DPAD_LEFT, down(KeyEvent.KEYCODE_DPAD_LEFT)))
+        assertEquals(NavControls.PlayingNow, sundial.holdAction(KeyEvent.KEYCODE_DPAD_RIGHT, down(KeyEvent.KEYCODE_DPAD_RIGHT)))
         // Y and Select already act on a single press, so the controller has no holds.
         val controller = keypad(KeypadModule.GamePad)
         assertNull(controller.holdAction(KeyEvent.KEYCODE_BUTTON_Y, down(KeyEvent.KEYCODE_BUTTON_Y)))

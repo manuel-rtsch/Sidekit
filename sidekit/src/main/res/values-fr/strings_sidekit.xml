@@ -64,7 +64,8 @@
     <string name="sk_sidekit_hint_next_track">Piste suivante</string>
     <string name="sk_sidekit_hint_previous_track">Piste précédente</string>
     <string name="sk_sidekit_hint_play_pause">Lecture ou pause ; maintenir pour Confirmer</string>
-    <string name="sk_sidekit_hint_corner_left">Aller à gauche</string>
+    <string name="sk_sidekit_hint_corner_left">Aller à gauche ; maintenir pour Rechercher</string>
+    <string name="sk_sidekit_hint_corner_right">Aller à droite ; maintenir pour la lecture en cours</string>
     <string name="sk_sidekit_hint_tab">Élément suivant ; maintenir pour Retour</string>
     <string name="sk_sidekit_hint_enter_sundial">Sélectionner ; maintenir pour Options (certaines versions envoient Lecture/Pause)</string>
     <string name="sk_sidekit_hint_confirm">Confirmer</string>

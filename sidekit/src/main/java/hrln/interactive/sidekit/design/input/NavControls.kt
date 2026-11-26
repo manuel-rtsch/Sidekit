@@ -85,25 +85,24 @@ object NavControls {
     )
 
     /**
-     * Hold actions for the Sundial's ring. A tap keeps the printed role (media, Tab, Enter); a
-     * hold turns it into the navigation action the module has no dedicated key for. Tab/Enter have
-     * no media role to preserve.
+     * Hold actions for the Sundial's ring. A tap keeps the printed role (media, Tab, Enter, the
+     * corner arrows' left/right move); a hold turns it into the navigation action the module has no
+     * dedicated key for. The corners' hold, Search and Playing Now, outranks a repeated left/right
+     * move: the tap waits for the release, and a held corner never slides the focus over before
+     * the screen opens.
      *
-     * Previous/Next are deliberately absent. Their tap is the media command, and the Sundial's
-     * corner arrows already move left and right; taking the edge keys' hold away only made those
-     * media controls feel like navigation. The arrows themselves stay plain as well: a hold defers
-     * the press to its release and swallows key repeat, so holding ↓ through a long list would stop
-     * scrolling and jump Home instead.
-     *
-     * There is therefore no spare hold on the Sundial, and it is the one module that cannot reach
-     * Playing Now from its own keys.
+     * Previous/Next stay plain. Their tap is the media command, and a hold would skip a track
+     * first, just to open a screen. Up/Down stay plain for the same reason: their hold would stop
+     * list scrolling. This is the Sundial's whole budget of holds.
      */
     val sundialHoldFor: Map<Int, Int> = mapOf(
         KeyEvent.KEYCODE_TAB to Back,
         KeyEvent.KEYCODE_ENTER to Options,
         // Some Sundial revisions report the bottom-right Enter key as the centre media key.
         // A hold still gives Confirm, while a tap keeps its media behaviour.
-        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm,
+        KeyEvent.KEYCODE_DPAD_LEFT to Search,
+        KeyEvent.KEYCODE_DPAD_RIGHT to PlayingNow
     )
 
     /**
@@ -138,7 +137,8 @@ object NavControls {
      * the keypad (a Bluetooth keyboard's Home/Enter keep their platform behaviour).
      *
      * The game controller has none. Y and Select already open Playing Now and Search on a single
-     * press, and the Sundial's ring has no spare hold (see [sundialHoldFor]).
+     * press, and the Sundial spends its remaining two holds on the corner arrows (see
+     * [sundialHoldFor]).
      */
     val holdFor: Map<KeypadModule, Map<Int, Int>> = mapOf(
         KeypadModule.T9 to t9HoldFor,

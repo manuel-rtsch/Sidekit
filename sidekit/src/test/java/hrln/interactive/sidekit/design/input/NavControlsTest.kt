@@ -98,8 +98,8 @@ class NavControlsTest {
     }
 
     @Test fun sundialHoldTargetsAreCanonicalNavKeys() {
-        NavControls.sundialHoldFor.forEach { (_, target) ->
-            assertTrue("unexpected Sundial hold target $target", target in NavControls.all)
+        NavControls.sundialHoldFor.forEach { (_, action) ->
+            assertTrue("unexpected Sundial hold target $action", action in NavControls.all)
         }
         assertEquals(NavControls.Back, NavControls.sundialHoldFor[KeyEvent.KEYCODE_TAB])
         assertEquals(NavControls.Options, NavControls.sundialHoldFor[KeyEvent.KEYCODE_ENTER])
@@ -107,14 +107,17 @@ class NavControlsTest {
         // Previous/Next are media keys; their holds must not turn them into left/right.
         assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
         assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
-        // The Sundial has no spare hold: Playing Now is reachable from the controller and from the
-        // typed modules' confirm hold, never from the ring.
-        assertNull(NavControls.defaultFor.getValue(KeypadModule.Sundial)[KeyEvent.KEYCODE_BUTTON_Y])
-        assertTrue(NavControls.holdFor.getValue(KeypadModule.Sundial).none { it.value == NavControls.PlayingNow })
-        // The arrows must keep moving on press and repeating while held.
-        for (arrow in listOf(NavControls.Up, NavControls.Down, NavControls.Left, NavControls.Right)) {
+        // Up and Down stay plain: a hold there would stop list scrolling.
+        for (arrow in listOf(NavControls.Up, NavControls.Down)) {
             assertNull("arrow $arrow must not be a hold key", NavControls.sundialHoldFor[arrow])
         }
+    }
+
+    @Test fun sundialCornersHoldSearchAndPlayingNow() {
+        // The corner arrows' taps move left/right, so their holds must outrank a repeated move:
+        // the tap waits for the release and a held corner never slides the focus over first.
+        assertEquals(NavControls.Search, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_LEFT])
+        assertEquals(NavControls.PlayingNow, NavControls.sundialHoldFor[KeyEvent.KEYCODE_DPAD_RIGHT])
     }
 
     @Test fun t9AndQwertyHoldTheirSoftKeyForSearchAndConfirmForPlayingNow() {
@@ -144,8 +147,8 @@ class NavControlsTest {
 
     @Test fun everyHoldTargetIsACanonicalNavKey() {
         NavControls.holdFor.forEach { (module, profile) ->
-            profile.forEach { (_, target) ->
-                assertTrue("$module holds to non-canonical $target", target in NavControls.all)
+            profile.forEach { (_, action) ->
+                assertTrue("$module holds to non-canonical $action", action in NavControls.all)
             }
         }
     }

@@ -236,6 +236,32 @@ class ChromeState {
     /** Offers a key pressed while focus is in the action bar to the screen that asked for it. */
     internal fun barKey(event: KeyEvent): Boolean = barKeys.lastOrNull()?.invoke(event) ?: false
 
+    /** Keys whose hold belongs to a screen, with one count per owner (more than one can share). */
+    private val reservedHolds = mutableMapOf<Int, Int>()
+
+    /**
+     * Claims [keyCode]'s hold for the composition that calls this, and returns the release.
+     *
+     * A screen can give a key its own hold: the library's held Left/Right steps categories, for
+     * example. That must win over a module's chrome hold on the same key, which would otherwise
+     * open Search after the category step. The input loop asks [isHoldReserved] before it claims a
+     * hold, so the screen's gesture is the only one that fires.
+     */
+    fun reserveHold(keyCode: Int): () -> Unit {
+        reservedHolds[keyCode] = (reservedHolds[keyCode] ?: 0) + 1
+        var released = false
+        return {
+            if (!released) {
+                released = true
+                val remaining = (reservedHolds[keyCode] ?: 1) - 1
+                if (remaining <= 0) reservedHolds.remove(keyCode) else reservedHolds[keyCode] = remaining
+            }
+        }
+    }
+
+    /** True while a screen owns [keyCode]'s hold (see [reserveHold]). */
+    fun isHoldReserved(keyCode: Int): Boolean = (reservedHolds[keyCode] ?: 0) > 0
+
     internal val top: ChromePublisher? get() = publishers.lastOrNull()
 
     /** Whose options are showing in the bar, if any (see [toggleOptions]). */
@@ -254,6 +280,15 @@ class ChromeState {
     /** True when the current screen publishes at least one option for [toggleOptions]. */
     val hasOptions: Boolean
         get() = optionsSource?.options?.isNotEmpty() == true
+
+    /**
+     * The Sundial's held Enter: open the options when the screen has any, otherwise move focus to
+     * the main action bar. One gesture always lands focus in some bar, so a screen with nothing to
+     * offer in its options still answers the hold.
+     */
+    fun openOptionsOrFocusBar() {
+        if (hasOptions) toggleOptions(focusBar = true) else focusActionBar()
+    }
 
     /**
      * A request to move the cursor into the bar once the new buttons are composed, counted so a
