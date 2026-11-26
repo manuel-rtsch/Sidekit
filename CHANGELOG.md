@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.13.1 — 2026-11-26
 
 - **The Sundial corners keep Search and Playing Now on the library's category row too.** The
   category-switch hold that gives held `←`/`→` a category step on the list rows now stands its
