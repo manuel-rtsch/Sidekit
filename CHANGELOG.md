@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **T9 and the mini QWERTY reach Search and Playing Now from their two free holds.** Neither module
+  has a key for either screen, and Home and OK / Enter are their only non-repeating keys without a
+  hold: every other key types (and its hold already types the printed digit or symbol) or moves with
+  key repeat. So **hold Home for Search** and **hold OK (T9) / Enter (mini QWERTY) for Playing
+  Now**. Both taps keep their printed role — Home stays the system Home key, OK / Enter keep
+  selecting, taking a suggestion or inserting a new line — both holds stand down while a text field
+  owns the keypad, and both follow the rules of every other default: a custom mapping replaces them
+  and they only apply to the keypad's own input devices. `NavControls.holdFor` is now the
+  per-module hold table (the Sundial's ring keeps its entries; the controller has none because Y and
+  Select already act on a single press), `Keypad.holdAction` resolves a press against the module, the
+  custom mapping, a focused field and the device, and the input controller performs every module's
+  hold in one place. The keypad guide and the mapping hints say the same thing.
 - **The Options key puts the cursor on the bar it opens.** A tap swapped the bar for the screen's
   options but left focus in the content, so a keypad user had to walk down before they could move
   between the options. The keypad loop now asks for `toggleOptions(focusBar = true)`, the first

@@ -56,6 +56,13 @@ internal object KeypadDetector {
     /** True for a keypad module, the virtual keyboard, or an event with no readable device. */
     internal fun isKeypadDevice(name: String?, deviceId: Int): Boolean = name == null || name in MODULE_DEVICES || deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD
 
+    /**
+     * True for a press from the keypad — a swappable module, the phone's own key device, or an
+     * injected / remapped key — rather than an external keyboard or a headset button, which send
+     * some of the same keys and must keep their own behaviour.
+     */
+    internal fun isKeypadEvent(name: String?, deviceId: Int): Boolean = deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD || name == PHONE_DEVICE || isKeypadDevice(name, deviceId)
+
     fun moduleFor(event: KeyEvent): KeypadModule? = moduleFor(event.device?.name, event.deviceId, event.keyCode)
 
     /**

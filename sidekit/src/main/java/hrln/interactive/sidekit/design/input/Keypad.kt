@@ -226,6 +226,19 @@ class Keypad internal constructor(
         session?.finish()
     }
 
+    /**
+     * The chrome action a held key performs, or null when the key keeps its tap.
+     *
+     * Holds are defaults, like [translateForUi]: a custom mapping replaces them, a text field that
+     * owns the keypad keeps OK/Enter for typing, and a press from another input device (a Bluetooth
+     * keyboard or a headset) is not the keypad.
+     */
+    fun holdAction(code: Int, source: KeyEvent): Int? {
+        if (mapper.customModule != null || session != null) return null
+        if (!KeypadDetector.isKeypadEvent(source.device?.name, source.deviceId)) return null
+        return NavControls.holdFor[module]?.get(code)
+    }
+
     internal fun registerFallback(focus: FocusRequester, activate: () -> Unit = {}) {
         fallbacks.add(TypingTarget(focus, activate))
     }

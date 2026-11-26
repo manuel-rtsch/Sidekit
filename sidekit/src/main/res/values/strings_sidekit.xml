@@ -54,12 +54,14 @@
     <string name="sk_sidekit_hint_move_left_cursor">Move left; cursor</string>
     <string name="sk_sidekit_hint_move_right_cursor">Move right; cursor</string>
     <string name="sk_sidekit_hint_select_or_suggestion">Select, or take a suggestion</string>
+    <string name="sk_sidekit_hint_ok_playing_now">Select, or take a suggestion; hold for the playing now screen</string>
     <string name="sk_sidekit_hint_punctuation_symbols">Punctuation and symbols</string>
     <string name="sk_sidekit_hint_case_numbers">Case; hold for numbers</string>
     <string name="sk_sidekit_hint_delete">Delete the previous character</string>
     <!-- %1$s is what a long press types: a digit or symbol. -->
     <string name="sk_sidekit_hint_hold_for">Hold for %1$s</string>
     <string name="sk_sidekit_hint_new_line">New line, or take a suggestion</string>
+    <string name="sk_sidekit_hint_enter_playing_now">New line, or take a suggestion; hold for the playing now screen</string>
     <string name="sk_sidekit_hint_next_suggestion">Next suggestion</string>
     <string name="sk_sidekit_hint_symbols">Symbols</string>
     <string name="sk_sidekit_hint_next_track">Next track</string>
@@ -74,6 +76,7 @@
     <string name="sk_sidekit_hint_button_y">Open the playing now screen</string>
     <string name="sk_sidekit_hint_open_search">Open search</string>
     <string name="sk_sidekit_hint_go_home">Go to the home screen</string>
+    <string name="sk_sidekit_hint_home_search">Go to the home screen; hold for search</string>
     <string name="sk_sidekit_hint_digit_0">Space; hold for 0</string>
     <string name="sk_sidekit_hint_digit_1">Punctuation; hold for 1</string>
     <string name="sk_sidekit_hint_digit">Letters; hold for %1$d</string>

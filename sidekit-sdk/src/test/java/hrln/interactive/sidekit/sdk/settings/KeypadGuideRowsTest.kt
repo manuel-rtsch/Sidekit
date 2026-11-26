@@ -69,6 +69,16 @@ class KeypadGuideRowsTest {
     }
 
     @Test
+    fun `t9 and the mini qwerty carry search and playing now on their free holds`() {
+        for (module in listOf(KeypadModule.T9, KeypadModule.Qwerty)) {
+            val keys = keypadGuideRows(module).flatten().filterNotNull()
+            assertEquals("Open search.", keys.first { it.label == "Home" }.hold)
+            // OK on T9, Enter on the mini QWERTY: both keep their tap and hold Playing Now.
+            assertEquals("Open the playing now screen.", keys.first { it.label == "OK" || it.label == "Enter" }.hold)
+        }
+    }
+
+    @Test
     fun `sundial prints the words on its ring`() {
         val rows = keypadGuideRows(KeypadModule.Sundial)
         assertEquals("Play / pause", rows[1][1]!!.printed)

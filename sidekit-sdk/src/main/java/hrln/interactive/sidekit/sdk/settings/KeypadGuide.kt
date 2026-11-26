@@ -133,12 +133,12 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
             listOf(
                 null,
                 key(left, focusLeftText, icon = SidekitIcon.ArrowLeftAlt, printed = left),
-                key("OK", okAction, printed = "OK"),
+                key("OK", okAction, openPlayingNow, printed = "OK"),
                 key(right, focusRightText, icon = SidekitIcon.ArrowRightAlt, printed = right),
                 null
             ),
             listOf(
-                key(home, returnHome, icon = SidekitIcon.Home, printed = home),
+                key(home, returnHome, openSearch, icon = SidekitIcon.Home, printed = home),
                 null,
                 key(down, focusDown, icon = SidekitIcon.ArrowDownward, printed = down),
                 null,
@@ -159,7 +159,7 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
             listOf(
                 key(back, goBackScreen, openDialer, SidekitIcon.Call),
                 key(back, goBackScreen, printed = dash),
-                key(home, returnHome, icon = SidekitIcon.Home),
+                key(home, returnHome, openSearch, icon = SidekitIcon.Home),
                 key(recents, showRecents, printed = dash),
                 key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
             )
@@ -181,7 +181,7 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
                 key("SYM", cycleSymbols, printed = "SYM"),
                 key(space, insertSpace, type(0), printed = space),
                 key("aA", changeCase, lettersAndNumbers, printed = "aA"),
-                key(enter, confirmOrNewLine, icon = SidekitIcon.KeyboardReturn, printed = enter)
+                key(enter, confirmOrNewLine, openPlayingNow, icon = SidekitIcon.KeyboardReturn, printed = enter)
             )
         )
 

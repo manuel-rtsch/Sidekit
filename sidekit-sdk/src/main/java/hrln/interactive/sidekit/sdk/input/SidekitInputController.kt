@@ -1,7 +1,6 @@
 package hrln.interactive.sidekit.sdk.input
 
 import android.annotation.SuppressLint
-import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import hrln.interactive.sidekit.design.action.ChromeState
 import hrln.interactive.sidekit.design.input.HoldToAct
@@ -18,7 +17,8 @@ import hrln.interactive.sidekit.design.input.SystemKeys
  * 1. detect the keypad module from the raw event, before navigation rewrites it;
  * 2. apply the custom mapping and each module's default navigation, so Options, Back, focus and
  *    typing all see the mapped key;
- * 3. give the Sundial's ring keys their holds (Tab for Back, Enter for Options) while a tap still
+ * 3. give each module's hold keys their hold (Tab for Back and Enter for Options on the Sundial;
+ *    Home for Search and OK/Enter for Playing Now on T9 and the mini QWERTY) while a tap still
  *    sends the key's own action;
  * 4. treat the top-right key as Options (on release) and swallow the top-left CALL key, which the
  *    keypad accessibility service turns into Back before the system dialer starts;
@@ -37,8 +37,11 @@ class SidekitInputController(
     private val onSearch: () -> Unit = {},
     private val onPlayingNow: () -> Unit = {}
 ) {
-    /** The Sundial has no Back/Options key: hold Tab / Enter. Taps keep their media role. */
-    private val sundialHold = HoldToAct(onHold = { action, source -> performSundialHold(action, source) })
+    /**
+     * The second layer of a module that has no dedicated key for a chrome action: the Sundial's
+     * Back and Options, T9's and the mini QWERTY's Search and Playing Now. Taps keep their role.
+     */
+    private val holds = HoldToAct(onHold = { action, source -> performHold(action, source) })
 
     /** Tap Options opens the options; holding it jumps to the first action button. */
     private val optionsHold = HoldToAct(
@@ -50,7 +53,7 @@ class SidekitInputController(
 
     /** Forgets a hold whose key never got its release (the window lost focus). */
     fun reset() {
-        sundialHold.reset()
+        holds.reset()
         optionsHold.reset()
     }
 
@@ -65,10 +68,10 @@ class SidekitInputController(
         // Keypad mapping first, plus each module's default navigation, so Options, Back, focus and
         // typing all see the mapped key.
         val translated = keypad.translateForUi(raw) ?: return true
-        // Holds belong to the Sundial ring only: Tab/Enter on a Bluetooth keyboard or Next on a headset
-        // keep their normal behaviour, as does a T9 OK if the remembered module is stale.
-        val fromSundial = raw.device?.name in SUNDIAL_DEVICES || raw.deviceId == KeyCharacterMap.VIRTUAL_KEYBOARD
-        when (val hold = sundialHold.handle(translated) { code -> if (fromSundial) sundialHoldAction(code) else null }) {
+        // Holds apply to the keypad only: Tab/Enter/Home on a Bluetooth keyboard or Next on a headset
+        // keep their normal behaviour, a custom mapping replaces them, and a focused text field
+        // keeps its OK/Enter.
+        when (val hold = holds.handle(translated) { code -> keypad.holdAction(code, raw) }) {
             HoldToAct.Result.Pass -> Unit
 
             HoldToAct.Result.Consume -> return true
@@ -92,18 +95,18 @@ class SidekitInputController(
     }
 
     /**
-     * Performs a Sundial hold after the timer fires or the key is released late.
+     * Performs a hold after the timer fires or the key is released late.
      *
      * Back comes from holding a hardware key, not from a system back gesture, so the
      * predictive-back lint does not apply; the dispatcher still routes through registered
      * callbacks.
      */
     @SuppressLint("GestureBackNavigation")
-    private fun performSundialHold(action: Int, source: KeyEvent) {
+    private fun performHold(action: Int, source: KeyEvent) {
         when (action) {
-            KeyEvent.KEYCODE_BACK -> onBack()
+            NavControls.Back -> onBack()
 
-            KeyEvent.KEYCODE_ENDCALL -> {
+            NavControls.Options -> {
                 keypad.finishTyping()
                 chrome.toggleOptions(focusBar = true)
             }
@@ -112,17 +115,16 @@ class SidekitInputController(
 
             NavControls.Search -> onSearch()
 
+            NavControls.PlayingNow -> {
+                keypad.finishTyping()
+                onPlayingNow()
+            }
+
             else -> dispatchNav(action, source)
         }
     }
 
-    /** The Sundial keys that get a hold action, and only while its layout is auto-detected. */
-    private fun sundialHoldAction(code: Int): Int? {
-        if (keypad.module != KeypadModule.Sundial || keypad.mapper.customModule != null) return null
-        return NavControls.sundialHoldFor[code]
-    }
-
-    /** Sends a held Sundial key's navigation action as a normal press/release. */
+    /** Sends a held key's navigation action (the Sundial's Confirm) as a normal press/release. */
     private fun dispatchNav(code: Int, from: KeyEvent) {
         val down = KeyEvent(
             from.downTime, from.eventTime, KeyEvent.ACTION_DOWN, code, 0,
@@ -136,7 +138,7 @@ class SidekitInputController(
         dispatchTranslated(up)
     }
 
-    /** Routes an already-translated event; also used for the tap released by [sundialHold]. */
+    /** Routes an already-translated event; also used for the tap released by [holds]. */
     private fun dispatchTranslated(event: KeyEvent): Boolean {
         // Generic chrome actions from the controller. A normal keyboard's Home/Search/PlayingNow keys keep
         // their platform behaviour.
@@ -175,10 +177,5 @@ class SidekitInputController(
             SystemKeys.isBack(event) -> return true
         }
         return keypad.dispatch(event) || dispatch(event)
-    }
-
-    private companion object {
-        /** Input devices that carry the Sundial ring (newer media module, older combined keyboard). */
-        val SUNDIAL_DEVICES = setOf("gxa535_media", "gxa535_keyboard")
     }
 }

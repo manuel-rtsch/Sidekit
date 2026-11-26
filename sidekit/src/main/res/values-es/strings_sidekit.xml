@@ -52,11 +52,13 @@
     <string name="sk_sidekit_hint_move_left_cursor">Mover a la izquierda; cursor</string>
     <string name="sk_sidekit_hint_move_right_cursor">Mover a la derecha; cursor</string>
     <string name="sk_sidekit_hint_select_or_suggestion">Seleccionar o aceptar una sugerencia</string>
+    <string name="sk_sidekit_hint_ok_playing_now">Seleccionar o aceptar una sugerencia; mantén para la reproducción actual</string>
     <string name="sk_sidekit_hint_punctuation_symbols">Puntuación y símbolos</string>
     <string name="sk_sidekit_hint_case_numbers">Mayúsculas; mantén para números</string>
     <string name="sk_sidekit_hint_delete">Borrar el carácter anterior</string>
     <string name="sk_sidekit_hint_hold_for">Mantén para %1$s</string>
     <string name="sk_sidekit_hint_new_line">Nueva línea o aceptar una sugerencia</string>
+    <string name="sk_sidekit_hint_enter_playing_now">Nueva línea o aceptar una sugerencia; mantén para la reproducción actual</string>
     <string name="sk_sidekit_hint_next_suggestion">Siguiente sugerencia</string>
     <string name="sk_sidekit_hint_symbols">Símbolos</string>
     <string name="sk_sidekit_hint_next_track">Pista siguiente</string>
@@ -71,6 +73,7 @@
     <string name="sk_sidekit_hint_button_y">Abrir la reproducción actual</string>
     <string name="sk_sidekit_hint_open_search">Abrir búsqueda</string>
     <string name="sk_sidekit_hint_go_home">Ir a la pantalla de inicio</string>
+    <string name="sk_sidekit_hint_home_search">Ir a la pantalla de inicio; mantén para la búsqueda</string>
     <string name="sk_sidekit_hint_digit_0">Espacio; mantén para 0</string>
     <string name="sk_sidekit_hint_digit_1">Puntuación; mantén para 1</string>
     <string name="sk_sidekit_hint_digit">Letras; mantén para %1$d</string>

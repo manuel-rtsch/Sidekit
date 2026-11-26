@@ -30,6 +30,17 @@ class KeypadDetectorTest {
         assertFalse(KeypadDetector.isKeypadDevice("gxa535_phone", deviceId = 3))
     }
 
+    @Test fun keypadEventsCoverModulesThePhoneDeviceAndInjectedKeys() {
+        // Holds only belong to the keypad: an external keyboard's Home/Enter and a headset's
+        // media keys must keep their platform behaviour.
+        for (name in listOf("gxa535_media", "gxa535_qwerty", "gxa535_t9", "gxa535_gamepad", "gxa535_keyboard", "gxa535_phone", null)) {
+            assertTrue(name, KeypadDetector.isKeypadEvent(name, deviceId = 3))
+        }
+        assertTrue(KeypadDetector.isKeypadEvent("External keyboard", KeyCharacterMap.VIRTUAL_KEYBOARD))
+        assertFalse(KeypadDetector.isKeypadEvent("External keyboard", deviceId = 7))
+        assertFalse(KeypadDetector.isKeypadEvent("mt63xx-accdet Headset", deviceId = 4))
+    }
+
     @Test fun rejectsUnknownModuleNames() {
         // A new module must be added to the allowlist deliberately.
         assertFalse(KeypadDetector.isKeypadDevice("gxa535_future", deviceId = 3))

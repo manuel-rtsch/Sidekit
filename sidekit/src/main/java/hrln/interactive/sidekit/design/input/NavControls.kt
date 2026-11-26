@@ -106,6 +106,41 @@ object NavControls {
         KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE to Confirm
     )
 
+    /**
+     * The holds T9 and the mini QWERTY have left, and the two chrome actions they carry.
+     *
+     * Neither module has a Search or a Playing Now key, and Home and OK/Enter are the only
+     * non-repeating keys without a hold: every other key either types — and its hold already types
+     * the printed digit or symbol — or moves with key repeat. A tap keeps the printed role (Home
+     * stays the system Home key, OK/Enter keep selecting and committing), so the hold is the second
+     * layer.
+     *
+     * The pair is the controller's clustering carried over: Search belongs on the chrome corner
+     * next to Home/Start, and Playing Now on the confirm key beside the controller's Y / A face
+     * buttons. While a text field owns the keypad both holds stand down, so OK/Enter keep their
+     * typing role.
+     */
+    private val homeAndConfirmHoldFor: Map<Int, Int> = mapOf(
+        KeyEvent.KEYCODE_HOME to Search,
+        KeyEvent.KEYCODE_ENTER to PlayingNow
+    )
+
+    /**
+     * Hold actions of every module, by the key the module sends.
+     *
+     * Holds are defaults like [defaultFor]: a custom mapping replaces them, and they only apply to
+     * the keypad (a Bluetooth keyboard's Home/Enter keep their platform behaviour).
+     *
+     * The game controller has none. Y and Select already open Playing Now and Search on a single
+     * press, and the Sundial's ring has no spare hold (see [sundialHoldFor]).
+     */
+    val holdFor: Map<KeypadModule, Map<Int, Int>> = mapOf(
+        KeypadModule.T9 to homeAndConfirmHoldFor,
+        KeypadModule.Qwerty to homeAndConfirmHoldFor,
+        KeypadModule.Sundial to sundialHoldFor,
+        KeypadModule.GamePad to emptyMap()
+    )
+
     /** The canonical navigation key [code] becomes in [module]'s UI, or null to keep it as sent. */
     internal fun applyDefault(module: KeypadModule, code: Int): Int? = defaultFor[module]?.get(code)
 }

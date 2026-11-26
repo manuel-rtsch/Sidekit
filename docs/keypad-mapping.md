@@ -26,7 +26,16 @@ Sidekit only treats the keypad modules' own input devices as keypads, and reads 
 
 ## Sundial holds
 
-The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter** for Options. Hold the **centre Play/Pause** key for Confirm when a revision reports Enter as the centre media key; a tap still controls media. The **Previous** / **Next** edges and the corner arrows always keep their printed roles: the edges skip tracks and the corners move left/right, on press as well as when held. That leaves no spare hold, so the Sundial is the one module that cannot open Playing Now from its own keys. Keypad holds follow Android's long-press timeout (`ViewConfiguration.getLongPressTimeout()`, 400 ms by default), so a device or accessibility tool that changes the system value also changes them. The Back-to-dialer hold stays at 600 ms.
+The Sundial has no Back or Options key. Hold **Tab** for Back and hold **Enter** for Options. Hold the **centre Play/Pause** key for Confirm when a revision reports Enter as the centre media key; a tap still controls media. The **Previous** / **Next** edges and the corner arrows always keep their printed roles: the edges skip tracks and the corners move left/right, on press as well as when held. That leaves no spare hold, so the Sundial is the one module that cannot open Playing Now from its own keys (T9 and the mini QWERTY hold OK / Enter, and the controller uses Y). Keypad holds follow Android's long-press timeout (`ViewConfiguration.getLongPressTimeout()`, 400 ms by default), so a device or accessibility tool that changes the system value also changes them. The Back-to-dialer hold stays at 600 ms.
+
+## Home and OK holds
+
+T9 and the mini QWERTY have no Search or Playing Now key, and Home and OK / Enter are their only keys without a hold: every other key types (and its hold already types the printed digit or symbol) or moves with key repeat. Those two free holds carry the same pair as the controller's corners and face buttons:
+
+- **Hold Home for Search.** A tap still sends the system Home key.
+- **Hold OK** (T9) or **Enter** (mini QWERTY) **for Playing Now.** A tap still selects, takes a suggestion or inserts a new line.
+
+Both holds stand down while a text field owns the keypad, so OK and Enter keep their typing role, and a custom mapping replaces them like every other default. A Bluetooth keyboard's Home, Enter and Tab keep their normal behaviour: holds only apply to the keypad's own devices.
 
 ## Game controller
 

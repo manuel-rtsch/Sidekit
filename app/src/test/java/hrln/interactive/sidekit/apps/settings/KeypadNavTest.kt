@@ -4,10 +4,12 @@ import android.view.KeyEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import hrln.interactive.sidekit.design.input.Keypad
 import hrln.interactive.sidekit.design.input.KeypadModule
+import hrln.interactive.sidekit.design.input.NavControls
 import hrln.interactive.sidekit.design.input.T9Words
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -78,5 +80,30 @@ class KeypadNavTest {
         val k = keypad(KeypadModule.Qwerty)
         assertEquals(KeyEvent.KEYCODE_A, k.translateForUi(down(KeyEvent.KEYCODE_A))?.keyCode)
         assertEquals(KeyEvent.KEYCODE_ENTER, k.translateForUi(down(KeyEvent.KEYCODE_ENTER))?.keyCode)
+    }
+
+    @Test fun holdActionGivesT9AndQwertyTheirChromeHolds() {
+        // Home held opens Search, OK / Enter held opens Playing Now; the taps keep their roles.
+        for (module in listOf(KeypadModule.T9, KeypadModule.Qwerty)) {
+            val k = keypad(module)
+            assertEquals(NavControls.Search, k.holdAction(KeyEvent.KEYCODE_HOME, down(KeyEvent.KEYCODE_HOME)))
+            assertEquals(NavControls.PlayingNow, k.holdAction(KeyEvent.KEYCODE_ENTER, down(KeyEvent.KEYCODE_ENTER)))
+            assertNull(k.holdAction(KeyEvent.KEYCODE_DPAD_UP, down(KeyEvent.KEYCODE_DPAD_UP)))
+        }
+    }
+
+    @Test fun holdActionKeepsTheSundialAndLeavesTheControllerAlone() {
+        val sundial = keypad(KeypadModule.Sundial)
+        assertEquals(NavControls.Back, sundial.holdAction(KeyEvent.KEYCODE_TAB, down(KeyEvent.KEYCODE_TAB)))
+        assertEquals(NavControls.Options, sundial.holdAction(KeyEvent.KEYCODE_ENTER, down(KeyEvent.KEYCODE_ENTER)))
+        // Y and Select already act on a single press, so the controller has no holds.
+        val controller = keypad(KeypadModule.GamePad)
+        assertNull(controller.holdAction(KeyEvent.KEYCODE_BUTTON_Y, down(KeyEvent.KEYCODE_BUTTON_Y)))
+    }
+
+    @Test fun customMappingReplacesTheHolds() {
+        val k = keypad(KeypadModule.T9)
+        k.useCustomMapping(KeypadModule.T9)
+        assertNull(k.holdAction(KeyEvent.KEYCODE_HOME, down(KeyEvent.KEYCODE_HOME)))
     }
 }

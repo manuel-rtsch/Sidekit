@@ -90,10 +90,10 @@ abstract class SidekitActivity : ComponentActivity() {
     /** A controller's Start/Home key. The host decides where its own home is. */
     protected open fun onSidekitHome() {}
 
-    /** A controller's shoulder/Search key. The host opens its search surface. */
+    /** A controller's shoulder/Search key, or Home held on T9 / the mini QWERTY. */
     protected open fun onSidekitSearch() {}
 
-    /** A controller's Y/Playing Now key. The host opens its now-playing surface. */
+    /** A controller's Y key, or OK / Enter held on T9 and the mini QWERTY. */
     protected open fun onSidekitPlayingNow() {}
 
     final override fun onResume() {

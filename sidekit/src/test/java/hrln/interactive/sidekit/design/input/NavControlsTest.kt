@@ -107,11 +107,38 @@ class NavControlsTest {
         // Previous/Next are media keys; their holds must not turn them into left/right.
         assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_PREVIOUS])
         assertNull(NavControls.sundialHoldFor[KeyEvent.KEYCODE_MEDIA_NEXT])
-        // The Sundial has no spare hold, so Playing Now is reachable from the controller only.
+        // The Sundial has no spare hold: Playing Now is reachable from the controller and from the
+        // typed modules' confirm hold, never from the ring.
         assertNull(NavControls.defaultFor.getValue(KeypadModule.Sundial)[KeyEvent.KEYCODE_BUTTON_Y])
+        assertTrue(NavControls.holdFor.getValue(KeypadModule.Sundial).none { it.value == NavControls.PlayingNow })
         // The arrows must keep moving on press and repeating while held.
         for (arrow in listOf(NavControls.Up, NavControls.Down, NavControls.Left, NavControls.Right)) {
             assertNull("arrow $arrow must not be a hold key", NavControls.sundialHoldFor[arrow])
+        }
+    }
+
+    @Test fun t9AndQwertyHoldHomeForSearchAndConfirmForPlayingNow() {
+        // Neither module has a Search or a Playing Now key, and these are its two free holds. The
+        // taps keep their printed roles: Home stays system Home, OK/Enter keep selecting.
+        for (module in listOf(KeypadModule.T9, KeypadModule.Qwerty)) {
+            assertEquals(NavControls.Search, NavControls.holdFor.getValue(module)[KeyEvent.KEYCODE_HOME])
+            assertEquals(NavControls.PlayingNow, NavControls.holdFor.getValue(module)[KeyEvent.KEYCODE_ENTER])
+            assertNull(mapped(module, KeyEvent.KEYCODE_HOME))
+            assertNull(mapped(module, KeyEvent.KEYCODE_ENTER))
+        }
+    }
+
+    @Test fun theControllerKeepsItsSinglePressChromeKeys() {
+        // Y and Select already open Playing Now and Search; no hold is needed there.
+        assertTrue(NavControls.holdFor.getValue(KeypadModule.GamePad).isEmpty())
+        assertEquals(NavControls.sundialHoldFor, NavControls.holdFor.getValue(KeypadModule.Sundial))
+    }
+
+    @Test fun everyHoldTargetIsACanonicalNavKey() {
+        NavControls.holdFor.forEach { (module, profile) ->
+            profile.forEach { (_, target) ->
+                assertTrue("$module holds to non-canonical $target", target in NavControls.all)
+            }
         }
     }
 

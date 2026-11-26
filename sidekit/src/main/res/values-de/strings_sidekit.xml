@@ -52,11 +52,13 @@
     <string name="sk_sidekit_hint_move_left_cursor">Nach links; Cursor</string>
     <string name="sk_sidekit_hint_move_right_cursor">Nach rechts; Cursor</string>
     <string name="sk_sidekit_hint_select_or_suggestion">Auswählen oder Vorschlag übernehmen</string>
+    <string name="sk_sidekit_hint_ok_playing_now">Auswählen oder Vorschlag übernehmen; halten für aktuelle Wiedergabe</string>
     <string name="sk_sidekit_hint_punctuation_symbols">Satz- und Sonderzeichen</string>
     <string name="sk_sidekit_hint_case_numbers">Groß/klein; halten für Zahlen</string>
     <string name="sk_sidekit_hint_delete">Vorheriges Zeichen löschen</string>
     <string name="sk_sidekit_hint_hold_for">Halten für %1$s</string>
     <string name="sk_sidekit_hint_new_line">Neue Zeile oder Vorschlag übernehmen</string>
+    <string name="sk_sidekit_hint_enter_playing_now">Neue Zeile oder Vorschlag übernehmen; halten für aktuelle Wiedergabe</string>
     <string name="sk_sidekit_hint_next_suggestion">Nächster Vorschlag</string>
     <string name="sk_sidekit_hint_symbols">Symbole</string>
     <string name="sk_sidekit_hint_next_track">Nächster Titel</string>
@@ -71,6 +73,7 @@
     <string name="sk_sidekit_hint_button_y">Aktuelle Wiedergabe öffnen</string>
     <string name="sk_sidekit_hint_open_search">Suche öffnen</string>
     <string name="sk_sidekit_hint_go_home">Zum Startbildschirm</string>
+    <string name="sk_sidekit_hint_home_search">Zum Startbildschirm; halten für Suche</string>
     <string name="sk_sidekit_hint_digit_0">Leerzeichen; halten für 0</string>
     <string name="sk_sidekit_hint_digit_1">Satzzeichen; halten für 1</string>
     <string name="sk_sidekit_hint_digit">Buchstaben; halten für %1$d</string>

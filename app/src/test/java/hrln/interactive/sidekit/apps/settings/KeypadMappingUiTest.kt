@@ -235,7 +235,8 @@ class KeypadMappingUiTest {
         compose.onRoot().captureRoboImage("screenshots/keyboard_guide_page.png")
         compose.onNodeWithText("OK").performClick()
         compose.onNodeWithText("Activate the focused control or confirm a suggestion.").assertIsDisplayed()
-        compose.onNodeWithText("No long press").assertIsDisplayed()
+        // The OK hold carries Playing Now, so the card states it instead of "No long press".
+        compose.onNodeWithText("Open the playing now screen.").assertIsDisplayed()
         compose.onNodeWithText("Back").performClick()
         compose.onNodeWithText("Open the dialer.").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keyboard_guide_selected.png")
