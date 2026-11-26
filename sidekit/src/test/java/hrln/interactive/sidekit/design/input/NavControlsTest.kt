@@ -117,14 +117,22 @@ class NavControlsTest {
         }
     }
 
-    @Test fun t9AndQwertyHoldHomeForSearchAndConfirmForPlayingNow() {
-        // Neither module has a Search or a Playing Now key, and these are its two free holds. The
-        // taps keep their printed roles: Home stays system Home, OK/Enter keep selecting.
+    @Test fun t9AndQwertyHoldTheirSoftKeyForSearchAndConfirmForPlayingNow() {
+        // Neither module has a Search or a Playing Now key. Delete (T9) and SYM (the mini QWERTY)
+        // carry Search, and OK / Enter carry Playing Now; the taps keep their printed roles.
+        assertEquals(NavControls.Search, NavControls.holdFor.getValue(KeypadModule.T9)[KeyEvent.KEYCODE_DEL])
+        assertEquals(NavControls.Search, NavControls.holdFor.getValue(KeypadModule.Qwerty)[QwertyLayout.SYM])
         for (module in listOf(KeypadModule.T9, KeypadModule.Qwerty)) {
-            assertEquals(NavControls.Search, NavControls.holdFor.getValue(module)[KeyEvent.KEYCODE_HOME])
             assertEquals(NavControls.PlayingNow, NavControls.holdFor.getValue(module)[KeyEvent.KEYCODE_ENTER])
-            assertNull(mapped(module, KeyEvent.KEYCODE_HOME))
             assertNull(mapped(module, KeyEvent.KEYCODE_ENTER))
+        }
+    }
+
+    @Test fun homeIsNeverAHoldKey() {
+        // KEY_HOMEPAGE becomes KEYCODE_HOME, which the system consumes before an app sees it: a
+        // hold there could never fire, so no module may claim it.
+        NavControls.holdFor.forEach { (module, profile) ->
+            assertNull("$module holds Home", profile[KeyEvent.KEYCODE_HOME])
         }
     }
 

@@ -76,7 +76,8 @@
     <string name="sk_sidekit_hint_button_y">Open the playing now screen</string>
     <string name="sk_sidekit_hint_open_search">Open search</string>
     <string name="sk_sidekit_hint_go_home">Go to the home screen</string>
-    <string name="sk_sidekit_hint_home_search">Go to the home screen; hold for search</string>
+    <string name="sk_sidekit_hint_delete_search">Delete the previous character; hold for search</string>
+    <string name="sk_sidekit_hint_symbols_search">Symbols; hold for search</string>
     <string name="sk_sidekit_hint_digit_0">Space; hold for 0</string>
     <string name="sk_sidekit_hint_digit_1">Punctuation; hold for 1</string>
     <string name="sk_sidekit_hint_digit">Letters; hold for %1$d</string>

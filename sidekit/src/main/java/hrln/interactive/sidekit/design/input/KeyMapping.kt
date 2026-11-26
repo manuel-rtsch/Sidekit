@@ -86,8 +86,9 @@ object KeypadControls {
                 t.printed(KeyEvent.KEYCODE_STAR, "*", R.string.sk_sidekit_hint_punctuation_symbols, "Punctuation and symbols"),
                 t.digit(0),
                 t.printed(KeyEvent.KEYCODE_POUND, "#", R.string.sk_sidekit_hint_case_numbers, "Case; hold for numbers"),
-                t.control(KeyEvent.KEYCODE_HOME, R.string.sk_sidekit_key_home, "Home", R.string.sk_sidekit_hint_home_search, "Go to the home screen; hold for search"),
-                t.control(KeyEvent.KEYCODE_DEL, R.string.sk_sidekit_key_delete, "Delete", R.string.sk_sidekit_hint_delete, "Delete the previous character")
+                // Home stays the system's key: it is consumed before an app sees it, so no hold.
+                t.control(KeyEvent.KEYCODE_HOME, R.string.sk_sidekit_key_home, "Home", R.string.sk_sidekit_hint_go_home, "Go to the home screen"),
+                t.control(KeyEvent.KEYCODE_DEL, R.string.sk_sidekit_key_delete, "Delete", R.string.sk_sidekit_hint_delete_search, "Delete the previous character; hold for search")
             )
 
             KeypadModule.Qwerty -> system + QwertyLayout.letters.map { (code, letters) ->
@@ -98,7 +99,7 @@ object KeypadControls {
                 t.control(KeyEvent.KEYCODE_DEL, R.string.sk_sidekit_key_delete, "Delete", R.string.sk_sidekit_hint_delete, "Delete the previous character"),
                 t.control(KeyEvent.KEYCODE_ENTER, R.string.sk_sidekit_key_enter, "Enter", R.string.sk_sidekit_hint_enter_playing_now, "New line, or take a suggestion; hold for the playing now screen"),
                 t.printed(QwertyLayout.SUGGEST, "↕", R.string.sk_sidekit_hint_next_suggestion, "Next suggestion"),
-                t.printed(QwertyLayout.SYM, "SYM", R.string.sk_sidekit_hint_symbols, "Symbols"),
+                t.printed(QwertyLayout.SYM, "SYM", R.string.sk_sidekit_hint_symbols_search, "Symbols; hold for search"),
                 t.printed(QwertyLayout.CASE, "aA", R.string.sk_sidekit_hint_case_numbers, "Case; hold for numbers")
             )
 

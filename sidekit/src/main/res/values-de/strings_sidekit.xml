@@ -73,7 +73,8 @@
     <string name="sk_sidekit_hint_button_y">Aktuelle Wiedergabe öffnen</string>
     <string name="sk_sidekit_hint_open_search">Suche öffnen</string>
     <string name="sk_sidekit_hint_go_home">Zum Startbildschirm</string>
-    <string name="sk_sidekit_hint_home_search">Zum Startbildschirm; halten für Suche</string>
+    <string name="sk_sidekit_hint_delete_search">Vorheriges Zeichen löschen; halten für Suche</string>
+    <string name="sk_sidekit_hint_symbols_search">Symbole; halten für Suche</string>
     <string name="sk_sidekit_hint_digit_0">Leerzeichen; halten für 0</string>
     <string name="sk_sidekit_hint_digit_1">Satzzeichen; halten für 1</string>
     <string name="sk_sidekit_hint_digit">Buchstaben; halten für %1$d</string>

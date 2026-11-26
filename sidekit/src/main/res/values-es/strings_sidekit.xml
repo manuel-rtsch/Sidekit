@@ -73,7 +73,8 @@
     <string name="sk_sidekit_hint_button_y">Abrir la reproducción actual</string>
     <string name="sk_sidekit_hint_open_search">Abrir búsqueda</string>
     <string name="sk_sidekit_hint_go_home">Ir a la pantalla de inicio</string>
-    <string name="sk_sidekit_hint_home_search">Ir a la pantalla de inicio; mantén para la búsqueda</string>
+    <string name="sk_sidekit_hint_delete_search">Borrar el carácter anterior; mantén para la búsqueda</string>
+    <string name="sk_sidekit_hint_symbols_search">Símbolos; mantén para la búsqueda</string>
     <string name="sk_sidekit_hint_digit_0">Espacio; mantén para 0</string>
     <string name="sk_sidekit_hint_digit_1">Puntuación; mantén para 1</string>
     <string name="sk_sidekit_hint_digit">Letras; mantén para %1$d</string>

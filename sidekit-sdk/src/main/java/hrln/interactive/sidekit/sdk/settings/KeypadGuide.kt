@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import hrln.interactive.sidekit.design.components.SidekitCard
@@ -141,11 +142,12 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
                 null
             ),
             listOf(
-                key(home, returnHome, openSearch, icon = SidekitIcon.Home),
+                // Home is the system's key and cannot be held; Delete carries Search instead.
+                key(home, returnHome, icon = SidekitIcon.Home),
                 null,
                 key(down, focusDown, icon = SidekitIcon.ArrowDownward),
                 null,
-                key(delete, deletePrevious, icon = SidekitIcon.Backspace)
+                key(delete, deletePrevious, openSearch, icon = SidekitIcon.Backspace)
             )
         ) + listOf(
             listOf(null, key("1", t(R.string.sk_sdk_guide_punctuation, "Tap repeatedly for punctuation."), type(1), printed = "1"), digit(2), digit(3), null),
@@ -162,7 +164,7 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
             listOf(
                 key(back, goBackScreen, openDialer, SidekitIcon.Call),
                 key(back, goBackScreen, printed = dash),
-                key(home, returnHome, openSearch, icon = SidekitIcon.Home),
+                key(home, returnHome, icon = SidekitIcon.Home),
                 key(recents, showRecents, printed = dash),
                 key(options, extraActions, jumpToBar, SidekitIcon.CallEnd)
             )
@@ -181,7 +183,7 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
         } + listOf(
             listOf(
                 key("\u2195", cycleSuggestions, printed = "\u2195"),
-                key("SYM", cycleSymbols, printed = "SYM"),
+                key("SYM", cycleSymbols, openSearch, printed = "SYM"),
                 key(space, insertSpace, type(0), printed = space),
                 key("aA", changeCase, lettersAndNumbers, printed = "aA"),
                 key(enter, confirmOrNewLine, openPlayingNow, icon = SidekitIcon.KeyboardReturn)
@@ -254,6 +256,9 @@ fun keypadGuideRows(module: KeypadModule, resources: Resources? = null): List<Li
     }
 }
 
+/** The test tag of the tile that opens [label]'s detail card. */
+fun guideKeyTag(label: String): String = "guide-key-$label"
+
 /**
  * The keypad diagram: each tile is printed like the physical key, and tapping one shows its tap
  * and long-press actions. The detail card stays above the keys so the answer is visible without
@@ -283,7 +288,9 @@ fun KeypadGuide(module: KeypadModule, modifier: Modifier = Modifier) {
                             Spacer(Modifier.weight(1f).height(keyHeight))
                         } else {
                             SidekitTile(
-                                Modifier.weight(1f).height(keyHeight),
+                                // The cap prints a glyph rather than a name, so a test (and only a
+                                // test) finds the tile by the name the detail card gives it.
+                                Modifier.weight(1f).height(keyHeight).testTag(guideKeyTag(key.label)),
                                 color = if (selected == key) SidekitTheme.colors.emphasisA1 else SidekitTheme.colors.surfaceA3,
                                 onClick = { selected = key },
                                 onClickLabel = stringResource(R.string.sk_sdk_guide_show_key, key.label)

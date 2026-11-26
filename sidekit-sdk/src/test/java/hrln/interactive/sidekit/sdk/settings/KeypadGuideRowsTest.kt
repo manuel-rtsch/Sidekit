@@ -79,9 +79,12 @@ class KeypadGuideRowsTest {
 
     @Test
     fun `t9 and the mini qwerty carry search and playing now on their free holds`() {
+        // Home is the system's key and cannot be held; Delete and SYM carry Search instead.
+        assertEquals("Open search.", keypadGuideRows(KeypadModule.T9).flatten().filterNotNull().first { it.label == "Delete" }.hold)
+        assertEquals("Open search.", keypadGuideRows(KeypadModule.Qwerty).flatten().filterNotNull().first { it.label == "SYM" }.hold)
         for (module in listOf(KeypadModule.T9, KeypadModule.Qwerty)) {
             val keys = keypadGuideRows(module).flatten().filterNotNull()
-            assertEquals("Open search.", keys.first { it.label == "Home" }.hold)
+            assertNull("$module must not claim a Home hold", keys.first { it.label == "Home" }.hold)
             // OK on T9, Enter on the mini QWERTY: both keep their tap and hold Playing Now.
             assertEquals("Open the playing now screen.", keys.first { it.label == "OK" || it.label == "Enter" }.hold)
         }

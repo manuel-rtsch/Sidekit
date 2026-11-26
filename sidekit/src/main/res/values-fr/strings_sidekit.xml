@@ -73,7 +73,8 @@
     <string name="sk_sidekit_hint_button_y">Ouvrir la lecture en cours</string>
     <string name="sk_sidekit_hint_open_search">Ouvrir la recherche</string>
     <string name="sk_sidekit_hint_go_home">Aller à l\'écran d\'accueil</string>
-    <string name="sk_sidekit_hint_home_search">Aller à l\'écran d\'accueil ; maintenir pour la recherche</string>
+    <string name="sk_sidekit_hint_delete_search">Effacer le caractère précédent ; maintenir pour la recherche</string>
+    <string name="sk_sidekit_hint_symbols_search">Symboles ; maintenir pour la recherche</string>
     <string name="sk_sidekit_hint_digit_0">Espace ; maintenir pour 0</string>
     <string name="sk_sidekit_hint_digit_1">Ponctuation ; maintenir pour 1</string>
     <string name="sk_sidekit_hint_digit">Lettres ; maintenir pour %1$d</string>

@@ -107,21 +107,27 @@ object NavControls {
     )
 
     /**
-     * The holds T9 and the mini QWERTY have left, and the two chrome actions they carry.
+     * T9's two free holds: Delete for Search, OK for Playing Now.
      *
-     * Neither module has a Search or a Playing Now key, and Home and OK/Enter are the only
-     * non-repeating keys without a hold: every other key either types — and its hold already types
-     * the printed digit or symbol — or moves with key repeat. A tap keeps the printed role (Home
-     * stays the system Home key, OK/Enter keep selecting and committing), so the hold is the second
-     * layer.
-     *
-     * The pair is the controller's clustering carried over: Search belongs on the chrome corner
-     * next to Home/Start, and Playing Now on the confirm key beside the controller's Y / A face
-     * buttons. While a text field owns the keypad both holds stand down, so OK/Enter keep their
-     * typing role.
+     * Home cannot carry one. The keypad sends `KEY_HOMEPAGE`, which the system turns into
+     * [KeyEvent.KEYCODE_HOME] and consumes before any app sees it — the same reason the top-left
+     * CALL key needs the keypad accessibility service to become Back. Delete is the module's other
+     * soft key, and its tap keeps erasing, so the hold is the second layer.
      */
-    private val homeAndConfirmHoldFor: Map<Int, Int> = mapOf(
-        KeyEvent.KEYCODE_HOME to Search,
+    private val t9HoldFor: Map<Int, Int> = mapOf(
+        KeyEvent.KEYCODE_DEL to Search,
+        KeyEvent.KEYCODE_ENTER to PlayingNow
+    )
+
+    /**
+     * The mini QWERTY's two free holds: SYM for Search, Enter for Playing Now.
+     *
+     * Its Home key is the system's for the same reason as T9's, the rocker's hold leaves the field,
+     * and Space and aA hold the digits and letters they type. SYM is the only key left, and its tap
+     * keeps stepping through symbols.
+     */
+    private val qwertyHoldFor: Map<Int, Int> = mapOf(
+        QwertyLayout.SYM to Search,
         KeyEvent.KEYCODE_ENTER to PlayingNow
     )
 
@@ -135,8 +141,8 @@ object NavControls {
      * press, and the Sundial's ring has no spare hold (see [sundialHoldFor]).
      */
     val holdFor: Map<KeypadModule, Map<Int, Int>> = mapOf(
-        KeypadModule.T9 to homeAndConfirmHoldFor,
-        KeypadModule.Qwerty to homeAndConfirmHoldFor,
+        KeypadModule.T9 to t9HoldFor,
+        KeypadModule.Qwerty to qwertyHoldFor,
         KeypadModule.Sundial to sundialHoldFor,
         KeypadModule.GamePad to emptyMap()
     )

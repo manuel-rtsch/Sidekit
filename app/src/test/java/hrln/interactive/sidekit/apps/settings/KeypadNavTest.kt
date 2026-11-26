@@ -83,11 +83,14 @@ class KeypadNavTest {
     }
 
     @Test fun holdActionGivesT9AndQwertyTheirChromeHolds() {
-        // Home held opens Search, OK / Enter held opens Playing Now; the taps keep their roles.
+        // Delete (T9) and SYM (the mini QWERTY's ALT key) held open Search, OK / Enter held opens Playing
+        // Now; the taps keep their roles. Home is the system's key and carries no hold.
+        assertEquals(NavControls.Search, keypad(KeypadModule.T9).holdAction(KeyEvent.KEYCODE_DEL, down(KeyEvent.KEYCODE_DEL)))
+        assertEquals(NavControls.Search, keypad(KeypadModule.Qwerty).holdAction(KeyEvent.KEYCODE_ALT_LEFT, down(KeyEvent.KEYCODE_ALT_LEFT)))
         for (module in listOf(KeypadModule.T9, KeypadModule.Qwerty)) {
             val k = keypad(module)
-            assertEquals(NavControls.Search, k.holdAction(KeyEvent.KEYCODE_HOME, down(KeyEvent.KEYCODE_HOME)))
             assertEquals(NavControls.PlayingNow, k.holdAction(KeyEvent.KEYCODE_ENTER, down(KeyEvent.KEYCODE_ENTER)))
+            assertNull(k.holdAction(KeyEvent.KEYCODE_HOME, down(KeyEvent.KEYCODE_HOME)))
             assertNull(k.holdAction(KeyEvent.KEYCODE_DPAD_UP, down(KeyEvent.KEYCODE_DPAD_UP)))
         }
     }
@@ -104,6 +107,6 @@ class KeypadNavTest {
     @Test fun customMappingReplacesTheHolds() {
         val k = keypad(KeypadModule.T9)
         k.useCustomMapping(KeypadModule.T9)
-        assertNull(k.holdAction(KeyEvent.KEYCODE_HOME, down(KeyEvent.KEYCODE_HOME)))
+        assertNull(k.holdAction(KeyEvent.KEYCODE_DEL, down(KeyEvent.KEYCODE_DEL)))
     }
 }

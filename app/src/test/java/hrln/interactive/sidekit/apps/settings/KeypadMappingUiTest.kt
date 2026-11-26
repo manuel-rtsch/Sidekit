@@ -237,7 +237,10 @@ class KeypadMappingUiTest {
         compose.onNodeWithText("Activate the focused control or confirm a suggestion.").assertIsDisplayed()
         // The OK hold carries Playing Now, so the card states it instead of "No long press".
         compose.onNodeWithText("Open the playing now screen.").assertIsDisplayed()
-        compose.onNodeWithText("Back").performClick()
+        // The CALL cap prints a glyph instead of its name, so the tile is found by its tag. (The
+        // bottom rows sit under the action bar, and a tile there cannot be tapped until the list
+        // scrolls; the hold each cap carries is pinned by KeypadGuideRowsTest instead.)
+        compose.onNodeWithTag(guideKeyTag("Back")).performClick()
         compose.onNodeWithText("Open the dialer.").assertIsDisplayed()
         compose.onRoot().captureRoboImage("screenshots/keyboard_guide_selected.png")
     }
